@@ -35,9 +35,15 @@ const CTA =
 const WEITER = '[data-testid="rent-offer-list-offer-snapshot-cta"]';
 const SCHUTZ = '[data-testid="rent-checkout-protection-packages-form"]';
 
-/** Zeilen ohne Zahl, die eine Selbstbeteiligung beschreiben. */
-const SB_RE = /(selbstbeteiligung|deductible|excess|franquicia|franchigia)/i;
-const OHNE_SB_RE = /(keine selbstbeteiligung|no deductible|sin franquicia|nessuna franchigia)/i;
+/**
+ * Zeilen, die eine Selbstbeteiligung beschreiben — in jeder Sprache anders.
+ * Fehlt eine Sprache, landet das Paket im falschen Fach: auf der franzoesischen
+ * Seite wurde "Protection Basique" als SB-frei einsortiert, weil "franchise"
+ * hier fehlte.
+ */
+const SB_RE = /(selbstbeteiligung|deductible|excess|franquicia|franchigia|franchise|eigen risico)/i;
+const OHNE_SB_RE =
+  /(keine selbstbeteiligung|no deductible|no excess|sin franquicia|nessuna franchigia|sans franchise|aucune franchise|geen eigen risico)/i;
 
 /**
  * Den Textblock eines Schutzpakets zerlegen.
@@ -226,7 +232,12 @@ export async function quoteSchutz(q) {
         // 94411,94 statt 411,94.
         for (const zeile of text.split('\n')) {
           if (!/[€£$]|CHF|SEK|NOK|DKK|PLN|CZK|HUF|TRY/i.test(zeile)) continue;
-          const m = zeile.match(/\d{1,3}(?:[.,]\d{3})*[.,]\d{2}/);
+          // Zwei Formen noetig. Mit Tausendertrenner ("1.084,66") greift die
+          // erste, ohne ihn ("1025,85") nur die zweite. Fehlte die zweite,
+          // rutschte die Erkennung eine Stelle weiter und las "025,85" — aus
+          // 1025,85 wurde 25,85. Genau so entstanden die 33,24 EUR auf der
+          // spanischen Seite, wo Tausender ohne Punkt geschrieben werden.
+          const m = zeile.match(/\d{1,3}(?:[.,]\d{3})+[.,]\d{2}|\d+[.,]\d{2}/);
           if (!m) continue;
           const roh = m[0];
           const sep = Math.max(roh.lastIndexOf('.'), roh.lastIndexOf(','));

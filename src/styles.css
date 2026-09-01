@@ -647,7 +647,25 @@ tr.mietzeile .betrag { color: var(--ink2); font-weight: 500; }
 
 /* ============================================================ Vorschläge */
 
-.vorschlag { margin-top: 20px; }
+/* Zurueckhaltend: eine Zeile, bis man sie braucht. */
+.vorschlag {
+  max-width: 1180px;
+  margin: 26px auto 0;
+}
+.vorschlag > summary {
+  color: var(--leise);
+  font-size: 13px;
+  margin: 0;
+  padding: 6px 0;
+}
+.vorschlag > summary:hover { color: var(--accent); }
+.vorschlagInhalt {
+  background: var(--flaeche);
+  border-radius: var(--r);
+  padding: 22px 24px;
+  margin-top: 10px;
+  box-shadow: var(--schatten);
+}
 .vorschlag textarea {
   width: 100%;
   margin: 6px 0 16px;

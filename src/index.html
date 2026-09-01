@@ -200,18 +200,22 @@
   </div>
 </section>
 
-<section class="card vorschlag" id="vorschlagKarte" hidden>
-  <h2>Etwas fehlt oder stört?</h2>
-  <p class="note">
-    Kurz aufschreiben — landet in einer Datei auf diesem Rechner, sonst nirgends.
-  </p>
-  <textarea id="vorschlagText" rows="3"
-    placeholder="Zum Beispiel: Station XY fehlt · Preis stimmt nicht mit der Seite überein · Ansicht Z wäre nützlich"></textarea>
-  <div class="btnrow">
-    <button type="button" id="vorschlagSenden" class="primary">Abschicken</button>
-    <span class="hint" id="vorschlagStatus"></span>
+<!-- Zusammengeklappt: das Feld wird selten gebraucht und soll nicht dauernd
+     Platz und Aufmerksamkeit beanspruchen. -->
+<details class="vorschlag" id="vorschlagKarte" hidden>
+  <summary>Etwas fehlt oder stört?</summary>
+  <div class="vorschlagInhalt">
+    <p class="note">
+      Kurz aufschreiben — landet in einer Datei auf diesem Rechner, sonst nirgends.
+    </p>
+    <textarea id="vorschlagText" rows="3"
+      placeholder="Zum Beispiel: Station XY fehlt · Preis stimmt nicht mit der Seite überein · Ansicht Z wäre nützlich"></textarea>
+    <div class="btnrow">
+      <button type="button" id="vorschlagSenden" class="primary">Abschicken</button>
+      <span class="hint" id="vorschlagStatus"></span>
+    </div>
   </div>
-</section>
+</details>
 
 <footer>
   <p>

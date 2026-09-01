@@ -650,7 +650,25 @@ tr.mietzeile .betrag { color: var(--ink2); font-weight: 500; }
 
 /* ============================================================ Vorschläge */
 
-.vorschlag { margin-top: 20px; }
+/* Zurueckhaltend: eine Zeile, bis man sie braucht. */
+.vorschlag {
+  max-width: 1180px;
+  margin: 26px auto 0;
+}
+.vorschlag > summary {
+  color: var(--leise);
+  font-size: 13px;
+  margin: 0;
+  padding: 6px 0;
+}
+.vorschlag > summary:hover { color: var(--accent); }
+.vorschlagInhalt {
+  background: var(--flaeche);
+  border-radius: var(--r);
+  padding: 22px 24px;
+  margin-top: 10px;
+  box-shadow: var(--schatten);
+}
 .vorschlag textarea {
   width: 100%;
   margin: 6px 0 16px;
@@ -868,18 +886,22 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
   </div>
 </section>
 
-<section class="card vorschlag" id="vorschlagKarte" hidden>
-  <h2>Etwas fehlt oder stört?</h2>
-  <p class="note">
-    Kurz aufschreiben — landet in einer Datei auf diesem Rechner, sonst nirgends.
-  </p>
-  <textarea id="vorschlagText" rows="3"
-    placeholder="Zum Beispiel: Station XY fehlt · Preis stimmt nicht mit der Seite überein · Ansicht Z wäre nützlich"></textarea>
-  <div class="btnrow">
-    <button type="button" id="vorschlagSenden" class="primary">Abschicken</button>
-    <span class="hint" id="vorschlagStatus"></span>
+<!-- Zusammengeklappt: das Feld wird selten gebraucht und soll nicht dauernd
+     Platz und Aufmerksamkeit beanspruchen. -->
+<details class="vorschlag" id="vorschlagKarte" hidden>
+  <summary>Etwas fehlt oder stört?</summary>
+  <div class="vorschlagInhalt">
+    <p class="note">
+      Kurz aufschreiben — landet in einer Datei auf diesem Rechner, sonst nirgends.
+    </p>
+    <textarea id="vorschlagText" rows="3"
+      placeholder="Zum Beispiel: Station XY fehlt · Preis stimmt nicht mit der Seite überein · Ansicht Z wäre nützlich"></textarea>
+    <div class="btnrow">
+      <button type="button" id="vorschlagSenden" class="primary">Abschicken</button>
+      <span class="hint" id="vorschlagStatus"></span>
+    </div>
   </div>
-</section>
+</details>
 
 <footer>
   <p>
