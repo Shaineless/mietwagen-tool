@@ -106,12 +106,42 @@ export async function getBrowser({ sichtbar = false } = {}) {
     await new Promise((r) => setTimeout(r, 400));
     try {
       browser = await chromium.connectOverCDP(`http://127.0.0.1:${PORT}`, { timeout: 2000 });
+      await bereiteKontextVor(browser);
       return browser;
     } catch (e) {
       lastErr = e;
     }
   }
   throw new Error('Verbindung zu Chrome fehlgeschlagen: ' + String(lastErr?.message).slice(0, 120));
+}
+
+/**
+ * Einmalig je Sitzung: ein Skript, das vor jedem Seitenskript laeuft.
+ *
+ * Es loescht nur Sixts Erinnerung an die zuletzt gewaehlte Station. Frueher
+ * wurde dafuer erst die Startseite geladen und der ganze Speicher geleert —
+ * das kostete eine zusaetzliche Navigation pro Abruf und warf nebenbei die
+ * Cookie-Auswahl weg, sodass der Banner jedes Mal neu erschien.
+ *
+ * Die Zustimmung bleibt jetzt erhalten: der Banner kommt genau einmal je
+ * Profil, danach faellt der ganze Umweg weg.
+ */
+async function bereiteKontextVor(b) {
+  const ctx = b.contexts()[0];
+  if (!ctx || ctx.__mwtVorbereitet) return;
+  ctx.__mwtVorbereitet = true;
+  await ctx
+    .addInitScript(() => {
+      try {
+        for (const k of Object.keys(localStorage)) {
+          if (k.startsWith('rent-search_')) localStorage.removeItem(k);
+        }
+        sessionStorage.clear();
+      } catch {
+        /* anderer Ursprung, egal */
+      }
+    })
+    .catch(() => {});
 }
 
 export async function closeBrowser() {
@@ -155,15 +185,6 @@ export async function withPage({ host, sichtbar = false }, fn) {
   page.setDefaultTimeout(30000);
 
   try {
-    // Nur so weit laden, dass die Herkunft steht — mehr braucht es zum Leeren
-    // des Speichers nicht, und die eigentliche Seite kommt gleich danach.
-    await page.goto(`https://${host}/`, { waitUntil: 'commit' }).catch(() => {});
-    await page
-      .evaluate(() => {
-        localStorage.clear();
-        sessionStorage.clear();
-      })
-      .catch(() => {});
     return await fn(page);
   } finally {
     await page.close().catch(() => {});
@@ -177,27 +198,50 @@ export async function withPage({ host, sichtbar = false }, fn) {
  * ueber Klassennamen, nicht ueber die Beschriftung: die heisst je Laenderseite
  * "Ablehnen", "Deny", "Rechazar" ... Geprueft auf sixt.de und sixt.co.uk.
  */
-export async function dismissConsent(page, { versuche = 16 } = {}) {
-  for (let i = 0; i < versuche; i++) {
-    const ok = await page
-      .evaluate(() => {
-        const h = document.querySelector('#usercentrics-cmp-ui');
-        const roots = h?.shadowRoot ? [document, h.shadowRoot] : [document];
-        for (const r of roots) {
-          const b = r.querySelector('button.uc-deny-button, button#deny');
-          if (b) {
-            b.click();
-            return true;
-          }
+export async function dismissConsent(page, { timeout = 3000 } = {}) {
+  // Erst kurz schauen, ob ueberhaupt ein Banner kommt. Vorher wurde stur eine
+  // feste Zahl von Versuchen durchlaufen — auf einem Profil, das die Auswahl
+  // schon gespeichert hat, waren das 13 Sekunden Warten auf etwas, das nie
+  // erscheint. Das war der groesste Zeitfresser im ganzen Abruf.
+  // Achtung auf die Signatur: waitForFunction(fn, arg, options). Werden die
+  // Optionen als zweites Argument uebergeben, gelten sie als Argument fuer die
+  // Seitenfunktion und der Timeout faellt still auf die Vorgabe von 30s
+  // zurueck. Genau daran hing der Abruf 30 statt 3 Sekunden fest.
+  const da = await page
+    .waitForFunction(
+      () => Boolean(document.querySelector('#usercentrics-cmp-ui')?.shadowRoot?.querySelector('button')),
+      undefined,
+      { timeout, polling: 150 }
+    )
+    .then(() => true)
+    .catch(() => false);
+
+  if (!da) return false;
+
+  const geklickt = await page
+    .evaluate(() => {
+      const h = document.querySelector('#usercentrics-cmp-ui');
+      const roots = h?.shadowRoot ? [document, h.shadowRoot] : [document];
+      for (const r of roots) {
+        const b = r.querySelector('button.uc-deny-button, button#deny');
+        if (b) {
+          b.click();
+          return true;
         }
-        return false;
-      })
-      .catch(() => false);
-    if (ok) {
-      await page.waitForTimeout(400);
-      return true;
-    }
-    await page.waitForTimeout(500);
-  }
-  return false;
+      }
+      return false;
+    })
+    .catch(() => false);
+
+  if (!geklickt) return false;
+
+  // Nur warten, wenn wirklich geklickt wurde. Auf manchen Laenderseiten
+  // bleibt die Huelle stehen; dafuer gibt es den Rueckfall im Aufrufer.
+  await page
+    .waitForFunction(() => !document.querySelector('#usercentrics-cmp-ui'), undefined, {
+      timeout: 2500,
+      polling: 150,
+    })
+    .catch(() => {});
+  return true;
 }

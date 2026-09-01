@@ -329,12 +329,22 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 .pill input { display: none; }
 .pill.on { background: var(--accent); color: var(--accent-ink); font-weight: 560; }
 
-.markets { display: grid; grid-template-columns: repeat(auto-fill, minmax(164px, 1fr)); gap: 2px; margin-top: 12px; }
-.mk { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 14px; color: var(--ink); cursor: pointer; }
-.mk:hover { background: var(--hairline2); }
-.mk.on { background: var(--accent-weich); }
-.mk input { margin: 0; accent-color: var(--accent); width: 15px; height: 15px; }
-.mklabel { flex: 1; }
+.markets { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+
+.mchip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 980px;
+  background: var(--flaeche2);
+  color: var(--ink2);
+  font-size: 13.5px;
+  font-weight: 450;
+}
+.mchip.on { background: var(--accent); color: var(--accent-ink); font-weight: 560; }
+.mchip.on .cur { color: var(--accent-ink); opacity: .72; }
+.mklabel { white-space: nowrap; }
 .cur { font-size: 11px; color: var(--leise); }
 
 /* ============================================================ Ergebnis */
@@ -477,6 +487,9 @@ tr.zeile:hover td, tr.zeile:hover th.klasse { background: var(--hairline2); }
 .proTag { display: block; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 3px; font-weight: 400; }
 .proTag.sb { color: var(--ink2); }
 .proTag.rabatt { color: var(--accent); }
+/* Der von Sixt angezeigte Tagespreis, wenn er vom tatsaechlichen abweicht —
+   bewusst zurueckhaltend, die abgelesene Zahl ist die gueltige. */
+.proTag.hinweis { color: var(--leise); font-style: italic; }
 
 td.best .betrag { color: var(--accent); font-weight: 640; }
 td.leer { color: var(--leise); }
@@ -486,7 +499,17 @@ td.leer { color: var(--leise); }
 /* ============================================================ Fahrzeug */
 
 .fzg { display: flex; align-items: center; gap: 16px; }
-.fbild { width: 84px; height: 50px; object-fit: contain; flex: none; }
+/* Bilder kommen ueber das Netz nach; ohne Ueberblendung erscheinen sie
+   schlagartig mitten in einer sonst fertigen Zeile. */
+.fbild {
+  width: 84px;
+  height: 50px;
+  object-fit: contain;
+  flex: none;
+  opacity: 0;
+  transition: opacity var(--t-klein) var(--raus);
+}
+.fbild.geladen, .fbild.leer { opacity: 1; }
 .fbild.leer { border-radius: 8px; background: var(--flaeche2); }
 
 .ftext2 { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -556,10 +579,19 @@ table.vergleich.schutz td, table.vergleich.schutz th.klasse { vertical-align: to
  * opacity, damit es der Compositor uebernimmt.
  */
 
-.station, .pill, .chipbtn, .gtab, .mk, .lnk, .mode, tr.zeile {
+.station, .pill, .chipbtn, .gtab, .mchip, .lnk, .mode, tr.zeile {
   transition: transform var(--t-druck) var(--raus), background-color var(--t-druck) var(--raus);
 }
-.station:active, .pill:active, .chipbtn:active, .gtab:active, .lnk:active { transform: scale(.985); }
+.station:active, .pill:active, .chipbtn:active, .gtab:active, .mchip:active, .lnk:active { transform: scale(.985); }
+
+/* Die Mietzeile ist Bezugsgroesse, nicht Angebot — sie tritt zurueck und
+   setzt sich zugleich vom Rest ab. */
+tr.mietzeile th.klasse, tr.mietzeile td {
+  background: var(--flaeche2);
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+tr.mietzeile .betrag { color: var(--ink2); font-weight: 500; }
 .mode:active { transform: scale(.98); }
 
 /* Der Wechsel zwischen den Ansichten laeuft in beide Richtungen gleich —
@@ -612,6 +644,23 @@ table.vergleich.schutz td, table.vergleich.schutz th.klasse { vertical-align: to
   .card, .mode { outline: 1px solid var(--hairline); }
   .muted, .leise { color: var(--ink2); }
 }
+
+/* ============================================================ Vorschläge */
+
+.vorschlag { margin-top: 20px; }
+.vorschlag textarea {
+  width: 100%;
+  margin: 6px 0 16px;
+  padding: 13px 15px;
+  border: 0;
+  border-radius: var(--r-klein);
+  background: var(--flaeche2);
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+  min-height: 78px;
+}
+.vorschlag textarea:focus-visible { outline: 3px solid var(--accent-weich); }
 
 /* ============================================================ Fuß */
 

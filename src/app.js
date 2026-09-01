@@ -23,8 +23,6 @@ const defaults = () => {
     stations: ['110'],
     returnStation: null,
     markets: ['de', 'at', 'ch', 'nl', 'es'],
-    /** Statusrabatt in Prozent — rein rechnerisch, siehe renderStatusWahl(). */
-    statusRabatt: 0,
     /** Nur bekannte, aber gerade nicht buchbare Klassen mitzeigen? */
     zeigeNichtBuchbare: true,
   };
@@ -145,8 +143,12 @@ async function pollErgebnisse() {
         }
       }
       if (neu) {
-        renderResults();
+        // Nur neu zeichnen, wenn sich die sichtbare Ansicht wirklich aendert.
+        // Frueher wurde bei jedem Takt die ganze Tabelle verworfen und neu
+        // gebaut — 52 Zeilen, alle 2,5 Sekunden. Das sah man als Flackern,
+        // Scrollposition und Hover gingen dabei jedes Mal verloren.
         if (schutzAcriss) renderSchutz();
+        else renderResults();
       }
     } catch {
       /* nächster Durchlauf */
@@ -357,57 +359,6 @@ function showScreen(name) {
   $('#schutzScreen').hidden = name !== 'schutz';
 }
 
-/* =========================================================== Statusrabatt */
-
-const STATUS_STUFEN = [
-  [0, 'Kein Status'],
-  [10, 'Gold · −10 %'],
-  [15, 'Platinum · −15 %'],
-  [20, 'Diamond · −20 %'],
-];
-
-/**
- * Statusrabatt auf einen Betrag anwenden.
- *
- * Bewusst eine reine Rechnung: Sixt zeigt den Rabatt erst nach dem Anmelden,
- * und er gilt nicht zwingend auf alle Bestandteile. Die Oberflaeche nennt das
- * deshalb ausdruecklich eine Schaetzung.
- */
-function mitStatus(v) {
-  if (v == null || !state.statusRabatt) return v;
-  return v * (1 - state.statusRabatt / 100);
-}
-
-function renderStatusWahl() {
-  return el(
-    'div',
-    { class: 'statuswahl' },
-    el('span', { class: 'swlabel' }, 'Statusrabatt'),
-    ...STATUS_STUFEN.map(([p, label]) =>
-      el(
-        'button',
-        {
-          type: 'button',
-          class: 'chipbtn' + (state.statusRabatt === p ? ' on' : ''),
-          onclick: () => {
-            state.statusRabatt = p;
-            persist();
-            renderResults();
-            if (schutzAcriss) renderSchutz();
-          },
-        },
-        label
-      )
-    ),
-    state.statusRabatt
-      ? el(
-          'span',
-          { class: 'swnote' },
-          'gerechnet, nicht abgefragt — Sixt zeigt den Rabatt erst nach dem Anmelden'
-        )
-      : null
-  );
-}
 
 /* =========================================================== Stationen */
 
@@ -482,31 +433,37 @@ function renderStationPicker() {
     )
   );
 }
-
 /* =========================================================== Märkte, Pills */
 
+/**
+ * Laenderseiten als Chips statt als Liste von Ankreuzfeldern.
+ *
+ * 23 Kaestchen untereinander sind ein Formular; als Chipfeld ist dieselbe
+ * Auswahl halb so hoch und auf einen Blick erfassbar — man sieht sofort, was
+ * gewaehlt ist, ohne 23 Zeilen abzusuchen.
+ */
 function renderMarkets() {
   setChildren(
     $('#markets'),
-    ...providerById(PROVIDER).markets.map((m) =>
-      el(
-        'label',
-        { class: 'mk' + (state.markets.includes(m.code) ? ' on' : '') },
-        el('input', {
-          type: 'checkbox',
-          checked: state.markets.includes(m.code),
-          onchange: (e) => {
-            if (e.target.checked) state.markets.push(m.code);
-            else state.markets = state.markets.filter((c) => c !== m.code);
+    ...providerById(PROVIDER).markets.map((m) => {
+      const on = state.markets.includes(m.code);
+      return el(
+        'button',
+        {
+          type: 'button',
+          class: 'mchip' + (on ? ' on' : ''),
+          onclick: () => {
+            if (on) state.markets = state.markets.filter((c) => c !== m.code);
+            else state.markets.push(m.code);
             // Nur das Ergebnis neu zeichnen: die Stationsliste anzufassen
             // liesse sie zurueckscrollen.
             update({ stationen: false });
           },
-        }),
+        },
         el('span', { class: 'mklabel' }, m.label),
         el('span', { class: 'cur' }, m.cur)
-      )
-    )
+      );
+    })
   );
 }
 
@@ -660,7 +617,16 @@ function renderTable(list) {
           'span',
           { class: 'fzg' },
           bild
-            ? el('img', { src: bild, alt: '', loading: 'lazy', class: 'fbild' })
+            ? el('img', {
+                src: bild,
+                alt: '',
+                loading: 'lazy',
+                class: 'fbild',
+                // Aus dem Zwischenspeicher ist das Bild sofort da — dann gar
+                // nicht erst ueberblenden.
+                onload: (e) => e.target.classList.add('geladen'),
+                onerror: (e) => e.target.classList.add('geladen'),
+              })
             : el('span', { class: 'fbild leer' }),
           el(
             'span',
@@ -689,7 +655,7 @@ function renderTable(list) {
           );
         }
         const roh = o.total ?? o.perDay;
-        const wert = mitStatus(roh);
+        const wert = roh;
         const billigste =
           vergleichbar.has(o.currency) &&
           (anzahl.get(o.currency) || 0) > 1 &&
@@ -707,7 +673,7 @@ function renderTable(list) {
           el(
             'span',
             { class: 'proTag' },
-            `${money(mitStatus(o.perDay), '')}/Tag`,
+            `${money(o.perDay, '')}/Tag`,
             o.fruehbucher ? el('span', { class: 'fbmark', title: 'Frühbucherrabatt' }, 'FB') : null
           )
         );
@@ -739,8 +705,32 @@ function renderTable(list) {
 
 /* =========================================================== Ergebnisse */
 
-function renderResults() {
+/** Kennung dessen, was die Ergebnisansicht darstellt. */
+let letzteSignatur = null;
+
+/**
+ * Fingerabdruck der Ergebnisansicht.
+ *
+ * Der Abfragetakt laeuft alle 2,5 Sekunden und rief bisher jedes Mal einen
+ * vollstaendigen Neubau der Tabelle aus — auch wenn sich nichts geaendert
+ * hatte. Bei ueber fuenfzig Zeilen sieht man das als Flackern, und Hover und
+ * Scrollstand gehen dabei verloren.
+ */
+function ergebnisSignatur(jobs) {
+  return [
+    aktiveGruppe,
+    Object.keys(katalog).length,
+    ...jobs.map((j) => {
+      const r = prices.get(j.key);
+      return `${j.key}:${r ? (r.error ? 'e' : r.offers?.length ?? 0) : '-'}`;
+    }),
+  ].join('|');
+}
+
+function renderResults({ erzwingen = false } = {}) {
   const jobs = aktuelleJobs();
+
+  // Die billigen Anzeigen laufen immer — sie kosten nichts und flackern nicht.
   $('#jobCount').textContent = jobs.length
     ? `${jobs.length} Abfrage${jobs.length === 1 ? '' : 'n'}`
     : '';
@@ -749,8 +739,13 @@ function renderResults() {
   $('#warn').hidden = jobs.length <= 12;
   $('#warn').textContent =
     jobs.length > 12
-      ? `${jobs.length} Abfragen — das dauert rund ${Math.ceil((jobs.length * 10) / 2 / 60)} Minuten.`
+      ? `${jobs.length} Abfragen — das dauert rund ${Math.ceil((jobs.length * 6) / 2 / 60)} Minuten.`
       : '';
+
+  // Die Tabelle nur anfassen, wenn sich an ihrem Inhalt etwas geaendert hat.
+  const sig = ergebnisSignatur(jobs);
+  if (!erzwingen && sig === letzteSignatur) return;
+  letzteSignatur = sig;
 
   if (!jobs.length) {
     setChildren($('#results'), el('p', { class: 'empty' }, 'Station und Länderseite wählen.'));
@@ -802,7 +797,6 @@ function renderResults() {
   setChildren(
     $('#results'),
     umschalter,
-    hatPreise ? renderStatusWahl() : null,
     ...sichtbar.map((k) => {
       const list = gruppen.get(k);
       const f = list[0];
@@ -956,6 +950,24 @@ function renderSchutz() {
 
   const tage = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
 
+  /**
+   * Mietpreis ohne Zusatzschutz.
+   *
+   * Bevorzugt der Gesamtpreis, den die Kasse beim Paket "kein Extra-Schutz"
+   * anzeigt — gemessen unter denselben Bedingungen wie alle anderen Pakete.
+   * Der Wert aus der Trefferliste weicht um Kleinbetraege ab (gemessen 97
+   * Cent), und dann stimmen die Aufschlaege nicht mehr zusammen.
+   */
+  function mietpreis(j) {
+    const ohne = proMarkt.get(j.key)?.ohne;
+    if (ohne?.gesamt != null) return ohne.gesamt;
+    const r = schutz.get(j.key);
+    if (r?.mieteOhneSchutz != null) return r.mieteOhneSchutz;
+    const rec = prices.get(jobKey(j.market.host, j.station.code, j.variant));
+    const treffer = (rec?.offers || []).find((o) => o.acriss === schutzAcriss);
+    return treffer ? (treffer.total ?? null) : null;
+  }
+
   const kopf = el(
     'tr',
     {},
@@ -969,6 +981,26 @@ function renderSchutz() {
         schutz.has(j.key) ? null : el('span', { class: 'thwait' }, 'lädt …')
       )
     )
+  );
+
+  // Erste Zeile: die reine Miete, als Bezugsgroesse fuer alles darunter.
+  const mieteZeile = el(
+    'tr',
+    { class: 'mietzeile' },
+    el(
+      'th',
+      { class: 'klasse' },
+      el('span', { class: 'pname' }, 'Nur Miete'),
+      el('span', { class: 'psb' }, `${tage} Tage, ohne jeden Zusatzschutz`)
+    ),
+    ...jobs.map((j) => {
+      const m = mietpreis(j);
+      return el(
+        'td',
+        {},
+        el('span', { class: 'betrag' }, m == null ? '—' : money(m, j.market.cur))
+      );
+    })
   );
 
   const zeilen = benutzt.map(([k, titel, erklärung]) =>
@@ -986,8 +1018,17 @@ function renderSchutz() {
         const p = proMarkt.get(j.key)?.[k];
         if (!p) return el('td', { class: 'leer' }, r ? '—' : '');
 
-        const proTag = p.inklusive ? 0 : p.proTag;
-        const gesamtSchutz = proTag == null ? null : proTag * tage;
+        // Der Gesamtpreis ist abgelesen, nicht gerechnet. Der je Paket
+        // angezeigte Tagespreis multipliziert sich nicht sauber hoch:
+        // gemessen zeigte Sixt 10,77 EUR/Tag an, waehrend der Gesamtpreis bei
+        // vier Tagen um 54,22 EUR stieg — 13,55 statt 10,77 je Tag.
+        const gesamt = p.gesamt ?? null;
+        // Aufschlag hier ausrechnen statt aus dem Abruf uebernehmen: so
+        // stammen Bezugswert und Paketpreis aus derselben Messreihe.
+        const basis = mietpreis(j);
+        const aufschlag =
+          gesamt != null && basis != null ? Number((gesamt - basis).toFixed(2)) : null;
+        const echtProTag = aufschlag != null ? aufschlag / tage : null;
 
         return el(
           'td',
@@ -998,16 +1039,26 @@ function renderSchutz() {
           el(
             'span',
             { class: 'betrag' },
-            p.inklusive ? 'inklusive' : money(mitStatus(proTag), p.waehrung) + '/Tag'
+            gesamt != null ? money(gesamt, p.waehrung) : '—'
           ),
-          !p.inklusive && gesamtSchutz != null
-            ? el('span', { class: 'proTag' }, `${money(mitStatus(gesamtSchutz), p.waehrung)} gesamt`)
+          aufschlag
+            ? el(
+                'span',
+                { class: 'proTag' },
+                `+ ${money(aufschlag, '')} Schutz · ${money(echtProTag, '')}/Tag`
+              )
+            : aufschlag === 0
+              ? el('span', { class: 'proTag' }, 'nur Miete')
+              : null,
+          p.proTag && echtProTag != null && Math.abs(echtProTag - p.proTag) > 0.02
+            ? el(
+                'span',
+                { class: 'proTag hinweis' },
+                `Seite zeigt ${money(p.proTag, '')}/Tag`
+              )
             : null,
           p.selbstbeteiligung
             ? el('span', { class: 'proTag sb' }, 'SB: ' + p.selbstbeteiligung)
-            : null,
-          p.rabattProzent
-            ? el('span', { class: 'proTag rabatt' }, `−${p.rabattProzent} % Online`)
             : null
         );
       })
@@ -1016,16 +1067,24 @@ function renderSchutz() {
 
   setChildren(
     $('#schutzBody'),
-    renderStatusWahl(),
     el(
       'div',
       { class: 'tabellenrahmen' },
-      el('table', { class: 'vergleich schutz' }, el('thead', {}, kopf), el('tbody', {}, ...zeilen))
+      el(
+        'table',
+        { class: 'vergleich schutz' },
+        el('thead', {}, kopf),
+        el('tbody', {}, mieteZeile, ...zeilen)
+      )
     ),
     el(
       'p',
       { class: 'tabnote' },
-      'Zugeordnet wird über den Inhalt (Selbstbeteiligung ja/nein, günstiger/teurer), ' +
+      'Die große Zahl ist der Gesamtpreis für den ganzen Zeitraum, abgelesen von Sixts ' +
+        'eigener Kasse — jedes Paket wird dafür einzeln ausgewählt. Nicht hochgerechnet: ' +
+        'der angezeigte Tagespreis multipliziert sich nicht sauber auf, gemessen lagen ' +
+        'zwischen beiden rund 26 %. Weicht er ab, steht der Wert der Seite klein darunter. ' +
+        'Zugeordnet wird über den Inhalt (Selbstbeteiligung ja/nein, günstiger/teurer), ' +
         'nicht über den Namen — der heißt auf jeder Länderseite anders. Der jeweilige ' +
         'Originalname steht klein über dem Preis, damit die Zuordnung nachprüfbar bleibt.'
     )
@@ -1184,6 +1243,52 @@ function copyAll() {
   );
 }
 
+/* =========================================================== Vorschläge */
+
+async function sendeVorschlag() {
+  const feld = $('#vorschlagText');
+  const text = feld.value.trim();
+  const status = $('#vorschlagStatus');
+
+  if (text.length < 3) {
+    status.textContent = 'Bitte etwas mehr schreiben.';
+    feld.focus();
+    return;
+  }
+
+  const btn = $('#vorschlagSenden');
+  btn.disabled = true;
+  status.textContent = 'wird gespeichert …';
+
+  try {
+    const r = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        // Der eingestellte Zustand hilft beim Nachvollziehen — ohne
+        // persoenliche Daten, das steht hier ohnehin nichts.
+        kontext: {
+          stationen: state.stations,
+          maerkte: state.markets,
+          von: state.pickupDate,
+          bis: state.returnDate,
+          klasse: schutzAcriss,
+        },
+      }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'abgelehnt');
+    feld.value = '';
+    status.textContent = 'Danke — ist gespeichert.';
+  } catch {
+    status.textContent = 'Konnte nicht gespeichert werden.';
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => (status.textContent = ''), 4000);
+  }
+}
+
 let flashTimer;
 function flash(msg) {
   const n = $('#flash');
@@ -1282,7 +1387,9 @@ function update(teile = {}) {
       () => {}
     );
   }
-  renderResults();
+  // Aus update() heraus hat sich der Zustand geaendert — hier muss die
+  // Tabelle tatsaechlich neu gebaut werden.
+  renderResults({ erzwingen: true });
 }
 
 function init() {
@@ -1349,6 +1456,7 @@ function init() {
 
   $('#getPrices').addEventListener('click', fetchPrices);
   $('#getSchutz').addEventListener('click', fetchSchutz);
+  $('#vorschlagSenden').addEventListener('click', sendeVorschlag);
   for (const id of ['#abbrechen', '#abbrechen2']) {
     $(id).addEventListener('click', abbrechen);
   }
@@ -1395,6 +1503,9 @@ function init() {
 
     $('#getPrices').hidden = !(ok && service.chrome);
     $('#getSchutz').hidden = !(ok && service.chrome);
+    // Vorschläge brauchen den Dienst — ohne ihn gäbe es nichts, was sie
+    // entgegennimmt.
+    $('#vorschlagKarte').hidden = !ok;
 
     if (ok) {
       startPolling();

@@ -12,7 +12,7 @@
  */
 
 import { createServer } from 'node:http';
-import { readFile, writeFile, stat } from 'node:fs/promises';
+import { readFile, writeFile, appendFile, mkdir, stat } from 'node:fs/promises';
 import { join, extname, normalize, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
@@ -309,6 +309,56 @@ createServer(async (req, res) => {
       return json(res, 200, { ok: true, klassen });
     } catch (e) {
       return json(res, 200, { ok: false, klassen: {}, error: String(e.message).slice(0, 120) });
+    }
+  }
+
+  // Verbesserungsvorschlaege einsammeln.
+  //
+  // Bewusst eine einfache Datei im JSON-Lines-Format: eine Zeile je Vorschlag,
+  // anhaengend geschrieben. Nichts kann dabei verlorengehen, und man kann sie
+  // mit jedem Editor lesen.
+  if (path === '/api/feedback' && req.method === 'POST') {
+    try {
+      const body = JSON.parse(await readBody(req, 40_000));
+      const text = String(body.text || '').trim();
+      if (text.length < 3) return json(res, 400, { ok: false, error: 'Zu kurz' });
+
+      const zeile =
+        JSON.stringify({
+          am: new Date().toISOString(),
+          text: text.slice(0, 4000),
+          // Was gerade eingestellt war — hilft beim Nachvollziehen.
+          kontext: typeof body.kontext === 'object' ? body.kontext : null,
+        }) + '\n';
+
+      const ziel = join(root, 'data', 'verbesserungen.jsonl');
+      await mkdir(dirname(ziel), { recursive: true });
+      await appendFile(ziel, zeile, 'utf8');
+      console.log(`  ✎ Vorschlag gespeichert (${text.length} Zeichen)`);
+      return json(res, 200, { ok: true });
+    } catch (e) {
+      return json(res, 400, { ok: false, error: String(e.message).slice(0, 200) });
+    }
+  }
+
+  // Gesammelte Vorschlaege ansehen.
+  if (path === '/api/feedback/list') {
+    try {
+      const roh = await readFile(join(root, 'data', 'verbesserungen.jsonl'), 'utf8');
+      const eintraege = roh
+        .split('\n')
+        .filter(Boolean)
+        .map((z) => {
+          try {
+            return JSON.parse(z);
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean);
+      return json(res, 200, { ok: true, eintraege });
+    } catch {
+      return json(res, 200, { ok: true, eintraege: [] });
     }
   }
 

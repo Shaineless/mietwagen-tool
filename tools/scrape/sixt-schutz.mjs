@@ -134,24 +134,22 @@ export async function quoteSchutz(q) {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     await dismissConsent(page);
 
+    // waitForFunction(fn, arg, options) — Optionen an dritter Stelle.
     const bereit = await page
       .waitForFunction(
         () => {
           const i = document.querySelector('input[name="pickupLocation"]');
           return i && i.value.trim().length > 0;
         },
-        { timeout: 40000 }
+        undefined,
+        { timeout: 40000, polling: 100 }
       )
       .then(() => true)
       .catch(() => false);
 
     if (!bereit) return { ok: false, error: 'Station wurde nicht übernommen', ms: Date.now() - started };
 
-    await dismissConsent(page, { versuche: 2 });
-    await page
-      .waitForFunction(() => !document.querySelector('#usercentrics-cmp-ui'), { timeout: 4000 })
-      .catch(() => {});
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(250);
 
     try {
       await page.locator(CTA).first().click({ timeout: 12000 });
@@ -205,16 +203,94 @@ export async function quoteSchutz(q) {
     if (!da) return { ok: false, error: 'Schutzpakete kamen nicht', ms: Date.now() - started };
 
     await page.waitForTimeout(1200);
-    const zeilen = await page.$eval(SCHUTZ, (n) => n.innerText.split('\n'));
 
-    const pakete = teileSchutzpakete(zeilen)
-      .map((b) => parseSchutzBlock(b, q.currency))
-      .filter((p) => p && p.name);
+    /**
+     * Der mitlaufende Gesamtpreis auf der Checkout-Seite.
+     *
+     * Das ist die einzige belastbare Zahl. Der je Paket angezeigte Tagespreis
+     * laesst sich NICHT hochrechnen: gemessen zeigte Sixt fuer Smart-Schutz
+     * 10,77 EUR/Tag an, waehrend der Gesamtpreis bei vier Tagen um 54,22 EUR
+     * stieg — also 13,56 EUR je Tag. Wer multipliziert, liegt daneben.
+     */
+    const liesGesamt = () =>
+      page.evaluate(() => {
+        const marke = [...document.querySelectorAll('*')].find(
+          (e) => e.children.length === 0 && /Gesamt:|Total:|Totale:|Total :/i.test(e.textContent)
+        );
+        const text = marke?.closest('div,section,aside')?.innerText || '';
+
+        // Zeilenweise auswerten. Ueber Zeilen hinweg zu suchen war ein Fehler:
+        // Sixt zeigt denselben Betrag zweimal, einmal als "411€94" und einmal
+        // als "411,94€". Ein Muster, das Leerraum als Tausendertrenner zulaesst,
+        // klebt das Ende der einen an den Anfang der naechsten Zeile und liest
+        // 94411,94 statt 411,94.
+        for (const zeile of text.split('\n')) {
+          if (!/[€£$]|CHF|SEK|NOK|DKK|PLN|CZK|HUF|TRY/i.test(zeile)) continue;
+          const m = zeile.match(/\d{1,3}(?:[.,]\d{3})*[.,]\d{2}/);
+          if (!m) continue;
+          const roh = m[0];
+          const sep = Math.max(roh.lastIndexOf('.'), roh.lastIndexOf(','));
+          const wert = Number(roh.slice(0, sep).replace(/[.,]/g, '') + '.' + roh.slice(sep + 1));
+          if (Number.isFinite(wert)) return wert;
+        }
+        return null;
+      });
+
+    /** Warten, bis sich der Gesamtpreis beruhigt hat. */
+    const gesamtNachKlick = async (vorher) => {
+      const bis = Date.now() + 8000;
+      let letzter = vorher;
+      let gleich = 0;
+      while (Date.now() < bis && gleich < 2) {
+        await page.waitForTimeout(350);
+        const jetzt = await liesGesamt().catch(() => null);
+        if (jetzt != null && jetzt === letzter) gleich++;
+        else gleich = 0;
+        letzter = jetzt ?? letzter;
+      }
+      return letzter;
+    };
+
+    // Die Pakete stehen als <label> mit einem Radio darin.
+    const paketLabels = await page.$$eval(`${SCHUTZ} label`, (ls) =>
+      ls
+        .map((l, i) => ({ i, radio: Boolean(l.querySelector('input[type=radio]')), text: l.innerText }))
+        .filter((x) => x.radio)
+    );
+
+    const basis = await liesGesamt().catch(() => null);
+    const pakete = [];
+
+    for (const eintrag of paketLabels) {
+      const block = parseSchutzBlock(eintrag.text.split('\n'), q.currency);
+      if (!block || !block.name) continue;
+
+      let gesamt = null;
+      try {
+        await page
+          .locator(`${SCHUTZ} label`)
+          .nth(eintrag.i)
+          .locator('input[type=radio]')
+          .click({ timeout: 8000, force: true });
+        gesamt = await gesamtNachKlick(basis);
+      } catch {
+        /* Paket liess sich nicht waehlen — dann bleibt gesamt leer */
+      }
+
+      pakete.push({
+        ...block,
+        // Abgelesen, nicht gerechnet.
+        gesamt,
+        // Was der Schutz tatsaechlich kostet: Differenz zur reinen Miete.
+        aufschlag: gesamt != null && basis != null ? Number((gesamt - basis).toFixed(2)) : null,
+      });
+    }
 
     return {
       ok: true,
       verfuegbar: true,
       acriss: q.acriss,
+      mieteOhneSchutz: basis,
       pakete,
       url: page.url(),
       ms: Date.now() - started,

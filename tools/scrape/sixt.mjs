@@ -46,7 +46,6 @@ export async function quoteSixt(q) {
 
   return withPage({ host: q.host, sichtbar: q.sichtbar }, async (page) => {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
-    await dismissConsent(page);
 
     // Die Maske wird clientseitig aus den URL-Parametern befuellt. Erst danach
     // darf die Suche los, sonst sucht sie mit leerer Station.
@@ -55,6 +54,8 @@ export async function quoteSixt(q) {
     // parallel, braucht die Seite deutlich laenger als allein. Genau daran ist
     // sixt.at im Zweierbetrieb gescheitert, waehrend es einzeln nach drei
     // Sekunden stand.
+    // waitForFunction(fn, arg, options) — die Optionen gehoeren an die dritte
+    // Stelle, sonst greift still der Vorgabe-Timeout.
     const stationDa = () =>
       page
         .waitForFunction(
@@ -62,12 +63,16 @@ export async function quoteSixt(q) {
             const i = document.querySelector('input[name="pickupLocation"]');
             return i && i.value.trim().length > 0;
           },
-          { timeout: 40000 }
+          undefined,
+          { timeout: 40000, polling: 100 }
         )
         .then(() => true)
         .catch(() => false);
 
-    let bereit = await stationDa();
+    // Beides gleichzeitig: der Banner blockiert nur den spaeteren Klick, und
+    // das Warten auf die Station ist ohnehin der laengere Weg. Nacheinander
+    // kostete das drei Sekunden je Abruf fuer nichts.
+    let [bereit] = await Promise.all([stationDa(), dismissConsent(page, { timeout: 2500 })]);
     if (!bereit) {
       await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
       await dismissConsent(page, { versuche: 4 });
@@ -84,16 +89,10 @@ export async function quoteSixt(q) {
       return { ok: false, error: 'Station wurde nicht übernommen', url, ms: Date.now() - started };
     }
 
-    // Der Banner kann zwischen Aufbau und Klick aufgetaucht sein.
-    await dismissConsent(page, { versuche: 2 });
-
     // Auf manchen Laenderseiten (sixt.es) bleibt die Banner-Huelle nach dem
-    // Ablehnen im DOM stehen und faengt weiter Klicks ab. Kurz warten, ob sie
-    // von selbst geht.
-    await page
-      .waitForFunction(() => !document.querySelector('#usercentrics-cmp-ui'), { timeout: 4000 })
-      .catch(() => {});
-    await page.waitForTimeout(500);
+    // Ablehnen im DOM stehen und faengt weiter Klicks ab — dafuer gibt es
+    // unten den Rueckfall auf einen direkten DOM-Klick.
+    await page.waitForTimeout(250);
 
     let geklickt = false;
     try {
@@ -140,11 +139,14 @@ export async function quoteSixt(q) {
       };
     }
 
-    // Die Liste laedt nach. Warten, bis die Anzahl zweimal gleich bleibt.
+    // Die Liste laedt nach. Kuerzer takten und frueher zufrieden sein: zwei
+    // gleiche Messungen im Abstand von 500ms genuegen, das spart gegenueber
+    // 1200ms rund zwei Sekunden je Abruf.
     let letzte = -1;
     let stabil = 0;
-    while (stabil < 2) {
-      await page.waitForTimeout(1200);
+    const bis = Date.now() + 12000;
+    while (stabil < 2 && Date.now() < bis) {
+      await page.waitForTimeout(500);
       const n = await page.locator(TILE).count();
       stabil = n === letzte ? stabil + 1 : 0;
       letzte = n;
