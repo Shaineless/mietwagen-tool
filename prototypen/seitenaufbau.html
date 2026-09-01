@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entwürfe · Seitenaufbau</title>
+<style>
+/* ---------------------------------------------------------- Token
+   Dieselbe Grundlage in allen Varianten. Was sich unterscheidet, ist der
+   Aufbau — nicht die Farbe. */
+:root {
+  --bg:#f5f5f7; --flaeche:#fff; --flaeche2:#f0f0f3;
+  --ink:#1d1d1f; --ink2:#424248; --muted:#86868b; --leise:#a1a1a6;
+  --hairline:rgba(0,0,0,.08); --hairline2:rgba(0,0,0,.05);
+  --accent:#ff5f00; --accent-weich:rgba(255,95,0,.1); --accent-ink:#fff;
+  --r:18px; --r-klein:12px;
+  --schatten:0 1px 3px rgba(0,0,0,.04), 0 8px 28px rgba(0,0,0,.05);
+  --raus:cubic-bezier(.23,1,.32,1);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#000; --flaeche:#1c1c1e; --flaeche2:#2c2c2e;
+    --ink:#f5f5f7; --ink2:#d1d1d6; --muted:#8e8e93; --leise:#6e6e73;
+    --hairline:rgba(255,255,255,.1); --hairline2:rgba(255,255,255,.06);
+    --accent:#ff7a2f; --accent-weich:rgba(255,122,47,.14); --schatten:none;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased}
+#stage{min-height:100vh;padding:34px 24px 130px}
+.mitte{max-width:1180px;margin-inline:auto}
+
+/* gemeinsame Tabelle — die Variante "Ruhig", die du gewählt hast */
+.tab{width:100%;border-collapse:collapse;font-size:14px;white-space:nowrap}
+.tab th,.tab td{padding:14px 20px;text-align:right;box-shadow:inset 0 -1px 0 var(--hairline2)}
+.tab thead th{font-size:12px;color:var(--muted);font-weight:480}
+.tab th.k{text-align:left;font-weight:400;min-width:250px}
+.tab tbody tr:last-child th,.tab tbody tr:last-child td{box-shadow:none}
+.fzg{display:flex;align-items:center;gap:14px}
+.fzg img{width:84px;height:50px;object-fit:contain;flex:none}
+.mod{font-weight:580;display:block}
+.kl{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted);margin-top:3px}
+.betrag{font-variant-numeric:tabular-nums;font-size:15px;font-weight:560;display:block}
+.tg{display:block;font-size:11.5px;color:var(--muted);margin-top:3px}
+.best .betrag{color:var(--accent);font-weight:640}
+.best .betrag::before{content:"▸";margin-right:5px;font-size:9px;vertical-align:1px}
+.acriss{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:10.5px;font-weight:620;
+  letter-spacing:.05em;padding:3px 7px;border-radius:6px;background:var(--flaeche2);color:var(--ink2)}
+.karte{background:var(--flaeche);border-radius:var(--r);box-shadow:var(--schatten)}
+
+/* ================================================== 1 · JETZT (Formular) */
+.a1 .bar{display:flex;align-items:center;gap:18px;margin:0 0 28px}
+.a1 .bar h1{font-size:24px;letter-spacing:-.025em;margin:0;font-weight:640}
+.a1 .zurueck{border:0;background:transparent;color:var(--accent);font-size:15px;cursor:pointer}
+.a1 main{display:grid;grid-template-columns:minmax(300px,.82fr) minmax(340px,1.18fr);gap:20px;align-items:start}
+.a1 .spalte{display:flex;flex-direction:column;gap:20px}
+.a1 .karte{padding:26px 28px}
+.a1 h2{font-size:19px;margin:0 0 18px;font-weight:620;letter-spacing:-.02em}
+.a1 .feld{display:grid;grid-template-columns:auto 1fr 108px;gap:10px 14px;align-items:center}
+.a1 .flabel{font-size:15px;font-weight:560;white-space:nowrap}
+.a1 input,.a1 select{width:100%;padding:11px 14px;border:0;border-radius:var(--r-klein);
+  background:var(--flaeche2);color:var(--ink);font:inherit}
+.a1 .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.a1 .chip{padding:8px 14px;border-radius:980px;background:var(--flaeche2);color:var(--ink2);font-size:13.5px}
+.a1 .chip.on{background:var(--accent);color:var(--accent-ink);font-weight:560}
+.a1 .liste{margin-top:10px;max-height:200px;overflow:auto;border-radius:var(--r-klein);background:var(--flaeche2)}
+.a1 .zeile{padding:11px 16px;font-size:14px;box-shadow:inset 0 -1px 0 var(--hairline2)}
+.a1 .erg{margin-top:20px;padding:26px 28px}
+
+/* ================================================== 2 · LEISTE */
+.a2{--tief:0}
+.a2 .kopfbereich{
+  margin:-34px -24px 0;padding:34px 24px 26px;
+  background:
+    radial-gradient(120% 100% at 50% 0%, rgba(255,95,0,.07), transparent 62%),
+    var(--flaeche);
+  border-bottom:1px solid var(--hairline2);
+}
+.a2 .kopfzeile{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+.a2 .zurueck{border:0;background:transparent;color:var(--accent);font-size:15px;cursor:pointer}
+.a2 .marke{font-size:12px;color:var(--accent);font-weight:600;letter-spacing:.01em}
+.a2 h1{font-size:34px;letter-spacing:-.032em;font-weight:660;margin:0 0 22px;line-height:1.1}
+.a2 .leiste{
+  display:flex;align-items:stretch;gap:2px;padding:6px;
+  background:var(--flaeche2);border-radius:980px;max-width:980px;
+}
+.a2 .seg{
+  flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+  padding:11px 22px;border:0;border-radius:980px;background:transparent;
+  color:var(--ink);text-align:left;cursor:pointer;min-width:0;
+  transition:background .16s var(--raus);
+}
+.a2 .seg:hover{background:var(--flaeche)}
+.a2 .seg[data-offen]{background:var(--flaeche);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.a2 .seg .lab{font-size:11px;color:var(--leise)}
+.a2 .seg .wert{font-size:14px;font-weight:560;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.a2 .los{flex:none;padding:0 28px;border:0;border-radius:980px;background:var(--accent);
+  color:var(--accent-ink);font:inherit;font-weight:580;cursor:pointer}
+.a2 .aufklapp{margin-top:16px;max-width:980px}
+.a2 .aufklapp .karte{padding:22px 24px}
+.a2 .chips{display:flex;flex-wrap:wrap;gap:7px}
+.a2 .chip{padding:8px 14px;border-radius:980px;background:var(--flaeche2);color:var(--ink2);
+  font-size:13.5px;border:0;cursor:pointer}
+.a2 .chip.on{background:var(--accent);color:var(--accent-ink);font-weight:560}
+.a2 .erg{margin-top:30px}
+.a2 .ergkopf{display:flex;align-items:baseline;gap:14px;margin-bottom:16px}
+.a2 .ergkopf h2{font-size:21px;margin:0;font-weight:620;letter-spacing:-.02em}
+.a2 .ergkopf span{font-size:13px;color:var(--muted)}
+
+/* ================================================== 3 · BÜHNE */
+.a3 .oben{
+  margin:-34px -24px 0;padding:26px 24px 0;
+  position:sticky;top:0;z-index:5;
+  background:color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+}
+.a3 .obenzeile{display:flex;align-items:center;gap:14px;padding-bottom:18px;
+  box-shadow:inset 0 -1px 0 var(--hairline2)}
+.a3 .zurueck{border:0;background:transparent;color:var(--accent);font-size:15px;cursor:pointer}
+.a3 .kurz{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13.5px;color:var(--muted)}
+.a3 .kurz b{color:var(--ink);font-weight:580}
+.a3 .kurz button{border:0;background:var(--flaeche2);color:var(--ink2);padding:6px 13px;
+  border-radius:980px;font:inherit;font-size:12.5px;cursor:pointer}
+.a3 .los{margin-left:auto;border:0;border-radius:980px;background:var(--accent);
+  color:var(--accent-ink);padding:10px 22px;font:inherit;font-weight:580;cursor:pointer}
+.a3 .held{padding:52px 0 40px;display:flex;align-items:center;gap:48px;flex-wrap:wrap}
+.a3 .held img{width:340px;max-width:100%;object-fit:contain}
+.a3 .held .txt{flex:1;min-width:260px}
+.a3 .held .lab{font-size:12px;color:var(--accent);font-weight:600;margin-bottom:12px}
+.a3 .held h1{font-size:46px;line-height:1.05;letter-spacing:-.035em;font-weight:670;margin:0 0 14px}
+.a3 .held h1 em{font-style:normal;color:var(--accent)}
+.a3 .held p{margin:0;color:var(--muted);font-size:15.5px}
+.a3 .werte{display:flex;gap:34px;margin-top:26px;flex-wrap:wrap}
+.a3 .werte div{display:flex;flex-direction:column;gap:3px}
+.a3 .werte .z{font-size:22px;font-weight:620;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.a3 .werte .w{font-size:12.5px;color:var(--muted)}
+.a3 .aufklapp{margin-bottom:20px}
+.a3 .aufklapp .karte{padding:22px 24px}
+.a3 .chips{display:flex;flex-wrap:wrap;gap:7px}
+.a3 .chip{padding:8px 14px;border-radius:980px;background:var(--flaeche2);color:var(--ink2);
+  font-size:13.5px;border:0;cursor:pointer}
+.a3 .chip.on{background:var(--accent);color:var(--accent-ink);font-weight:560}
+
+/* ---------------------------------------------------------- Picker */
+.proto-picker{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:2147483647;display:flex;align-items:center;gap:2px;padding:4px;border-radius:999px;background:rgba(10,10,10,.82);-webkit-backdrop-filter:blur(12px) saturate(1.4);backdrop-filter:blur(12px) saturate(1.4);box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 8px 24px rgba(0,0,0,.24),0 2px 6px rgba(0,0,0,.12);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:13px;line-height:1;-webkit-font-smoothing:antialiased;user-select:none}
+.proto-picker-highlight{position:absolute;top:4px;left:0;height:28px;border-radius:999px;background:rgba(255,255,255,.12);will-change:transform}
+.proto-picker[data-ready] .proto-picker-highlight{transition:transform 250ms cubic-bezier(.23,1,.32,1),width 250ms cubic-bezier(.23,1,.32,1)}
+@media (prefers-reduced-motion:reduce){.proto-picker[data-ready] .proto-picker-highlight{transition:none}}
+.proto-picker-item{position:relative;display:flex;align-items:center;height:28px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:rgba(255,255,255,.55);font:inherit;cursor:pointer;transition:color 150ms ease-out}
+.proto-picker-item:hover{color:rgba(255,255,255,.85)}
+.proto-picker-item:active{transform:scale(.97)}
+.proto-picker-item[data-active]{color:#fff}
+</style>
+</head>
+<body>
+
+<div id="stage"></div>
+
+<nav class="proto-picker" aria-label="Prototype variants">
+  <span class="proto-picker-highlight" aria-hidden="true"></span>
+  <button class="proto-picker-item" data-active aria-current="true">Jetzt</button>
+  <button class="proto-picker-item">Leiste</button>
+  <button class="proto-picker-item">Bühne</button>
+</nav>
+
+<script>
+const B='https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/';
+const AUTOS=[
+ {a:'CDMR',m:'VW GOLF',k:'Kompaktklasse · Limousine · Schaltung',b:B+'vw-golf-5d-grey-2024.png',p:[367.96,342.97,360.94]},
+ {a:'CDAR',m:'VW GOLF',k:'Kompaktklasse · Limousine · Automatik',b:B+'vw-golf-5d-grey-2024.png',p:[391.93,368.94,385.91]},
+ {a:'CFMR',m:'VW TAIGO',k:'Kompaktklasse · SUV · Schaltung',b:B+'vw-taigo-suv-white-2022.png',p:[377.97,351.98,371.96]},
+ {a:'GWAR',m:'BMW 3ER TOURING',k:'Oberklasse Elite · Kombi · Automatik',b:B+'bmw-3-stw-black-2023.png',p:[578.96,521.94,559.93]},
+];
+const L=['Deutschland','Frankreich','Spanien'];
+const ALLE=['Deutschland','Österreich','Schweiz','Frankreich','Spanien','Italien','Portugal','Niederlande','Belgien','Polen'];
+const g=(v)=>v==null?'—':v.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' EUR';
+const proTag=(v)=>v==null?'':(v/4).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+'/Tag';
+
+function tabelle(){
+  const zeilen=AUTOS.map(x=>{
+    const min=Math.min(...x.p);
+    return `<tr>
+      <th class="k"><span class="fzg"><img src="${x.b}" alt="">
+        <span><span class="mod">${x.m}</span>
+        <span class="kl"><span class="acriss">${x.a}</span>${x.k}</span></span></span></th>
+      ${x.p.map(p=>`<td class="${p===min?'best':''}">
+        <span class="betrag">${g(p)}</span><span class="tg">${proTag(p)}</span></td>`).join('')}
+    </tr>`;
+  }).join('');
+  return `<table class="tab"><thead><tr><th class="k">Fahrzeug</th>
+    ${L.map(n=>`<th>${n}</th>`).join('')}</tr></thead><tbody>${zeilen}</tbody></table>`;
+}
+const laenderChips=(cls)=>ALLE.map((n,i)=>
+  `<button class="${cls} ${i<3?'on':''}" data-chip>${n}</button>`).join('');
+
+/* -------------------------------------------------- 1 · Jetzt */
+function jetzt(){return `<div class="mitte">
+  <div class="bar"><button class="zurueck">← Zurück</button><h1>Preisvergleich</h1></div>
+  <main>
+    <div class="spalte">
+      <section class="karte"><h2>Zeitraum</h2>
+        <div class="feld">
+          <span class="flabel">Abholung</span><input type="date" value="2026-09-15"><input type="time" value="10:00">
+          <span class="flabel">Rückgabe</span><input type="date" value="2026-09-19"><input type="time" value="10:00">
+        </div>
+      </section>
+      <section class="karte"><h2>Länderseiten</h2>
+        <div class="chips">${laenderChips('chip')}</div>
+      </section>
+    </div>
+    <div class="spalte">
+      <section class="karte"><h2>Stationen</h2>
+        <input type="search" placeholder="FRA · Hauptbahnhof · München …">
+        <div class="liste">
+          ${['Frankfurt Flughafen (FRA)','Frankfurt/Main Hauptbahnhof','Frankfurt Offenbach','Frankfurt a. M. Eschborn','Bonn Bad Godesberg']
+            .map(s=>`<div class="zeile">${s}</div>`).join('')}
+        </div>
+      </section>
+    </div>
+  </main>
+  <section class="karte erg"><h2>Ergebnis</h2>${tabelle()}</section>
+</div>`}
+
+/* -------------------------------------------------- 2 · Leiste */
+function leiste(){return `
+  <div class="kopfbereich"><div class="mitte">
+    <div class="kopfzeile"><button class="zurueck">← Zurück</button>
+      <span class="marke">Sixt · Länderpreis-Vergleich</span></div>
+    <h1>Frankfurt Flughafen</h1>
+    <div class="leiste">
+      <button class="seg" data-panel="station"><span class="lab">Station</span>
+        <span class="wert">Frankfurt Flughafen</span></button>
+      <button class="seg" data-panel="zeit"><span class="lab">Abholung</span>
+        <span class="wert">Di 15.09. · 10:00</span></button>
+      <button class="seg" data-panel="zeit"><span class="lab">Rückgabe</span>
+        <span class="wert">Sa 19.09. · 10:00</span></button>
+      <button class="seg" data-panel="land"><span class="lab">Länderseiten</span>
+        <span class="wert">3 gewählt</span></button>
+      <button class="los">Preise holen</button>
+    </div>
+    <div class="aufklapp" id="klapp2" hidden></div>
+  </div></div>
+  <div class="mitte erg">
+    <div class="ergkopf"><h2>52 Fahrzeugklassen</h2><span>4 Tage · 3 Länderseiten</span></div>
+    <div class="karte" style="padding:8px 4px">${tabelle()}</div>
+  </div>`}
+
+/* -------------------------------------------------- 3 · Bühne */
+function buehne(){return `
+  <div class="oben"><div class="mitte">
+    <div class="obenzeile">
+      <button class="zurueck">←</button>
+      <div class="kurz"><b>Frankfurt Flughafen</b> · <span>Di 15.09. → Sa 19.09.</span>
+        <button data-panel="land">3 Länderseiten</button>
+        <button data-panel="zeit">Zeitraum ändern</button></div>
+      <button class="los">Preise holen</button>
+    </div>
+  </div></div>
+  <div class="mitte">
+    <div class="aufklapp" id="klapp3" hidden></div>
+    <div class="held">
+      <img src="${AUTOS[0].b}" alt="">
+      <div class="txt">
+        <div class="lab">Günstigster Fund</div>
+        <h1>VW Golf für <em>342,97 €</em><br>auf der französischen Seite.</h1>
+        <p>25 € weniger als über sixt.de — bei identischer Station und identischem Zeitraum.</p>
+        <div class="werte">
+          <div><span class="z">4 Tage</span><span class="w">15.–19. September</span></div>
+          <div><span class="z">52</span><span class="w">Klassen verglichen</span></div>
+          <div><span class="z">3</span><span class="w">Länderseiten</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="karte" style="padding:8px 4px">${tabelle()}</div>
+  </div>`}
+
+const variants=[jetzt,leiste,buehne];
+const stage=document.getElementById('stage');
+const picker=document.querySelector('.proto-picker');
+const highlight=picker.querySelector('.proto-picker-highlight');
+const items=[...picker.querySelectorAll('.proto-picker-item')];
+let current=0;
+
+function moveHighlight(){const el=items[current];
+  highlight.style.width=el.offsetWidth+'px';
+  highlight.style.transform=`translateX(${el.offsetLeft}px)`}
+
+function verdrahten(){
+  // Chips umschalten
+  stage.querySelectorAll('[data-chip]').forEach(c=>
+    c.addEventListener('click',()=>c.classList.toggle('on')));
+  // Aufklappende Bereiche
+  const klapp=stage.querySelector('#klapp2,#klapp3');
+  if(!klapp)return;
+  const inhalt={
+    station:`<div class="karte"><input type="search" placeholder="FRA · Hauptbahnhof · München …"
+        style="width:100%;padding:11px 14px;border:0;border-radius:12px;background:var(--flaeche2);color:var(--ink);font:inherit">
+      <div style="margin-top:12px;color:var(--muted);font-size:13px">2250 Stationen · tippen zum Filtern</div></div>`,
+    zeit:`<div class="karte"><div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+      <label style="font-size:13px;color:var(--muted)">Abholung<br><input type="date" value="2026-09-15"
+        style="margin-top:5px;padding:11px 14px;border:0;border-radius:12px;background:var(--flaeche2);color:var(--ink);font:inherit"></label>
+      <label style="font-size:13px;color:var(--muted)">Rückgabe<br><input type="date" value="2026-09-19"
+        style="margin-top:5px;padding:11px 14px;border:0;border-radius:12px;background:var(--flaeche2);color:var(--ink);font:inherit"></label>
+      </div></div>`,
+    land:`<div class="karte"><div class="chips">${laenderChips('chip')}</div></div>`,
+  };
+  let offen=null;
+  stage.querySelectorAll('[data-panel]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const p=b.dataset.panel;
+      if(offen===p){klapp.hidden=true;offen=null;
+        stage.querySelectorAll('.seg').forEach(s=>s.removeAttribute('data-offen'));return}
+      offen=p;klapp.hidden=false;klapp.innerHTML=inhalt[p]||'';
+      stage.querySelectorAll('.seg').forEach(s=>
+        s.toggleAttribute('data-offen', s.dataset.panel===p));
+      klapp.querySelectorAll('[data-chip]').forEach(c=>
+        c.addEventListener('click',()=>c.classList.toggle('on')));
+    });
+  });
+}
+
+function mount(i){
+  stage.innerHTML='';
+  stage.className='a'+(i+1);
+  requestAnimationFrame(()=>{stage.innerHTML=variants[i]();verdrahten()});
+}
+function setActive(i){
+  if(i<0||i>=variants.length)return;
+  current=i;
+  items.forEach((el,j)=>{el.toggleAttribute('data-active',j===i);
+    if(j===i)el.setAttribute('aria-current','true');else el.removeAttribute('aria-current')});
+  moveHighlight();
+  const url=new URL(location);url.searchParams.set('v',i+1);history.replaceState(null,'',url);
+  mount(i);
+}
+items.forEach((el,i)=>el.addEventListener('click',()=>setActive(i)));
+window.addEventListener('resize',moveHighlight);
+document.addEventListener('keydown',(e)=>{
+  if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)||e.target.isContentEditable)return;
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  const n=parseInt(e.key,10);
+  if(n>=1&&n<=variants.length)setActive(n-1);
+  else if(e.key==='ArrowRight')setActive((current+1)%variants.length);
+  else if(e.key==='ArrowLeft')setActive((current-1+variants.length)%variants.length);
+});
+setActive((parseInt(new URLSearchParams(location.search).get('v'),10)||1)-1);
+requestAnimationFrame(()=>requestAnimationFrame(()=>picker.setAttribute('data-ready','')));
+</script>
+</body>
+</html>
