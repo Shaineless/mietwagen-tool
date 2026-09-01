@@ -27,6 +27,21 @@
   --r: 18px;
   --r-klein: 12px;
   --schatten: 0 1px 3px rgba(0, 0, 0, .04), 0 8px 28px rgba(0, 0, 0, .05);
+
+  /* Kritisch gedaempft, kein Ueberschwingen: die Kurve entspricht einer
+     Feder mit damping 1.0 und response ~0.4s. Ueberschwingen gehoert nur
+     dorthin, wo die Geste selbst Schwung mitbringt — hier gibt es keine
+     Wischgesten, also nirgends. */
+  --feder: cubic-bezier(.32, .72, 0, 1);
+  --antwort: .38s;
+  /* Rueckmeldung auf den Druck muss sofort kommen, nicht federn. */
+  --sofort: .1s;
+
+  --glas: rgba(255, 255, 255, .72);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { --glas: rgba(28, 28, 30, .72); }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -58,7 +73,10 @@ body {
   font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
     system-ui, Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
-  letter-spacing: -.01em;
+  /* Laufweite ist groessenabhaengig, kein fester Wert fuers ganze Dokument:
+     Fliesstext bei 0, grosse Ueberschriften negativ, kleine Beschriftungen
+     leicht positiv. Ein globaler Wert waere irgendwo immer falsch. */
+  letter-spacing: 0;
 }
 
 .screen, footer { max-width: 1180px; margin-inline: auto; }
@@ -411,17 +429,26 @@ table.vergleich th, table.vergleich td {
 table.vergleich tbody tr:last-child th,
 table.vergleich tbody tr:last-child td { box-shadow: none; }
 
+/* Der mitlaufende Kopf soll als schwebende Schicht lesen, nicht als Balken mit
+   Trennstrich — deshalb ein weicher Auslauf nach unten statt einer 1px-Linie.
+   Durchscheinendes Material waere hier das Naheliegende, funktioniert aber
+   nicht: backdrop-filter wird in Chromium auf Tabellenzellen ignoriert
+   (nachgemessen, computed style bleibt "none"). Also deckend plus weiche
+   Kante — dasselbe Ziel, verlaesslich. */
 table.vergleich thead th {
   position: sticky;
   top: 0;
   z-index: 2;
   background: var(--flaeche);
   font-size: 12px;
-  color: var(--muted);
-  font-weight: 480;
-  padding-top: 8px;
+  color: var(--ink2);
+  font-weight: 500;
+  /* Ueber durchscheinendem Grund traegt etwas mehr Gewicht und Laufweite
+     die Lesbarkeit, wenn Inhalt darunter durchwandert. */
+  letter-spacing: .01em;
+  padding-top: 10px;
   padding-bottom: 14px;
-  box-shadow: inset 0 -1px 0 var(--hairline);
+  box-shadow: 0 8px 12px -12px rgba(0, 0, 0, .5);
 }
 table.vergleich thead th a { color: var(--ink); text-decoration: none; font-size: 14px; font-weight: 580; letter-spacing: -.015em; }
 table.vergleich thead th a:hover { color: var(--accent); }
@@ -519,6 +546,56 @@ table.vergleich.schutz td, table.vergleich.schutz th.klasse { vertical-align: to
 .caps li { padding: 4px 0; }
 .caps .yes { color: var(--ink2); }
 .caps .no { color: var(--leise); text-decoration: line-through; }
+
+/* ============================================================ Rückmeldung
+ *
+ * Rueckmeldung gehoert auf das Druecken, nicht auf das Loslassen. Wartet man
+ * auf den Klick, wirkt die Flaeche tot. Alles hier laeuft ueber transform und
+ * opacity, damit es der Compositor uebernimmt.
+ */
+
+.station, .pill, .chipbtn, .gtab, .mk, .lnk, .mode, tr.zeile {
+  transition: transform var(--sofort) ease-out, background-color var(--sofort) ease-out;
+}
+.station:active, .pill:active, .chipbtn:active, .gtab:active, .lnk:active { transform: scale(.985); }
+.mode:active { transform: scale(.99); }
+
+/* Der Wechsel zwischen den Ansichten laeuft in beide Richtungen gleich —
+   was so hereinkommt, geht so wieder hinaus. */
+.screen:not([hidden]) { animation: auftauchen var(--antwort) var(--feder); }
+@keyframes auftauchen {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ============================================================ Rücksicht
+ *
+ * Weniger Bewegung heisst nicht keine Rueckmeldung, sondern eine sanftere:
+ * Ueberblenden statt Verschieben, kein Federn.
+ */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .mode:hover, .mode:active, .station:active, .pill:active { transform: none; }
+  .screen:not([hidden]) { animation: einblenden .2s ease; }
+  @keyframes einblenden { from { opacity: 0; } to { opacity: 1; } }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  /* Weiche Kanten sind selbst schon eine Transparenzwirkung — hier lieber
+     die eindeutige Linie. */
+  table.vergleich thead th { box-shadow: inset 0 -1px 0 var(--hairline); }
+}
+
+@media (prefers-contrast: more) {
+  .card, .mode { outline: 1px solid var(--hairline); }
+  .muted, .leise { color: var(--ink2); }
+}
 
 /* ============================================================ Fuß */
 

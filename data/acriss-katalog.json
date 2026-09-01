@@ -10,7 +10,7 @@
     "BMW SÉRIE 3 TOURING",
     "BMW SERIE 3 TOURING"
    ],
-   "beispielText": "Oberklasse Elite Kombi Automatik",
+   "beispielText": "Fullsize Elite Break Automatique",
    "zuletzt": "2026-09-01"
   },
   "CDMR": {
@@ -18,7 +18,7 @@
    "modelle": [
     "VW GOLF"
    ],
-   "beispielText": "Kompaktklasse Limousine Manuell",
+   "beispielText": "Compact Berline Manuelle",
    "zuletzt": "2026-09-01"
   },
   "CFMR": {
@@ -26,7 +26,7 @@
    "modelle": [
     "VW TAIGO"
    ],
-   "beispielText": "Kompaktklasse SUV Manuell",
+   "beispielText": "Compact SUV Manuelle",
    "zuletzt": "2026-09-01"
   },
   "CTMR": {
@@ -43,7 +43,7 @@
    "modelle": [
     "VW GOLF"
    ],
-   "beispielText": "Kompaktklasse Limousine Automatik",
+   "beispielText": "Compact Berline Automatique",
    "zuletzt": "2026-09-01"
   },
   "CFAR": {
@@ -51,7 +51,7 @@
    "modelle": [
     "VW TAIGO"
    ],
-   "beispielText": "Kompaktklasse SUV Automatik",
+   "beispielText": "Compact SUV Automatique",
    "zuletzt": "2026-09-01"
   },
   "CTAR": {
@@ -68,7 +68,7 @@
    "modelle": [
     "VW TOURAN"
    ],
-   "beispielText": "Mittelklasse Van Manuell",
+   "beispielText": "Intermedia Van Manuale",
    "zuletzt": "2026-09-01"
   },
   "IFMR": {
@@ -76,7 +76,7 @@
    "modelle": [
     "VW T-ROC"
    ],
-   "beispielText": "Mittelklasse SUV Manuell",
+   "beispielText": "Intermédiaire SUV Manuelle",
    "zuletzt": "2026-09-01"
   },
   "DDAR": {
@@ -88,7 +88,7 @@
     "BMW SÉRIE 1",
     "BMW SERIE 1"
    ],
-   "beispielText": "Kompaktklasse Elite Limousine Automatik",
+   "beispielText": "Compact Elite Berline Automatique",
    "zuletzt": "2026-09-01"
   },
   "SFMR": {
@@ -96,7 +96,7 @@
    "modelle": [
     "VW TIGUAN"
    ],
-   "beispielText": "Standardklasse SUV Manuell",
+   "beispielText": "Standard SUV Manuelle",
    "zuletzt": "2026-09-01"
   },
   "IFAR": {
@@ -104,7 +104,7 @@
    "modelle": [
     "VW T-ROC"
    ],
-   "beispielText": "Mittelklasse SUV Automatik",
+   "beispielText": "Intermédiaire SUV Automatique",
    "zuletzt": "2026-09-01"
   },
   "IVAV": {
@@ -112,7 +112,7 @@
    "modelle": [
     "VW TOURAN"
    ],
-   "beispielText": "Mittelklasse Van Automatik",
+   "beispielText": "Intermedia Van Automatico",
    "zuletzt": "2026-09-01"
   },
   "DFAR": {
@@ -120,7 +120,7 @@
    "modelle": [
     "AUDI Q2"
    ],
-   "beispielText": "Kompaktklasse Elite SUV Automatik",
+   "beispielText": "Compact Elite SUV Automatique",
    "zuletzt": "2026-09-01"
   },
   "PFAV": {
@@ -128,7 +128,7 @@
    "modelle": [
     "VW TAYRON"
    ],
-   "beispielText": "Premiumklasse SUV Automatik",
+   "beispielText": "Premium SUV Automatique",
    "zuletzt": "2026-09-01"
   },
   "JDAR": {
@@ -138,7 +138,7 @@
     "AUDI A3 SEDAN",
     "AUDI A3 BERLINA"
    ],
-   "beispielText": "Mittelklasse Elite Limousine Automatik",
+   "beispielText": "Intermédiaire Elite Berline Automatique",
    "zuletzt": "2026-09-01"
   },
   "SFAR": {
@@ -146,16 +146,18 @@
    "modelle": [
     "VW TIGUAN"
    ],
-   "beispielText": "Standardklasse SUV Automatik",
+   "beispielText": "Standard SUV Automatique",
    "zuletzt": "2026-09-01"
   },
   "DVAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-2-active-tourer-van-4d-black-2022-JV.png",
    "modelle": [
     "BMW 2ER ACTIVE TOURER",
-    "BMW 2 SERIES ACTIVE TOURER"
+    "BMW 2 SERIES ACTIVE TOURER",
+    "BMW SÉRIE 2 ACTIVE TOURER",
+    "BMW SERIE 2 ACTIVE TOURER"
    ],
-   "beispielText": "Kompaktklasse Elite Van Automatik",
+   "beispielText": "Compact Elite Monospace Automatique",
    "zuletzt": "2026-09-01"
   },
   "GDAR": {
@@ -167,16 +169,17 @@
     "BMW SÉRIE 3",
     "BMW SERIE 3"
    ],
-   "beispielText": "Oberklasse Elite Limousine Automatik",
+   "beispielText": "Fullsize Elite Berline Automatique",
    "zuletzt": "2026-09-01"
   },
   "UDAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-e-class-4d-silver-2024.png",
    "modelle": [
     "MERCEDES-BENZ E-KLASSE",
-    "MERCEDES-BENZ E-CLASS"
+    "MERCEDES-BENZ E-CLASS",
+    "MERCEDES-BENZ CLASSE E"
    ],
-   "beispielText": "Premiumklasse Elite Limousine Automatik",
+   "beispielText": "Premium Elite Berline Automatique",
    "zuletzt": "2026-09-01"
   },
   "GFAR": {
@@ -184,7 +187,7 @@
    "modelle": [
     "BMW X2"
    ],
-   "beispielText": "Oberklasse Elite SUV Automatik",
+   "beispielText": "Fullsize Elite SUV Automatique",
    "zuletzt": "2026-09-01"
   },
   "UFAR": {
@@ -192,7 +195,7 @@
    "modelle": [
     "BMW X3"
    ],
-   "beispielText": "Premiumklasse Elite SUV Automatik",
+   "beispielText": "Premium Elite SUV Automatique",
    "zuletzt": "2026-09-01"
   },
   "UWAR": {
@@ -200,16 +203,18 @@
    "modelle": [
     "AUDI A6 AVANT"
    ],
-   "beispielText": "Premiumklasse Elite Kombi Automatik",
+   "beispielText": "Premium Elite Break Automatique",
    "zuletzt": "2026-09-01"
   },
   "GEAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-4-2d-coupe-grey-2021.png",
    "modelle": [
     "BMW 4ER COUPÉ",
-    "BMW 4 SERIES COUPÉ"
+    "BMW 4 SERIES COUPÉ",
+    "BMW SÉRIE 4 COUPÉ",
+    "BMW SERIE 4 COUPÉ"
    ],
-   "beispielText": "Oberklasse Elite Coupé Automatik",
+   "beispielText": "Fullsize Elite Coupé Automatique",
    "zuletzt": "2026-09-01"
   },
   "DDSR": {
@@ -217,7 +222,7 @@
    "modelle": [
     "BMW M135"
    ],
-   "beispielText": "Kompaktklasse Elite Limousine Automatik",
+   "beispielText": "Compact Elite Berline Automatique",
    "zuletzt": "2026-09-01"
   },
   "JDSR": {
@@ -225,7 +230,7 @@
    "modelle": [
     "BMW M235 GRAN COUPÉ"
    ],
-   "beispielText": "Mittelklasse Elite Limousine Automatik",
+   "beispielText": "Intermédiaire Elite Berline Automatique",
    "zuletzt": "2026-09-01"
   },
   "GFSR": {
@@ -257,7 +262,7 @@
    "modelle": [
     "BMW X3 M50"
    ],
-   "beispielText": "Premiumklasse Elite SUV Automatik",
+   "beispielText": "Premium Elite SUV Automatique",
    "zuletzt": "2026-09-01"
   },
   "GLSR": {
@@ -275,7 +280,7 @@
     "BMW 7ER XDRIVE",
     "BMW 7 SERIE XDRIVE"
    ],
-   "beispielText": "Spezialklasse Limousine Automatik",
+   "beispielText": "Extraordinaire Berline Automatique",
    "zuletzt": "2026-09-01"
   },
   "WFSR": {
@@ -311,7 +316,7 @@
     "MERCEDES-BENZ CLASE S LARGA",
     "MERCEDES-BENZ CLASSE S LUNGO"
    ],
-   "beispielText": "Spezialklasse Limousine Automatik",
+   "beispielText": "Extraordinaire Berline Automatique",
    "zuletzt": "2026-09-01"
   },
   "WFLP": {
@@ -407,7 +412,7 @@
    "modelle": [
     "OPEL FRONTERA"
    ],
-   "beispielText": "Mittelklasse SUV Automatik",
+   "beispielText": "Intermédiaire SUV Automatique",
    "zuletzt": "2026-09-01"
   },
   "EFAR": {
@@ -450,7 +455,50 @@
    "modelle": [
     "CUPRA TAVASCAN"
    ],
-   "beispielText": "Standardklasse SUV Automatik",
+   "beispielText": "Standard SUV Automatique",
+   "zuletzt": "2026-09-01"
+  },
+  "CWMR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-golf-variant-stw-4d-grey-2022.png",
+   "modelle": [
+    "VW GOLF SW",
+    "VW GOLF VARIANT"
+   ],
+   "beispielText": "Compatta Station wagon Manuale",
+   "zuletzt": "2026-09-01"
+  },
+  "CWAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-golf-variant-stw-4d-grey-2022.png",
+   "modelle": [
+    "VW GOLF SW",
+    "VW GOLF VARIANT"
+   ],
+   "beispielText": "Compatta Station wagon Automatico",
+   "zuletzt": "2026-09-01"
+  },
+  "UTAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-cle-2d-white-open-2024.png",
+   "modelle": [
+    "MERCEDES-BENZ CLE CABRIOLET",
+    "MERCEDES-BENZ CLE CABRIO"
+   ],
+   "beispielText": "Premium Elite Cabriolet Automatique",
+   "zuletzt": "2026-09-01"
+  },
+  "GTAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-4-convertible-2d-black-2023-JV.png",
+   "modelle": [
+    "BMW SÉRIE 4 CABRIOLET"
+   ],
+   "beispielText": "Fullsize Elite Cabriolet Automatique",
+   "zuletzt": "2026-09-01"
+  },
+  "WVAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-vito-van-black-2020.png",
+   "modelle": [
+    "MERCEDES-BENZ VITO TOURER"
+   ],
+   "beispielText": "Classe luxe Elite Monospace Automatique",
    "zuletzt": "2026-09-01"
   }
  },
@@ -901,6 +949,113 @@
    "DDSR": "2026-09-01",
    "GWSR": "2026-09-01",
    "UFSR": "2026-09-01"
+  },
+  "sixt|2442|www.sixt.fr": {
+   "GWAR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "CWMR": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "CWAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "IVMV": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "DVAR": "2026-09-01",
+   "IVAV": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "GEAR": "2026-09-01",
+   "UWAR": "2026-09-01",
+   "PFAV": "2026-09-01",
+   "UTAR": "2026-09-01"
+  },
+  "sixt|2442|www.sixt.es": {
+   "GWAR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "CWMR": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "CWAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "IVMV": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "DVAR": "2026-09-01",
+   "IVAV": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "PFAV": "2026-09-01",
+   "GEAR": "2026-09-01",
+   "UWAR": "2026-09-01",
+   "UTAR": "2026-09-01"
+  },
+  "sixt|2442|www.sixt.it": {
+   "GWAR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "CWMR": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "CWAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "IVMV": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "DVAR": "2026-09-01",
+   "IVAV": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "GEAR": "2026-09-01",
+   "PFAV": "2026-09-01",
+   "UWAR": "2026-09-01",
+   "UTAR": "2026-09-01"
+  },
+  "sixt|6243|www.sixt.fr": {
+   "GWAR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "IFAE": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "SFAE": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "DVAR": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "UDAR": "2026-09-01",
+   "GEAR": "2026-09-01",
+   "PFAV": "2026-09-01",
+   "UWAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "DDSR": "2026-09-01",
+   "JDSR": "2026-09-01",
+   "UTAR": "2026-09-01",
+   "GTAR": "2026-09-01",
+   "UFSR": "2026-09-01",
+   "WVAR": "2026-09-01",
+   "XDDR": "2026-09-01",
+   "XDSR": "2026-09-01"
   }
  }
 }
