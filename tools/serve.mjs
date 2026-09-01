@@ -408,7 +408,9 @@ createServer(async (req, res) => {
   }
 }).listen(port, '127.0.0.1', () => {
   const chrome = findBrowser();
-  console.log(`Mietwagen-Preistool:  http://localhost:${port}/`);
+  // 127.0.0.1 statt localhost: der Dienst haengt nur an der IPv4-Adresse,
+  // waehrend "localhost" unter Windows zuerst als ::1 aufgeloest wird.
+  console.log(`Mietwagen-Preistool:  http://127.0.0.1:${port}/`);
   console.log(
     `Preisabruf:           ${chrome ? chrome : 'kein Chrome gefunden — nur Link-Modus'}`
   );

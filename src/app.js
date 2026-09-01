@@ -737,10 +737,17 @@ function renderTable(list) {
  */
 function renderHeld() {
   const held = $('#held');
-  const jobs = aktuelleJobs();
+  // Nur die gezeigte Station und ihren Termin. Ueber alle Gruppen hinweg zu
+  // suchen ergaebe einen Satz, der "gleiche Station, gleicher Zeitraum"
+  // behauptet und dabei zwei verschiedene Staedte vergleicht.
+  const alle = aktuelleJobs();
+  const jobs = alle.filter((j) => j.gruppe === aktiveGruppe);
+  const v = jobs[0]?.variant;
 
-  const tage = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
-  const zeit = `${pretty(state.pickupDate)} → ${pretty(state.returnDate)} · ${tage} Tage`;
+  const tage = v?.duration ?? Math.max(1, daysBetween(state.pickupDate, state.returnDate));
+  const von = v?.pickupDate ?? state.pickupDate;
+  const bis = v?.returnDate ?? state.returnDate;
+  const zeit = `${pretty(von)} → ${pretty(bis)} · ${tage} Tage`;
 
   // Bestes Angebot je Klasse suchen, nur innerhalb derselben Waehrung.
   let bester = null;
@@ -762,11 +769,13 @@ function renderHeld() {
         el(
           'h2',
           {},
-          state.stations.length
-            ? `${state.stations.length} Station${state.stations.length === 1 ? '' : 'en'} · ${
-                state.markets.length
-              } Länderseiten`
-            : 'Station wählen'
+          // Die Buehne zeigt immer genau die gewaehlte Gruppe — auch wenn
+          // dort noch nichts abgerufen ist.
+          jobs[0]
+            ? `${jobs[0].station.name} · ${jobs.length} Länderseite${jobs.length === 1 ? '' : 'n'}`
+            : state.stations.length
+              ? 'Länderseite wählen'
+              : 'Station wählen'
         ),
         el('p', { class: 'unter' }, zeit)
       )
@@ -799,7 +808,15 @@ function renderHeld() {
     el(
       'div',
       { class: 'heldtext' },
-      el('p', { class: 'lab' }, 'Günstigster Fund'),
+      el(
+        'p',
+        { class: 'lab' },
+        // Bei mehreren Stationen muss dranstehen, welche gemeint ist — der
+        // Satz darunter gilt nur fuer diese eine.
+        new Set(alle.map((j) => j.gruppe)).size > 1
+          ? `Günstigster Fund · ${bester.job.station.name}`
+          : 'Günstigster Fund'
+      ),
       el(
         'h2',
         {},
@@ -829,8 +846,8 @@ function renderHeld() {
         el(
           'div',
           {},
-          el('span', { class: 'z' }, String(new Set(jobs.map((j) => j.key)).size)),
-          el('span', { class: 'w' }, 'Abfragen')
+          el('span', { class: 'z' }, String(jobs.filter((j) => prices.has(j.key)).length)),
+          el('span', { class: 'w' }, `von ${jobs.length} Länderseiten`)
         ),
         el(
           'div',
@@ -929,6 +946,11 @@ function ergebnisSignatur(jobs) {
 function renderResults({ erzwingen = false } = {}) {
   const jobs = aktuelleJobs();
 
+  // Die gezeigte Gruppe festlegen, bevor irgendjemand sie liest — Buehne und
+  // Signatur haengen beide daran.
+  const schluessel = [...new Set(jobs.map((j) => j.gruppe))];
+  if (!schluessel.includes(aktiveGruppe)) aktiveGruppe = schluessel[0] ?? null;
+
   // Die billigen Anzeigen laufen immer — sie kosten nichts und flackern nicht.
   $('#jobCount').textContent = jobs.length
     ? `${jobs.length} Abfrage${jobs.length === 1 ? '' : 'n'}`
@@ -962,9 +984,6 @@ function renderResults({ erzwingen = false } = {}) {
   const hatPreise = [...prices.values()].some((r) => r.offers?.length);
 
   // Umschalter, sobald es mehr als eine Station/Termin-Kombination gibt.
-  const schluessel = [...gruppen.keys()];
-  if (!schluessel.includes(aktiveGruppe)) aktiveGruppe = schluessel[0];
-
   const umschalter = gruppenwahl(jobs, aktiveGruppe, (k) => {
     aktiveGruppe = k;
     renderResults();
@@ -1536,9 +1555,89 @@ const CAP_LABEL = {
   prepaid: 'Prepaid-Filter (Parameter wird verworfen)',
 };
 
+/** Eine Kennzahl im Dienst-Kasten. */
+function kennzahl(wert, was, ok = null) {
+  return el(
+    'div',
+    { class: 'kz' + (ok === true ? ' gut' : ok === false ? ' schlecht' : '') },
+    el('span', { class: 'kzwert' }, String(wert)),
+    el('span', { class: 'kzwas' }, was)
+  );
+}
+
 function renderStatus() {
+  const gespeichert = prices.size + schutz.size;
+  const klassen = Object.keys(katalog).length;
+
   setChildren(
     $('#statusBody'),
+
+    /* --- Was gerade laeuft, aus dem Dienst selbst gelesen --- */
+    el(
+      'div',
+      { class: 'card' },
+      el('h3', {}, 'Dieser Rechner'),
+      el(
+        'div',
+        { class: 'kzreihe' },
+        kennzahl(
+          service.available ? 'läuft' : 'aus',
+          'Preisdienst auf 127.0.0.1:4173',
+          service.available
+        ),
+        kennzahl(
+          service.chrome ? 'gefunden' : 'fehlt',
+          'Chrome für den Abruf',
+          service.chrome
+        ),
+        kennzahl(ALLE_STATIONEN.length, 'Sixt-Stationen hinterlegt'),
+        kennzahl(providerById(PROVIDER).markets.length, 'Länderseiten'),
+        kennzahl(klassen, 'ACRISS-Klassen im Katalog'),
+        kennzahl(gespeichert, 'Abrufe im Speicher')
+      ),
+      el(
+        'p',
+        { class: 'note' },
+        service.available
+          ? service.chrome
+            ? 'Der Abruf öffnet die Länderseiten in einem eigenen Chrome-Fenster außerhalb des sichtbaren Bereichs. Es wird nichts an Dritte gesendet; Ergebnisse verfallen nach einer Stunde.'
+            : 'Ohne Chrome oder Edge bleibt der Link-Modus: das Werkzeug baut die Suchen, abgerufen wird von Hand.'
+          : 'Der Dienst läuft nicht. Ohne ihn gibt es nur die Linkliste — zum Abrufen „Preistool starten.cmd" verwenden.'
+      )
+    ),
+
+    /* --- Was das Werkzeug kann, mit den bewussten Luecken --- */
+    ...WERKZEUG_STAND.map((g) =>
+      el(
+        'div',
+        { class: 'card' },
+        el('h3', {}, g.gruppe),
+        el(
+          'ul',
+          { class: 'standliste' },
+          ...g.punkte.map(([stand, titel, text]) =>
+            el(
+              'li',
+              { class: 'st ' + stand },
+              el(
+                'span',
+                { class: 'stmark' },
+                stand === 'ja' ? '✓' : stand === 'teils' ? '~' : '✕'
+              ),
+              el(
+                'span',
+                {},
+                el('b', {}, titel),
+                el('span', { class: 'sttext' }, text)
+              )
+            )
+          )
+        )
+      )
+    ),
+
+    el('h2', { class: 'statusteil' }, 'Anbieter'),
+
     ...PROVIDERS.map((p) =>
       el(
         'div',
@@ -1563,10 +1662,9 @@ function renderStatus() {
               )
             )
           : null,
-        ...p.notes.map((n) => el('p', { class: 'note' }, n)),
-        p.id === PROVIDER
-          ? el('p', { class: 'note' }, `${ALLE_STATIONEN.length} Stationen hinterlegt.`)
-          : null
+        // Die Stationszahl steht schon oben als Kennzahl — hier waere sie
+        // nur Wiederholung.
+        ...p.notes.map((n) => el('p', { class: 'note' }, n))
       )
     )
   );
@@ -1618,6 +1716,8 @@ function update(teile = {}) {
 }
 
 function init() {
+  starteHintergrund();
+
   document.querySelectorAll('.mode').forEach((b) =>
     b.addEventListener('click', () => {
       state.mode = b.dataset.mode;
@@ -1711,7 +1811,11 @@ function init() {
     location.reload();
   });
 
-  $('#startFuss').textContent = `${ALLE_STATIONEN.length} Sixt-Stationen aus 104 Ländern hinterlegt.`;
+  // Die Laenderzahl aus den Daten holen, nicht hinschreiben — sonst stimmt
+  // sie nach der naechsten Ernte nicht mehr.
+  const laender = new Set(ALLE_STATIONEN.map((s) => s.country).filter(Boolean)).size;
+  $('#startFuss').textContent =
+    `${ALLE_STATIONEN.length} Sixt-Stationen aus ${laender} Ländern hinterlegt.`;
 
   if (state.mode === 'status') {
     renderStatus();

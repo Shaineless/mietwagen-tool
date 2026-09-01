@@ -74,16 +74,23 @@ writeFileSync(src('stations.js'), stationsModule);
  * auf zyklische oder umbenennende Importe verzichten.
  */
 function flatten(code) {
-  return code
+  const flach = code
     .replace(/^\s*import[^;]+;\s*$/gm, '')
+    // Sammel-Export am Dateiende: im Bundle ueberfluessig, im klassischen
+    // Script ein Syntaxfehler. Kostet eine Zeile hier, spart die Suche danach.
+    .replace(/^export\s*\{[^}]*\}\s*;?\s*$/gm, '')
     .replace(/^export\s+(const|function|class|let)\b/gm, '$1')
     .trim();
+
+  const rest = flach.match(/^\s*export\b.*$/m);
+  if (rest) throw new Error(`build.mjs kann diese export-Zeile nicht auflösen: ${rest[0].trim()}`);
+  return flach;
 }
 
 // Reihenfolge = Abhängigkeitsreihenfolge: app.js benutzt alles Vorherige.
 // places.js liegt fuer den spaeteren Anbietervergleich bereit, wird aber
 // derzeit nicht gebraucht — vorerst nur Sixt.
-const MODULES = ['providers.js', 'offer-classes.js', 'app.js'];
+const MODULES = ['providers.js', 'offer-classes.js', 'hintergrund.js', 'app.js'];
 
 const bundle = [
   '(() => {',

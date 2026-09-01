@@ -38,7 +38,9 @@ for (const p of r.pakete || []) {
       String(p.inklusive ? 'inklusive' : (p.proTag ?? '—')).padStart(14) +
       String(p.gesamt ?? '—').padStart(12) +
       String(p.aufschlag ?? '—').padStart(11) +
-      String(p.aufschlag != null ? (p.aufschlag / 4).toFixed(2) : '—').padStart(13)
+      // Die Mietdauer kommt aus dem Ergebnis; die 4 aus dem Beispiel oben
+      // hier fest einzutragen war beim ersten Wechsel des Zeitraums falsch.
+      proTagEcht.padStart(13)
   );
 }
 

@@ -84,10 +84,12 @@ body {
 
 /* ============================================================ Schleier
  *
- * Ein sehr langsam wandernder Farbnebel hinter der Seite. Zwei Regeln halten
- * ihn aus dem Weg: er faellt nach oben hin aus (unter Preisen, die man liest,
- * bewegt sich nichts) und er laeuft nur ueber transform/opacity, damit kein
- * Layout dafuer neu gerechnet wird.
+ * Der Hintergrund besteht aus zwei Lagen: drei grosse Farbwolken als ruhender
+ * Grund und darueber eine Leinwand, die die eigentliche Bewegung traegt
+ * (src/hintergrund.js). Das Thema steht als data-thema am Behaelter.
+ *
+ * Beide Lagen werden nach unten hin ausgeblendet — unter der Preistabelle
+ * bewegt sich dadurch nichts, was den Blick von den Zahlen zieht.
  */
 .schleier {
   position: fixed;
@@ -95,9 +97,15 @@ body {
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  /* Unten ausblenden: die Tabelle bekommt eine ruhige, leere Flaeche. */
-  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 34%, transparent 68%);
-  mask-image: linear-gradient(to bottom, #000 0, #000 34%, transparent 68%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 38%, transparent 74%);
+  mask-image: linear-gradient(to bottom, #000 0, #000 38%, transparent 74%);
+}
+#schleierLeinwand {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 .wolke {
   position: absolute;
@@ -106,85 +114,96 @@ body {
   border-radius: 50%;
   will-change: transform;
 }
-.w1 {
-  top: -26vmax; left: -14vmax;
-  background: radial-gradient(circle at 50% 50%,
-    rgba(255, 95, 0, .16) 0%, rgba(255, 95, 0, .07) 42%, transparent 68%);
-  animation: treiben1 68s var(--rein-raus) infinite;
-}
-.w2 {
-  top: -34vmax; right: -18vmax;
-  background: radial-gradient(circle at 50% 50%,
-    rgba(88, 86, 214, .14) 0%, rgba(88, 86, 214, .06) 44%, transparent 70%);
-  animation: treiben2 91s var(--rein-raus) infinite;
-}
-.w3 {
-  top: -8vmax; left: 34vmax;
-  width: 46vmax; height: 46vmax;
-  background: radial-gradient(circle at 50% 50%,
-    rgba(0, 178, 255, .1) 0%, rgba(0, 178, 255, .04) 46%, transparent 72%);
-  animation: treiben3 113s var(--rein-raus) infinite;
-}
+.w1 { top: -26vmax; left: -14vmax;  animation: treiben1 34s var(--rein-raus) infinite; }
+.w2 { top: -34vmax; right: -18vmax; animation: treiben2 47s var(--rein-raus) infinite; }
+.w3 { top: -8vmax;  left: 34vmax; width: 46vmax; height: 46vmax;
+      animation: treiben3 59s var(--rein-raus) infinite; }
 
-/* Drei verschieden lange Umlaeufe, damit sich das Bild nie sichtbar
-   wiederholt. Kein Zoom ueber 1.12 — darueber wird die Bewegung bemerkbar. */
+/* Drei ungleich lange Umlaeufe, damit sich das Bild nie sichtbar wiederholt. */
 @keyframes treiben1 {
   0%, 100% { transform: none; }
-  33%      { transform: translate3d(14vmax, 6vmax, 0) scale(1.1); }
-  66%      { transform: translate3d(4vmax, -5vmax, 0) scale(.94); }
+  33%      { transform: translate3d(16vmax, 7vmax, 0) scale(1.14); }
+  66%      { transform: translate3d(5vmax, -6vmax, 0) scale(.9); }
 }
 @keyframes treiben2 {
   0%, 100% { transform: none; }
-  40%      { transform: translate3d(-16vmax, 8vmax, 0) scale(1.12); }
-  70%      { transform: translate3d(-6vmax, -4vmax, 0) scale(.96); }
+  40%      { transform: translate3d(-18vmax, 9vmax, 0) scale(1.16); }
+  70%      { transform: translate3d(-7vmax, -5vmax, 0) scale(.92); }
 }
 @keyframes treiben3 {
   0%, 100% { transform: none; }
-  50%      { transform: translate3d(-10vmax, 12vmax, 0) scale(1.08); }
+  50%      { transform: translate3d(-12vmax, 14vmax, 0) scale(1.1); }
 }
+
+/* --- Space: kalter Nebel, das Orange nur als Gegengewicht --- */
+[data-thema=space] .w1 { background: radial-gradient(circle, rgba(255,95,0,.16) 0%, rgba(255,95,0,.07) 42%, transparent 68%); }
+[data-thema=space] .w2 { background: radial-gradient(circle, rgba(88,86,214,.14) 0%, rgba(88,86,214,.06) 44%, transparent 70%); }
+[data-thema=space] .w3 { background: radial-gradient(circle, rgba(0,178,255,.10) 0%, rgba(0,178,255,.04) 46%, transparent 72%); }
+
+/* --- Sakura: Morgenrosa mit einem warmen Ton darunter --- */
+[data-thema=sakura] .w1 { background: radial-gradient(circle, rgba(255,138,178,.20) 0%, rgba(255,138,178,.08) 42%, transparent 68%); }
+[data-thema=sakura] .w2 { background: radial-gradient(circle, rgba(190,140,255,.14) 0%, rgba(190,140,255,.06) 44%, transparent 70%); }
+[data-thema=sakura] .w3 { background: radial-gradient(circle, rgba(255,196,140,.14) 0%, rgba(255,196,140,.05) 46%, transparent 72%); }
+
+/* --- Sixt: das Orange der Marke, dreifach gestaffelt --- */
+[data-thema=sixt] .w1 { background: radial-gradient(circle, rgba(255,95,0,.24) 0%, rgba(255,95,0,.09) 42%, transparent 68%); }
+[data-thema=sixt] .w2 { background: radial-gradient(circle, rgba(255,150,30,.18) 0%, rgba(255,150,30,.07) 44%, transparent 70%); }
+[data-thema=sixt] .w3 { background: radial-gradient(circle, rgba(220,50,20,.14) 0%, rgba(200,40,10,.05) 46%, transparent 72%); }
+
+[data-thema=aus] .wolke { display: none; }
 
 /* Im Dunkeln traegt Schwarz die Farbe kaum — dort darf der Nebel deutlich
    kraeftiger sein als auf hellem Grund, wo dieselbe Staerke schmutzig wirkt. */
 @media (prefers-color-scheme: dark) {
-  .w1 {
-    background: radial-gradient(circle at 50% 50%,
-      rgba(255, 110, 20, .30) 0%, rgba(255, 90, 0, .12) 42%, transparent 68%);
-  }
-  .w2 {
-    background: radial-gradient(circle at 50% 50%,
-      rgba(120, 90, 255, .28) 0%, rgba(90, 70, 220, .11) 44%, transparent 70%);
-  }
-  .w3 {
-    background: radial-gradient(circle at 50% 50%,
-      rgba(0, 190, 255, .20) 0%, rgba(0, 150, 230, .07) 46%, transparent 72%);
-  }
+  [data-thema=space] .w1 { background: radial-gradient(circle, rgba(255,110,20,.30) 0%, rgba(255,90,0,.12) 42%, transparent 68%); }
+  [data-thema=space] .w2 { background: radial-gradient(circle, rgba(120,90,255,.30) 0%, rgba(90,70,220,.12) 44%, transparent 70%); }
+  [data-thema=space] .w3 { background: radial-gradient(circle, rgba(0,190,255,.20) 0%, rgba(0,150,230,.07) 46%, transparent 72%); }
 
-  /* Sternenstaub — nur im Dunkeln, wo er als solcher gelesen wird. Auf Weiss
-     waeren es bloss Schmutzpunkte. Drei gekachelte Ebenen mit ungleichen
-     Kachelgroessen: das Muster wiederholt sich sichtbar erst weit ausserhalb
-     des Bildschirms. */
-  .schleier::before {
-    content: "";
-    position: absolute;
-    inset: -25%;
-    background-image:
-      radial-gradient(1.5px 1.5px at 24px 32px,  rgba(255,255,255,.85), transparent),
-      radial-gradient(1.2px 1.2px at 118px 76px, rgba(255,255,255,.55), transparent),
-      radial-gradient(1px 1px     at 62px 148px, rgba(255,255,255,.45), transparent),
-      radial-gradient(1.8px 1.8px at 196px 22px, rgba(255,235,215,.7),  transparent),
-      radial-gradient(1.1px 1.1px at 152px 196px, rgba(215,230,255,.5), transparent),
-      radial-gradient(1.3px 1.3px at 88px 244px, rgba(255,255,255,.4),  transparent);
-    background-size: 233px 281px, 233px 281px, 233px 281px,
-                     397px 337px, 397px 337px, 311px 293px;
-    opacity: .55;
-    will-change: transform;
-    animation: sterne 160s linear infinite;
-  }
+  [data-thema=sakura] .w1 { background: radial-gradient(circle, rgba(255,120,170,.30) 0%, rgba(220,80,140,.12) 42%, transparent 68%); }
+  [data-thema=sakura] .w2 { background: radial-gradient(circle, rgba(170,110,255,.24) 0%, rgba(140,80,220,.09) 44%, transparent 70%); }
+  [data-thema=sakura] .w3 { background: radial-gradient(circle, rgba(255,170,110,.20) 0%, rgba(220,130,70,.07) 46%, transparent 72%); }
+
+  [data-thema=sixt] .w1 { background: radial-gradient(circle, rgba(255,110,20,.38) 0%, rgba(255,80,0,.15) 42%, transparent 68%); }
+  [data-thema=sixt] .w2 { background: radial-gradient(circle, rgba(255,165,40,.26) 0%, rgba(230,130,20,.10) 44%, transparent 70%); }
+  [data-thema=sixt] .w3 { background: radial-gradient(circle, rgba(230,45,15,.22) 0%, rgba(190,30,5,.08) 46%, transparent 72%); }
 }
-@keyframes sterne {
-  from { transform: translate3d(0, 0, 0); }
-  to   { transform: translate3d(3vmax, -4vmax, 0); }
+
+/* --- Die Auswahl: vier Tupfer, die zeigen, was sie schalten --- */
+
+.hgwahl { display: inline-flex; gap: 6px; align-items: center; }
+.hgs {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  /* Der weisse Ring markiert die Wahl, ohne die Kachel zu vergroessern —
+     sonst wackelt die ganze Reihe beim Umschalten. */
+  box-shadow: 0 0 0 1px var(--hairline) inset;
+  transition: transform var(--t-druck) var(--raus), box-shadow var(--t-druck) var(--raus);
 }
+.hgs[data-thema=space]  { background: linear-gradient(140deg, #10122b, #3a2a6d 55%, #ff5f00); }
+.hgs[data-thema=sakura] { background: linear-gradient(140deg, #ffe3ee, #ff8ab2 55%, #b76cff); }
+.hgs[data-thema=sixt]   { background: linear-gradient(140deg, #ffb266, #ff5f00 55%, #c8280f); }
+.hgs[data-thema=aus]    { background: var(--flaeche2); }
+.hgs[aria-pressed=true] {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+.hgs:active { transform: scale(.9); }
+@media (hover: hover) and (pointer: fine) {
+  .hgs:hover { transform: scale(1.12); }
+}
+
+/* Auf dem Startbildschirm steht die Auswahl beschriftet unter den Kacheln. */
+.hgzeile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 34px;
+}
+.hglabel { font-size: 12.5px; color: var(--leise); }
 
 h1 { font-size: 30px; letter-spacing: -.028em; margin: 0 0 8px; font-weight: 660; }
 h2 { font-size: 19px; letter-spacing: -.02em; margin: 0 0 18px; font-weight: 620; }
@@ -827,6 +846,53 @@ table.vergleich.schutz td, table.vergleich.schutz th.klasse { vertical-align: to
 .caps .yes { color: var(--ink2); }
 .caps .no { color: var(--leise); text-decoration: line-through; }
 
+/* --- Was gerade laeuft: Zahlen zuerst, Erklaerung darunter --- */
+
+#statusBody .card { margin-bottom: 16px; }
+.statusteil { margin: 34px 0 16px; }
+
+.kzreihe {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 18px 26px;
+  margin: 4px 0 6px;
+}
+.kz { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.kzwert {
+  font-size: 21px;
+  font-weight: 620;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.kz.gut .kzwert { color: var(--accent); }
+.kz.schlecht .kzwert { color: var(--warn); }
+.kzwas { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+
+/* --- Kann / kann nicht, mit Begruendung --- */
+
+.standliste { list-style: none; padding: 0; margin: 0; }
+.standliste .st {
+  display: flex;
+  gap: 12px;
+  padding: 11px 0;
+  font-size: 14px;
+  box-shadow: inset 0 -1px 0 var(--hairline2);
+}
+.standliste .st:last-child { box-shadow: none; padding-bottom: 0; }
+.stmark {
+  flex: none;
+  width: 20px;
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.st.ja .stmark { color: var(--accent); }
+.st.teils .stmark { color: var(--warn); }
+.st.nein .stmark { color: var(--leise); }
+.standliste b { font-weight: 560; letter-spacing: -.01em; }
+.st.nein b { color: var(--muted); }
+.sttext { display: block; margin-top: 3px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+
 /* ============================================================ Rückmeldung
  *
  * Rueckmeldung gehoert auf das Druecken, nicht auf das Loslassen. Wartet man
@@ -888,8 +954,10 @@ tr.mietzeile .betrag { color: var(--ink2); font-weight: 500; }
   .screen:not([hidden]) { animation: einblenden .2s ease; }
   @keyframes einblenden { from { opacity: 0; } to { opacity: 1; } }
   /* Der Schleier bleibt als Farbe stehen, aber er wandert nicht mehr. Die
-     Regel oben wuerde ihn sonst in 0,01ms ans Ende der Kurve schieben. */
-  .wolke, .schleier::before { animation: none !important; transform: none !important; }
+     Regel oben wuerde ihn sonst in 0,01ms ans Ende der Kurve schieben.
+     Die Leinwand haelt sich selbst an (siehe hintergrund.js). */
+  .wolke { animation: none !important; transform: none !important; }
+  .hgs:hover, .hgs:active { transform: none; }
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -956,13 +1024,14 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
 .credit { opacity: .75; }
 </style>
 
-<!-- Farbschleier im Hintergrund. Liegt hinter allem, bewegt sich sehr langsam
-     und endet weit oberhalb der Tabelle — unter Zahlen, die man liest, darf
-     nichts wandern. -->
-<div class="schleier" aria-hidden="true">
+<!-- Hintergrund. Liegt hinter allem und wird nach unten ausgeblendet — unter
+     Zahlen, die man liest, darf nichts wandern. Die Wolken sind der ruhende
+     Farbgrund, die Leinwand darüber trägt die Bewegung. -->
+<div class="schleier" aria-hidden="true" data-thema="space">
   <span class="wolke w1"></span>
   <span class="wolke w2"></span>
   <span class="wolke w3"></span>
+  <canvas id="schleierLeinwand"></canvas>
 </div>
 
 <!-- ===================================================== Startbildschirm -->
@@ -997,6 +1066,11 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
     </button>
   </div>
 
+  <div class="hgzeile">
+    <span class="hglabel">Hintergrund</span>
+    <span class="hgwahl" data-hintergrundwahl></span>
+  </div>
+
   <p class="fuss" id="startFuss"></p>
 </section>
 
@@ -1004,7 +1078,7 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
 <section id="statusScreen" class="screen" hidden>
   <div class="bar">
     <button type="button" class="back">← Zurück</button>
-    <h1>Stand der Anbieter</h1>
+    <h1>Was geht gerade</h1>
   </div>
   <div id="statusBody"></div>
 </section>
@@ -1019,9 +1093,10 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
       <div class="kurz">
         <b id="kurzStation">—</b>
         <span id="kurzZeit">—</span>
-        <button type="button" data-panel="station" id="knopfStation">Station</button>
+        <button type="button" data-panel="station">Station</button>
         <button type="button" data-panel="zeit">Zeitraum</button>
         <button type="button" data-panel="land" id="knopfLand">Länderseiten</button>
+        <span class="hgwahl" data-hintergrundwahl></span>
       </div>
       <button type="button" id="getPrices" class="los" hidden>Preise holen</button>
     </div>
@@ -1064,7 +1139,7 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
    </div>
 
    <div class="panel" id="panelLand" hidden>
-    <section class="card" id="marketCard">
+    <section class="card">
       <h2>Länderseiten</h2>
       <div class="btnrow">
         <button type="button" id="marketsDACH" class="ghost">DACH</button>
@@ -1076,7 +1151,7 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
    </div>
 
    <div class="panel" id="panelStation" hidden>
-    <section class="card" id="stationCard">
+    <section class="card">
       <h2>Stationen</h2>
       <input type="search" id="stationSearch" placeholder="FRA · Hauptbahnhof · München · Mallorca …" autocomplete="off">
       <div class="suchzeile">
@@ -1296,7 +1371,8 @@ const sixt = {
       'heute verworfen — geprüft: die Trefferliste startet mit leerem Filter.',
     'Ein Direktsprung in die Trefferliste ist nicht möglich; Sixt adressiert ' +
       'Stationen dort über eine UUID, die sich aus der Stations-ID nicht ' +
-      'ableiten lässt. Das Tool belegt die Suchmaske vor.',
+      'ableiten lässt. Der Link belegt daher die Suchmaske vor — beim ' +
+      'Preisabruf drückt das Werkzeug den Suchknopf selbst.',
   ],
 
   build(q, market, station, returnStation) {
@@ -1369,6 +1445,58 @@ const arndt = planned(
   'https://www.arndt-autovermietung.de/',
   'Noch nicht untersucht.'
 );
+
+/* ============================================================ Stand */
+
+/**
+ * Was das Werkzeug heute kann — und was bewusst nicht.
+ *
+ * Diese Liste steht hier und nicht in der Oberflaeche, weil sie derselben
+ * Regel folgt wie `capabilities` oben: nichts wird als koennend dargestellt,
+ * was nicht geprueft ist. `stand` ist 'ja', 'nein' oder 'teils'; bei 'nein'
+ * gehoert in den Text, ob es fehlt oder absichtlich fehlt.
+ */
+const WERKZEUG_STAND = [
+  {
+    gruppe: 'Preise',
+    punkte: [
+      ['ja', 'Preise je Länderseite auslesen',
+        'Läuft in einem eigenen, unsichtbaren Chrome-Fenster auf diesem Rechner. Zwei Abfragen gleichzeitig.'],
+      ['ja', 'Schutzpakete mit echtem Endpreis',
+        'Jedes Paket wird in der Kasse angeklickt und die Gesamtsumme abgelesen. Der Tagespreis mal Tage zu rechnen ergab bis zu 26 % daneben.'],
+      ['ja', 'Frühbucherrabatt erkennen',
+        'Wird je Länderseite angezeigt — er läuft nicht überall gleichzeitig, und das verzerrt den Vergleich.'],
+      ['nein', 'Währungen umrechnen',
+        'Absichtlich nicht: verglichen wird nur innerhalb derselben Währung. Ein Kurs von heute wäre eine erfundene Genauigkeit.'],
+      ['nein', 'Statusrabatt (Gold, Platin, Diamond)',
+        'Wieder entfernt — gezeigt werden nur Preise, die tatsächlich von der Seite abgelesen wurden.'],
+    ],
+  },
+  {
+    gruppe: 'Vergleich',
+    punkte: [
+      ['ja', 'ACRISS-Code als Schlüssel',
+        'Die Klassen heißen auf jeder Länderseite anders; der Vier-Buchstaben-Code ist sprachunabhängig. Sixt benutzt dabei eigene Buchstaben (S, L, P), die der Decoder mitträgt.'],
+      ['ja', 'Fahrzeugbilder und Modellnamen', 'Direkt aus der Angebotskachel.'],
+      ['ja', 'Mehrere Stationen und Termine',
+        'Datums-Matrix: Abholtag −5 bis +5 Tage, dazu mehrere Mietdauern. Station und Termin sind oben umschaltbar.'],
+      ['ja', 'Klassen merken, die gerade nicht buchbar sind',
+        'Einmal gesehene Klassen bleiben als Zeile stehen und werden als „nicht buchbar" markiert, statt aus der Tabelle zu verschwinden.'],
+    ],
+  },
+  {
+    gruppe: 'Betrieb',
+    punkte: [
+      ['ja', 'Abbrechen', 'Die Warteschlange lässt sich mitten im Abruf anhalten.'],
+      ['ja', 'Alles bleibt auf diesem Rechner',
+        'Der Dienst hört nur auf 127.0.0.1. Ergebnisse liegen im Arbeitsspeicher und verfallen nach einer Stunde.'],
+      ['teils', 'Proxy je Länderseite',
+        'Im Unterbau vorhanden, aber ohne Bedienelement — bislang war keiner nötig.'],
+      ['nein', 'Andere Vermieter',
+        'Nur Sixt ist angebunden. Der Rest steht unten mit dem Grund.'],
+    ],
+  },
+];
 
 const PROVIDERS = [sixt, avis, europcar, hertz, enterprise, carvia, arndt];
 
@@ -1553,6 +1681,452 @@ function classify(offer) {
 function classOrder(key) {
   const d = decodeAcriss(key);
   return d ? d.ordnung : 99000;
+}
+
+/**
+ * Bewegter Hintergrund mit waehlbarem Thema.
+ *
+ * Drei Regeln, die alle Themen einhalten:
+ *
+ * 1. Die Bewegung bleibt oben. Die Leinwand liegt hinter der Seite und wird
+ *    nach unten hin ausgeblendet (Maske in styles.css), damit unter der
+ *    Preistabelle nichts wandert — Zahlen, die man vergleicht, brauchen einen
+ *    ruhigen Grund.
+ * 2. Sie ist sichtbar, aber nie schneller als der Blick. Der erste Entwurf
+ *    lief in 68 bis 113 Sekunden pro Umlauf und wirkte dadurch wie ein Standbild.
+ * 3. Sie kostet nichts, wenn niemand hinsieht: bei verstecktem Tab haelt die
+ *    Schleife an, bei "Bewegung reduzieren" wird ein einziges Standbild
+ *    gezeichnet.
+ */
+
+const LS_HG = 'mwt-preistool/hintergrund';
+
+const THEMEN = [
+  { id: 'space', name: 'Space', beschreibung: 'Sternenfeld mit Sternschnuppen' },
+  { id: 'sakura', name: 'Sakura', beschreibung: 'Fallende Kirschblüten' },
+  { id: 'sixt', name: 'Sixt', beschreibung: 'Orange Lichtspuren' },
+  { id: 'aus', name: 'Aus', beschreibung: 'Ruhiger, einfarbiger Grund' },
+];
+
+let aktuellesThema = 'space';
+let leinwand = null;
+let ctx = null;
+let breite = 0;
+let hoehe = 0;
+let teilchen = [];
+let laeuft = false;
+let letzterTakt = 0;
+let rafId = 0;
+
+const zufall = (min, max) => min + Math.random() * (max - min);
+
+/**
+ * Weisse Sterne auf hellem Grund sind unsichtbar. Statt das Thema im Hellen
+ * wegzulassen, kehrt sich der Sternenton um — nachts weiss, tags ein dunkles
+ * Blaugrau. Rosa Blueten und oranges Licht tragen auf beidem und bleiben.
+ */
+let dunkel = true;
+
+function beobachteFarbschema() {
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  dunkel = mq.matches;
+  mq.addEventListener('change', (e) => {
+    dunkel = e.matches;
+  });
+}
+
+const sternTon = (a) =>
+  dunkel ? `rgba(255,255,255,${a})` : `rgba(52,60,86,${(a * 0.85).toFixed(3)})`;
+
+/* ---------------------------------------------------------------- Themen */
+
+/**
+ * Jedes Thema erzeugt seine Teilchen selbst und zeichnet einen Schritt.
+ * `dt` ist die vergangene Zeit in Sekunden — die Bewegung haengt damit an der
+ * Uhr, nicht an der Bildrate. Auf einem 144-Hz-Schirm laeuft sonst alles
+ * doppelt so schnell wie auf einem 60-Hz-Schirm.
+ */
+const MOTOREN = {
+  /* --- Space: drei Sternenebenen mit Parallaxe, dazu Sternschnuppen --- */
+  space: {
+    erzeuge() {
+      const dichte = Math.round((breite * hoehe) / 9000);
+      const sterne = [];
+      for (let i = 0; i < Math.min(dichte, 260); i++) {
+        // Ebene 0 ist am weitesten weg: klein, dunkel, langsam.
+        const ebene = Math.random() < 0.55 ? 0 : Math.random() < 0.7 ? 1 : 2;
+        sterne.push({
+          x: Math.random() * breite,
+          y: Math.random() * hoehe,
+          r: [0.6, 1, 1.6][ebene] * zufall(0.7, 1.3),
+          v: [5, 11, 20][ebene] * zufall(0.8, 1.2),
+          hell: [0.35, 0.6, 0.9][ebene] * zufall(0.7, 1),
+          // Funkeln: eigene Phase, damit nicht alle im Takt blinken.
+          phase: Math.random() * Math.PI * 2,
+          takt: zufall(0.4, 1.4),
+        });
+      }
+      return { sterne, schnuppen: [], bisSchnuppe: zufall(1.5, 4) };
+    },
+
+    schritt(s, dt, statisch) {
+      ctx.clearRect(0, 0, breite, hoehe);
+
+      for (const st of s.sterne) {
+        if (!statisch) {
+          st.x -= st.v * dt;
+          st.phase += dt * st.takt;
+          if (st.x < -4) {
+            st.x = breite + 4;
+            st.y = Math.random() * hoehe;
+          }
+        }
+        const a = st.hell * (0.72 + 0.28 * Math.sin(st.phase));
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+        ctx.fillStyle = sternTon(a.toFixed(3));
+        ctx.fill();
+      }
+
+      if (statisch) return;
+
+      // Sternschnuppen sind das, was den Blick kurz hebt — deshalb selten.
+      s.bisSchnuppe -= dt;
+      if (s.bisSchnuppe <= 0) {
+        s.bisSchnuppe = zufall(2.5, 7);
+        s.schnuppen.push({
+          x: zufall(breite * 0.25, breite * 1.05),
+          y: zufall(-20, hoehe * 0.55),
+          v: zufall(620, 1000),
+          laenge: zufall(90, 200),
+          leben: 0,
+          dauer: zufall(0.6, 1.1),
+        });
+      }
+
+      for (let i = s.schnuppen.length - 1; i >= 0; i--) {
+        const f = s.schnuppen[i];
+        f.leben += dt;
+        if (f.leben > f.dauer) {
+          s.schnuppen.splice(i, 1);
+          continue;
+        }
+        const t = f.leben / f.dauer;
+        // Auf- und abschwellen, damit nichts hart erscheint oder abreisst.
+        const a = Math.sin(t * Math.PI) * 0.85;
+        f.x -= f.v * dt;
+        f.y += f.v * 0.32 * dt;
+
+        const x2 = f.x + f.laenge;
+        const y2 = f.y - f.laenge * 0.32;
+        const g = ctx.createLinearGradient(f.x, f.y, x2, y2);
+        g.addColorStop(0, sternTon(a.toFixed(3)));
+        g.addColorStop(0.4, sternTon((a * 0.4).toFixed(3)));
+        g.addColorStop(1, sternTon('0'));
+        ctx.strokeStyle = g;
+        ctx.lineWidth = 1.7;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(f.x, f.y);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+    },
+  },
+
+  /* --- Sakura: fallende Blueten, jede mit eigener Drehung und Pendelbahn --- */
+  sakura: {
+    erzeuge() {
+      const anzahl = Math.min(Math.round((breite * hoehe) / 26000), 70);
+      const blueten = [];
+      for (let i = 0; i < anzahl; i++) {
+        blueten.push(neueBluete(Math.random() * hoehe));
+      }
+      return { blueten };
+    },
+
+    schritt(s, dt, statisch) {
+      ctx.clearRect(0, 0, breite, hoehe);
+      for (let i = 0; i < s.blueten.length; i++) {
+        const b = s.blueten[i];
+        if (!statisch) {
+          b.t += dt;
+          b.y += b.fall * dt;
+          // Pendeln um die eigene Bahn — Blueten fallen nicht senkrecht.
+          b.x += Math.sin(b.t * b.pendel) * b.weite * dt + b.wind * dt;
+          b.dreh += b.drehV * dt;
+          if (b.y > hoehe + 20) s.blueten[i] = neueBluete(-20);
+          else if (b.x > breite + 30) b.x = -30;
+          else if (b.x < -30) b.x = breite + 30;
+        }
+        zeichneBluete(b);
+      }
+    },
+  },
+
+  /* --- Sixt: orange Lichtspuren, wie Scheinwerfer in der Langzeitbelichtung --- */
+  sixt: {
+    erzeuge() {
+      const anzahl = Math.min(Math.round(breite / 46), 34);
+      const spuren = [];
+      for (let i = 0; i < anzahl; i++) spuren.push(neueSpur(true));
+      // Ein paar langsam steigende Funken darunter, damit die Flaeche zwischen
+      // den Spuren nicht tot wirkt.
+      const funken = [];
+      for (let i = 0; i < Math.min(Math.round(breite / 40), 40); i++) {
+        funken.push({
+          x: Math.random() * breite,
+          y: Math.random() * hoehe,
+          r: zufall(0.8, 2.2),
+          v: zufall(6, 18),
+          a: zufall(0.15, 0.5),
+          phase: Math.random() * Math.PI * 2,
+        });
+      }
+      return { spuren, funken };
+    },
+
+    schritt(s, dt, statisch) {
+      ctx.clearRect(0, 0, breite, hoehe);
+
+      for (const f of s.funken) {
+        if (!statisch) {
+          f.y -= f.v * dt;
+          f.phase += dt * 1.1;
+          if (f.y < -6) {
+            f.y = hoehe + 6;
+            f.x = Math.random() * breite;
+          }
+        }
+        const a = f.a * (0.6 + 0.4 * Math.sin(f.phase));
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,170,80,${a.toFixed(3)})`;
+        ctx.fill();
+      }
+
+      for (let i = 0; i < s.spuren.length; i++) {
+        const sp = s.spuren[i];
+        if (!statisch) {
+          sp.x += sp.v * dt;
+          sp.y += sp.v * 0.42 * dt;
+          if (sp.x - sp.laenge > breite || sp.y - sp.laenge * 0.42 > hoehe) {
+            s.spuren[i] = neueSpur(false);
+            continue;
+          }
+        }
+        const x0 = sp.x - sp.laenge;
+        const y0 = sp.y - sp.laenge * 0.42;
+        const g = ctx.createLinearGradient(x0, y0, sp.x, sp.y);
+        g.addColorStop(0, 'rgba(255,120,0,0)');
+        g.addColorStop(0.75, `rgba(255,125,20,${(sp.a * 0.55).toFixed(3)})`);
+        g.addColorStop(1, `rgba(255,205,150,${sp.a.toFixed(3)})`);
+        ctx.strokeStyle = g;
+        ctx.lineWidth = sp.dick;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(sp.x, sp.y);
+        ctx.stroke();
+      }
+    },
+  },
+};
+
+/* ------------------------------------------------------------- Bausteine */
+
+function neueBluete(y) {
+  const groesse = zufall(6, 15);
+  return {
+    x: Math.random() * breite,
+    y,
+    g: groesse,
+    // Grosse Blueten sind naeher und fallen schneller — das gibt Tiefe.
+    fall: groesse * zufall(3.4, 5.2),
+    pendel: zufall(0.7, 1.8),
+    weite: zufall(14, 40),
+    wind: zufall(6, 22),
+    dreh: Math.random() * Math.PI * 2,
+    drehV: zufall(-1.6, 1.6),
+    t: Math.random() * 10,
+    a: zufall(0.32, 0.78),
+    ton: Math.random() < 0.25 ? [255, 226, 236] : [255, 183, 206],
+  };
+}
+
+/**
+ * Eine Bluete als zwei gespiegelte Bezier-Boegen: von weitem genau die
+ * Herzform eines Kirschblueten-Blattes, und billiger als ein Bild.
+ */
+function zeichneBluete(b) {
+  const [r, g, bl] = b.ton;
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  ctx.rotate(b.dreh);
+  // Die Drehung um die Laengsachse: das Blatt wird schmal und wieder breit.
+  ctx.scale(Math.max(0.25, Math.abs(Math.cos(b.t * 1.3))), 1);
+  ctx.beginPath();
+  ctx.moveTo(0, -b.g / 2);
+  ctx.bezierCurveTo(b.g * 0.55, -b.g * 0.35, b.g * 0.42, b.g * 0.45, 0, b.g / 2);
+  ctx.bezierCurveTo(-b.g * 0.42, b.g * 0.45, -b.g * 0.55, -b.g * 0.35, 0, -b.g / 2);
+  ctx.fillStyle = `rgba(${r},${g},${bl},${b.a.toFixed(3)})`;
+  ctx.fill();
+  ctx.restore();
+}
+
+function neueSpur(verteilt) {
+  const laenge = zufall(70, 260);
+  return {
+    // Beim ersten Aufbau ueber das Bild verteilt, danach von links unten neu.
+    x: verteilt ? Math.random() * breite : zufall(-breite * 0.35, 0),
+    y: verteilt ? Math.random() * hoehe : zufall(-hoehe * 0.3, hoehe),
+    v: zufall(90, 260),
+    laenge,
+    dick: zufall(1, 2.6),
+    a: zufall(0.18, 0.6),
+  };
+}
+
+/* ---------------------------------------------------------------- Ablauf */
+
+function magBewegung() {
+  return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function passeGroesseAn() {
+  if (!leinwand) return;
+  // Ueber 2 bringt mehr Pixel keinen sichtbaren Gewinn, kostet aber Fläche.
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  breite = leinwand.clientWidth;
+  hoehe = leinwand.clientHeight;
+  leinwand.width = Math.round(breite * dpr);
+  leinwand.height = Math.round(hoehe * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function baueAuf() {
+  const motor = MOTOREN[aktuellesThema];
+  if (!motor || !breite || !hoehe) {
+    teilchen = null;
+    return;
+  }
+  teilchen = motor.erzeuge();
+}
+
+function takt(jetzt) {
+  rafId = 0;
+  if (!laeuft) return;
+  const dt = Math.min((jetzt - letzterTakt) / 1000, 0.05); // Sprung nach Tab-Wechsel abfangen
+  letzterTakt = jetzt;
+  MOTOREN[aktuellesThema]?.schritt(teilchen, dt, false);
+  rafId = requestAnimationFrame(takt);
+}
+
+function starte() {
+  if (laeuft || !ctx) return;
+  if (!MOTOREN[aktuellesThema] || !teilchen) return;
+  if (!magBewegung()) {
+    // Ein Standbild statt einer Schleife: die Gestaltung bleibt, die Bewegung
+    // faellt weg. Ganz leer waere eine Verschlechterung, keine Ruecksicht.
+    MOTOREN[aktuellesThema].schritt(teilchen, 0, true);
+    return;
+  }
+  laeuft = true;
+  letzterTakt = performance.now();
+  rafId = requestAnimationFrame(takt);
+}
+
+function halte() {
+  laeuft = false;
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = 0;
+}
+
+/* ------------------------------------------------------------- Oberfläche */
+
+function setzeThema(id, merken = true) {
+  if (!THEMEN.some((t) => t.id === id)) id = 'space';
+  aktuellesThema = id;
+  document.querySelector('.schleier')?.setAttribute('data-thema', id);
+  if (merken) {
+    try {
+      localStorage.setItem(LS_HG, id);
+    } catch {}
+  }
+
+  halte();
+  if (ctx) ctx.clearRect(0, 0, breite, hoehe);
+  if (leinwand) leinwand.hidden = id === 'aus';
+
+  if (id !== 'aus') {
+    baueAuf();
+    starte();
+  }
+  zeichneWahl();
+}
+
+/** Die Auswahl steht in jedem Behaelter mit [data-hintergrundwahl]. */
+function zeichneWahl() {
+  for (const behaelter of document.querySelectorAll('[data-hintergrundwahl]')) {
+    if (!behaelter.firstChild) {
+      for (const t of THEMEN) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'hgs';
+        b.dataset.thema = t.id;
+        b.title = `${t.name} — ${t.beschreibung}`;
+        b.setAttribute('aria-label', `Hintergrund: ${t.name}`);
+        b.addEventListener('click', () => setzeThema(t.id));
+        behaelter.appendChild(b);
+      }
+    }
+    for (const b of behaelter.children) {
+      b.setAttribute('aria-pressed', String(b.dataset.thema === aktuellesThema));
+    }
+  }
+}
+
+let groessenTimer = 0;
+
+function starteHintergrund() {
+  leinwand = document.querySelector('#schleierLeinwand');
+  if (!leinwand) return;
+  ctx = leinwand.getContext('2d');
+  beobachteFarbschema();
+
+  let gemerkt = null;
+  try {
+    gemerkt = localStorage.getItem(LS_HG);
+  } catch {}
+
+  passeGroesseAn();
+  setzeThema(gemerkt || 'space', false);
+
+  window.addEventListener('resize', () => {
+    clearTimeout(groessenTimer);
+    // Waehrend des Ziehens jedes Mal neu aufzubauen ruckelt sichtbar.
+    groessenTimer = setTimeout(() => {
+      const lief = laeuft;
+      halte();
+      passeGroesseAn();
+      if (aktuellesThema !== 'aus') {
+        baueAuf();
+        if (lief || magBewegung()) starte();
+      }
+    }, 180);
+  });
+
+  // Im versteckten Tab zeichnet der Browser ohnehin nichts Sichtbares — dann
+  // soll die Schleife auch keine Rechenzeit kosten.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) halte();
+    else if (aktuellesThema !== 'aus') starte();
+  });
+
+  window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => {
+    halte();
+    if (aktuellesThema !== 'aus') starte();
+  });
 }
 
 /* =========================================================== Zustand */
@@ -2290,10 +2864,17 @@ function renderTable(list) {
  */
 function renderHeld() {
   const held = $('#held');
-  const jobs = aktuelleJobs();
+  // Nur die gezeigte Station und ihren Termin. Ueber alle Gruppen hinweg zu
+  // suchen ergaebe einen Satz, der "gleiche Station, gleicher Zeitraum"
+  // behauptet und dabei zwei verschiedene Staedte vergleicht.
+  const alle = aktuelleJobs();
+  const jobs = alle.filter((j) => j.gruppe === aktiveGruppe);
+  const v = jobs[0]?.variant;
 
-  const tage = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
-  const zeit = `${pretty(state.pickupDate)} → ${pretty(state.returnDate)} · ${tage} Tage`;
+  const tage = v?.duration ?? Math.max(1, daysBetween(state.pickupDate, state.returnDate));
+  const von = v?.pickupDate ?? state.pickupDate;
+  const bis = v?.returnDate ?? state.returnDate;
+  const zeit = `${pretty(von)} → ${pretty(bis)} · ${tage} Tage`;
 
   // Bestes Angebot je Klasse suchen, nur innerhalb derselben Waehrung.
   let bester = null;
@@ -2315,11 +2896,13 @@ function renderHeld() {
         el(
           'h2',
           {},
-          state.stations.length
-            ? `${state.stations.length} Station${state.stations.length === 1 ? '' : 'en'} · ${
-                state.markets.length
-              } Länderseiten`
-            : 'Station wählen'
+          // Die Buehne zeigt immer genau die gewaehlte Gruppe — auch wenn
+          // dort noch nichts abgerufen ist.
+          jobs[0]
+            ? `${jobs[0].station.name} · ${jobs.length} Länderseite${jobs.length === 1 ? '' : 'n'}`
+            : state.stations.length
+              ? 'Länderseite wählen'
+              : 'Station wählen'
         ),
         el('p', { class: 'unter' }, zeit)
       )
@@ -2352,7 +2935,15 @@ function renderHeld() {
     el(
       'div',
       { class: 'heldtext' },
-      el('p', { class: 'lab' }, 'Günstigster Fund'),
+      el(
+        'p',
+        { class: 'lab' },
+        // Bei mehreren Stationen muss dranstehen, welche gemeint ist — der
+        // Satz darunter gilt nur fuer diese eine.
+        new Set(alle.map((j) => j.gruppe)).size > 1
+          ? `Günstigster Fund · ${bester.job.station.name}`
+          : 'Günstigster Fund'
+      ),
       el(
         'h2',
         {},
@@ -2382,8 +2973,8 @@ function renderHeld() {
         el(
           'div',
           {},
-          el('span', { class: 'z' }, String(new Set(jobs.map((j) => j.key)).size)),
-          el('span', { class: 'w' }, 'Abfragen')
+          el('span', { class: 'z' }, String(jobs.filter((j) => prices.has(j.key)).length)),
+          el('span', { class: 'w' }, `von ${jobs.length} Länderseiten`)
         ),
         el(
           'div',
@@ -2482,6 +3073,11 @@ function ergebnisSignatur(jobs) {
 function renderResults({ erzwingen = false } = {}) {
   const jobs = aktuelleJobs();
 
+  // Die gezeigte Gruppe festlegen, bevor irgendjemand sie liest — Buehne und
+  // Signatur haengen beide daran.
+  const schluessel = [...new Set(jobs.map((j) => j.gruppe))];
+  if (!schluessel.includes(aktiveGruppe)) aktiveGruppe = schluessel[0] ?? null;
+
   // Die billigen Anzeigen laufen immer — sie kosten nichts und flackern nicht.
   $('#jobCount').textContent = jobs.length
     ? `${jobs.length} Abfrage${jobs.length === 1 ? '' : 'n'}`
@@ -2515,9 +3111,6 @@ function renderResults({ erzwingen = false } = {}) {
   const hatPreise = [...prices.values()].some((r) => r.offers?.length);
 
   // Umschalter, sobald es mehr als eine Station/Termin-Kombination gibt.
-  const schluessel = [...gruppen.keys()];
-  if (!schluessel.includes(aktiveGruppe)) aktiveGruppe = schluessel[0];
-
   const umschalter = gruppenwahl(jobs, aktiveGruppe, (k) => {
     aktiveGruppe = k;
     renderResults();
@@ -3089,9 +3682,89 @@ const CAP_LABEL = {
   prepaid: 'Prepaid-Filter (Parameter wird verworfen)',
 };
 
+/** Eine Kennzahl im Dienst-Kasten. */
+function kennzahl(wert, was, ok = null) {
+  return el(
+    'div',
+    { class: 'kz' + (ok === true ? ' gut' : ok === false ? ' schlecht' : '') },
+    el('span', { class: 'kzwert' }, String(wert)),
+    el('span', { class: 'kzwas' }, was)
+  );
+}
+
 function renderStatus() {
+  const gespeichert = prices.size + schutz.size;
+  const klassen = Object.keys(katalog).length;
+
   setChildren(
     $('#statusBody'),
+
+    /* --- Was gerade laeuft, aus dem Dienst selbst gelesen --- */
+    el(
+      'div',
+      { class: 'card' },
+      el('h3', {}, 'Dieser Rechner'),
+      el(
+        'div',
+        { class: 'kzreihe' },
+        kennzahl(
+          service.available ? 'läuft' : 'aus',
+          'Preisdienst auf 127.0.0.1:4173',
+          service.available
+        ),
+        kennzahl(
+          service.chrome ? 'gefunden' : 'fehlt',
+          'Chrome für den Abruf',
+          service.chrome
+        ),
+        kennzahl(ALLE_STATIONEN.length, 'Sixt-Stationen hinterlegt'),
+        kennzahl(providerById(PROVIDER).markets.length, 'Länderseiten'),
+        kennzahl(klassen, 'ACRISS-Klassen im Katalog'),
+        kennzahl(gespeichert, 'Abrufe im Speicher')
+      ),
+      el(
+        'p',
+        { class: 'note' },
+        service.available
+          ? service.chrome
+            ? 'Der Abruf öffnet die Länderseiten in einem eigenen Chrome-Fenster außerhalb des sichtbaren Bereichs. Es wird nichts an Dritte gesendet; Ergebnisse verfallen nach einer Stunde.'
+            : 'Ohne Chrome oder Edge bleibt der Link-Modus: das Werkzeug baut die Suchen, abgerufen wird von Hand.'
+          : 'Der Dienst läuft nicht. Ohne ihn gibt es nur die Linkliste — zum Abrufen „Preistool starten.cmd" verwenden.'
+      )
+    ),
+
+    /* --- Was das Werkzeug kann, mit den bewussten Luecken --- */
+    ...WERKZEUG_STAND.map((g) =>
+      el(
+        'div',
+        { class: 'card' },
+        el('h3', {}, g.gruppe),
+        el(
+          'ul',
+          { class: 'standliste' },
+          ...g.punkte.map(([stand, titel, text]) =>
+            el(
+              'li',
+              { class: 'st ' + stand },
+              el(
+                'span',
+                { class: 'stmark' },
+                stand === 'ja' ? '✓' : stand === 'teils' ? '~' : '✕'
+              ),
+              el(
+                'span',
+                {},
+                el('b', {}, titel),
+                el('span', { class: 'sttext' }, text)
+              )
+            )
+          )
+        )
+      )
+    ),
+
+    el('h2', { class: 'statusteil' }, 'Anbieter'),
+
     ...PROVIDERS.map((p) =>
       el(
         'div',
@@ -3116,10 +3789,9 @@ function renderStatus() {
               )
             )
           : null,
-        ...p.notes.map((n) => el('p', { class: 'note' }, n)),
-        p.id === PROVIDER
-          ? el('p', { class: 'note' }, `${ALLE_STATIONEN.length} Stationen hinterlegt.`)
-          : null
+        // Die Stationszahl steht schon oben als Kennzahl — hier waere sie
+        // nur Wiederholung.
+        ...p.notes.map((n) => el('p', { class: 'note' }, n))
       )
     )
   );
@@ -3171,6 +3843,8 @@ function update(teile = {}) {
 }
 
 function init() {
+  starteHintergrund();
+
   document.querySelectorAll('.mode').forEach((b) =>
     b.addEventListener('click', () => {
       state.mode = b.dataset.mode;
@@ -3264,7 +3938,11 @@ function init() {
     location.reload();
   });
 
-  $('#startFuss').textContent = `${ALLE_STATIONEN.length} Sixt-Stationen aus 104 Ländern hinterlegt.`;
+  // Die Laenderzahl aus den Daten holen, nicht hinschreiben — sonst stimmt
+  // sie nach der naechsten Ernte nicht mehr.
+  const laender = new Set(ALLE_STATIONEN.map((s) => s.country).filter(Boolean)).size;
+  $('#startFuss').textContent =
+    `${ALLE_STATIONEN.length} Sixt-Stationen aus ${laender} Ländern hinterlegt.`;
 
   if (state.mode === 'status') {
     renderStatus();

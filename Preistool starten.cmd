@@ -39,7 +39,8 @@ echo.
 
 rem Kurz warten, dann den Browser oeffnen. ping statt timeout, weil timeout
 rem abbricht, sobald die Eingabe umgeleitet ist.
-start "" /b cmd /c "ping -n 3 127.0.0.1 >nul & start "" http://localhost:4173/"
+rem 127.0.0.1 statt localhost: der Dienst haengt nur an der IPv4-Adresse.
+start "" /b cmd /c "ping -n 3 127.0.0.1 >nul & start "" http://127.0.0.1:4173/"
 
 node tools\serve.mjs
 

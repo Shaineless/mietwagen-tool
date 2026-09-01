@@ -1,9 +1,9 @@
 # Mietwagen-Preistool
 
-Öffnet dieselbe Mietwagensuche gleichzeitig auf allen Sixt-Länderseiten.
-Sixt ruft für identische Anfragen je nach Landesdomain unterschiedliche Preise
-auf — das Tool baut die passenden Links, öffnet sie in einem Rutsch und kann die
-Preise über eine Browser-Erweiterung direkt einsammeln.
+Stellt dieselbe Mietwagensuche auf allen Sixt-Länderseiten gegenüber. Sixt ruft
+für identische Anfragen je nach Landesdomain unterschiedliche Preise auf — das
+Werkzeug fragt sie im Hintergrund ab und stellt sie Klasse für Klasse
+nebeneinander, inklusive der Schutzpakete, die den Endpreis wirklich bestimmen.
 
 Neubau des [MWT-Preistools von Sloth & Crazer][mwt] (mietwagen-talk.de, 2020),
 dessen URL-Format zwischenzeitlich nicht mehr funktioniert.
@@ -12,81 +12,90 @@ dessen URL-Format zwischenzeitlich nicht mehr funktioniert.
 
 ## Benutzen
 
-**Nur Links** — eine einzelne Datei, kein Server, kein Installieren:
+Doppelklick auf **`Preistool starten.cmd`**. Das baut die Oberfläche, startet den
+lokalen Dienst und öffnet den Browser.
+
+Von Hand geht es auch:
 
 ```bash
 node build.mjs
-```
-
-Danach `dist/mietwagen-preistool.html` im Browser öffnen, auch per Doppelklick
-aus dem Dateisystem.
-
-**Mit Preisen** — zusätzlich der lokale Dienst und die Erweiterung:
-
-```bash
 node tools/serve.mjs
 ```
 
-Dann <http://localhost:4173/> öffnen. Zur Einrichtung der Erweiterung siehe
-[extension/README.md](extension/README.md).
+Dann <http://127.0.0.1:4173/> öffnen.
 
-## Betriebsarten
+Ohne den Dienst läuft `dist/mietwagen-preistool.html` auch per Doppelklick aus
+dem Dateisystem — dann allerdings nur als Linkliste, ohne Preisabruf. Die
+Oberfläche erkennt beim Start selbst, welche Betriebsart verfügbar ist, und sagt
+es oben an.
 
-| | ohne Dienst | mit Dienst + Erweiterung |
-| --- | --- | --- |
-| Umfang | eine HTML-Datei | Datei + lokaler Node-Dienst + Chrome-Erweiterung |
-| Ergebnis | Linkliste, Tabs selbst durchsehen | günstigster Preis und Klassenzahl direkt im Tool |
-| Datenfluss | nichts verlässt den Browser | nur an `127.0.0.1`, eine Stunde im Arbeitsspeicher |
+## Was es tut
 
-Das Tool erkennt beim Start selbst, welche Betriebsart verfügbar ist.
+- **Preise je Länderseite.** 23 Sixt-Domains, dieselbe Station, derselbe
+  Zeitraum. Der Abruf läuft in einem eigenen Chrome-Fenster außerhalb des
+  sichtbaren Bereichs; man merkt nichts davon.
+- **ACRISS-Codes als Vergleichsschlüssel.** Die Klassennamen unterscheiden sich
+  je Sprache, der Vier-Buchstaben-Code nicht. Dazu Fahrzeugbild und Modellname
+  aus der Angebotskachel.
+- **Schutzpakete mit echtem Endpreis.** Jedes Paket wird in der Kasse angeklickt
+  und die Gesamtsumme abgelesen — der Tagespreis mal Miettage zu rechnen lag bis
+  zu 26 % daneben. Station und Termin sind dort umschaltbar.
+- **Frühbucherrabatt sichtbar.** Er läuft nicht auf allen Länderseiten
+  gleichzeitig; ohne den Hinweis wäre der Vergleich verzerrt.
+- **Mehrere Stationen und Termine.** Datums-Matrix von −5 bis +5 Tagen um den
+  Stichtag, dazu beliebige Mietdauern.
+- **Klassen, die gerade nicht buchbar sind,** bleiben als Zeile stehen und
+  werden markiert, statt aus der Tabelle zu verschwinden.
+- **Abbrechen** mitten im Abruf.
+- **Hintergrund wählbar** — Space, Sakura, Sixt-Orange oder aus. Die Bewegung
+  bleibt oben und endet oberhalb der Preistabelle.
 
-## Die drei Ansichten
+Was bewusst **nicht** drin ist: Währungsumrechnung (verglichen wird nur innerhalb
+derselben Währung), Statusrabatte für Gold/Platin/Diamond (gezeigt werden nur
+abgelesene Preise) und jede Form von Tarnkappen-Technik gegenüber Sixt.
 
-- **Länder-Vergleich** — ein Anbieter, dieselbe Suche auf allen Länderseiten.
-- **Anbieter-Vergleich** — ein Ort und ein Zeitraum, mehrere Vermieter
-  nebeneinander. Weil Vermieter nicht dieselben Stationen haben, läuft der
-  Vergleich über eine Ortsebene: Flughäfen werden über den IATA-Code exakt
-  zugeordnet, alles andere über Ortsname und Stationsart und wird sichtbar als
-  „ungefähr" gekennzeichnet. Anbieter ohne Station am Ort erscheinen als
-  Fehlanzeige statt stillschweigend zu verschwinden.
-- **Was geht gerade?** — ehrlicher Stand je Anbieter: welche Suchparameter
-  nachweislich ausgewertet werden und welche verworfen.
+Der Bildschirm **„Was geht gerade?"** im Werkzeug führt denselben Stand live —
+inklusive der Zahlen dieses Rechners.
 
 ## Was es besser macht als das Original
 
 | Original (2020) | Hier |
 | --- | --- |
 | `uda=01-12-2026` — von Sixt **nicht mehr ausgewertet**, das Datum wurde ignoriert | `uda=20261201`, gegen die Live-Seite geprüft |
-| Fahrzeugklasse und Prepaid als Auswahl — beide Parameter werden heute **verworfen** | entfernt statt vorgetäuscht; dadurch landet jeder Link auf der vollständigen Klassenübersicht mit allen Preisen |
+| Fahrzeugklasse und Prepaid als Auswahl — beide Parameter werden heute **verworfen** | entfernt statt vorgetäuscht; dadurch landet jede Suche auf der vollständigen Klassenübersicht |
 | Stationen als hartkodierte `<option>`-Listen im HTML | Stationsliste als editierbare Textdatei, Build meldet Dubletten |
 | Riesige Dropdowns zum Scrollen | Suchfeld mit Umlaut- und IATA-Erkennung (`munchen`, `FRA`, `heathrow`) |
-| ~500 Stationen, überwiegend DACH | 1779 Stationen aus 104 Ländern — Flughäfen, Bahnhöfe, Stadt-, Hotel-, Hafen- und LKW-Stationen |
-| Eine Station pro Suche | Beliebig viele Stationen gleichzeitig |
-| Ein Termin pro Suche | Datums-Matrix: Abholtag ±3 Tage × mehrere Mietdauern |
-| `window.open()` beim Absenden — von Browsern als Popup blockiert | Ergebnisse erst als Linkliste; „Alle öffnen" gestaffelt, mit Hinweis bei Blockade |
-| Nur Sixt und Avis, fest verdrahtet | Adapter je Anbieter, GET- und POST-Formulare, Status je Anbieter sichtbar |
-| Keine Preise | optional echte Preise im Tool, über die eigene Browsersitzung |
+| ~500 Stationen, überwiegend DACH | 2250 Stationen aus 108 Ländern — Flughäfen, Bahnhöfe, Stadt-, Hotel-, Hafen- und Agenturstationen |
+| Eine Station pro Suche | Beliebig viele Stationen gleichzeitig, oben umschaltbar |
+| Ein Termin pro Suche | Datums-Matrix: Abholtag ±5 Tage × mehrere Mietdauern |
+| `window.open()` beim Absenden — von Browsern als Popup blockiert | Preise landen direkt in der Tabelle; die Linkliste bleibt als Rückfallebene |
+| Keine Preise | Preise, Schutzpakete und Endpreise im Werkzeug |
 | Keine Persistenz | Auswahl bleibt im Browser gespeichert |
 | Zugangsdaten im Formular | entfernt — die Login-Parameter wirken bei Sixt ohnehin nicht mehr |
 
 ## Grenzen
 
-**Kein Direktsprung in die Trefferliste.** Sixts heutige Ergebnisseite
+**Kein Direktsprung in die Trefferliste.** Sixts Ergebnisseite
 (`/betafunnel/#/offerlist`) adressiert Stationen über eine UUID, die sich aus der
-Stations-ID nicht ableiten lässt. Das Tool belegt die Suchmaske der jeweiligen
-Länderseite vor; es bleibt ein Klick auf „Suche" — den die Erweiterung
-übernimmt, wenn sie läuft.
+Stations-ID nicht ableiten lässt. Der gebaute Link belegt die Suchmaske vor; beim
+Preisabruf drückt das Werkzeug den Suchknopf selbst.
 
-**Kein unsichtbarer Hintergrundabruf.** Ein automatisierter Browser wird von
-Sixt abgewiesen („Access denied. Your request has been blocked."). Deshalb läuft
-der Preisabruf über die echte Browsersitzung; die Tabs sind dabei sichtbar.
-Hintergründe und die verworfenen Alternativen: [tools/README-preise.md](tools/README-preise.md).
+**Chrome oder Edge muss installiert sein.** Ohne bleibt der Link-Modus. Warum der
+Abruf ausgerechnet über ein selbst gestartetes Chrome läuft und welche
+Alternativen daran gescheitert sind, steht in
+[tools/README-preise.md](tools/README-preise.md).
+
+**Es bricht, wenn Sixt umbaut.** Dann meldet der Eintrag den Grund, statt still
+falsche Zahlen zu zeigen.
+
+**Preise sind Momentaufnahmen.** Kein Dauer-Tracking, keine Historie. Ergebnisse
+liegen im Arbeitsspeicher und verfallen nach einer Stunde.
 
 ## Stand der Anbieter
 
 | Anbieter | Status |
 | --- | --- |
-| Sixt | **fertig** — Deep-Links gegen die Live-Seite verifiziert, 1779 Stationen in 104 Ländern, 23 Länderseiten, Preisauslesung |
+| Sixt | **fertig** — Preise, Schutzpakete, 2250 Stationen in 108 Ländern, 23 Länderseiten |
 | Avis | offen — POST-Formular an `secure.avis.de`, Feldnamen bekannt, Datumsformat noch nicht |
 | Europcar, Hertz, Enterprise, Carvia, Arndt | offen — Suchmasken sind JS-gesteuert, das Link-Format muss je Anbieter aus einer echten Suche abgeleitet werden |
 
@@ -99,10 +108,12 @@ POST-Formulare ausgelegt.
 src/
   index.html            Grundgerüst
   styles.css            Darstellung, hell und dunkel
-  app.js                Zustand, Suche, Kombinationslogik, Oberfläche
+  app.js                Zustand, Suche, Tabellen, Oberfläche
+  hintergrund.js        bewegter Hintergrund, Themen und Auswahl
   providers.js          Anbieter-Adapter (URL-Bau, Status, Farbthemen)
-  places.js             Ortsebene für den Anbieter-Vergleich
+  offer-classes.js      ACRISS-Decoder, inklusive Sixts eigener Buchstaben
   offer-parse.js        Auswertung der Angebotskacheln — einzige Quelle
+  places.js             Ortsebene, vorbereitet für den Anbietervergleich
   data/
     stations.sixt.txt   Stationsliste, von Hand erweiterbar
   stations.js           erzeugt vom Build — nicht bearbeiten
@@ -112,12 +123,17 @@ extension/
   content.js            erzeugt vom Build — nicht bearbeiten
   background.js         Weiterleitung an 127.0.0.1
 tools/
-  serve.mjs             lokaler Dienst: Oberfläche + Preiseingang
-  browser.mjs           Playwright-Sitzungen (Proxy je Länderseite)
-  scrape/sixt.mjs       Preisabruf per Playwright — von Sixt blockiert
+  serve.mjs             lokaler Dienst: Oberfläche, Warteschlange, API
+  browser.mjs           Chrome starten und verbinden, Cookie-Banner
+  katalog.mjs           merkt sich gesehene ACRISS-Klassen je Station
+  scrape/sixt.mjs       Preisliste auslesen
+  scrape/sixt-schutz.mjs Schutzpakete in der Kasse durchklicken
+  try-quote.mjs         Handprobe: eine Preisliste auslesen
+  try-schutz.mjs        Handprobe: die Schutzpakete einer Klasse
   harvest-sixt.md       Anleitung: Stationen nachladen
   README-preise.md      warum der Preisabruf so läuft, wie er läuft
 build.mjs               bündelt alles und verteilt den Parser
+Preistool starten.cmd   bauen, Dienst starten, Browser öffnen
 ```
 
 ## Stationsliste erweitern
@@ -139,6 +155,10 @@ Die Stations-IDs stammen aus den öffentlichen, für Suchmaschinen freigegebenen
 Stationsseiten auf sixt.de, wo sie im Seitenquelltext stehen. Es wurde keine
 interne API angezapft.
 
-Die Farbthemen sind an die Hausfarben der Vermieter angelehnt und dienen der
-Orientierung beim Umschalten. Keine Logos, keine Nachbildung der Originalseiten;
-dies ist kein Angebot der genannten Unternehmen.
+Verbesserungsvorschläge aus dem Werkzeug landen in `data/verbesserungen.jsonl`
+auf diesem Rechner und werden nirgendwohin gesendet.
+
+Fahrzeugbilder und Preise stammen von Sixt. Die Farbthemen sind an die
+Hausfarben der Vermieter angelehnt und dienen der Orientierung. Keine Logos,
+keine Nachbildung der Originalseiten; dies ist kein Angebot der genannten
+Unternehmen.

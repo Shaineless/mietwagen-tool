@@ -83,7 +83,8 @@ const sixt = {
       'heute verworfen — geprüft: die Trefferliste startet mit leerem Filter.',
     'Ein Direktsprung in die Trefferliste ist nicht möglich; Sixt adressiert ' +
       'Stationen dort über eine UUID, die sich aus der Stations-ID nicht ' +
-      'ableiten lässt. Das Tool belegt die Suchmaske vor.',
+      'ableiten lässt. Der Link belegt daher die Suchmaske vor — beim ' +
+      'Preisabruf drückt das Werkzeug den Suchknopf selbst.',
   ],
 
   build(q, market, station, returnStation) {
@@ -156,6 +157,58 @@ const arndt = planned(
   'https://www.arndt-autovermietung.de/',
   'Noch nicht untersucht.'
 );
+
+/* ============================================================ Stand */
+
+/**
+ * Was das Werkzeug heute kann — und was bewusst nicht.
+ *
+ * Diese Liste steht hier und nicht in der Oberflaeche, weil sie derselben
+ * Regel folgt wie `capabilities` oben: nichts wird als koennend dargestellt,
+ * was nicht geprueft ist. `stand` ist 'ja', 'nein' oder 'teils'; bei 'nein'
+ * gehoert in den Text, ob es fehlt oder absichtlich fehlt.
+ */
+export const WERKZEUG_STAND = [
+  {
+    gruppe: 'Preise',
+    punkte: [
+      ['ja', 'Preise je Länderseite auslesen',
+        'Läuft in einem eigenen, unsichtbaren Chrome-Fenster auf diesem Rechner. Zwei Abfragen gleichzeitig.'],
+      ['ja', 'Schutzpakete mit echtem Endpreis',
+        'Jedes Paket wird in der Kasse angeklickt und die Gesamtsumme abgelesen. Der Tagespreis mal Tage zu rechnen ergab bis zu 26 % daneben.'],
+      ['ja', 'Frühbucherrabatt erkennen',
+        'Wird je Länderseite angezeigt — er läuft nicht überall gleichzeitig, und das verzerrt den Vergleich.'],
+      ['nein', 'Währungen umrechnen',
+        'Absichtlich nicht: verglichen wird nur innerhalb derselben Währung. Ein Kurs von heute wäre eine erfundene Genauigkeit.'],
+      ['nein', 'Statusrabatt (Gold, Platin, Diamond)',
+        'Wieder entfernt — gezeigt werden nur Preise, die tatsächlich von der Seite abgelesen wurden.'],
+    ],
+  },
+  {
+    gruppe: 'Vergleich',
+    punkte: [
+      ['ja', 'ACRISS-Code als Schlüssel',
+        'Die Klassen heißen auf jeder Länderseite anders; der Vier-Buchstaben-Code ist sprachunabhängig. Sixt benutzt dabei eigene Buchstaben (S, L, P), die der Decoder mitträgt.'],
+      ['ja', 'Fahrzeugbilder und Modellnamen', 'Direkt aus der Angebotskachel.'],
+      ['ja', 'Mehrere Stationen und Termine',
+        'Datums-Matrix: Abholtag −5 bis +5 Tage, dazu mehrere Mietdauern. Station und Termin sind oben umschaltbar.'],
+      ['ja', 'Klassen merken, die gerade nicht buchbar sind',
+        'Einmal gesehene Klassen bleiben als Zeile stehen und werden als „nicht buchbar" markiert, statt aus der Tabelle zu verschwinden.'],
+    ],
+  },
+  {
+    gruppe: 'Betrieb',
+    punkte: [
+      ['ja', 'Abbrechen', 'Die Warteschlange lässt sich mitten im Abruf anhalten.'],
+      ['ja', 'Alles bleibt auf diesem Rechner',
+        'Der Dienst hört nur auf 127.0.0.1. Ergebnisse liegen im Arbeitsspeicher und verfallen nach einer Stunde.'],
+      ['teils', 'Proxy je Länderseite',
+        'Im Unterbau vorhanden, aber ohne Bedienelement — bislang war keiner nötig.'],
+      ['nein', 'Andere Vermieter',
+        'Nur Sixt ist angebunden. Der Rest steht unten mit dem Grund.'],
+    ],
+  },
+];
 
 export const PROVIDERS = [sixt, avis, europcar, hertz, enterprise, carvia, arndt];
 

@@ -1,19 +1,23 @@
 # Preisleser — Browser-Erweiterung
 
-Liest die Preise aus den Trefferlisten, die das Preistool ohnehin öffnet, und
-reicht sie an den lokal laufenden Dienst weiter. Dadurch stehen die Preise
-direkt im Tool statt in 20 Tabs verteilt.
+Liest die Preise aus Trefferlisten, die du selbst öffnest, und reicht sie an den
+lokal laufenden Dienst weiter.
 
-## Warum eine Erweiterung und kein Scraper
+## Rückfallebene, nicht der Normalweg
 
-Ein automatisierter Browser (Playwright) kommt bei Sixt nicht durch — die Seite
-antwortet mit *„Access denied. Your request has been blocked."* Der Weg über die
-Erweiterung umgeht das nicht, sondern arbeitet damit: die Seiten laufen in
-**deiner** echten Browsersitzung, mit deinem Profil, in Tabs, die du selbst
-öffnest. Die Erweiterung liest nur ab, was ohnehin auf dem Bildschirm steht.
+**Für den Alltag wird sie nicht gebraucht.** Der Preisabruf läuft heute über ein
+eigenes, unsichtbares Chrome-Fenster, das der Dienst selbst startet und per CDP
+steuert — ohne Erweiterung, ohne sichtbare Tabs. Warum ausgerechnet so und
+welche Wege daran gescheitert sind, steht in
+[../tools/README-preise.md](../tools/README-preise.md).
 
-Der Preis dafür: die Tabs sind sichtbar. Vollständig unsichtbar im Hintergrund
-geht es nicht — genau das verhindert der Bot-Schutz.
+Diese Erweiterung war der ursprüngliche Weg, bevor sich der CDP-Ansatz als
+tragfähig erwies. Sie bleibt erhalten für den Fall, dass Chrome den Debug-Port
+sperrt oder auf dem Rechner gar kein Chrome installiert ist: dann laufen die
+Seiten in **deiner** echten Sitzung, in Tabs, die du selbst öffnest, und die
+Erweiterung liest nur ab, was ohnehin auf dem Bildschirm steht.
+
+Der Preis dafür: die Tabs sind sichtbar.
 
 ## Installieren
 
@@ -28,12 +32,11 @@ Klick auf das Neuladen-Symbol der Erweiterung.
 ## Benutzen
 
 1. Dienst starten: `node tools/serve.mjs`
-2. <http://localhost:4173/> öffnen — oben im Ergebnisbereich muss
-   *„Preisdienst verbunden"* stehen.
-3. Suche zusammenstellen, **Alle öffnen** klicken.
-4. Die Tabs laden, suchen selbständig und melden ihre Preise zurück. Im Tool
-   füllen sich die Einträge nach und nach: günstigster Gesamtpreis und Anzahl
-   der gefundenen Klassen.
+2. <http://127.0.0.1:4173/> öffnen — oben im Ergebnisbereich muss der
+   Preisdienst als laufend gemeldet sein.
+3. Suche zusammenstellen, **Im Browser öffnen** klicken.
+4. Die Tabs laden, suchen selbständig und melden ihre Preise zurück. Die
+   Tabelle füllt sich nach und nach.
 
 Die Tabs können danach geschlossen werden; die Preise bleiben im Tool stehen.
 
@@ -64,7 +67,7 @@ und Node-Worker nie auseinanderlaufen.
 
 ## Wenn nichts ankommt
 
-- Steht im Tool *„Preisdienst verbunden"*? Sonst läuft `tools/serve.mjs` nicht.
+- Meldet das Tool den Preisdienst als laufend? Sonst läuft `tools/serve.mjs` nicht.
 - Läuft der Dienst auf einem anderen Port als 4173 oder 4174? Dann in
   `chrome://extensions` bei der Erweiterung unter *Service Worker* die Konsole
   öffnen und `chrome.storage.local.set({mwtPort: <port>})` ausführen.

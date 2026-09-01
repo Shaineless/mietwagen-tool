@@ -3,13 +3,14 @@
 <title>Mietwagen-Preistool</title>
 <style>/*STYLES*/</style>
 
-<!-- Farbschleier im Hintergrund. Liegt hinter allem, bewegt sich sehr langsam
-     und endet weit oberhalb der Tabelle — unter Zahlen, die man liest, darf
-     nichts wandern. -->
-<div class="schleier" aria-hidden="true">
+<!-- Hintergrund. Liegt hinter allem und wird nach unten ausgeblendet — unter
+     Zahlen, die man liest, darf nichts wandern. Die Wolken sind der ruhende
+     Farbgrund, die Leinwand darüber trägt die Bewegung. -->
+<div class="schleier" aria-hidden="true" data-thema="space">
   <span class="wolke w1"></span>
   <span class="wolke w2"></span>
   <span class="wolke w3"></span>
+  <canvas id="schleierLeinwand"></canvas>
 </div>
 
 <!-- ===================================================== Startbildschirm -->
@@ -44,6 +45,11 @@
     </button>
   </div>
 
+  <div class="hgzeile">
+    <span class="hglabel">Hintergrund</span>
+    <span class="hgwahl" data-hintergrundwahl></span>
+  </div>
+
   <p class="fuss" id="startFuss"></p>
 </section>
 
@@ -51,7 +57,7 @@
 <section id="statusScreen" class="screen" hidden>
   <div class="bar">
     <button type="button" class="back">← Zurück</button>
-    <h1>Stand der Anbieter</h1>
+    <h1>Was geht gerade</h1>
   </div>
   <div id="statusBody"></div>
 </section>
@@ -66,9 +72,10 @@
       <div class="kurz">
         <b id="kurzStation">—</b>
         <span id="kurzZeit">—</span>
-        <button type="button" data-panel="station" id="knopfStation">Station</button>
+        <button type="button" data-panel="station">Station</button>
         <button type="button" data-panel="zeit">Zeitraum</button>
         <button type="button" data-panel="land" id="knopfLand">Länderseiten</button>
+        <span class="hgwahl" data-hintergrundwahl></span>
       </div>
       <button type="button" id="getPrices" class="los" hidden>Preise holen</button>
     </div>
@@ -111,7 +118,7 @@
    </div>
 
    <div class="panel" id="panelLand" hidden>
-    <section class="card" id="marketCard">
+    <section class="card">
       <h2>Länderseiten</h2>
       <div class="btnrow">
         <button type="button" id="marketsDACH" class="ghost">DACH</button>
@@ -123,7 +130,7 @@
    </div>
 
    <div class="panel" id="panelStation" hidden>
-    <section class="card" id="stationCard">
+    <section class="card">
       <h2>Stationen</h2>
       <input type="search" id="stationSearch" placeholder="FRA · Hauptbahnhof · München · Mallorca …" autocomplete="off">
       <div class="suchzeile">
