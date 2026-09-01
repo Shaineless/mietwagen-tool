@@ -12,12 +12,27 @@
  */
 
 import { createServer } from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
+import { readFile, writeFile, stat } from 'node:fs/promises';
 import { join, extname, normalize, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { randomBytes } from 'node:crypto';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const port = Number(process.argv[2]) || 4173;
+
+/**
+ * Einmal-Token fuer den Stationsimport.
+ *
+ * Der Dienst nimmt Stationslisten entgegen, damit ein Crawl-Ergebnis direkt
+ * aus der Browser-Konsole in die Datei wandern kann, ohne Umweg ueber
+ * Zwischenablage und Editor. Weil dabei eine Datei geschrieben wird und jede
+ * beliebige offene Seite localhost ansprechen koennte, braucht der Aufruf ein
+ * Token, das nur hier im Terminal steht.
+ */
+const IMPORT_TOKEN = randomBytes(9).toString('hex');
+
+/** Nur diese Dateien darf ein Import ueberschreiben. */
+const IMPORTABLE = new Set(['stations.sixt.txt']);
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -53,6 +68,9 @@ function json(res, status, body) {
     // Die Erweiterung meldet sich aus dem Kontext der Anbieterseite.
     'access-control-allow-origin': '*',
     'access-control-allow-headers': 'content-type',
+    // Chrome behandelt Zugriffe von einer oeffentlichen Seite auf localhost
+    // als "Private Network Access" und verlangt diese ausdrueckliche Freigabe.
+    'access-control-allow-private-network': 'true',
   });
   res.end(payload);
 }
@@ -79,6 +97,8 @@ createServer(async (req, res) => {
       'access-control-allow-origin': '*',
       'access-control-allow-methods': 'GET,POST,OPTIONS',
       'access-control-allow-headers': 'content-type',
+      'access-control-allow-private-network': 'true',
+      'access-control-max-age': '600',
     });
     return res.end();
   }
@@ -124,6 +144,32 @@ createServer(async (req, res) => {
     return json(res, 200, { ok: true, results: out });
   }
 
+  // Stationsliste aus einem Crawl uebernehmen.
+  if (path === '/api/stations-import' && req.method === 'POST') {
+    try {
+      const body = JSON.parse(await readBody(req, 5_000_000));
+      if (body.token !== IMPORT_TOKEN) return json(res, 403, { ok: false, error: 'Token falsch' });
+      if (!IMPORTABLE.has(body.file)) return json(res, 400, { ok: false, error: 'Datei nicht erlaubt' });
+
+      const rows = Array.isArray(body.rows) ? body.rows : [];
+      const valid = rows.filter((r) => /^\d+\|[A-Z?]{2}\|[A-Z]{0,3}\|.+/.test(r));
+      if (!valid.length) return json(res, 400, { ok: false, error: 'keine gültigen Zeilen' });
+
+      const head = [
+        '# SIXT-Stationen — Format: id|land|iata|name',
+        '# Quelle: oeffentliche Stationsseiten auf sixt.de (/mietwagen/<land>/<stadt>/<station>/)',
+        `# Geerntet: ${new Date().toISOString().slice(0, 10)} · Anleitung: tools/harvest-sixt.md`,
+        '# Zeilen mit # werden ignoriert. Eigene Stationen einfach unten anhaengen.',
+      ].join('\n');
+
+      await writeFile(join(root, 'src', 'data', body.file), head + '\n' + valid.join('\n') + '\n');
+      console.log(`  ← Stationsimport: ${valid.length} Zeilen in src/data/${body.file}`);
+      return json(res, 200, { ok: true, written: valid.length, skipped: rows.length - valid.length });
+    } catch (e) {
+      return json(res, 400, { ok: false, error: String(e.message).slice(0, 200) });
+    }
+  }
+
   if (path === '/api/results/clear' && req.method === 'POST') {
     results.clear();
     return json(res, 200, { ok: true });
@@ -154,4 +200,5 @@ createServer(async (req, res) => {
 }).listen(port, '127.0.0.1', () => {
   console.log(`Mietwagen-Preistool:  http://localhost:${port}/`);
   console.log(`Preiseingang:         POST /api/offers`);
+  console.log(`Import-Token:         ${IMPORT_TOKEN}`);
 });
