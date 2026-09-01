@@ -12,10 +12,12 @@ dessen URL-Format zwischenzeitlich nicht mehr funktioniert.
 
 ## Benutzen
 
-Doppelklick auf **`Preistool starten.cmd`**. Das baut die Oberfläche, startet den
-lokalen Dienst und öffnet den Browser.
+**Als Programm:** `dist/Mietwagen-Preistool.exe` doppelklicken. Eine einzelne
+Datei, keine Installation, kein Node nötig — sie startet den Dienst und öffnet
+den Browser. Alles, was sie schreibt, landet im Ordner `Preistool-Daten` neben
+der EXE.
 
-Von Hand geht es auch:
+**Aus dem Quellbaum:** Doppelklick auf `Preistool starten.cmd`, oder von Hand:
 
 ```bash
 node build.mjs
@@ -28,6 +30,28 @@ Ohne den Dienst läuft `dist/mietwagen-preistool.html` auch per Doppelklick aus
 dem Dateisystem — dann allerdings nur als Linkliste, ohne Preisabruf. Die
 Oberfläche erkennt beim Start selbst, welche Betriebsart verfügbar ist, und sagt
 es oben an.
+
+### Die EXE selbst bauen
+
+```bash
+npm install
+npm run exe
+```
+
+Vier Schritte: Oberfläche bauen, den Dienst samt Playwright mit esbuild in eine
+CommonJS-Datei bündeln, daraus einen SEA-Vorrat erzeugen und den in eine Kopie
+von `node.exe` einspritzen. Ergebnis: ~96 MB, davon ist das meiste die
+Node-Laufzeit.
+
+Ein Browser kommt **nicht** mit. Der Abruf benutzt das Chrome oder Edge, das
+ohnehin installiert ist — ein mitgeliefertes Chromium wäre nicht nur 150 MB
+grösser, es würde von Sixt auch abgewiesen. Genau deshalb geht der Abruf über
+den installierten Browser.
+
+Zwei Dinge, die beim Weitergeben zu erwarten sind: Windows SmartScreen warnt
+beim ersten Start, weil die Datei nicht signiert ist (eine Code-Signatur kostet
+Geld und läuft auf einen Namen), und manche Virenscanner sind bei frisch
+gebauten SEA-Dateien misstrauisch.
 
 ## Was es tut
 
@@ -124,6 +148,7 @@ extension/
   background.js         Weiterleitung an 127.0.0.1
 tools/
   serve.mjs             lokaler Dienst: Oberfläche, Warteschlange, API
+  pfade.mjs             wo gelesen und geschrieben wird — Quellbaum oder EXE
   browser.mjs           Chrome starten und verbinden, Cookie-Banner
   katalog.mjs           merkt sich gesehene ACRISS-Klassen je Station
   scrape/sixt.mjs       Preisliste auslesen
@@ -133,6 +158,7 @@ tools/
   harvest-sixt.md       Anleitung: Stationen nachladen
   README-preise.md      warum der Preisabruf so läuft, wie er läuft
 build.mjs               bündelt alles und verteilt den Parser
+build-exe.mjs           baut daraus die einzelne Windows-EXE
 Preistool starten.cmd   bauen, Dienst starten, Browser öffnen
 ```
 

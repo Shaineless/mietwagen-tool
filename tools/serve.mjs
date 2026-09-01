@@ -12,17 +12,21 @@
  */
 
 import { createServer } from 'node:http';
-import { readFile, writeFile, appendFile, mkdir, stat } from 'node:fs/promises';
-import { join, extname, normalize, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { writeFile, appendFile, mkdir, readFile } from 'node:fs/promises';
+import { join, extname, normalize } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { quoteSixt } from './scrape/sixt.mjs';
 import { quoteSchutz } from './scrape/sixt-schutz.mjs';
 import { findBrowser, closeBrowser } from './browser.mjs';
 import { merkeAngebote, bekannteKlassen, katalogStand } from './katalog.mjs';
+import { istExe, quellWurzel, datenOrdner, leseVorrat } from './pfade.mjs';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const port = Number(process.argv[2]) || 4173;
+const argumente = process.argv.slice(2);
+// Den Port aus dem ersten Zahlenargument holen, nicht aus argv[2] — sonst
+// verschiebt ein vorangestellter Schalter ihn.
+const port = Number(argumente.find((a) => /^\d+$/.test(a))) || 4173;
+/** Kein Browserfenster aufmachen — fuer Pruefläufe und stille Starts. */
+const stillerStart = argumente.includes('--kein-browser');
 
 /**
  * Einmal-Token fuer den Stationsimport.
@@ -280,6 +284,10 @@ createServer(async (req, res) => {
   // Stationsliste aus einem Crawl uebernehmen.
   if (path === '/api/stations-import' && req.method === 'POST') {
     try {
+      // Der Import schreibt in den Quellbaum und braucht danach einen neuen
+      // Build. In der EXE gibt es beides nicht.
+      if (istExe) return json(res, 400, { ok: false, error: 'Nur aus dem Quellbaum möglich' });
+
       const body = JSON.parse(await readBody(req, 5_000_000));
       if (body.token !== IMPORT_TOKEN) return json(res, 403, { ok: false, error: 'Token falsch' });
       if (!IMPORTABLE.has(body.file)) return json(res, 400, { ok: false, error: 'Datei nicht erlaubt' });
@@ -295,7 +303,7 @@ createServer(async (req, res) => {
         '# Zeilen mit # werden ignoriert. Eigene Stationen einfach unten anhaengen.',
       ].join('\n');
 
-      await writeFile(join(root, 'src', 'data', body.file), head + '\n' + valid.join('\n') + '\n');
+      await writeFile(join(quellWurzel, 'src', 'data', body.file), head + '\n' + valid.join('\n') + '\n');
       console.log(`  ← Stationsimport: ${valid.length} Zeilen in src/data/${body.file}`);
       return json(res, 200, { ok: true, written: valid.length, skipped: rows.length - valid.length });
     } catch (e) {
@@ -335,9 +343,8 @@ createServer(async (req, res) => {
           kontext: typeof body.kontext === 'object' ? body.kontext : null,
         }) + '\n';
 
-      const ziel = join(root, 'data', 'verbesserungen.jsonl');
-      await mkdir(dirname(ziel), { recursive: true });
-      await appendFile(ziel, zeile, 'utf8');
+      await mkdir(datenOrdner, { recursive: true });
+      await appendFile(join(datenOrdner, 'verbesserungen.jsonl'), zeile, 'utf8');
       console.log(`  ✎ Vorschlag gespeichert (${text.length} Zeichen)`);
       return json(res, 200, { ok: true });
     } catch (e) {
@@ -348,7 +355,7 @@ createServer(async (req, res) => {
   // Gesammelte Vorschlaege ansehen.
   if (path === '/api/feedback/list') {
     try {
-      const roh = await readFile(join(root, 'data', 'verbesserungen.jsonl'), 'utf8');
+      const roh = await readFile(join(datenOrdner, 'verbesserungen.jsonl'), 'utf8');
       const eintraege = roh
         .split('\n')
         .filter(Boolean)
@@ -386,36 +393,80 @@ createServer(async (req, res) => {
 
   /* ---------------------------------------------------- Statische Dateien */
 
-  let file = path === '/' ? '/dist/mietwagen-preistool.html' : path;
-  const abs = join(root, normalize(file).replace(/^(\.\.[/\\])+/, ''));
-  if (!abs.startsWith(root)) {
-    res.writeHead(403).end('verboten');
+  const file = path === '/' ? '/dist/mietwagen-preistool.html' : path;
+  // Erst normalisieren, dann fuehrende Schraegstriche und Aufstiege abtragen —
+  // und zwar so lange, bis nichts mehr uebrig ist. Nur einmal zu ersetzen
+  // laesst "/../x" stehen. Die eigentliche Sperre sitzt zusaetzlich in
+  // leseVorrat; hier geht es darum, gar nicht erst danach zu fragen.
+  let name = normalize(file).replaceAll('\\', '/');
+  for (let vorher = null; vorher !== name; ) {
+    vorher = name;
+    name = name.replace(/^\/+/, '').replace(/^(\.\.?\/)+/, '');
+  }
+
+  // Ausgeliefert wird nur, was in dist/ liegt — die gebaute Oberflaeche.
+  // Alles andere braucht die Seite nicht: sie ist eine einzige Datei, die
+  // Daten kommen ueber /api/. Der Dienst hoert zwar nur auf 127.0.0.1, aber
+  // jede beliebige offene Seite im Browser kann ihn ansprechen, und dann muss
+  // sie nicht den Quellbaum durchblaettern koennen.
+  if (!name.startsWith('dist/')) {
+    res.writeHead(403, { 'content-type': 'text/plain; charset=utf-8' });
+    res.end('nur dist/ wird ausgeliefert: ' + path);
     return;
   }
 
-  try {
-    const info = await stat(abs);
-    if (!info.isFile()) throw new Error('kein File');
-    const body = await readFile(abs);
-    res.writeHead(200, {
-      'content-type': TYPES[extname(abs)] || 'application/octet-stream',
-      'cache-control': 'no-store',
-    });
-    res.end(body);
-  } catch {
+  const body = await leseVorrat(name);
+  if (!body) {
     res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
     res.end('nicht gefunden: ' + path);
+    return;
   }
+
+  res.writeHead(200, {
+    'content-type': TYPES[extname(name)] || 'application/octet-stream',
+    'cache-control': 'no-store',
+  });
+  res.end(body);
 }).listen(port, '127.0.0.1', () => {
   const chrome = findBrowser();
   // 127.0.0.1 statt localhost: der Dienst haengt nur an der IPv4-Adresse,
   // waehrend "localhost" unter Windows zuerst als ::1 aufgeloest wird.
-  console.log(`Mietwagen-Preistool:  http://127.0.0.1:${port}/`);
+  const adresse = `http://127.0.0.1:${port}/`;
+  console.log(`Mietwagen-Preistool:  ${adresse}`);
   console.log(
     `Preisabruf:           ${chrome ? chrome : 'kein Chrome gefunden — nur Link-Modus'}`
   );
-  console.log(`Import-Token:         ${IMPORT_TOKEN}`);
+  if (istExe) {
+    console.log(`Daten:                ${datenOrdner}`);
+    console.log('\nZum Beenden dieses Fenster schliessen.');
+    if (!stillerStart) oeffneImBrowser(adresse);
+  } else {
+    console.log(`Import-Token:         ${IMPORT_TOKEN}`);
+  }
 });
+
+/**
+ * Den Standardbrowser auf die Oberflaeche schicken.
+ *
+ * Nur in der EXE: aus dem Quellbaum heraus macht das der Starter, und beim
+ * Entwickeln will man nicht bei jedem Neustart ein neues Fenster.
+ */
+async function oeffneImBrowser(adresse) {
+  const { spawn } = await import('node:child_process');
+  try {
+    if (process.platform === 'win32') {
+      // Das leere Argument ist der Fenstertitel, den start erwartet — ohne ihn
+      // wuerde die Adresse als Titel gelesen und nichts geoeffnet.
+      spawn('cmd', ['/c', 'start', '', adresse], { detached: true, stdio: 'ignore' }).unref();
+    } else if (process.platform === 'darwin') {
+      spawn('open', [adresse], { detached: true, stdio: 'ignore' }).unref();
+    } else {
+      spawn('xdg-open', [adresse], { detached: true, stdio: 'ignore' }).unref();
+    }
+  } catch {
+    console.log('Browser liess sich nicht oeffnen — Adresse von Hand aufrufen.');
+  }
+}
 
 // Chrome nicht als Waise zuruecklassen, wenn der Dienst endet.
 for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) {

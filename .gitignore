@@ -1,3 +1,10 @@
-﻿node_modules/
+node_modules/
 tools/_probe*
 data/verbesserungen.jsonl
+
+# Zwischenstufen und Ergebnis des EXE-Baus. Die EXE ist knapp 100 MB, weil
+# die Node-Laufzeit darin steckt — sie gehoert nicht in die Versionsverwaltung,
+# sondern zu den Veroeffentlichungen.
+build/
+dist/*.exe
+dist/Preistool-Daten/

@@ -18,11 +18,10 @@
  */
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { datenOrdner } from './pfade.mjs';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const DATEI = join(root, 'data', 'acriss-katalog.json');
+const DATEI = join(datenOrdner, 'acriss-katalog.json');
 
 let katalog = null;
 let schreibTimer = null;
@@ -50,7 +49,7 @@ function sichereBald() {
   clearTimeout(schreibTimer);
   schreibTimer = setTimeout(async () => {
     try {
-      await mkdir(dirname(DATEI), { recursive: true });
+      await mkdir(datenOrdner, { recursive: true });
       await writeFile(DATEI, JSON.stringify(katalog, null, 1));
     } catch {
       /* nicht schreibbar — der Katalog ist Beiwerk, kein Grund zu scheitern */
