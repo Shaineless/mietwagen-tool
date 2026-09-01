@@ -121,7 +121,11 @@ async function tick() {
         host: job.host,
         url: res.url || null,
         acriss: job.acriss,
-        verfuegbar: res.verfuegbar !== false,
+        // Nur als verfuegbar merken, wenn der Abruf auch geklappt hat.
+        // Vorher galt ein gescheiterter Abruf als verfuegbar, weil
+        // `undefined !== false` wahr ist — die Oberflaeche zeigte dann ein
+        // nichtssagendes "—" statt der Fehlermeldung.
+        verfuegbar: res.ok === true && res.verfuegbar !== false,
         pakete: res.pakete || [],
         error: res.error || null,
         note: res.note || null,

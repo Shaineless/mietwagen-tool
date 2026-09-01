@@ -80,7 +80,8 @@ export function parseSchutzBlock(zeilen, waehrung) {
     .map((l) => mwtParseAmount(l))
     .filter((v) => v != null);
 
-  const inklusive = /inklusive|included|incluido|incluso/i.test(text) && !tagesPreise.length;
+  const inklusive =
+    /inklusive|included|incluido|incluso|inclus|inbegrepen/i.test(text) && !tagesPreise.length;
 
   const rabatt = (text.match(/-\s?(\d{1,2})\s?%/) || [])[1];
 
@@ -138,22 +139,40 @@ export async function quoteSchutz(q) {
 
   return withPage({ host: q.host, sichtbar: q.sichtbar }, async (page) => {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
-    await dismissConsent(page);
 
     // waitForFunction(fn, arg, options) — Optionen an dritter Stelle.
-    const bereit = await page
-      .waitForFunction(
-        () => {
-          const i = document.querySelector('input[name="pickupLocation"]');
-          return i && i.value.trim().length > 0;
-        },
-        undefined,
-        { timeout: 40000, polling: 100 }
-      )
-      .then(() => true)
-      .catch(() => false);
+    const stationDa = () =>
+      page
+        .waitForFunction(
+          () => {
+            const i = document.querySelector('input[name="pickupLocation"]');
+            return i && i.value.trim().length > 0;
+          },
+          undefined,
+          { timeout: 40000, polling: 100 }
+        )
+        .then(() => true)
+        .catch(() => false);
 
-    if (!bereit) return { ok: false, error: 'Station wurde nicht übernommen', ms: Date.now() - started };
+    // Dieselbe Behandlung wie beim Preisabruf: Banner-Pruefung parallel zum
+    // Warten auf die Station, und ein Neuladeversuch. Laufen mehrere Abrufe
+    // gleichzeitig, braucht die Seite deutlich laenger — genau daran sind
+    // hier sixt.fr und sixt.es gescheitert.
+    let [bereit] = await Promise.all([stationDa(), dismissConsent(page, { timeout: 2500 })]);
+    if (!bereit) {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await dismissConsent(page, { timeout: 2500 });
+      bereit = await stationDa();
+    }
+
+    if (!bereit) {
+      return {
+        ok: false,
+        verfuegbar: false,
+        error: 'Station wurde nicht übernommen',
+        ms: Date.now() - started,
+      };
+    }
 
     await page.waitForTimeout(250);
 

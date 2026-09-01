@@ -914,13 +914,35 @@ function renderSchutz() {
 
   function kanonisiere(pakete) {
     const zu = {};
+    const rest = [...(pakete || [])];
+
+    // "Ohne Schutz" ist das Paket mit dem niedrigsten Gesamtpreis — das kostet
+    // per Definition nichts extra. Ueber den Text zu gehen war zu wackelig:
+    // die franzoesische Seite schreibt "Inclus", was in keiner meiner
+    // Wortlisten stand, und das Paket landete dadurch bei den SB-freien.
+    let ohneIdx = -1;
+    let min = Infinity;
+    rest.forEach((p, i) => {
+      const g = p.gesamt ?? Infinity;
+      if (g < min) {
+        min = g;
+        ohneIdx = i;
+      }
+    });
+    if (ohneIdx < 0) ohneIdx = rest.findIndex((p) => p.inklusive || p.proTag === 0);
+    if (ohneIdx >= 0) {
+      zu.ohne = rest[ohneIdx];
+      rest.splice(ohneIdx, 1);
+    }
+
     const frei = [];
-    for (const p of pakete || []) {
-      if (p.inklusive || p.proTag === 0) zu.ohne = p;
-      else if (p.sbBetrag != null && p.sbBetrag > 0) zu.sb = p;
+    for (const p of rest) {
+      if (p.sbBetrag != null && p.sbBetrag > 0) zu.sb = p;
       else frei.push(p);
     }
-    frei.sort((a, b) => (a.proTag ?? Infinity) - (b.proTag ?? Infinity));
+    frei.sort(
+      (a, b) => (a.gesamt ?? a.proTag ?? Infinity) - (b.gesamt ?? b.proTag ?? Infinity)
+    );
     if (frei[0]) zu.frei1 = frei[0];
     if (frei[1]) zu.frei2 = frei[1];
     return zu;
@@ -1016,7 +1038,15 @@ function renderSchutz() {
       ...jobs.map((j) => {
         const r = schutz.get(j.key);
         const p = proMarkt.get(j.key)?.[k];
-        if (!p) return el('td', { class: 'leer' }, r ? '—' : '');
+        if (!p) {
+          // Unterscheiden: gescheiterter Abruf, dort nicht buchbar, oder
+          // dieses eine Paket fehlt. Ein blosses "—" verschweigt den Grund.
+          if (!r) return el('td', { class: 'leer' }, '');
+          if (r.error) return el('td', { class: 'leer' }, el('span', { class: 'zellfehler' }, r.error));
+          if (r.verfuegbar === false)
+            return el('td', { class: 'leer' }, el('span', { class: 'zellfehler' }, 'nicht buchbar'));
+          return el('td', { class: 'leer' }, '—');
+        }
 
         // Der Gesamtpreis ist abgelesen, nicht gerechnet. Der je Paket
         // angezeigte Tagespreis multipliziert sich nicht sauber hoch:
