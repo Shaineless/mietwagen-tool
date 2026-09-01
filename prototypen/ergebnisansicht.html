@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entwürfe · Ergebnisansicht</title>
+<style>
+/* ---------------------------------------------------------- Projekt-Token
+   Dieselben Werte wie im Tool, damit jede Variante aussieht, als könnte sie
+   morgen ausgeliefert werden. */
+:root {
+  --bg: #f5f5f7; --flaeche: #fff; --flaeche2: #f0f0f3;
+  --ink: #1d1d1f; --ink2: #424248; --muted: #86868b; --leise: #a1a1a6;
+  --hairline: rgba(0,0,0,.08); --hairline2: rgba(0,0,0,.05);
+  --accent: #ff5f00; --accent-weich: rgba(255,95,0,.1); --accent-ink: #fff;
+  --r: 18px; --r-klein: 12px;
+  --schatten: 0 1px 3px rgba(0,0,0,.04), 0 8px 28px rgba(0,0,0,.05);
+  --raus: cubic-bezier(.23,1,.32,1);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#000; --flaeche:#1c1c1e; --flaeche2:#2c2c2e;
+    --ink:#f5f5f7; --ink2:#d1d1d6; --muted:#8e8e93; --leise:#6e6e73;
+    --hairline:rgba(255,255,255,.1); --hairline2:rgba(255,255,255,.06);
+    --accent:#ff7a2f; --accent-weich:rgba(255,122,47,.14); --schatten:none;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin:0; padding:36px 24px 120px; background:var(--bg); color:var(--ink);
+  font:15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+#stage { max-width:1120px; margin-inline:auto; }
+.kopf { margin-bottom:26px; }
+.kopf h1 { font-size:24px; letter-spacing:-.025em; margin:0 0 5px; font-weight:640; }
+.kopf p { margin:0; color:var(--muted); font-size:14px; }
+
+/* ================================================== 1 · RUHIG (Tabelle) */
+.v1 .karte { background:var(--flaeche); border-radius:var(--r); box-shadow:var(--schatten); padding:24px 28px; }
+.v1 table { border-collapse:collapse; width:100%; font-size:14px; white-space:nowrap; }
+.v1 th, .v1 td { padding:14px 20px; text-align:right; box-shadow:inset 0 -1px 0 var(--hairline2); }
+.v1 thead th { font-size:12px; color:var(--muted); font-weight:480; }
+.v1 th.k { text-align:left; font-weight:400; min-width:268px; }
+.v1 tbody tr:last-child th, .v1 tbody tr:last-child td { box-shadow:none; }
+.v1 .fzg { display:flex; align-items:center; gap:14px; }
+.v1 img { width:84px; height:50px; object-fit:contain; flex:none; }
+.v1 .mod { font-weight:580; font-size:14px; display:block; }
+.v1 .kl { display:flex; align-items:center; gap:9px; font-size:12px; color:var(--muted); margin-top:3px; }
+.v1 .betrag { font-variant-numeric:tabular-nums; font-size:15px; font-weight:560; display:block; }
+.v1 .tag { display:block; font-size:11.5px; color:var(--muted); margin-top:3px; }
+.v1 .best .betrag { color:var(--accent); font-weight:640; }
+.v1 .best .betrag::before { content:"▸"; margin-right:5px; font-size:9px; vertical-align:1px; }
+.v1 tr:hover td, .v1 tr:hover th.k { background:var(--hairline2); }
+.acriss { font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:10.5px;
+  font-weight:620; letter-spacing:.05em; padding:3px 7px; border-radius:6px;
+  background:var(--flaeche2); color:var(--ink2); }
+
+/* ================================================== 2 · KARTEN (Objekt) */
+.v2 .gitter { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:16px; }
+.v2 .auto {
+  background:var(--flaeche); border-radius:var(--r); box-shadow:var(--schatten);
+  padding:22px 24px 18px; display:flex; flex-direction:column; gap:16px;
+  transition:transform .2s var(--raus);
+}
+@media (hover:hover) and (pointer:fine) { .v2 .auto:hover { transform:translateY(-3px); } }
+.v2 .bild { height:96px; display:flex; align-items:center; justify-content:center; }
+.v2 .bild img { max-width:100%; max-height:100%; object-fit:contain; }
+.v2 .titel { font-size:19px; font-weight:620; letter-spacing:-.02em; }
+.v2 .unter { font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:9px; margin-top:5px; }
+.v2 .laender { display:flex; flex-direction:column; gap:1px; }
+.v2 .land {
+  display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+  padding:9px 12px; border-radius:10px; font-size:13.5px;
+}
+.v2 .land.best { background:var(--accent-weich); }
+.v2 .land .name { color:var(--muted); }
+.v2 .land.best .name { color:var(--accent); font-weight:560; }
+.v2 .land .preis { font-variant-numeric:tabular-nums; font-weight:560; }
+.v2 .land.best .preis { color:var(--accent); font-weight:680; }
+.v2 .weg { opacity:.4; font-style:italic; font-size:12px; }
+
+/* ================================================== 3 · BEFUND (Einsicht) */
+.v3 .befund {
+  background:var(--flaeche); border-radius:var(--r); box-shadow:var(--schatten);
+  padding:40px 44px; margin-bottom:16px;
+}
+.v3 .label { font-size:12px; color:var(--accent); font-weight:600; margin:0 0 14px; }
+.v3 .satz { font-size:38px; line-height:1.15; letter-spacing:-.03em; font-weight:640; margin:0 0 18px; }
+.v3 .satz em { font-style:normal; color:var(--accent); }
+.v3 .beleg { display:flex; gap:36px; flex-wrap:wrap; margin-top:26px; }
+.v3 .beleg div { display:flex; flex-direction:column; gap:3px; }
+.v3 .beleg .zahl { font-size:21px; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+.v3 .beleg .wozu { font-size:12.5px; color:var(--muted); }
+.v3 .liste { background:var(--flaeche); border-radius:var(--r); box-shadow:var(--schatten); padding:10px 14px; }
+.v3 .zeile {
+  display:grid; grid-template-columns:56px 1fr auto auto auto; align-items:center;
+  gap:16px; padding:12px 12px; box-shadow:inset 0 -1px 0 var(--hairline2);
+}
+.v3 .zeile:last-child { box-shadow:none; }
+.v3 .zeile img { width:56px; height:34px; object-fit:contain; }
+.v3 .mod { font-weight:560; font-size:14px; }
+.v3 .kl { font-size:11.5px; color:var(--muted); margin-top:2px; }
+.v3 .p { font-variant-numeric:tabular-nums; font-size:14px; min-width:104px; text-align:right; color:var(--muted); }
+.v3 .p.best { color:var(--accent); font-weight:660; }
+.v3 .p small { display:block; font-size:10.5px; color:var(--leise); font-weight:400; }
+
+/* ---------------------------------------------------------- Picker */
+.proto-picker{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:2147483647;display:flex;align-items:center;gap:2px;padding:4px;border-radius:999px;background:rgba(10,10,10,.82);-webkit-backdrop-filter:blur(12px) saturate(1.4);backdrop-filter:blur(12px) saturate(1.4);box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 8px 24px rgba(0,0,0,.24),0 2px 6px rgba(0,0,0,.12);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:13px;line-height:1;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+.proto-picker-highlight{position:absolute;top:4px;left:0;height:28px;border-radius:999px;background:rgba(255,255,255,.12);will-change:transform}
+.proto-picker[data-ready] .proto-picker-highlight{transition:transform 250ms cubic-bezier(.23,1,.32,1),width 250ms cubic-bezier(.23,1,.32,1)}
+@media (prefers-reduced-motion:reduce){.proto-picker[data-ready] .proto-picker-highlight{transition:none}}
+.proto-picker-item{position:relative;display:flex;align-items:center;height:28px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:rgba(255,255,255,.55);font:inherit;cursor:pointer;transition:color 150ms ease-out}
+.proto-picker-item:hover{color:rgba(255,255,255,.85)}
+.proto-picker-item:active{transform:scale(.97)}
+.proto-picker-item:focus-visible{outline:2px solid rgba(255,255,255,.4);outline-offset:2px}
+.proto-picker-item[data-active]{color:#fff}
+</style>
+</head>
+<body>
+
+<div id="stage"></div>
+
+<nav class="proto-picker" aria-label="Prototype variants">
+  <span class="proto-picker-highlight" aria-hidden="true"></span>
+  <button class="proto-picker-item" data-active aria-current="true">Ruhig</button>
+  <button class="proto-picker-item">Karten</button>
+  <button class="proto-picker-item">Befund</button>
+</nav>
+
+<script>
+const B = 'https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/';
+
+// Echte Messwerte: VW Golf & Co, Frankfurt Flughafen, 15.–19.09., 4 Tage.
+const AUTOS = [
+  { acriss:'CDMR', modell:'VW GOLF', klasse:'Kompaktklasse · Limousine · Schaltung',
+    bild:B+'vw-golf-5d-grey-2024.png', preise:[366.94,406.97,339.07] },
+  { acriss:'CDAR', modell:'VW GOLF', klasse:'Kompaktklasse · Limousine · Automatik',
+    bild:B+'vw-golf-5d-grey-2024.png', preise:[391.93,434.96,362.54] },
+  { acriss:'CFMR', modell:'VW TAIGO', klasse:'Kompaktklasse · SUV · Schaltung',
+    bild:B+'vw-taigo-suv-white-2022.png', preise:[377.97,419.97,348.76] },
+  { acriss:'CTMR', modell:'VW T-ROC CABRIOLET', klasse:'Kompaktklasse · Cabrio · Schaltung',
+    bild:B+'vw-t-cross-5d-suv-white-2024.png', preise:[413.98,433.93,388.89] },
+  { acriss:'GWAR', modell:'BMW 3ER TOURING', klasse:'Oberklasse Elite · Kombi · Automatik',
+    bild:B+'bmw-3-stw-black-2023.png', preise:[578.96,617.94,509.93] },
+  { acriss:'EDMR', modell:'SEAT IBIZA', klasse:'Kleinwagen · Limousine · Schaltung',
+    bild:B+'seat-ibiza-hatch-4d-grey-2021-JV.png', preise:[null,null,null] },
+];
+const LAENDER = [
+  { name:'Deutschland', waehrung:'EUR' },
+  { name:'Österreich',  waehrung:'EUR' },
+  { name:'Schweiz',     waehrung:'CHF' },
+];
+
+const geld = (v, w) => v == null ? '—' :
+  v.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}) + (w ? ' '+w : '');
+const proTag = (v) => v == null ? '' : geld(v/4,'') + '/Tag';
+
+// Günstigster je Zeile — nur innerhalb derselben Währung (EUR-Spalten 0 und 1).
+function besterEUR(p) {
+  const eur = [p[0], p[1]].filter(v => v != null);
+  return eur.length > 1 ? Math.min(...eur) : null;
+}
+
+const kopf = (unter) => `
+  <div class="kopf">
+    <h1>Frankfurt Flughafen (FRA)</h1>
+    <p>Di 15.09. 10:00 → Sa 19.09. 10:00 · 4 Tage · ${unter}</p>
+  </div>`;
+
+/* ---------------------------------------------------- 1 · Ruhig */
+function ruhig() {
+  const zeilen = AUTOS.map(a => {
+    const best = besterEUR(a.preise);
+    const zellen = a.preise.map((p,i) => {
+      if (p == null) return `<td style="color:var(--leise)">nicht buchbar</td>`;
+      return `<td class="${p===best?'best':''}">
+        <span class="betrag">${geld(p, LAENDER[i].waehrung)}</span>
+        <span class="tag">${proTag(p)}</span></td>`;
+    }).join('');
+    return `<tr>
+      <th class="k"><span class="fzg">
+        <img src="${a.bild}" alt="">
+        <span><span class="mod">${a.modell}</span>
+        <span class="kl"><span class="acriss">${a.acriss}</span>${a.klasse}</span></span>
+      </span></th>${zellen}</tr>`;
+  }).join('');
+  return kopf('52 Klassen · 3 Länderseiten') + `
+    <div class="karte"><table>
+      <thead><tr><th class="k">Fahrzeug</th>
+        ${LAENDER.map(l=>`<th>${l.name}</th>`).join('')}</tr></thead>
+      <tbody>${zeilen}</tbody>
+    </table></div>`;
+}
+
+/* ---------------------------------------------------- 2 · Karten */
+function karten() {
+  const karten = AUTOS.map(a => {
+    const best = besterEUR(a.preise);
+    const laender = a.preise.map((p,i) => p == null
+      ? `<span class="land"><span class="name">${LAENDER[i].name}</span><span class="weg">nicht buchbar</span></span>`
+      : `<span class="land ${p===best?'best':''}">
+           <span class="name">${LAENDER[i].name}</span>
+           <span class="preis">${geld(p, LAENDER[i].waehrung)}</span></span>`
+    ).join('');
+    return `<article class="auto">
+      <div class="bild"><img src="${a.bild}" alt=""></div>
+      <div>
+        <div class="titel">${a.modell}</div>
+        <div class="unter"><span class="acriss">${a.acriss}</span>${a.klasse}</div>
+      </div>
+      <div class="laender">${laender}</div>
+    </article>`;
+  }).join('');
+  return kopf('52 Klassen · 3 Länderseiten') + `<div class="gitter">${karten}</div>`;
+}
+
+/* ---------------------------------------------------- 3 · Befund */
+function befund() {
+  const g = AUTOS.filter(a => a.preise[0] != null);
+  const spar = g.map(a => a.preise[1] - a.preise[0]);
+  const maxIdx = spar.indexOf(Math.max(...spar));
+  const bestes = g[maxIdx];
+  const schnitt = spar.reduce((s,v)=>s+v,0) / spar.length;
+
+  const zeilen = g.map(a => {
+    const best = besterEUR(a.preise);
+    return `<div class="zeile">
+      <img src="${a.bild}" alt="">
+      <div><div class="mod">${a.modell}</div>
+        <div class="kl"><span class="acriss">${a.acriss}</span> ${a.klasse}</div></div>
+      ${a.preise.map((p,i)=>`<span class="p ${p===best?'best':''}">${geld(p,LAENDER[i].waehrung)}
+        <small>${LAENDER[i].name}</small></span>`).join('')}
+    </div>`;
+  }).join('');
+
+  return kopf('52 Klassen · 3 Länderseiten') + `
+    <div class="befund">
+      <p class="label">Befund</p>
+      <p class="satz">Die deutsche Seite ist bei <em>allen ${g.length} buchbaren Klassen</em>
+        günstiger als die österreichische — im Schnitt um <em>${geld(schnitt,'€')}</em>.</p>
+      <div class="beleg">
+        <div><span class="zahl">${geld(Math.max(...spar),'€')}</span>
+          <span class="wozu">größter Abstand · ${bestes.modell}</span></div>
+        <div><span class="zahl">${geld(g[0].preise[0],'€')}</span>
+          <span class="wozu">günstigste Klasse · ${g[0].acriss}</span></div>
+        <div><span class="zahl">3</span><span class="wozu">Länderseiten geprüft</span></div>
+      </div>
+    </div>
+    <div class="liste">${zeilen}</div>`;
+}
+
+const variants = [ruhig, karten, befund];
+
+const stage = document.getElementById('stage');
+const picker = document.querySelector('.proto-picker');
+const highlight = picker.querySelector('.proto-picker-highlight');
+const items = [...picker.querySelectorAll('.proto-picker-item:not(.proto-picker-replay)')];
+let current = 0;
+
+function moveHighlight() {
+  const el = items[current];
+  highlight.style.width = el.offsetWidth + 'px';
+  highlight.style.transform = `translateX(${el.offsetLeft}px)`;
+}
+function mount(i) {
+  stage.innerHTML = '';
+  // Der Klassenname traegt die gesamte Gestaltung der Variante — ohne ihn
+  // greift keine einzige Regel und alles faellt auf Browservorgaben zurueck.
+  stage.className = 'v' + (i + 1);
+  requestAnimationFrame(() => { stage.innerHTML = variants[i](); });
+}
+function setActive(i) {
+  if (i < 0 || i >= variants.length) return;
+  current = i;
+  items.forEach((el, j) => {
+    el.toggleAttribute('data-active', j === i);
+    if (j === i) el.setAttribute('aria-current', 'true'); else el.removeAttribute('aria-current');
+  });
+  moveHighlight();
+  const url = new URL(location);
+  url.searchParams.set('v', i + 1);
+  history.replaceState(null, '', url);
+  mount(i);
+}
+items.forEach((el, i) => el.addEventListener('click', () => setActive(i)));
+window.addEventListener('resize', moveHighlight);
+document.addEventListener('keydown', (e) => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const num = parseInt(e.key, 10);
+  if (num >= 1 && num <= variants.length) setActive(num - 1);
+  else if (e.key === 'ArrowRight') setActive((current + 1) % variants.length);
+  else if (e.key === 'ArrowLeft') setActive((current - 1 + variants.length) % variants.length);
+});
+setActive((parseInt(new URLSearchParams(location.search).get('v'), 10) || 1) - 1);
+requestAnimationFrame(() => requestAnimationFrame(() => picker.setAttribute('data-ready', '')));
+</script>
+</body>
+</html>
