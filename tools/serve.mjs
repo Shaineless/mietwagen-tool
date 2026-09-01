@@ -20,12 +20,14 @@ import { quoteSchutz } from './scrape/sixt-schutz.mjs';
 import { findBrowser, closeBrowser } from './browser.mjs';
 import { merkeAngebote, bekannteKlassen, katalogStand } from './katalog.mjs';
 import { istExe, quellWurzel, datenOrdner, leseVorrat } from './pfade.mjs';
+import { oeffneFenster } from './fenster.mjs';
+import { protokolliereNach, protokollPfad, zeigeMeldung } from './meldung.mjs';
 
 const argumente = process.argv.slice(2);
 // Den Port aus dem ersten Zahlenargument holen, nicht aus argv[2] — sonst
 // verschiebt ein vorangestellter Schalter ihn.
 const port = Number(argumente.find((a) => /^\d+$/.test(a))) || 4173;
-/** Kein Browserfenster aufmachen — fuer Pruefläufe und stille Starts. */
+/** Kein Fenster aufmachen — fuer Pruefläufe und stille Starts. */
 const stillerStart = argumente.includes('--kein-browser');
 
 /**
@@ -194,6 +196,78 @@ async function readBody(req, limit = 1_000_000) {
     chunks.push(chunk);
   }
   return Buffer.concat(chunks).toString('utf8');
+}
+
+/* ------------------------------------------------------ Lebenszeichen
+ *
+ * Woher weiss ein Programm ohne Konsolenfenster, dass es fertig ist?
+ *
+ * Nicht vom Chrome-Prozess: Chrome reicht Fenster zwischen seinen Prozessen
+ * weiter, der gestartete Prozess endet dabei, das Fenster bleibt stehen. Wer
+ * daran das Programmende haengt, beendet sich nach Sekunden von selbst —
+ * genau das ist passiert.
+ *
+ * Also sagt es die Seite selbst: sie meldet sich regelmaessig und schickt beim
+ * Schliessen ein letztes Signal. Das Neuladen schickt dasselbe Signal, deshalb
+ * wird nicht sofort beendet, sondern ein paar Sekunden auf ein neues
+ * Lebenszeichen gewartet. Bleibt es aus, war es wirklich das Ende.
+ */
+
+/**
+ * Offene Fenster, je mit eigener Kennung.
+ *
+ * Gezaehlt wird einzeln und nicht bloss "irgendwer war da": sonst beendet das
+ * Schliessen des einen Fensters das Programm, waehrend ein zweites noch offen
+ * ist. Die Kennung vergibt die Seite beim Laden.
+ */
+const offeneFenster = new Map(); // Kennung -> zuletzt gesehen
+
+/** So lange nach dem letzten Fenster gewartet wird — ein Neuladen dauert kürzer. */
+const NACHFRIST_MS = 4000;
+
+/** Ohne Lebenszeichen gilt ein Fenster nach dieser Zeit als abgestürzt. */
+const STILLE_MS = 90_000;
+
+let schliessTimer = null;
+
+function pruefeObNochWer() {
+  if (!istExe) return;
+  if (offeneFenster.size > 0) {
+    if (schliessTimer) {
+      clearTimeout(schliessTimer);
+      schliessTimer = null;
+    }
+    return;
+  }
+  if (schliessTimer) return;
+  // Nicht sofort: ein Neuladen meldet sich ab und gleich darauf neu an.
+  schliessTimer = setTimeout(() => {
+    if (offeneFenster.size > 0) return;
+    console.log('Letztes Fenster geschlossen — Programm beendet.');
+    beenden();
+  }, NACHFRIST_MS);
+}
+
+function lebenszeichen(kennung) {
+  if (!kennung) return;
+  offeneFenster.set(kennung, Date.now());
+  pruefeObNochWer();
+}
+
+function fensterGehtZu(kennung) {
+  if (kennung) offeneFenster.delete(kennung);
+  pruefeObNochWer();
+}
+
+// Notnagel: stuerzt der Browser ab, kommt kein Abschiedssignal. Ohne diese
+// Pruefung liefe der Dienst unsichtbar weiter, bis jemand ihn im Taskmanager
+// findet.
+if (istExe) {
+  setInterval(() => {
+    const alt = Date.now() - STILLE_MS;
+    for (const [k, zuletzt] of offeneFenster) if (zuletzt < alt) offeneFenster.delete(k);
+    pruefeObNochWer();
+  }, 15_000).unref();
 }
 
 /* ------------------------------------------------------ Server */
@@ -386,6 +460,18 @@ const server = createServer(async (req, res) => {
     return json(res, 200, { ok: true, verworfen, nochLaufend: laufend });
   }
 
+  // Die Seite meldet, dass ihr Fenster noch offen ist.
+  if (path === '/api/lebt') {
+    lebenszeichen(url.searchParams.get('id'));
+    return json(res, 200, { ok: true });
+  }
+
+  // ... und dass es zugeht.
+  if (path === '/api/fenster-zu') {
+    fensterGehtZu(url.searchParams.get('id'));
+    return json(res, 200, { ok: true });
+  }
+
   if (path === '/api/results/clear' && req.method === 'POST') {
     results.clear();
     return json(res, 200, { ok: true });
@@ -471,25 +557,45 @@ function versucheLauschen(p) {
 }
 
 /**
- * Windows-Konsole auf UTF-8 stellen.
+ * Das Programmfenster öffnen.
  *
- * Beim Start aus der .cmd erledigt das `chcp 65001`. Die EXE wird
- * doppelgeklickt und hat niemanden, der das für sie tut — steht die Konsole
- * dann auf der deutschen Standardcodepage, werden aus Umlauten Kästchen.
- * Schlägt es fehl, ist das kein Grund, den Start abzubrechen.
+ * Wann das Programm endet, entscheidet nicht dieser Prozess, sondern die
+ * Seite darin (siehe Lebenszeichen weiter unten). Chrome reicht Fenster
+ * zwischen eigenen Prozessen weiter, wie es ihm passt — der hier gestartete
+ * Prozess kann längst beendet sein, während das Fenster offen auf dem
+ * Bildschirm steht. Ihn als Ausschalter zu nehmen, hat genau das getan:
+ * das Programm beendete sich nach ein paar Sekunden von selbst.
  */
-async function setzeKonsoleAufUtf8() {
-  if (!istExe || process.platform !== 'win32') return;
-  try {
-    const { execFileSync } = await import('node:child_process');
-    execFileSync('chcp.com', ['65001'], { stdio: 'ignore' });
-  } catch {
-    /* dann eben mit Kästchen */
+function oeffneProgrammfenster(adresse) {
+  const { art, prozess } = oeffneFenster(adresse, datenOrdner);
+
+  if (art === 'keiner') {
+    zeigeMeldung(
+      'Es liess sich kein Fenster öffnen.\n\n' +
+        'Das Preistool läuft, erreichbar unter:\n' +
+        adresse
+    );
+    return;
   }
+
+  if (art === 'browser') {
+    console.log('Kein Chrome und kein Edge gefunden — geöffnet im Standardbrowser.');
+    zeigeMeldung(
+      'Chrome oder Edge wurde nicht gefunden.\n\n' +
+        'Das Preistool ist im Standardbrowser geöffnet, aber der Preisabruf ' +
+        'braucht Chrome oder Edge. Ohne einen der beiden bleibt es beim ' +
+        'Erzeugen der Links.'
+    );
+    return;
+  }
+
+  // Nur fürs Protokoll: der Prozess sagt nichts darüber aus, ob das Fenster
+  // noch steht, aber sein Ende ist beim Suchen eines Fehlers nützlich.
+  prozess.on('exit', (code) => console.log(`Fensterprozess beendet (Code ${code}).`));
 }
 
 async function starteDienst() {
-  await setzeKonsoleAufUtf8();
+  if (istExe) protokolliereNach(datenOrdner);
 
   // 127.0.0.1 statt localhost: der Dienst haengt nur an der IPv4-Adresse,
   // waehrend "localhost" unter Windows zuerst als ::1 aufgeloest wird.
@@ -497,10 +603,11 @@ async function starteDienst() {
     if (await schonUnserer(p)) {
       const adresse = `http://127.0.0.1:${p}/`;
       console.log(`Das Preistool läuft bereits auf ${adresse}`);
-      if (istExe) {
-        if (!stillerStart) oeffneImBrowser(adresse);
-        // Kurz stehenlassen, damit der Browser den Aufruf noch absetzen kann.
-        setTimeout(() => process.exit(0), 1500);
+      if (istExe && !stillerStart) {
+        // Nur ein weiteres Fenster dazu — der laufende Dienst bleibt der Chef,
+        // deshalb hier ohne Ende-Kopplung.
+        oeffneFenster(adresse, datenOrdner);
+        setTimeout(() => process.exit(0), 2500);
         return;
       }
       process.exit(0);
@@ -519,8 +626,7 @@ async function starteDienst() {
     );
     if (istExe) {
       console.log(`Daten:                ${datenOrdner}`);
-      console.log('\nZum Beenden dieses Fenster schliessen.');
-      if (!stillerStart) oeffneImBrowser(adresse);
+      if (!stillerStart) oeffneProgrammfenster(adresse);
     } else {
       console.log(`Import-Token:         ${IMPORT_TOKEN}`);
     }
@@ -531,57 +637,53 @@ async function starteDienst() {
 }
 
 /**
- * Bei einem Fehler das Fenster offen halten.
+ * Fehler sichtbar machen.
  *
- * Die EXE ist ein Konsolenprogramm: stuerzt sie ab, schliesst Windows das
- * Fenster sofort wieder. Von aussen sieht ein Doppelklick dann so aus, als
- * waere gar nichts passiert — die Meldung, die erklaert warum, ist schon weg.
+ * Ohne Konsolenfenster gibt es niemanden, der eine Ausgabe liest. Was den
+ * Start verhindert, muss deshalb als Fenster auf den Bildschirm — mit einem
+ * Verweis auf das Protokoll, in dem die Einzelheiten stehen.
  */
-async function halteFensterOffen(text) {
-  console.error('\n' + text + '\n');
-  if (!istExe || stillerStart || !process.stdin.isTTY) return;
-  console.log('Zum Schliessen die Eingabetaste drücken.');
-  process.stdin.resume();
-  await new Promise((fertig) => process.stdin.once('data', fertig));
+function melde(ueberschrift, fehler) {
+  const text = String(fehler?.stack || fehler?.message || fehler);
+  console.error(ueberschrift + ': ' + text);
+  if (!istExe || stillerStart) return;
+  zeigeMeldung(
+    `${ueberschrift}:\n\n${String(fehler?.message || fehler).slice(0, 400)}\n\n` +
+      `Einzelheiten stehen in:\n${protokollPfad() || '(kein Protokoll)'}`
+  );
 }
 
-starteDienst().catch(async (e) => {
-  await halteFensterOffen('Start fehlgeschlagen: ' + (e?.message || e));
-  process.exit(1);
+starteDienst().catch((e) => {
+  melde('Start fehlgeschlagen', e);
+  // Der Meldung Zeit lassen, sich zu zeigen, bevor der Prozess endet.
+  setTimeout(() => process.exit(1), 2500);
 });
 
-process.on('uncaughtException', async (e) => {
-  await halteFensterOffen('Unerwarteter Fehler: ' + (e?.stack || e));
-  process.exit(1);
+process.on('uncaughtException', (e) => {
+  melde('Unerwarteter Fehler', e);
+  setTimeout(() => process.exit(1), 2500);
 });
 
 /**
- * Den Standardbrowser auf die Oberflaeche schicken.
+ * Geordnet enden.
  *
- * Nur in der EXE: aus dem Quellbaum heraus macht das der Starter, und beim
- * Entwickeln will man nicht bei jedem Neustart ein neues Fenster.
+ * Das Chrome des Preisabrufs laeuft ausserhalb des Bildschirms; bliebe es als
+ * Waise zurueck, haette der Nutzer einen unsichtbaren Prozess auf dem Rechner,
+ * den er nicht findet und nicht zuordnen kann.
  */
-async function oeffneImBrowser(adresse) {
-  const { spawn } = await import('node:child_process');
+let beendetGerade = false;
+
+async function beenden(code = 0) {
+  if (beendetGerade) return;
+  beendetGerade = true;
   try {
-    if (process.platform === 'win32') {
-      // Das leere Argument ist der Fenstertitel, den start erwartet — ohne ihn
-      // wuerde die Adresse als Titel gelesen und nichts geoeffnet.
-      spawn('cmd', ['/c', 'start', '', adresse], { detached: true, stdio: 'ignore' }).unref();
-    } else if (process.platform === 'darwin') {
-      spawn('open', [adresse], { detached: true, stdio: 'ignore' }).unref();
-    } else {
-      spawn('xdg-open', [adresse], { detached: true, stdio: 'ignore' }).unref();
-    }
+    await closeBrowser();
   } catch {
-    console.log('Browser liess sich nicht oeffnen — Adresse von Hand aufrufen.');
+    /* dann eben nicht — beenden ist wichtiger */
   }
+  process.exit(code);
 }
 
-// Chrome nicht als Waise zuruecklassen, wenn der Dienst endet.
 for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
-  process.on(sig, async () => {
-    await closeBrowser();
-    process.exit(0);
-  });
+  process.on(sig, () => beenden(0));
 }

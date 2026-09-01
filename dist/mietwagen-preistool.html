@@ -3842,6 +3842,40 @@ function update(teile = {}) {
   renderResults({ erzwingen: true });
 }
 
+/**
+ * Dem Dienst sagen, dass dieses Fenster noch offen ist.
+ *
+ * Läuft das Werkzeug als eigenständiges Programm, hat es kein Konsolenfenster
+ * mehr, das man schliessen könnte — dieses Fenster hier ist der Ausschalter.
+ * Der Dienst kann das aber nicht am Chrome-Prozess ablesen, weil Chrome
+ * Fenster zwischen seinen Prozessen weiterreicht. Also sagt es die Seite.
+ *
+ * Aus dem Quellbaum heraus ist beides folgenlos: der Dienst nimmt es
+ * entgegen und beendet sich nicht.
+ */
+function haltAmLeben() {
+  // Eigene Kennung je Fenster: der Dienst zählt sie einzeln, sonst würde das
+  // Schliessen des einen Fensters das Programm beenden, während ein zweites
+  // noch offen steht.
+  const kennung = Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+  const melde = () => fetch(`/api/lebt?id=${kennung}`, { cache: 'no-store' }).catch(() => {});
+  melde();
+  setInterval(melde, 15_000);
+
+  // pagehide statt unload: unload verhindert, dass die Seite in den
+  // Zwischenspeicher des Browsers darf, und wird in manchen Fällen gar nicht
+  // mehr ausgelöst. sendBeacon kommt auch dann noch durch, wenn die Seite
+  // schon abgebaut wird.
+  addEventListener('pagehide', () => {
+    try {
+      navigator.sendBeacon(`/api/fenster-zu?id=${kennung}`);
+    } catch {
+      /* dann greift der Notnagel im Dienst */
+    }
+  });
+}
+
 function init() {
   starteHintergrund();
 
@@ -3971,6 +4005,7 @@ function init() {
     $('#vorschlagKarte').hidden = !ok;
 
     if (ok) {
+      haltAmLeben();
       startPolling();
       ladeKatalog().then(() => {
         if (state.mode && state.mode !== 'status') update();

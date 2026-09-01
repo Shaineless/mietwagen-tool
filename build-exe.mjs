@@ -156,6 +156,50 @@ lauf(
   'in die EXE einspritzen'
 );
 
+/* --------------------------------------------------- 5. Ohne Konsole */
+
+/**
+ * Aus dem Konsolenprogramm ein Fensterprogramm machen.
+ *
+ * node.exe ist als Konsolenprogramm gebaut: beim Doppelklick geht immer eine
+ * schwarze Konsole auf. Welche Art Programm es ist, steht als eine einzige
+ * Zahl im PE-Kopf — 3 heisst Konsole, 2 heisst Fenster. Das Feld sitzt
+ * 68 Bytes hinter dem Anfang des Optional Headers, und der beginnt hinter der
+ * PE-Signatur (4 Bytes) und dem COFF-Kopf (20 Bytes). Der Offset dorthin
+ * steht bei 0x3C.
+ *
+ * Ohne Konsole gibt es kein stdout mehr, das jemand liest — deshalb schreibt
+ * das Programm sein Protokoll in eine Datei und zeigt Startfehler als Fenster
+ * (tools/meldung.mjs).
+ */
+function machZuFensterprogramm(datei) {
+  const bytes = readFileSync(datei);
+
+  if (bytes.readUInt16LE(0) !== 0x5a4d) throw new Error('Keine PE-Datei (MZ fehlt).');
+  const peOffset = bytes.readUInt32LE(0x3c);
+  if (bytes.readUInt32LE(peOffset) !== 0x00004550) throw new Error('PE-Signatur nicht gefunden.');
+
+  const subsystem = peOffset + 4 + 20 + 68;
+  const vorher = bytes.readUInt16LE(subsystem);
+  if (vorher === 2) return 'war schon ein Fensterprogramm';
+  if (vorher !== 3) throw new Error(`Unerwartetes Subsystem ${vorher}, erwartet 3 (Konsole).`);
+
+  bytes.writeUInt16LE(2, subsystem);
+  writeFileSync(datei, bytes);
+  return 'Konsole → Fenster';
+}
+
+if (process.platform === 'win32') {
+  process.stdout.write('  Konsolenfenster abschalten … ');
+  try {
+    console.log(machZuFensterprogramm(ziel));
+  } catch (e) {
+    console.log('FEHLER\n');
+    console.error('  ' + e.message);
+    console.error('  Die EXE läuft, öffnet beim Start aber ein Konsolenfenster.');
+  }
+}
+
 console.log(`\nFertig: dist/Mietwagen-Preistool.exe (${mb(ziel)})`);
-console.log('Doppelklick startet den Dienst und öffnet den Browser.');
+console.log('Doppelklick öffnet ein eigenes Programmfenster, ohne Konsole.');
 console.log('Chrome oder Edge muss installiert sein — sonst bleibt der Link-Modus.\n');

@@ -13,9 +13,10 @@ dessen URL-Format zwischenzeitlich nicht mehr funktioniert.
 ## Benutzen
 
 **Als Programm:** `dist/Mietwagen-Preistool.exe` doppelklicken. Eine einzelne
-Datei, keine Installation, kein Node nötig — sie startet den Dienst und öffnet
-den Browser. Alles, was sie schreibt, landet im Ordner `Preistool-Daten` neben
-der EXE.
+Datei, keine Installation, kein Node nötig. Es öffnet sich ein eigenes
+Programmfenster — keine Konsole, keine Adresszeile, keine Tabs, eigener Eintrag
+in der Taskleiste. Fenster zu heisst Programm beendet. Alles, was es schreibt,
+landet im Ordner `Preistool-Daten` daneben.
 
 **Aus dem Quellbaum:** Doppelklick auf `Preistool starten.cmd`, oder von Hand:
 
@@ -38,15 +39,26 @@ npm install
 npm run exe
 ```
 
-Vier Schritte: Oberfläche bauen, den Dienst samt Playwright mit esbuild in eine
-CommonJS-Datei bündeln, daraus einen SEA-Vorrat erzeugen und den in eine Kopie
-von `node.exe` einspritzen. Ergebnis: ~96 MB, davon ist das meiste die
-Node-Laufzeit.
+Fünf Schritte: Oberfläche bauen, den Dienst samt Playwright mit esbuild in eine
+CommonJS-Datei bündeln, daraus einen SEA-Vorrat erzeugen, den in eine Kopie von
+`node.exe` einspritzen und im PE-Kopf das Subsystem von Konsole auf Fenster
+stellen. Ergebnis: ~96 MB, davon ist das meiste die Node-Laufzeit.
 
-Ein Browser kommt **nicht** mit. Der Abruf benutzt das Chrome oder Edge, das
-ohnehin installiert ist — ein mitgeliefertes Chromium wäre nicht nur 150 MB
-grösser, es würde von Sixt auch abgewiesen. Genau deshalb geht der Abruf über
-den installierten Browser.
+Ein Browser kommt **nicht** mit — auch nicht für das Fenster. Chrome und Edge
+zeichnen mit `--app=` ein Fenster ohne Adresszeile und Tabs, das von aussen ein
+gewöhnliches Programmfenster ist; ein eigenes Profil gibt ihm einen eigenen
+Eintrag in der Taskleiste. Electron hätte dafür ein zweites, vollständiges
+Chromium mitgebracht — rund 150 MB für ein Fenster, das der installierte
+Browser genauso zeichnet. Und da ist ohnehin eines: der Preisabruf braucht ein
+echtes, installiertes Chrome, weil ein mitgebrachtes von Sixt abgewiesen würde.
+
+Weil die EXE kein Konsolenfenster mehr hat, schreibt sie ihr Protokoll nach
+`Preistool-Daten/preistool.log`, und was den Start verhindert, kommt als
+Meldungsfenster auf den Bildschirm. Wann das Programm endet, sagt die Seite im
+Fenster selbst: sie meldet sich alle 15 Sekunden und verabschiedet sich beim
+Schliessen. Am Chrome-Prozess lässt sich das nicht ablesen — Chrome reicht
+Fenster zwischen seinen Prozessen weiter, der gestartete Prozess endet dabei,
+das Fenster bleibt stehen.
 
 Zwei Dinge, die beim Weitergeben zu erwarten sind: Windows SmartScreen warnt
 beim ersten Start, weil die Datei nicht signiert ist (eine Code-Signatur kostet
@@ -149,6 +161,8 @@ extension/
 tools/
   serve.mjs             lokaler Dienst: Oberfläche, Warteschlange, API
   pfade.mjs             wo gelesen und geschrieben wird — Quellbaum oder EXE
+  fenster.mjs           das Programmfenster (Chrome/Edge im --app-Modus)
+  meldung.mjs           Protokolldatei und Meldungsfenster ohne Konsole
   browser.mjs           Chrome starten und verbinden, Cookie-Banner
   katalog.mjs           merkt sich gesehene ACRISS-Klassen je Station
   scrape/sixt.mjs       Preisliste auslesen
