@@ -35,6 +35,16 @@ let state = load();
 /** Fahrzeugklasse, deren Schutzpakete gerade betrachtet werden. */
 let schutzAcriss = null;
 
+/**
+ * Welche Station/Termin-Kombination gerade angezeigt wird.
+ *
+ * Bei mehreren Stationen oder Datumsvarianten wurden vorher alle Tabellen
+ * untereinander gestapelt — bei fuenf Stationen sind das fuenf mal fuenfzig
+ * Zeilen und man findet nichts wieder. Jetzt gibt es einen Umschalter und
+ * immer nur eine Tabelle.
+ */
+let aktiveGruppe = null;
+
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
@@ -755,10 +765,46 @@ function renderResults() {
 
   const hatPreise = [...prices.values()].some((r) => r.offers?.length);
 
+  // Umschalter, sobald es mehr als eine Station/Termin-Kombination gibt.
+  const schluessel = [...gruppen.keys()];
+  if (!schluessel.includes(aktiveGruppe)) aktiveGruppe = schluessel[0];
+
+  const umschalter =
+    schluessel.length > 1
+      ? el(
+          'div',
+          { class: 'gruppenwahl' },
+          ...schluessel.map((k) => {
+            const f = gruppen.get(k)[0];
+            return el(
+              'button',
+              {
+                type: 'button',
+                class: 'gtab' + (k === aktiveGruppe ? ' on' : ''),
+                onclick: () => {
+                  aktiveGruppe = k;
+                  renderResults();
+                },
+              },
+              el('span', {}, f.station.name),
+              el(
+                'span',
+                { class: 'gzeit' },
+                `${pretty(f.variant.pickupDate)} · ${f.variant.duration} Tage`
+              )
+            );
+          })
+        )
+      : null;
+
+  const sichtbar = schluessel.filter((k) => schluessel.length === 1 || k === aktiveGruppe);
+
   setChildren(
     $('#results'),
+    umschalter,
     hatPreise ? renderStatusWahl() : null,
-    ...[...gruppen.values()].map((list) => {
+    ...sichtbar.map((k) => {
+      const list = gruppen.get(k);
       const f = list[0];
       return el(
         'div',
