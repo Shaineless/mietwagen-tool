@@ -1221,7 +1221,7 @@ function update(teile = {}) {
   if (pillen) {
     renderPills(
       '#shifts',
-      [-3, -2, -1, 0, 1, 2, 3],
+      [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5],
       () => state.dayShifts,
       (n) => (n === 0 ? 'Stichtag' : (n > 0 ? `+${n}` : `${n}`) + ' Tg'),
       (arr) => {

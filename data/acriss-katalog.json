@@ -275,7 +275,7 @@
     "BMW 7ER XDRIVE",
     "BMW 7 SERIE XDRIVE"
    ],
-   "beispielText": "Special Berlina Automatico",
+   "beispielText": "Spezialklasse Limousine Automatik",
    "zuletzt": "2026-09-01"
   },
   "WFSR": {
@@ -283,7 +283,7 @@
    "modelle": [
     "BMW X5 M60"
    ],
-   "beispielText": "Classe lusso Elite SUV Automatico",
+   "beispielText": "Luxusklasse Elite SUV Automatik",
    "zuletzt": "2026-09-01"
   },
   "XFDR": {
@@ -311,7 +311,7 @@
     "MERCEDES-BENZ CLASE S LARGA",
     "MERCEDES-BENZ CLASSE S LUNGO"
    ],
-   "beispielText": "Special Berlina Automatico",
+   "beispielText": "Spezialklasse Limousine Automatik",
    "zuletzt": "2026-09-01"
   },
   "WFLP": {
@@ -319,7 +319,7 @@
    "modelle": [
     "PORSCHE CAYENNE"
    ],
-   "beispielText": "Classe lusso Elite SUV Automatico",
+   "beispielText": "Luxusklasse Elite SUV Automatik",
    "zuletzt": "2026-09-01"
   },
   "XDLP": {
@@ -335,7 +335,7 @@
    "modelle": [
     "BMW X6 M COMPETITION"
    ],
-   "beispielText": "Classe lusso Elite SUV Automatico",
+   "beispielText": "Luxusklasse Elite SUV Automatik",
    "zuletzt": "2026-09-01"
   },
   "XFLR": {
@@ -343,7 +343,7 @@
    "modelle": [
     "BMW X7 M60"
    ],
-   "beispielText": "Special SUV Automatico",
+   "beispielText": "Spezialklasse SUV Automatik",
    "zuletzt": "2026-09-01"
   },
   "GELP": {
@@ -359,7 +359,7 @@
    "modelle": [
     "PORSCHE 911 CARRERA"
    ],
-   "beispielText": "Intermedia Elite Coupé Automatico",
+   "beispielText": "Mittelklasse Elite Coupé Automatik",
    "zuletzt": "2026-09-01"
   },
   "GTLP": {
