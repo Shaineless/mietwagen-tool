@@ -795,6 +795,9 @@ tr.nurkatalog th.klasse, tr.nurkatalog td { opacity: .42; }
 /* ============================================================ Schutz */
 
 .fahrzeugkopf { margin-bottom: 20px; }
+/* Der Umschalter bringt seinen eigenen Abstand mit — leer soll er keinen
+   Spalt hinterlassen. */
+#schutzGruppen:empty { display: none; }
 .fzgkopf { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; }
 .kbild { width: 230px; height: 138px; object-fit: contain; }
 .kmodell { font-size: 30px; font-weight: 650; margin: 0 0 10px; letter-spacing: -.03em; }

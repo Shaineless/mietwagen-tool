@@ -33,6 +33,9 @@ let state = load();
 /** Fahrzeugklasse, deren Schutzpakete gerade betrachtet werden. */
 let schutzAcriss = null;
 
+/** Station/Termin, deren Schutzpakete gezeigt werden (Schluessel wie `gruppe`). */
+let schutzGruppe = null;
+
 /**
  * Welche Station/Termin-Kombination gerade angezeigt wird.
  *
@@ -308,24 +311,43 @@ function aktuelleJobs() {
   return jobs;
 }
 
-/** Schutz-Aufträge für die gerade betrachtete Klasse. */
-function schutzJobs() {
+/**
+ * Alle Schutz-Auftraege der betrachteten Klasse — ueber jede Station und
+ * jeden Termin, in denselben Gruppen wie die Preistabelle.
+ */
+function alleSchutzJobs() {
   if (!schutzAcriss) return [];
   const stationen = state.stations.map(stationByCode).filter(Boolean);
-  const v = dateVariants()[0];
   const jobs = [];
   for (const station of stationen) {
-    for (const market of marktListe()) {
-      jobs.push({
-        market,
-        station,
-        variant: v,
-        acriss: schutzAcriss,
-        key: jobKey(market.host, station.code, v, schutzAcriss),
-      });
+    for (const v of dateVariants()) {
+      for (const market of marktListe()) {
+        jobs.push({
+          market,
+          station,
+          variant: v,
+          acriss: schutzAcriss,
+          gruppe: `${station.code}|${v.pickupDate}|${v.returnDate}`,
+          key: jobKey(market.host, station.code, v, schutzAcriss),
+        });
+      }
     }
   }
   return jobs;
+}
+
+/**
+ * Nur die Auftraege der gerade gewaehlten Station/Termin-Gruppe.
+ *
+ * Ohne diese Einschraenkung stuenden bei zwei Stationen alle Laenderseiten
+ * doppelt nebeneinander — mit gleicher Beschriftung, also nicht
+ * unterscheidbar — und der Abruf liefe doppelt so lange.
+ */
+function schutzJobs() {
+  const alle = alleSchutzJobs();
+  const schluessel = [...new Set(alle.map((j) => j.gruppe))];
+  if (!schluessel.includes(schutzGruppe)) schutzGruppe = schluessel[0] ?? null;
+  return alle.filter((j) => j.gruppe === schutzGruppe);
 }
 
 /* =========================================================== DOM */
@@ -851,6 +873,35 @@ function zeigeBereich(name) {
   );
 }
 
+/**
+ * Reiter fuer Station/Termin-Gruppen.
+ *
+ * Gibt es nur eine Gruppe, gibt es auch nichts zu waehlen — dann null, damit
+ * kein leerer Streifen stehen bleibt.
+ */
+function gruppenwahl(jobs, aktiv, waehle) {
+  const erste = new Map();
+  for (const j of jobs) if (!erste.has(j.gruppe)) erste.set(j.gruppe, j);
+  if (erste.size < 2) return null;
+
+  return el(
+    'div',
+    { class: 'gruppenwahl' },
+    ...[...erste].map(([k, f]) =>
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'gtab' + (k === aktiv ? ' on' : ''),
+          onclick: () => waehle(k),
+        },
+        el('span', {}, f.station.name),
+        el('span', { class: 'gzeit' }, `${pretty(f.variant.pickupDate)} · ${f.variant.duration} Tage`)
+      )
+    )
+  );
+}
+
 /* =========================================================== Ergebnisse */
 
 /** Kennung dessen, was die Ergebnisansicht darstellt. */
@@ -914,33 +965,10 @@ function renderResults({ erzwingen = false } = {}) {
   const schluessel = [...gruppen.keys()];
   if (!schluessel.includes(aktiveGruppe)) aktiveGruppe = schluessel[0];
 
-  const umschalter =
-    schluessel.length > 1
-      ? el(
-          'div',
-          { class: 'gruppenwahl' },
-          ...schluessel.map((k) => {
-            const f = gruppen.get(k)[0];
-            return el(
-              'button',
-              {
-                type: 'button',
-                class: 'gtab' + (k === aktiveGruppe ? ' on' : ''),
-                onclick: () => {
-                  aktiveGruppe = k;
-                  renderResults();
-                },
-              },
-              el('span', {}, f.station.name),
-              el(
-                'span',
-                { class: 'gzeit' },
-                `${pretty(f.variant.pickupDate)} · ${f.variant.duration} Tage`
-              )
-            );
-          })
-        )
-      : null;
+  const umschalter = gruppenwahl(jobs, aktiveGruppe, (k) => {
+    aktiveGruppe = k;
+    renderResults();
+  });
 
   const sichtbar = schluessel.filter((k) => schluessel.length === 1 || k === aktiveGruppe);
 
@@ -997,6 +1025,8 @@ function renderResults({ erzwingen = false } = {}) {
 function öffneSchutz(acriss) {
   if (!decodeAcriss(acriss)) return;
   schutzAcriss = acriss;
+  // Auf der Station landen, aus deren Tabelle geklickt wurde.
+  schutzGruppe = aktiveGruppe;
   showScreen('schutz');
   renderSchutz();
   window.scrollTo(0, 0);
@@ -1005,6 +1035,17 @@ function öffneSchutz(acriss) {
 function renderSchutz() {
   const d = decodeAcriss(schutzAcriss);
   if (!d) return;
+
+  const jobs = schutzJobs();
+  const gruppe = jobs[0];
+
+  setChildren(
+    $('#schutzGruppen'),
+    gruppenwahl(alleSchutzJobs(), schutzGruppe, (k) => {
+      schutzGruppe = k;
+      renderSchutz();
+    })
+  );
 
   const info = katalog[schutzAcriss] || {};
   const beispiel = (() => {
@@ -1033,17 +1074,21 @@ function renderSchutz() {
           el('span', { class: 'acriss gross' }, d.acriss),
           d.label
         ),
-        el(
-          'p',
-          { class: 'kzeit' },
-          `${pretty(state.pickupDate)} ${state.pickupTime} → ${pretty(state.returnDate)} ${state.returnTime} · ` +
-            `${Math.max(1, daysBetween(state.pickupDate, state.returnDate))} Tage`
-        )
+        // Station und Termin der gewaehlten Gruppe, nicht die Grundeinstellung
+        // — bei zwei Stationen stand hier sonst immer dasselbe.
+        gruppe
+          ? el(
+              'p',
+              { class: 'kzeit' },
+              el('b', {}, gruppe.station.name),
+              ` · ${pretty(gruppe.variant.pickupDate)} ${state.pickupTime} → ` +
+                `${pretty(gruppe.variant.returnDate)} ${state.returnTime} · ${gruppe.variant.duration} Tage`
+            )
+          : null
       )
     )
   );
 
-  const jobs = schutzJobs();
   const fertig = jobs.filter((j) => schutz.has(j.key));
   $('#schutzHinweis').textContent = fertig.length
     ? `${fertig.length} von ${jobs.length} Länderseiten abgerufen`
@@ -1120,7 +1165,9 @@ function renderSchutz() {
     return;
   }
 
-  const tage = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
+  // Die Mietdauer der gezeigten Gruppe, nicht die der Grundeinstellung — mit
+  // Datums-Matrix koennen sich die beiden unterscheiden.
+  const tage = gruppe?.variant.duration ?? Math.max(1, daysBetween(state.pickupDate, state.returnDate));
 
   /**
    * Mietpreis ohne Zusatzschutz.

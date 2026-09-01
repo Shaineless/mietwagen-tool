@@ -100,11 +100,12 @@
    "zuletzt": "2026-09-01"
   },
   "IFAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-t-roc-suv-black-2026.png",
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/toyota-rav4-5d-schwarz-2019.png",
    "modelle": [
-    "VW T-ROC"
+    "VW T-ROC",
+    "INTERMEDIATE SUV"
    ],
-   "beispielText": "Mittelklasse SUV Automatik",
+   "beispielText": "TOYOTA RAV4",
    "zuletzt": "2026-09-01"
   },
   "IVAV": {
@@ -116,19 +117,21 @@
    "zuletzt": "2026-09-01"
   },
   "DFAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/audi-q2-suv-silver-2021.png",
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mini-countryman-suv-4d-white-2026-US.png",
    "modelle": [
-    "AUDI Q2"
+    "AUDI Q2",
+    "COMPACT ELITE SUV"
    ],
-   "beispielText": "Kompaktklasse Elite SUV Automatik",
+   "beispielText": "MINI COUNTRYMAN",
    "zuletzt": "2026-09-01"
   },
   "PFAV": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-tayron-suv-grey-2025.png",
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/chevrolet-suburban-suv-blue-2025.png",
    "modelle": [
-    "VW TAYRON"
+    "VW TAYRON",
+    "PREMIUM SUV"
    ],
-   "beispielText": "Premium SUV Automático",
+   "beispielText": "CHEVROLET SUBURBAN",
    "zuletzt": "2026-09-01"
   },
   "JDAR": {
@@ -142,11 +145,12 @@
    "zuletzt": "2026-09-01"
   },
   "SFAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-tiguan-suv-black-2024.png",
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/toyota-4runner-suv-silver-2026.png",
    "modelle": [
-    "VW TIGUAN"
+    "VW TIGUAN",
+    "STANDARD SUV"
    ],
-   "beispielText": "Standardklasse SUV Automatik",
+   "beispielText": "TOYOTA 4RUNNER",
    "zuletzt": "2026-09-01"
   },
   "DVAR": {
@@ -185,11 +189,12 @@
    "zuletzt": "2026-09-01"
   },
   "GFAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x2-suv-4d-white-2024.png",
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x5-suv-black-2025-US.png",
    "modelle": [
-    "BMW X2"
+    "BMW X2",
+    "FULLSIZE ELITE SUV"
    ],
-   "beispielText": "Oberklasse Elite SUV Automatik",
+   "beispielText": "BMW X5",
    "zuletzt": "2026-09-01"
   },
   "UFAR": {
@@ -236,11 +241,12 @@
    "zuletzt": "2026-09-01"
   },
   "GFSR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x2-m35-suv-4d-blue-2024.png",
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x5-m60-suv-grey-2025.png",
    "modelle": [
-    "BMW X2 M35"
+    "BMW X2 M35",
+    "FULLSIZE ELITE SUV"
    ],
-   "beispielText": "Oberklasse Elite SUV Automatik",
+   "beispielText": "BMW X5 M60",
    "zuletzt": "2026-09-01"
   },
   "GWSR": {
@@ -490,12 +496,16 @@
    "zuletzt": "2026-09-01"
   },
   "GTAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-4-convertible-2d-black-2023-JV.png",
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-4-convertible-2d-black-2026-US.png",
    "modelle": [
     "BMW SÉRIE 4 CABRIOLET",
-    "BMW SERIE 4 CABRIO"
+    "BMW SERIE 4 CABRIO",
+    "FULLSIZE ELITE CABRIO",
+    "FULLSIZE ELITE CABRIOLET",
+    "FULLSIZE ELITE DESCAPOTABLE",
+    "FULLSIZE ELITE CONVERSÍVEL"
    ],
-   "beispielText": "Fullsize Elite Descapotable Automático",
+   "beispielText": "BMW 4 SERIES CONVERTIBLE",
    "zuletzt": "2026-09-01"
   },
   "WVAR": {
@@ -636,6 +646,260 @@
     "BMW X5"
    ],
    "beispielText": "Luxury Elite SUV Automático",
+   "zuletzt": "2026-09-01"
+  },
+  "SFAV": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/gmc-acadia-suv-silver-2026.png",
+   "modelle": [
+    "STANDARD SUV"
+   ],
+   "beispielText": "GMC ACADIA",
+   "zuletzt": "2026-09-01"
+  },
+  "ICAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/nissan-sentra-4d-orange-2020.png",
+   "modelle": [
+    "INTERMEDIATE LIMOUSINE",
+    "INTERMEDIATE BERLINE",
+    "INTERMEDIATE BERLINA",
+    "INTERMEDIATE SEDAN"
+   ],
+   "beispielText": "NISSAN SENTRA",
+   "zuletzt": "2026-09-01"
+  },
+  "CCAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/nissan-versa-4d-grey-2023.png",
+   "modelle": [
+    "COMPACT LIMOUSINE",
+    "COMPACT BERLINE",
+    "COMPACT BERLINA",
+    "COMPACT SEDAN"
+   ],
+   "beispielText": "NISSAN VERSA",
+   "zuletzt": "2026-09-01"
+  },
+  "SCAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-jetta-4d-silber-2019.png",
+   "modelle": [
+    "STANDARD LIMOUSINE",
+    "STANDARD BERLINE",
+    "STANDARD BERLINA",
+    "STANDARD SEDAN"
+   ],
+   "beispielText": "VOLKSWAGEN JETTA",
+   "zuletzt": "2026-09-01"
+  },
+  "FCAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/toyota-camry-4d-red-2023.png",
+   "modelle": [
+    "FULLSIZE LIMOUSINE",
+    "FULLSIZE BERLINE",
+    "FULLSIZE BERLINA",
+    "FULLSIZE SEDAN"
+   ],
+   "beispielText": "TOYOTA CAMRY",
+   "zuletzt": "2026-09-01"
+  },
+  "GCAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-3-sedan-4d-blue-2023-US.png",
+   "modelle": [
+    "FULLSIZE ELITE LIMOUSINE",
+    "FULLSIZE ELITE BERLINE",
+    "FULLSIZE ELITE BERLINA",
+    "FULLSIZE ELITE SEDAN"
+   ],
+   "beispielText": "BMW 3 SERIES",
+   "zuletzt": "2026-09-01"
+  },
+  "JCAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-2-gran-coupe-4d-blue-2026-US.png",
+   "modelle": [
+    "INTERMEDIATE ELITE LIMOUSINE",
+    "INTERMEDIATE ELITE BERLINE",
+    "INTERMEDIATE ELITE BERLINA",
+    "INTERMEDIATE ELITE SEDAN"
+   ],
+   "beispielText": "BMW 2 SERIES",
+   "zuletzt": "2026-09-01"
+  },
+  "JFAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x1-suv-grey-2025-US.png",
+   "modelle": [
+    "INTERMEDIATE ELITE SUV"
+   ],
+   "beispielText": "BMW X1",
+   "zuletzt": "2026-09-01"
+  },
+  "RFAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x3-suv-blue-2025-US.png",
+   "modelle": [
+    "STANDARD ELITE SUV"
+   ],
+   "beispielText": "BMW X3",
+   "zuletzt": "2026-09-01"
+  },
+  "UCAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-5-4d-black-2024-US.png",
+   "modelle": [
+    "PREMIUM ELITE LIMOUSINE",
+    "PREMIUM ELITE BERLINE",
+    "PREMIUM ELITE BERLINA",
+    "PREMIUM ELITE SEDAN"
+   ],
+   "beispielText": "BMW 5 SERIES",
+   "zuletzt": "2026-09-01"
+  },
+  "JCSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m235-gran-coupe-grey-2025-US.png",
+   "modelle": [
+    "INTERMEDIATE ELITE LIMOUSINE",
+    "INTERMEDIATE ELITE BERLINE",
+    "INTERMEDIATE ELITE BERLINA",
+    "INTERMEDIATE ELITE SEDAN"
+   ],
+   "beispielText": "BMW M235 GRAND COUPE",
+   "zuletzt": "2026-09-01"
+  },
+  "JFSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x1-m35-suv-blue-2025.png",
+   "modelle": [
+    "INTERMEDIATE ELITE SUV"
+   ],
+   "beispielText": "BMW X1 M35",
+   "zuletzt": "2026-09-01"
+  },
+  "RFSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x3-m50-suv-grey-2025-US.png",
+   "modelle": [
+    "STANDARD ELITE SUV"
+   ],
+   "beispielText": "BMW X3 M50",
+   "zuletzt": "2026-09-01"
+  },
+  "JTAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-z4-convertibe-2d-blue-2023-US.png",
+   "modelle": [
+    "INTERMEDIATE ELITE CABRIO",
+    "INTERMEDIATE ELITE CABRIOLET",
+    "INTERMEDIATE ELITE DESCAPOTABLE",
+    "INTERMEDIATE ELITE CONVERSÍVEL",
+    "INTERMEDIATE ELITE CONVERTIBLE"
+   ],
+   "beispielText": "BMW Z4 CONVERTIBLE",
+   "zuletzt": "2026-09-01"
+  },
+  "GCSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m340-4d-white-2025-US.png",
+   "modelle": [
+    "FULLSIZE ELITE LIMOUSINE",
+    "FULLSIZE ELITE BERLINE",
+    "FULLSIZE ELITE BERLINA",
+    "FULLSIZE ELITE SEDAN"
+   ],
+   "beispielText": "BMW M340",
+   "zuletzt": "2026-09-01"
+  },
+  "MVAV": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/chrysler-pacifica-van-4d-black-2020-JV.png",
+   "modelle": [
+    "MINIVAN VAN",
+    "MINIVAN MONOSPACE"
+   ],
+   "beispielText": "CHRYSLER PACIFICA",
+   "zuletzt": "2026-09-01"
+  },
+  "GESR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m440-coupe-blue-2025-US.png",
+   "modelle": [
+    "FULLSIZE ELITE COUPÉ",
+    "FULLSIZE ELITE COUPE"
+   ],
+   "beispielText": "BMW M440 COUPE",
+   "zuletzt": "2026-09-01"
+  },
+  "FFAV": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/chevrolet-tahoe-suv-white-2025.png",
+   "modelle": [
+    "FULLSIZE SUV"
+   ],
+   "beispielText": "CHEVROLET TAHOE",
+   "zuletzt": "2026-09-01"
+  },
+  "UFAV": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x7-suv-grey-2025-US.png",
+   "modelle": [
+    "PREMIUM ELITE SUV"
+   ],
+   "beispielText": "BMW X7",
+   "zuletzt": "2026-09-01"
+  },
+  "GELR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m4-coupe-blue-2022.png",
+   "modelle": [
+    "FULLSIZE ELITE COUPÉ",
+    "FULLSIZE ELITE COUPE"
+   ],
+   "beispielText": "BMW M4 COMPETITION COUPE",
+   "zuletzt": "2026-09-01"
+  },
+  "WFAV": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/cadillac-escalade-suv-black-2026.png",
+   "modelle": [
+    "LUXURY ELITE SUV"
+   ],
+   "beispielText": "CADILLAC ESCALADE",
+   "zuletzt": "2026-09-01"
+  },
+  "SFSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/ineos-grenadier-suv-silver-2026.png",
+   "modelle": [
+    "STANDARD SUV"
+   ],
+   "beispielText": "INEOS GRENADIER",
+   "zuletzt": "2026-09-01"
+  },
+  "GCLR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m3-4d-blue-US-2024.png",
+   "modelle": [
+    "FULLSIZE ELITE LIMOUSINE",
+    "FULLSIZE ELITE BERLINE",
+    "FULLSIZE ELITE BERLINA",
+    "FULLSIZE ELITE SEDAN"
+   ],
+   "beispielText": "BMW M3 COMPETITION",
+   "zuletzt": "2026-09-01"
+  },
+  "GTSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m440-coupe-black-2025-US.png",
+   "modelle": [
+    "FULLSIZE ELITE CABRIO",
+    "FULLSIZE ELITE CABRIOLET",
+    "FULLSIZE ELITE DESCAPOTABLE",
+    "FULLSIZE ELITE CONVERSÍVEL",
+    "FULLSIZE ELITE CONVERTIBLE"
+   ],
+   "beispielText": "BMW M440 CONVERTIBLE",
+   "zuletzt": "2026-09-01"
+  },
+  "FELR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/chevrolet-corvette-coupe-grey-2026.png",
+   "modelle": [
+    "FULLSIZE COUPÉ",
+    "FULLSIZE COUPE"
+   ],
+   "beispielText": "CHEVROLET CORVETTE",
+   "zuletzt": "2026-09-01"
+  },
+  "FTLR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/chevrolet-corvette-convertible-white-2026.png",
+   "modelle": [
+    "FULLSIZE CABRIO",
+    "FULLSIZE CABRIOLET",
+    "FULLSIZE DESCAPOTABLE",
+    "FULLSIZE CONVERSÍVEL",
+    "FULLSIZE CONVERTIBLE"
+   ],
+   "beispielText": "CHEVROLET CORVETTE",
    "zuletzt": "2026-09-01"
   }
  },
@@ -1970,6 +2234,237 @@
    "LVMR": "2026-09-01",
    "WFDR": "2026-09-01",
    "LVAR": "2026-09-01"
+  },
+  "sixt|4|www.sixt.at": {
+   "SFAV": "2026-09-01",
+   "ICAR": "2026-09-01",
+   "CCAR": "2026-09-01",
+   "SCAR": "2026-09-01",
+   "FCAR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "GCAR": "2026-09-01",
+   "JCAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "JFAR": "2026-09-01",
+   "RFAR": "2026-09-01",
+   "UCAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "JCSR": "2026-09-01",
+   "JFSR": "2026-09-01",
+   "RFSR": "2026-09-01",
+   "JTAR": "2026-09-01",
+   "GCSR": "2026-09-01",
+   "MVAV": "2026-09-01",
+   "GESR": "2026-09-01",
+   "FFAV": "2026-09-01",
+   "UFAV": "2026-09-01",
+   "GTAR": "2026-09-01",
+   "GFSR": "2026-09-01",
+   "PFAV": "2026-09-01",
+   "GELR": "2026-09-01",
+   "WFAV": "2026-09-01",
+   "SFSR": "2026-09-01",
+   "GCLR": "2026-09-01",
+   "GTSR": "2026-09-01",
+   "FELR": "2026-09-01",
+   "FTLR": "2026-09-01"
+  },
+  "sixt|4|www.sixt.de": {
+   "SFAV": "2026-09-01",
+   "ICAR": "2026-09-01",
+   "CCAR": "2026-09-01",
+   "SCAR": "2026-09-01",
+   "FCAR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "GCAR": "2026-09-01",
+   "JCAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "JFAR": "2026-09-01",
+   "RFAR": "2026-09-01",
+   "UCAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "JCSR": "2026-09-01",
+   "JFSR": "2026-09-01",
+   "RFSR": "2026-09-01",
+   "JTAR": "2026-09-01",
+   "GCSR": "2026-09-01",
+   "MVAV": "2026-09-01",
+   "GESR": "2026-09-01",
+   "FFAV": "2026-09-01",
+   "UFAV": "2026-09-01",
+   "GTAR": "2026-09-01",
+   "GFSR": "2026-09-01",
+   "PFAV": "2026-09-01",
+   "GELR": "2026-09-01",
+   "WFAV": "2026-09-01",
+   "SFSR": "2026-09-01",
+   "GCLR": "2026-09-01",
+   "GTSR": "2026-09-01",
+   "FELR": "2026-09-01",
+   "FTLR": "2026-09-01"
+  },
+  "sixt|4|www.sixt.fr": {
+   "SFAV": "2026-09-01",
+   "ICAR": "2026-09-01",
+   "CCAR": "2026-09-01",
+   "SCAR": "2026-09-01",
+   "FCAR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "GCAR": "2026-09-01",
+   "JCAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "JFAR": "2026-09-01",
+   "RFAR": "2026-09-01",
+   "UCAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "JCSR": "2026-09-01",
+   "JFSR": "2026-09-01",
+   "RFSR": "2026-09-01",
+   "JTAR": "2026-09-01",
+   "GCSR": "2026-09-01",
+   "MVAV": "2026-09-01",
+   "GESR": "2026-09-01",
+   "FFAV": "2026-09-01",
+   "UFAV": "2026-09-01",
+   "GTAR": "2026-09-01",
+   "GFSR": "2026-09-01",
+   "PFAV": "2026-09-01",
+   "GELR": "2026-09-01",
+   "WFAV": "2026-09-01",
+   "SFSR": "2026-09-01",
+   "GCLR": "2026-09-01",
+   "GTSR": "2026-09-01",
+   "FELR": "2026-09-01",
+   "FTLR": "2026-09-01"
+  },
+  "sixt|4|www.sixt.es": {
+   "SFAV": "2026-09-01",
+   "ICAR": "2026-09-01",
+   "CCAR": "2026-09-01",
+   "SCAR": "2026-09-01",
+   "FCAR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "GCAR": "2026-09-01",
+   "JCAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "JFAR": "2026-09-01",
+   "RFAR": "2026-09-01",
+   "UCAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "JCSR": "2026-09-01",
+   "JFSR": "2026-09-01",
+   "RFSR": "2026-09-01",
+   "JTAR": "2026-09-01",
+   "GCSR": "2026-09-01",
+   "MVAV": "2026-09-01",
+   "GESR": "2026-09-01",
+   "FFAV": "2026-09-01",
+   "UFAV": "2026-09-01",
+   "GTAR": "2026-09-01",
+   "GFSR": "2026-09-01",
+   "PFAV": "2026-09-01",
+   "GELR": "2026-09-01",
+   "WFAV": "2026-09-01",
+   "SFSR": "2026-09-01",
+   "GCLR": "2026-09-01",
+   "GTSR": "2026-09-01",
+   "FELR": "2026-09-01",
+   "FTLR": "2026-09-01"
+  },
+  "sixt|4|www.sixt.pt": {
+   "SFAV": "2026-09-01",
+   "ICAR": "2026-09-01",
+   "CCAR": "2026-09-01",
+   "SCAR": "2026-09-01",
+   "FCAR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "GCAR": "2026-09-01",
+   "JCAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "JFAR": "2026-09-01",
+   "RFAR": "2026-09-01",
+   "UCAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "JCSR": "2026-09-01",
+   "JFSR": "2026-09-01",
+   "RFSR": "2026-09-01",
+   "JTAR": "2026-09-01",
+   "GCSR": "2026-09-01",
+   "MVAV": "2026-09-01",
+   "GESR": "2026-09-01",
+   "FFAV": "2026-09-01",
+   "UFAV": "2026-09-01",
+   "GTAR": "2026-09-01",
+   "GFSR": "2026-09-01",
+   "PFAV": "2026-09-01",
+   "GELR": "2026-09-01",
+   "WFAV": "2026-09-01",
+   "SFSR": "2026-09-01",
+   "GCLR": "2026-09-01",
+   "GTSR": "2026-09-01",
+   "FELR": "2026-09-01",
+   "FTLR": "2026-09-01"
+  },
+  "sixt|4|www.sixt.it": {
+   "SFAV": "2026-09-01",
+   "ICAR": "2026-09-01",
+   "CCAR": "2026-09-01",
+   "SCAR": "2026-09-01",
+   "FCAR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "GCAR": "2026-09-01",
+   "JCAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "JFAR": "2026-09-01",
+   "RFAR": "2026-09-01",
+   "UCAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "JTAR": "2026-09-01",
+   "MVAV": "2026-09-01",
+   "FFAV": "2026-09-01",
+   "GTAR": "2026-09-01",
+   "PFAV": "2026-09-01"
+  },
+  "sixt|4|www.sixt.com": {
+   "SFAV": "2026-09-01",
+   "ICAR": "2026-09-01",
+   "CCAR": "2026-09-01",
+   "SCAR": "2026-09-01",
+   "FCAR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "GCAR": "2026-09-01",
+   "JCAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "JFAR": "2026-09-01",
+   "RFAR": "2026-09-01",
+   "UCAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "JCSR": "2026-09-01",
+   "JFSR": "2026-09-01",
+   "RFSR": "2026-09-01",
+   "JTAR": "2026-09-01",
+   "GCSR": "2026-09-01",
+   "MVAV": "2026-09-01",
+   "GESR": "2026-09-01",
+   "FFAV": "2026-09-01",
+   "UFAV": "2026-09-01",
+   "GTAR": "2026-09-01",
+   "GFSR": "2026-09-01",
+   "PFAV": "2026-09-01",
+   "GELR": "2026-09-01",
+   "WFAV": "2026-09-01",
+   "SFSR": "2026-09-01",
+   "GCLR": "2026-09-01",
+   "GTSR": "2026-09-01",
+   "FELR": "2026-09-01",
+   "FTLR": "2026-09-01"
   }
  }
 }
