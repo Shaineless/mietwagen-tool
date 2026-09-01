@@ -71,7 +71,7 @@ function persist() {
  * Die zweite Art schaltet sich von selbst frei, sobald der lokale Dienst
  * antwortet. Faellt er aus, bleibt das Tool benutzbar.
  */
-const service = { available: false, checked: false };
+const service = { available: false, checked: false, chrome: false, queue: null };
 
 /** Preisergebnisse, Auftragsschluessel -> Datensatz vom Dienst. */
 const prices = new Map();
@@ -81,11 +81,66 @@ async function checkService() {
   try {
     const r = await fetch('/api/health', { cache: 'no-store' });
     service.available = r.ok;
+    if (r.ok) {
+      const d = await r.json();
+      service.chrome = Boolean(d.chrome);
+      service.queue = d.queue || null;
+    }
   } catch {
     service.available = false;
   }
   service.checked = true;
   return service.available;
+}
+
+/**
+ * Stösst den automatischen Abruf an.
+ *
+ * Der Dienst startet dafür ein eigenes, unsichtbares Chrome-Fenster, arbeitet
+ * die Anfragen zu zweit ab und legt die Ergebnisse ab; die Oberfläche holt sie
+ * über pollPrices() nach und nach ein.
+ */
+async function fetchPrices() {
+  const jobs = buildJobs()
+    .filter((j) => j.key && j.url && !prices.has(j.key))
+    .map((j) => ({
+      key: j.key,
+      provider: j.provider.id,
+      host: j.market.host,
+      stationCode: j.station.code,
+      returnCode: state.returnStation || undefined,
+      pickupDate: j.variant.pickupDate,
+      returnDate: j.variant.returnDate,
+      pickupTime: state.pickupTime,
+      returnTime: state.returnTime,
+      currency: j.market.cur,
+    }));
+
+  if (!jobs.length) {
+    flash('Für diese Auswahl liegen schon alle Preise vor.');
+    return;
+  }
+
+  const btn = $('#getPrices');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/fetch', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jobs }),
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      flash(d.error || 'Abruf nicht möglich.');
+      btn.disabled = false;
+      return;
+    }
+    flash(`${d.angenommen} Abrufe laufen — Preise erscheinen nach und nach.`);
+    startPolling();
+  } catch {
+    flash('Der Preisdienst antwortet nicht.');
+    btn.disabled = false;
+  }
 }
 
 /**
@@ -126,6 +181,21 @@ async function pollPrices() {
     if (changed) renderResults();
   } catch {
     /* Dienst weg — beim naechsten Durchlauf erneut versuchen */
+  }
+
+  // Fortschritt anzeigen und den Knopf wieder freigeben, wenn nichts mehr läuft.
+  try {
+    const h = await (await fetch('/api/health', { cache: 'no-store' })).json();
+    service.queue = h.queue || null;
+    const q = service.queue;
+    const aktiv = q && (q.laufend > 0 || q.offen > 0);
+    $('#queue').hidden = !aktiv;
+    if (aktiv) {
+      $('#queue').textContent = `Abruf läuft — ${q.erledigt} von ${q.gesamt} fertig`;
+    }
+    if (!aktiv) $('#getPrices').disabled = false;
+  } catch {
+    /* egal */
   }
 }
 
@@ -976,13 +1046,20 @@ function init() {
 
   // Preisdienst suchen. Ist er da, schaltet sich der Preis-Modus frei und die
   // URLs bekommen ihren Auftragsschlüssel — deshalb danach neu zeichnen.
+  $('#getPrices').addEventListener('click', fetchPrices);
+
   checkService().then((ok) => {
     const badge = $('#serviceBadge');
     badge.hidden = false;
-    badge.className = 'svc ' + (ok ? 'on' : 'off');
-    badge.textContent = ok
-      ? 'Preisdienst verbunden — geöffnete Tabs liefern Preise zurück'
-      : 'Kein Preisdienst — reiner Link-Modus';
+    badge.className = 'svc ' + (ok && service.chrome ? 'on' : 'off');
+    badge.textContent = !ok
+      ? 'Kein Preisdienst — reiner Link-Modus'
+      : service.chrome
+        ? 'Preisabruf bereit — holt die Preise automatisch im Hintergrund'
+        : 'Preisdienst läuft, aber kein Chrome gefunden — nur Link-Modus';
+
+    $('#getPrices').hidden = !(ok && service.chrome);
+
     if (ok) {
       startPolling();
       if (state.mode && state.mode !== 'status') update();

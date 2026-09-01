@@ -1,35 +1,35 @@
-﻿/**
+/**
  * Preisabruf fuer Sixt.
  *
- * Ablauf: Laenderseite mit vorbelegten Suchparametern oeffnen, Cookie-Banner
- * ablehnen, Suche ausloesen, auf die Trefferliste warten, Kacheln auslesen.
+ * Ablauf je Anfrage: Laenderseite mit vorbelegten Suchparametern oeffnen,
+ * Cookie-Banner ablehnen, warten bis die Maske aus den URL-Parametern befuellt
+ * ist, Suche ausloesen, Trefferliste abwarten, Kacheln auslesen.
  *
- * Bewusst ueber `data-testid`-Haken und Textmuster statt ueber CSS-Klassen:
- * die Klassennamen sind generiert (sc-79f1dc24-8) und aendern sich bei jedem
- * Deploy, die Testid-Haken sind seit Jahren stabil.
+ * Angesprochen wird alles ueber `data-testid`-Haken und Textmuster, nicht ueber
+ * CSS-Klassen: die Klassennamen sind generiert (sc-79f1dc24-8) und wechseln bei
+ * jedem Deploy.
+ *
+ * Geprueft gegen sixt.de und sixt.co.uk — beide Sprachen, beide Zahlenformate.
  */
 
 import { withPage, dismissConsent } from '../browser.mjs';
 import { mwtParseTile } from './offer-parse.mjs';
 
 const TILE = '[data-testid="rent-offer-list-tile"]';
-const CTA_MAIN = '[data-testid="rent-search-form-cta"] button';
-const CTA_MINI = '[data-testid="rent-minimized-form-cta"] button';
+const CTA =
+  '[data-testid="rent-search-form-cta"] button, [data-testid="rent-minimized-form-cta"] button';
 
 /**
- * Preise fuer eine Anfrage holen.
- *
  * @param {object} q
- * @param {string} q.host          z.B. "www.sixt.es"
- * @param {string} q.stationCode   numerische Sixt-Stations-ID (uci)
+ * @param {string} q.host        z.B. "www.sixt.es"
+ * @param {string} q.stationCode numerische Sixt-Stations-ID (uci)
  * @param {string} [q.returnCode]
- * @param {string} q.pickupDate    yyyy-mm-dd
- * @param {string} q.returnDate    yyyy-mm-dd
- * @param {string} q.pickupTime    hh:mm
- * @param {string} q.returnTime    hh:mm
- * @param {string} [q.currency]    Erwartete Waehrung, dient als Rueckfallwert
- * @param {object} [q.proxy]       { server, username?, password? }
- * @param {string} [q.locale]
+ * @param {string} q.pickupDate  yyyy-mm-dd
+ * @param {string} q.returnDate  yyyy-mm-dd
+ * @param {string} q.pickupTime  hh:mm
+ * @param {string} q.returnTime  hh:mm
+ * @param {string} [q.currency]  Rueckfallwert, falls die Seite keins zeigt
+ * @param {boolean} [q.sichtbar] Browserfenster anzeigen statt verstecken
  */
 export async function quoteSixt(q) {
   const p = new URLSearchParams({
@@ -42,23 +42,24 @@ export async function quoteSixt(q) {
     ctyp: 'P',
   });
   const url = `https://${q.host}/?${p.toString()}`;
+  const started = Date.now();
 
-  return withPage({ host: q.host, locale: q.locale, proxy: q.proxy }, async (page) => {
-    const started = Date.now();
+  return withPage({ host: q.host, sichtbar: q.sichtbar }, async (page) => {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     await dismissConsent(page);
 
-    // Die Maske wird clientseitig aus den URL-Parametern befuellt; erst danach
-    // darf die Suche losgehen, sonst sucht sie mit leerer Station.
-    await page
+    // Die Maske wird clientseitig aus den URL-Parametern befuellt. Erst danach
+    // darf die Suche los, sonst sucht sie mit leerer Station.
+    const bereit = await page
       .waitForFunction(
         () => {
           const i = document.querySelector('input[name="pickupLocation"]');
           return i && i.value.trim().length > 0;
         },
-        { timeout: 20000 }
+        { timeout: 25000 }
       )
-      .catch(() => {});
+      .then(() => true)
+      .catch(() => false);
 
     const station = await page
       .locator('input[name="pickupLocation"]')
@@ -66,49 +67,59 @@ export async function quoteSixt(q) {
       .inputValue()
       .catch(() => '');
 
-    if (!station) {
-      return { ok: false, error: 'Station wurde nicht Ã¼bernommen', url };
+    if (!bereit || !station) {
+      return { ok: false, error: 'Station wurde nicht übernommen', url, ms: Date.now() - started };
     }
 
-    // Zweiter Versuch: der Banner kann zwischen Seitenaufbau und Klick
-    // aufgetaucht sein und faengt sonst den Klick ab.
-    await dismissConsent(page, { timeout: 3000 });
+    // Der Banner kann zwischen Aufbau und Klick aufgetaucht sein.
+    await dismissConsent(page, { versuche: 2 });
+    await page.waitForTimeout(600);
 
-    const cta = page.locator(`${CTA_MAIN}, ${CTA_MINI}`).first();
-    await cta.click({ timeout: 15000 });
-
-    // Entweder es kommen Kacheln, oder die Seite meldet "keine VerfÃ¼gbarkeit".
     try {
-      await page.waitForSelector(TILE, { timeout: 45000 });
+      await page.locator(CTA).first().click({ timeout: 15000 });
     } catch {
+      return { ok: false, station, error: 'Suche ließ sich nicht auslösen', url, ms: Date.now() - started };
+    }
+
+    const kamen = await page
+      .waitForSelector(TILE, { timeout: 60000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (!kamen) {
       const text = await page.locator('body').innerText().catch(() => '');
-      const soldOut = /keine.*verfÃ¼gbar|no.*available|nicht verfÃ¼gbar|sold out/i.test(text);
+      const blockiert = /access denied|request has been blocked/i.test(text);
+      const ausgebucht = /keine.*verfügbar|nicht verfügbar|no.*available|sold out/i.test(text);
       return {
-        ok: soldOut,
+        ok: ausgebucht,
+        station,
         offers: [],
-        note: soldOut ? 'keine Fahrzeuge verfÃ¼gbar' : 'Trefferliste kam nicht',
+        error: blockiert
+          ? 'Zugriff von der Seite blockiert'
+          : ausgebucht
+            ? null
+            : 'Trefferliste kam nicht',
+        note: ausgebucht ? 'keine Fahrzeuge verfügbar' : null,
         url: page.url(),
         ms: Date.now() - started,
       };
     }
 
-    // Nach dem ersten Treffer kurz nachladen lassen, damit die Liste vollzÃ¤hlig ist.
-    await page.waitForTimeout(1500);
+    // Die Liste laedt nach. Warten, bis die Anzahl zweimal gleich bleibt.
+    let letzte = -1;
+    let stabil = 0;
+    while (stabil < 2) {
+      await page.waitForTimeout(1200);
+      const n = await page.locator(TILE).count();
+      stabil = n === letzte ? stabil + 1 : 0;
+      letzte = n;
+    }
 
-    const raw = await page.$$eval(TILE, (nodes) =>
-      nodes.map((n) => n.innerText.split('\n'))
-    );
-
-    const offers = raw
+    const roh = await page.$$eval(TILE, (nodes) => nodes.map((n) => n.innerText.split('\n')));
+    const offers = roh
       .map((lines) => mwtParseTile(lines, q.currency))
       .filter((o) => o && (o.perDay != null || o.total != null));
 
-    return {
-      ok: true,
-      station,
-      offers,
-      url: page.url(),
-      ms: Date.now() - started,
-    };
+    return { ok: true, station, offers, url: page.url(), ms: Date.now() - started };
   });
 }

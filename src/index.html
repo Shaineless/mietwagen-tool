@@ -8,8 +8,8 @@
   <header class="hero">
     <h1>Mietwagen-Preistool</h1>
     <p class="sub">
-      Baut Suchlinks und öffnet sie gebündelt. Ruft selbst keine Preise ab —
-      die Suche läuft auf der Anbieterseite, wo sie hingehört.
+      Vergleicht Mietwagenpreise über Länderseiten und Anbieter hinweg —
+      auf Wunsch vollautomatisch im Hintergrund.
     </p>
   </header>
 
@@ -138,11 +138,13 @@
   <section class="card out">
     <h2>Ergebnis <span class="count"><span id="jobCount">0</span> Aufrufe</span></h2>
     <div class="btnrow">
-      <button type="button" id="openAll" class="primary">Alle öffnen</button>
+      <button type="button" id="getPrices" class="primary" hidden>Preise holen</button>
+      <button type="button" id="openAll" class="ghost">Alle öffnen</button>
       <button type="button" id="copyAll" class="ghost">Links kopieren</button>
       <button type="button" id="reset" class="ghost right">Zurücksetzen</button>
     </div>
     <p id="serviceBadge" class="svc" hidden></p>
+    <p id="queue" class="svc on" hidden></p>
     <p id="warn" class="note warn" hidden></p>
     <p id="popupHint" class="note warn" hidden>
       Der Browser hat Tabs blockiert. Pop-ups für diese Seite erlauben
@@ -156,10 +158,10 @@
 
 <footer>
   <p>
-    Läuft vollständig lokal im Browser. Keine Server, keine Datenübertragung an
-    Dritte, kein Abruf von Preisen — das Tool baut nur Links und öffnet sie.
-    Farbthemen dienen der Orientierung; dies ist kein Angebot der genannten
-    Unternehmen.
+    Läuft vollständig lokal. Keine Datenübertragung an Dritte: der Preisabruf
+    öffnet die Anbieterseiten in einem eigenen Chrome-Fenster auf diesem
+    Rechner, die Ergebnisse bleiben hier. Farbthemen dienen der Orientierung;
+    dies ist kein Angebot der genannten Unternehmen.
   </p>
   <p class="credit">
     Idee nach dem MWT-Preistool von Sloth &amp; Crazer (mietwagen-talk.de, 2020).

@@ -16,6 +16,8 @@ import { readFile, writeFile, stat } from 'node:fs/promises';
 import { join, extname, normalize, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
+import { quoteSixt } from './scrape/sixt.mjs';
+import { findBrowser, closeBrowser } from './browser.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const port = Number(process.argv[2]) || 4173;
@@ -56,6 +58,76 @@ function remember(key, record) {
   const cutoff = Date.now() - MAX_AGE_MS;
   for (const [k, v] of results) if (v.receivedAt < cutoff) results.delete(k);
   while (results.size > MAX_ENTRIES) results.delete(results.keys().next().value);
+}
+
+/* ------------------------------------------------------ Abrufwarteschlange */
+
+/**
+ * Der Preisabruf laeuft im Hintergrund, damit die Oberflaeche waehrenddessen
+ * bedienbar bleibt. Zwei Anfragen gleichzeitig — mehr waere gegenueber den
+ * Anbieterseiten unhoeflich und bringt auch nichts, weil ohnehin jede Seite
+ * ihre Ladezeit braucht.
+ */
+const queue = [];
+let laufend = 0;
+let erledigt = 0;
+let gesamt = 0;
+const PARALLEL = 2;
+
+const ABRUF = { sixt: quoteSixt };
+
+function enqueue(jobs) {
+  for (const j of jobs) {
+    if (!j?.key || results.has(j.key)) continue;
+    if (queue.some((q) => q.key === j.key)) continue;
+    queue.push(j);
+    gesamt++;
+  }
+  for (let i = laufend; i < PARALLEL; i++) tick();
+}
+
+async function tick() {
+  if (laufend >= PARALLEL) return;
+  const job = queue.shift();
+  if (!job) {
+    // Nichts mehr zu tun: Zaehler zuruecksetzen, damit der naechste Lauf
+    // wieder bei 0 anfaengt.
+    if (laufend === 0) {
+      erledigt = 0;
+      gesamt = 0;
+    }
+    return;
+  }
+
+  laufend++;
+  try {
+    const abruf = ABRUF[job.provider];
+    if (!abruf) throw new Error(`Anbieter ${job.provider} hat keinen Preisabruf`);
+
+    console.log(`  → ${job.host}  Station ${job.stationCode}  ${job.pickupDate}`);
+    const res = await abruf(job);
+
+    remember(job.key, {
+      host: job.host,
+      url: res.url || null,
+      station: res.station || null,
+      offers: res.offers || [],
+      error: res.error || null,
+    });
+
+    const n = res.offers?.length ?? 0;
+    console.log(
+      `  ← ${job.host}  ${res.error ? 'Fehler: ' + res.error : n + ' Angebote'}` +
+        (res.ms ? `  (${(res.ms / 1000).toFixed(1)}s)` : '')
+    );
+  } catch (e) {
+    remember(job.key, { host: job.host, offers: [], error: String(e.message).slice(0, 160) });
+    console.log(`  ← ${job.host}  Fehler: ${String(e.message).slice(0, 120)}`);
+  } finally {
+    laufend--;
+    erledigt++;
+    tick();
+  }
 }
 
 /* ------------------------------------------------------ Hilfen */
@@ -105,7 +177,34 @@ createServer(async (req, res) => {
 
   // Lebenszeichen — die Oberflaeche schaltet daran den Preis-Modus frei.
   if (path === '/api/health') {
-    return json(res, 200, { ok: true, service: 'mwt-preistool', stored: results.size });
+    return json(res, 200, {
+      ok: true,
+      service: 'mwt-preistool',
+      stored: results.size,
+      // Ohne Chrome gibt es keinen automatischen Abruf; die Oberflaeche sagt
+      // das dann statt es zu versuchen und stillschweigend zu scheitern.
+      chrome: Boolean(findBrowser()),
+      queue: { laufend, offen: queue.length, erledigt, gesamt },
+    });
+  }
+
+  // Automatischer Preisabruf anstossen.
+  if (path === '/api/fetch' && req.method === 'POST') {
+    try {
+      const body = JSON.parse(await readBody(req));
+      const jobs = Array.isArray(body.jobs) ? body.jobs : [];
+      if (!findBrowser()) {
+        return json(res, 200, {
+          ok: false,
+          error: 'Chrome wurde nicht gefunden — automatischer Abruf nicht möglich.',
+        });
+      }
+      const vorher = queue.length + laufend;
+      enqueue(jobs);
+      return json(res, 200, { ok: true, angenommen: queue.length + laufend - vorher });
+    } catch (e) {
+      return json(res, 400, { ok: false, error: String(e.message).slice(0, 200) });
+    }
   }
 
   // Eingang der Erweiterung.
@@ -198,7 +297,18 @@ createServer(async (req, res) => {
     res.end('nicht gefunden: ' + path);
   }
 }).listen(port, '127.0.0.1', () => {
+  const chrome = findBrowser();
   console.log(`Mietwagen-Preistool:  http://localhost:${port}/`);
-  console.log(`Preiseingang:         POST /api/offers`);
+  console.log(
+    `Preisabruf:           ${chrome ? chrome : 'kein Chrome gefunden — nur Link-Modus'}`
+  );
   console.log(`Import-Token:         ${IMPORT_TOKEN}`);
 });
+
+// Chrome nicht als Waise zuruecklassen, wenn der Dienst endet.
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.on(sig, async () => {
+    await closeBrowser();
+    process.exit(0);
+  });
+}

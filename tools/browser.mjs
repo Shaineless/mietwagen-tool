@@ -1,65 +1,136 @@
 /**
- * Browser-Verwaltung fuer den Preis-Worker.
+ * Browser-Steuerung fuer den Preisabruf.
  *
- * Warum ein echter Browser und kein simples fetch()? Zwei Gruende:
+ * Der entscheidende Punkt steht ganz am Anfang, weil er nicht offensichtlich
+ * ist und teuer erkauft wurde:
  *
- *   1. Die Anbieterseiten stehen hinter Bot-Schutz. Ein blankes fetch() aus
- *      Node bekommt von sixt.de zuverlaessig 403 — nachgemessen.
- *   2. Die Trefferliste wird erst clientseitig aufgebaut. Es gibt kein HTML
- *      mit Preisen, das man parsen koennte; die Seite muss laufen.
+ *   Playwrights eigenes chromium.launch() wird von Sixt abgewiesen
+ *   ("Access denied. Your request has been blocked."), egal ob headless oder
+ *   nicht, egal ob Chromium oder echtes Chrome. Playwright startet den Browser
+ *   mit Automatisierungs-Flags und einem Wegwerfprofil; das faellt auf.
  *
- * Der Browser laeuft headless, also unsichtbar im Hintergrund.
+ *   Ein selbst gestartetes, ganz normales Chrome mit --remote-debugging-port,
+ *   an das man sich per CDP anhaengt, kommt dagegen durch. Gemessen: 50 von 50
+ *   Angebotskacheln.
  *
- * Der Proxy wird bewusst pro Kontext gesetzt und nicht global: so kann jede
- * Laenderseite ueber einen eigenen Ausgang laufen, was genau der Punkt ist —
- * Preise koennen davon abhaengen, aus welchem Land man anfragt.
+ * Deshalb: Chrome selbst starten, dann verbinden. Nicht "vereinfachen".
+ *
+ * Unsichtbar laeuft es ueber --window-position weit ausserhalb des Bildschirms.
+ * Echtes Headless wird ebenfalls abgewiesen — auch das ist gemessen.
  */
 
 import { chromium } from 'playwright';
+import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 
-let browser = null;
-let closing = null;
+const PORT = Number(process.env.MWT_CDP_PORT) || 9222;
+
+/** Eigenes Profil: das echte Profil des Nutzers bleibt unberuehrt. */
+const PROFILE = join(tmpdir(), 'mwt-preistool-chrome');
 
 /** Wartezeit zwischen Aufrufen je Host — bewusst hoeflich. */
-const MIN_GAP_MS = 1200;
+const MIN_GAP_MS = 1500;
 const lastHit = new Map();
 
-const UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
-  '(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
+let proc = null;
+let browser = null;
+
+/* ------------------------------------------------------ Chrome finden */
+
+const CANDIDATES = [
+  [process.env.PROGRAMFILES, 'Google\\Chrome\\Application\\chrome.exe'],
+  [process.env['PROGRAMFILES(X86)'], 'Google\\Chrome\\Application\\chrome.exe'],
+  [process.env.LOCALAPPDATA, 'Google\\Chrome\\Application\\chrome.exe'],
+  [process.env.PROGRAMFILES, 'Microsoft\\Edge\\Application\\msedge.exe'],
+  [process.env['PROGRAMFILES(X86)'], 'Microsoft\\Edge\\Application\\msedge.exe'],
+];
+
+export function findBrowser() {
+  if (process.env.MWT_CHROME && existsSync(process.env.MWT_CHROME)) {
+    return process.env.MWT_CHROME;
+  }
+  for (const [base, rest] of CANDIDATES) {
+    if (!base) continue;
+    const p = join(base, rest);
+    if (existsSync(p)) return p;
+  }
+  return null;
+}
+
+/* ------------------------------------------------------ Start und Verbindung */
 
 /**
- * Einstellbar ueber Umgebungsvariablen, weil der Bot-Schutz der Anbieter
- * empfindlich auf die Startvariante reagiert:
- *
- *   MWT_HEADLESS=0        sichtbares Fenster (zum Nachvollziehen)
- *   MWT_CHANNEL=chrome    echtes Chrome statt gebuendeltem Chromium
- *   MWT_PROFILE=<pfad>    dauerhaftes Profil (stabilerer Fingerabdruck)
+ * Startet Chrome (falls noetig) und verbindet sich.
+ * @param {boolean} sichtbar  true = Fenster auf dem Bildschirm, zum Zuschauen
  */
-export async function getBrowser() {
-  if (closing) await closing;
+export async function getBrowser({ sichtbar = false } = {}) {
   if (browser && browser.isConnected()) return browser;
 
-  const headless = process.env.MWT_HEADLESS !== '0';
-  const channel = process.env.MWT_CHANNEL || undefined;
+  // Laeuft schon eine passende Instanz? Dann einfach anhaengen.
+  try {
+    browser = await chromium.connectOverCDP(`http://127.0.0.1:${PORT}`, { timeout: 2000 });
+    return browser;
+  } catch {
+    /* keine da — selbst starten */
+  }
 
-  browser = await chromium.launch({
-    headless,
-    ...(channel ? { channel } : {}),
-    args: ['--lang=de-DE', '--no-sandbox'],
-  });
-  return browser;
+  const exe = findBrowser();
+  if (!exe) {
+    throw new Error(
+      'Chrome (oder Edge) wurde nicht gefunden. Pfad über die Umgebungsvariable ' +
+        'MWT_CHROME setzen, oder Chrome von https://google.com/chrome installieren.'
+    );
+  }
+
+  const args = [
+    `--remote-debugging-port=${PORT}`,
+    // Eigenes Profil ist Pflicht: Chrome verweigert Debugging auf dem
+    // Standardprofil, und das echte Profil des Nutzers soll unberuehrt bleiben.
+    `--user-data-dir=${PROFILE}`,
+    '--no-first-run',
+    '--no-default-browser-check',
+  ];
+  if (!sichtbar) {
+    args.push('--window-position=-32000,-32000', '--window-size=1400,1000');
+  }
+  args.push('about:blank');
+
+  proc = spawn(exe, args, { detached: true, stdio: 'ignore' });
+  proc.unref();
+
+  // Chrome braucht einen Moment, bis der Debug-Port lauscht.
+  let lastErr;
+  for (let i = 0; i < 25; i++) {
+    await new Promise((r) => setTimeout(r, 400));
+    try {
+      browser = await chromium.connectOverCDP(`http://127.0.0.1:${PORT}`, { timeout: 2000 });
+      return browser;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw new Error('Verbindung zu Chrome fehlgeschlagen: ' + String(lastErr?.message).slice(0, 120));
 }
 
 export async function closeBrowser() {
-  if (!browser) return;
-  closing = browser.close().catch(() => {});
-  await closing;
+  try {
+    await browser?.close();
+  } catch {
+    /* egal */
+  }
   browser = null;
-  closing = null;
+  try {
+    if (proc?.pid) process.kill(proc.pid);
+  } catch {
+    /* schon beendet */
+  }
+  proc = null;
 }
 
-/** Hoeflichkeitsbremse: nie zwei Aufrufe gegen denselben Host im Sekundentakt. */
+/* ------------------------------------------------------ Seiten */
+
 async function throttle(host) {
   const last = lastHit.get(host) || 0;
   const wait = MIN_GAP_MS - (Date.now() - last);
@@ -68,115 +139,63 @@ async function throttle(host) {
 }
 
 /**
- * Fuehrt `fn` in einer frischen, isolierten Sitzung aus.
+ * Fuehrt `fn` in einem frischen Tab aus und raeumt ihn danach weg.
  *
- * Frisch ist wichtig: Sixt merkt sich die zuletzt gewaehlte Station in
- * localStorage. Ohne saubere Sitzung bekommt man Ergebnisse fuer die vorige
- * Anfrage zurueck und merkt es nicht — genau dieser Effekt hat mich bei der
- * Analyse zuerst in die Irre gefuehrt.
- *
- * @param {object}   opts
- * @param {string}   opts.host    Zielhost, fuer die Hoeflichkeitsbremse
- * @param {string}   [opts.locale]
- * @param {object}   [opts.proxy] { server, username?, password? }
- * @param {Function} fn           bekommt die Page
+ * Frischer Tab, aber gemeinsames Profil: Sixt merkt sich die zuletzt gewaehlte
+ * Station. Deshalb wird vor jeder Anfrage der Speicher der Seite geleert —
+ * sonst bekommt man das Ergebnis der vorigen Anfrage zurueck und merkt es
+ * nicht. Genau dieser Effekt hat mich bei der Analyse zuerst in die Irre
+ * gefuehrt.
  */
-export async function withPage({ host, locale = 'de-DE', proxy }, fn) {
+export async function withPage({ host, sichtbar = false }, fn) {
   await throttle(host);
-  const b = await getBrowser();
-
-  const context = await b.newContext({
-    userAgent: UA,
-    locale,
-    viewport: { width: 1400, height: 1000 },
-    timezoneId: 'Europe/Berlin',
-    ...(proxy ? { proxy } : {}),
-  });
-  context.setDefaultTimeout(30000);
-
-  // Bilder/Schriften blocken spart Zeit, ist aber selbst ein Erkennungsmerkmal
-  // (echte Browser laden sie). Deshalb standardmaessig aus.
-  if (process.env.MWT_BLOCK_ASSETS === '1') {
-    await context.route('**/*', (route) => {
-      const t = route.request().resourceType();
-      if (t === 'image' || t === 'font' || t === 'media') return route.abort();
-      route.continue();
-    });
-  }
-
-  // Hier stand kurzzeitig eine Tarnkappen-Schicht (navigator.webdriver
-  // faelschen usw.). Sie ist bewusst wieder raus: Sixt hat den Zugriff
-  // ausdruecklich gesperrt ("Access denied. Your request has been blocked"),
-  // und diese Sperre gezielt zu umgehen ist etwas anderes als eine oeffentliche
-  // Seite zu lesen. Der Weg ueber die echte Browsersitzung des Nutzers steht
-  // in tools/README-preise.md.
+  const b = await getBrowser({ sichtbar });
+  const ctx = b.contexts()[0];
+  const page = await ctx.newPage();
+  page.setDefaultTimeout(30000);
 
   try {
-    const page = await context.newPage();
+    await page.goto(`https://${host}/`, { waitUntil: 'domcontentloaded' }).catch(() => {});
+    await page
+      .evaluate(() => {
+        localStorage.clear();
+        sessionStorage.clear();
+      })
+      .catch(() => {});
     return await fn(page);
   } finally {
-    await context.close().catch(() => {});
+    await page.close().catch(() => {});
   }
 }
 
 /**
- * Cookie-Banner wegklicken — bewusst mit "Ablehnen", nicht "Akzeptieren".
- * Fuer einen Preisabruf wird kein Tracking gebraucht.
+ * Cookie-Banner ablehnen — bewusst "Ablehnen", nicht "Einverstanden".
+ *
+ * Der Banner liegt im Shadow DOM von #usercentrics-cmp-ui. Angesprochen wird er
+ * ueber Klassennamen, nicht ueber die Beschriftung: die heisst je Laenderseite
+ * "Ablehnen", "Deny", "Rechazar" ... Geprueft auf sixt.de und sixt.co.uk.
  */
-export async function dismissConsent(page, { timeout = 12000 } = {}) {
-  // Der Banner wird nachgeladen und ist beim DOMContentLoaded noch nicht da.
-  // Ohne dieses Warten klickt man ins Leere und der Banner faengt danach
-  // jeden weiteren Klick ab.
-  const appeared = await page
-    .waitForFunction(
-      () => {
-        const host = document.querySelector('#usercentrics-cmp-ui');
-        return Boolean(host?.shadowRoot?.querySelector('button'));
-      },
-      { timeout }
-    )
-    .then(() => true)
-    .catch(() => false);
-
-  if (!appeared) return false;
-
-  // Der Banner liegt im Shadow DOM von #usercentrics-cmp-ui. Die Klassennamen
-  // sind sprachunabhaengig — anders als die Beschriftung, die je Laenderseite
-  // "Ablehnen", "Deny", "Rechazar" ... heisst.
-  const clicked = await page
-    .evaluate(() => {
-      const roots = [document];
-      const host = document.querySelector('#usercentrics-cmp-ui');
-      if (host?.shadowRoot) roots.push(host.shadowRoot);
-
-      const selectors = [
-        'button.uc-deny-button',
-        'button#deny',
-        '[data-testid="uc-deny-all-button"]',
-        '#uc-btn-deny-banner',
-      ];
-
-      for (const root of roots) {
-        for (const sel of selectors) {
-          const btn = root.querySelector(sel);
-          if (btn) {
-            btn.click();
-            return sel;
+export async function dismissConsent(page, { versuche = 16 } = {}) {
+  for (let i = 0; i < versuche; i++) {
+    const ok = await page
+      .evaluate(() => {
+        const h = document.querySelector('#usercentrics-cmp-ui');
+        const roots = h?.shadowRoot ? [document, h.shadowRoot] : [document];
+        for (const r of roots) {
+          const b = r.querySelector('button.uc-deny-button, button#deny');
+          if (b) {
+            b.click();
+            return true;
           }
         }
-      }
-      return null;
-    })
-    .catch(() => null);
-
-  if (clicked) {
-    // Dem Banner Zeit geben, sich abzuräumen, sonst fängt er den nächsten Klick.
-    await page
-      .waitForFunction(() => !document.querySelector('#usercentrics-cmp-ui'), {
-        timeout: 5000,
+        return false;
       })
-      .catch(() => page.waitForTimeout(800));
-    return true;
+      .catch(() => false);
+    if (ok) {
+      await page.waitForTimeout(400);
+      return true;
+    }
+    await page.waitForTimeout(500);
   }
   return false;
 }
