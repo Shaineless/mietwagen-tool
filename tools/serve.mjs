@@ -198,7 +198,7 @@ async function readBody(req, limit = 1_000_000) {
 
 /* ------------------------------------------------------ Server */
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
   const path = decodeURIComponent(url.pathname);
 
@@ -427,22 +427,132 @@ createServer(async (req, res) => {
     'cache-control': 'no-store',
   });
   res.end(body);
-}).listen(port, '127.0.0.1', () => {
-  const chrome = findBrowser();
+});
+
+/* ------------------------------------------------------ Starten */
+
+/**
+ * Laeuft auf diesem Port bereits unser eigener Dienst?
+ *
+ * Wichtig fuer den Doppelklick: startet jemand das Programm ein zweites Mal,
+ * soll es nicht mit einer Fehlermeldung abbrechen, sondern einfach das
+ * Fenster zum schon laufenden Dienst aufmachen.
+ */
+async function schonUnserer(p) {
+  try {
+    const r = await fetch(`http://127.0.0.1:${p}/api/health`, {
+      signal: AbortSignal.timeout(1200),
+    });
+    return r.ok && (await r.json()).service === 'mwt-preistool';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Einmal versuchen zu lauschen. `false` heisst "Port belegt"; jeder andere
+ * Fehler wird durchgereicht, denn der ist nicht durch Weiterzaehlen zu heilen.
+ */
+function versucheLauschen(p) {
+  return new Promise((gelungen, gescheitert) => {
+    const beiFehler = (e) => {
+      server.removeListener('listening', beiErfolg);
+      if (e.code === 'EADDRINUSE') gelungen(false);
+      else gescheitert(e);
+    };
+    const beiErfolg = () => {
+      server.removeListener('error', beiFehler);
+      gelungen(true);
+    };
+    server.once('error', beiFehler);
+    server.once('listening', beiErfolg);
+    server.listen(p, '127.0.0.1');
+  });
+}
+
+/**
+ * Windows-Konsole auf UTF-8 stellen.
+ *
+ * Beim Start aus der .cmd erledigt das `chcp 65001`. Die EXE wird
+ * doppelgeklickt und hat niemanden, der das für sie tut — steht die Konsole
+ * dann auf der deutschen Standardcodepage, werden aus Umlauten Kästchen.
+ * Schlägt es fehl, ist das kein Grund, den Start abzubrechen.
+ */
+async function setzeKonsoleAufUtf8() {
+  if (!istExe || process.platform !== 'win32') return;
+  try {
+    const { execFileSync } = await import('node:child_process');
+    execFileSync('chcp.com', ['65001'], { stdio: 'ignore' });
+  } catch {
+    /* dann eben mit Kästchen */
+  }
+}
+
+async function starteDienst() {
+  await setzeKonsoleAufUtf8();
+
   // 127.0.0.1 statt localhost: der Dienst haengt nur an der IPv4-Adresse,
   // waehrend "localhost" unter Windows zuerst als ::1 aufgeloest wird.
-  const adresse = `http://127.0.0.1:${port}/`;
-  console.log(`Mietwagen-Preistool:  ${adresse}`);
-  console.log(
-    `Preisabruf:           ${chrome ? chrome : 'kein Chrome gefunden — nur Link-Modus'}`
-  );
-  if (istExe) {
-    console.log(`Daten:                ${datenOrdner}`);
-    console.log('\nZum Beenden dieses Fenster schliessen.');
-    if (!stillerStart) oeffneImBrowser(adresse);
-  } else {
-    console.log(`Import-Token:         ${IMPORT_TOKEN}`);
+  for (let p = port; p < port + 12; p++) {
+    if (await schonUnserer(p)) {
+      const adresse = `http://127.0.0.1:${p}/`;
+      console.log(`Das Preistool läuft bereits auf ${adresse}`);
+      if (istExe) {
+        if (!stillerStart) oeffneImBrowser(adresse);
+        // Kurz stehenlassen, damit der Browser den Aufruf noch absetzen kann.
+        setTimeout(() => process.exit(0), 1500);
+        return;
+      }
+      process.exit(0);
+    }
+
+    if (!(await versucheLauschen(p))) {
+      console.log(`Port ${p} ist belegt — versuche ${p + 1} …`);
+      continue;
+    }
+
+    const adresse = `http://127.0.0.1:${p}/`;
+    const chrome = findBrowser();
+    console.log(`Mietwagen-Preistool:  ${adresse}`);
+    console.log(
+      `Preisabruf:           ${chrome ? chrome : 'kein Chrome gefunden — nur Link-Modus'}`
+    );
+    if (istExe) {
+      console.log(`Daten:                ${datenOrdner}`);
+      console.log('\nZum Beenden dieses Fenster schliessen.');
+      if (!stillerStart) oeffneImBrowser(adresse);
+    } else {
+      console.log(`Import-Token:         ${IMPORT_TOKEN}`);
+    }
+    return;
   }
+
+  throw new Error(`Kein freier Port zwischen ${port} und ${port + 11} gefunden.`);
+}
+
+/**
+ * Bei einem Fehler das Fenster offen halten.
+ *
+ * Die EXE ist ein Konsolenprogramm: stuerzt sie ab, schliesst Windows das
+ * Fenster sofort wieder. Von aussen sieht ein Doppelklick dann so aus, als
+ * waere gar nichts passiert — die Meldung, die erklaert warum, ist schon weg.
+ */
+async function halteFensterOffen(text) {
+  console.error('\n' + text + '\n');
+  if (!istExe || stillerStart || !process.stdin.isTTY) return;
+  console.log('Zum Schliessen die Eingabetaste drücken.');
+  process.stdin.resume();
+  await new Promise((fertig) => process.stdin.once('data', fertig));
+}
+
+starteDienst().catch(async (e) => {
+  await halteFensterOffen('Start fehlgeschlagen: ' + (e?.message || e));
+  process.exit(1);
+});
+
+process.on('uncaughtException', async (e) => {
+  await halteFensterOffen('Unerwarteter Fehler: ' + (e?.stack || e));
+  process.exit(1);
 });
 
 /**
