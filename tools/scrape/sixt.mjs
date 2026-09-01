@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Preisabruf fuer Sixt.
  *
  * Ablauf: Laenderseite mit vorbelegten Suchparametern oeffnen, Cookie-Banner
@@ -10,76 +10,11 @@
  */
 
 import { withPage, dismissConsent } from '../browser.mjs';
+import { mwtParseTile } from './offer-parse.mjs';
 
 const TILE = '[data-testid="rent-offer-list-tile"]';
 const CTA_MAIN = '[data-testid="rent-search-form-cta"] button';
 const CTA_MINI = '[data-testid="rent-minimized-form-cta"] button';
-
-/** Waehrungszeichen, die auf den Sixt-Laenderseiten vorkommen. */
-const CUR_RE = /(€|£|\$|CHF|SEK|NOK|DKK|PLN|CZK|HUF|TRY|zł|Kč|Ft|kr)/i;
-
-/**
- * Zahl aus einer Zeile ziehen.
- *
- * Faengt beide Schreibweisen ab: "1.234,56 €" (de) und "£1,234.56" (uk).
- * Das letzte Trennzeichen ist immer das Dezimaltrennzeichen.
- *
- * Zeilen wie "134€49" — Sixts optisch aufgehuebschte Dopplung, bei der das
- * Waehrungszeichen zwischen den Ziffern steht — werden absichtlich NICHT
- * erkannt: es gibt sie immer zusaetzlich in sauberer Form.
- */
-export function parseAmount(line) {
-  const m = line.match(/\d{1,3}(?:[.,\s]\d{3})*[.,]\d{2}|\d+[.,]\d{2}/);
-  if (!m) return null;
-
-  const raw = m[0].replace(/\s/g, '');
-  const lastSep = Math.max(raw.lastIndexOf('.'), raw.lastIndexOf(','));
-  if (lastSep < 0) return null;
-
-  const whole = raw.slice(0, lastSep).replace(/[.,]/g, '');
-  const frac = raw.slice(lastSep + 1);
-  const value = Number(`${whole}.${frac}`);
-  return Number.isFinite(value) ? value : null;
-}
-
-/** Eine Angebotskachel in ein Datensatz-Objekt uebersetzen. */
-export function parseTile(lines, fallbackCurrency) {
-  const clean = lines.map((s) => s.trim()).filter(Boolean);
-  if (!clean.length) return null;
-
-  const amounts = [];
-  for (const line of clean) {
-    if (!CUR_RE.test(line)) continue;
-    const value = parseAmount(line);
-    if (value == null) continue;
-    // Der Tagespreis ist die Zeile mit dem Schraegstrich ("134,49€/Tag").
-    amounts.push({ value, perDay: line.includes('/') });
-  }
-  if (!amounts.length) return null;
-
-  const perDay = amounts.find((a) => a.perDay)?.value ?? null;
-  const totals = amounts.filter((a) => !a.perDay).map((a) => a.value);
-  const total = totals.length ? Math.max(...totals) : null;
-
-  const currency =
-    (clean.join(' ').match(CUR_RE) || [])[0]?.toUpperCase() || fallbackCurrency;
-
-  const category = clean[1] || '';
-  return {
-    model: clean[0],
-    category,
-    transmission: /automat/i.test(category)
-      ? 'Automatik'
-      : /manuell|manual|schalt/i.test(category)
-        ? 'Schaltung'
-        : null,
-    unlimitedKm: clean.some((l) => /unbegrenzt|unlimited|ilimitad|illimit/i.test(l)),
-    guaranteedModel: !clean.some((l) => /ähnlich|similar|simile|similaire/i.test(l)),
-    perDay,
-    total,
-    currency: currency === '€' ? 'EUR' : currency === '£' ? 'GBP' : currency,
-  };
-}
 
 /**
  * Preise fuer eine Anfrage holen.
@@ -132,7 +67,7 @@ export async function quoteSixt(q) {
       .catch(() => '');
 
     if (!station) {
-      return { ok: false, error: 'Station wurde nicht übernommen', url };
+      return { ok: false, error: 'Station wurde nicht Ã¼bernommen', url };
     }
 
     // Zweiter Versuch: der Banner kann zwischen Seitenaufbau und Klick
@@ -142,22 +77,22 @@ export async function quoteSixt(q) {
     const cta = page.locator(`${CTA_MAIN}, ${CTA_MINI}`).first();
     await cta.click({ timeout: 15000 });
 
-    // Entweder es kommen Kacheln, oder die Seite meldet "keine Verfügbarkeit".
+    // Entweder es kommen Kacheln, oder die Seite meldet "keine VerfÃ¼gbarkeit".
     try {
       await page.waitForSelector(TILE, { timeout: 45000 });
     } catch {
       const text = await page.locator('body').innerText().catch(() => '');
-      const soldOut = /keine.*verfügbar|no.*available|nicht verfügbar|sold out/i.test(text);
+      const soldOut = /keine.*verfÃ¼gbar|no.*available|nicht verfÃ¼gbar|sold out/i.test(text);
       return {
         ok: soldOut,
         offers: [],
-        note: soldOut ? 'keine Fahrzeuge verfügbar' : 'Trefferliste kam nicht',
+        note: soldOut ? 'keine Fahrzeuge verfÃ¼gbar' : 'Trefferliste kam nicht',
         url: page.url(),
         ms: Date.now() - started,
       };
     }
 
-    // Nach dem ersten Treffer kurz nachladen lassen, damit die Liste vollzählig ist.
+    // Nach dem ersten Treffer kurz nachladen lassen, damit die Liste vollzÃ¤hlig ist.
     await page.waitForTimeout(1500);
 
     const raw = await page.$$eval(TILE, (nodes) =>
@@ -165,7 +100,7 @@ export async function quoteSixt(q) {
     );
 
     const offers = raw
-      .map((lines) => parseTile(lines, q.currency))
+      .map((lines) => mwtParseTile(lines, q.currency))
       .filter((o) => o && (o.perDay != null || o.total != null));
 
     return {

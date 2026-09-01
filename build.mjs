@@ -93,6 +93,29 @@ const bundle = [
 
 /* ------------------------------------------------ In HTML einsetzen */
 
+/* --------------------------------- Parser an seine zwei Einsatzorte kopieren */
+
+// Die Kachel-Auswertung existiert genau einmal (src/offer-parse.js) und wird
+// von hier aus verteilt. Sonst laufen Erweiterung und Worker auseinander,
+// ohne dass es jemand merkt.
+const parser = readFileSync(src('offer-parse.js'), 'utf8');
+const GENERATED = '// Erzeugt von build.mjs aus src/offer-parse.js — nicht direkt bearbeiten.\n\n';
+
+writeFileSync(
+  join(root, 'extension', 'content.js'),
+  GENERATED + parser + '\n\n' + readFileSync(join(root, 'extension', 'content.src.js'), 'utf8')
+);
+
+mkdirSync(join(root, 'tools', 'scrape'), { recursive: true });
+writeFileSync(
+  join(root, 'tools', 'scrape', 'offer-parse.mjs'),
+  GENERATED + parser + '\n\nexport { mwtParseTile, mwtParseAmount };\n'
+);
+
+console.log('  Parser verteilt: extension/content.js, tools/scrape/offer-parse.mjs');
+
+/* --------------------------------- In HTML einsetzen */
+
 const html = readFileSync(src('index.html'), 'utf8')
   .replace('/*STYLES*/', () => readFileSync(src('styles.css'), 'utf8'))
   .replace('/*SCRIPT*/', () => bundle);

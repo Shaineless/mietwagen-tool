@@ -435,3 +435,38 @@ h2.pick {
   cursor: default;
 }
 .lnk.off:hover { border-color: var(--line); background: var(--card); }
+
+/* ============================================ Preisdienst */
+
+.svc {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin: 0 0 10px;
+  display: inline-block;
+}
+.svc.on { background: var(--on); color: var(--accent); }
+.svc.off { background: var(--bg); color: var(--muted); }
+
+.lnk.priced { border-color: var(--pa); }
+
+.price {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.2;
+  margin-left: 4px;
+  padding-left: 8px;
+  border-left: 1px solid var(--line);
+  font-weight: 650;
+}
+.price .pcount {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.price.wait, .price.err {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--muted);
+}
+.price.err { color: var(--warn); }

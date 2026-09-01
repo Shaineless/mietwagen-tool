@@ -59,6 +59,96 @@ function persist() {
   }
 }
 
+/* =========================================================== Preisdienst */
+
+/**
+ * Das Tool laeuft in zwei Betriebsarten:
+ *
+ *   ohne Dienst - reiner Link-Generator, eine einzelne HTML-Datei
+ *   mit Dienst  - zusaetzlich echte Preise, geliefert von der Browser-
+ *                 Erweiterung, die sie aus den geoeffneten Tabs abliest
+ *
+ * Die zweite Art schaltet sich von selbst frei, sobald der lokale Dienst
+ * antwortet. Faellt er aus, bleibt das Tool benutzbar.
+ */
+const service = { available: false, checked: false };
+
+/** Preisergebnisse, Auftragsschluessel -> Datensatz vom Dienst. */
+const prices = new Map();
+let pollTimer = null;
+
+async function checkService() {
+  try {
+    const r = await fetch('/api/health', { cache: 'no-store' });
+    service.available = r.ok;
+  } catch {
+    service.available = false;
+  }
+  service.checked = true;
+  return service.available;
+}
+
+/**
+ * Auftragsschluessel: identifiziert eine konkrete Anfrage eindeutig, damit
+ * die Erweiterung ihr Ergebnis dem richtigen Link zuordnen kann.
+ */
+function jobKey(providerId, host, stationCode, v) {
+  return [
+    providerId,
+    host,
+    stationCode,
+    v.pickupDate,
+    v.returnDate,
+    state.pickupTime,
+    state.returnTime,
+  ].join('~');
+}
+
+async function pollPrices() {
+  if (!service.available) return;
+  const keys = buildJobs()
+    .filter((j) => j.key && !prices.has(j.key))
+    .map((j) => j.key);
+  if (!keys.length) return;
+
+  try {
+    const r = await fetch(`/api/results?keys=${encodeURIComponent(keys.join(','))}`, {
+      cache: 'no-store',
+    });
+    const data = await r.json();
+    let changed = false;
+    for (const [k, v] of Object.entries(data.results || {})) {
+      if (!prices.has(k)) {
+        prices.set(k, v);
+        changed = true;
+      }
+    }
+    if (changed) renderResults();
+  } catch {
+    /* Dienst weg — beim naechsten Durchlauf erneut versuchen */
+  }
+}
+
+function startPolling() {
+  if (pollTimer || !service.available) return;
+  pollTimer = setInterval(pollPrices, 2500);
+}
+
+/** Guenstigstes Angebot eines Ergebnisses. */
+function cheapest(record) {
+  if (!record || !record.offers?.length) return null;
+  return record.offers.reduce((best, o) => {
+    const v = o.total ?? o.perDay ?? Infinity;
+    const b = best ? (best.total ?? best.perDay ?? Infinity) : Infinity;
+    return v < b ? o : best;
+  }, null);
+}
+
+function money(v, cur) {
+  if (v == null) return '—';
+  return `${v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur || ''}`.trim();
+}
+
 /* =========================================================== Datum */
 
 function iso(d) {
@@ -151,6 +241,18 @@ function stationByCode(providerId, code) {
 
 /* =========================================================== Aufträge */
 
+/**
+ * Haengt den Auftragsschluessel an die Ziel-URL, damit die Erweiterung das
+ * Ergebnis zuordnen kann. Nur wenn der Dienst laeuft — ohne ihn hat der
+ * Parameter keinen Zweck und soll die URL nicht unnötig aufblähen.
+ *
+ * Sixt ignoriert unbekannte Parameter; geprüft, die Suche bleibt unberührt.
+ */
+function withJobKey(url, key) {
+  if (!service.available || !url) return url;
+  return url + (url.includes('?') ? '&' : '?') + 'mwt=' + encodeURIComponent(key);
+}
+
 /** Datumsvarianten aus Verschiebungen × Mietdauern. */
 function dateVariants() {
   const base = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
@@ -184,16 +286,20 @@ function jobsByMarket() {
     for (const v of dateVariants()) {
       for (const market of markets) {
         const q = { ...state, pickupDate: v.pickupDate, returnDate: v.returnDate };
+        const built = provider.build(q, market, station, ret);
+        const key = jobKey(provider.id, market.host, station.code, v);
         jobs.push({
           provider,
           market,
           station,
           variant: v,
+          key,
           groupKey: `${station.code}|${v.pickupDate}|${v.returnDate}`,
           groupLabel: station.name,
           itemLabel: market.label,
           itemSub: market.cur,
-          ...provider.build(q, market, station, ret),
+          ...built,
+          url: withJobKey(built.url, key),
         });
       }
     }
@@ -238,12 +344,16 @@ function jobsByProvider() {
       // Heimatmarkt des Anbieters für den reinen Anbietervergleich.
       const market = provider.markets[0];
       const q = { ...state, pickupDate: v.pickupDate, returnDate: v.returnDate };
+      const built = provider.build(q, market, station, null);
+      const key = jobKey(provider.id, market.host, station.code, v);
       jobs.push({
         ...common,
         station,
         market,
+        key,
         itemSub: station.name,
-        ...provider.build(q, market, station, null),
+        ...built,
+        url: withJobKey(built.url, key),
       });
     }
   }
@@ -577,6 +687,51 @@ function renderPills(sel, opts, list, label, onEmpty) {
   );
 }
 
+/**
+ * Ein Eintrag der Ergebnisliste.
+ *
+ * Ohne Preisdienst ist das schlicht ein Link. Mit Dienst zeigt derselbe
+ * Eintrag zusaetzlich den guenstigsten gelesenen Preis und die Zahl der
+ * gefundenen Klassen — der Link bleibt, damit man immer nachsehen kann.
+ */
+function renderLink(j) {
+  const rec = j.key ? prices.get(j.key) : null;
+  const best = cheapest(rec);
+
+  const node = el(
+    'a',
+    {
+      href: j.url,
+      target: '_blank',
+      rel: 'noopener',
+      class: 'lnk' + (best ? ' priced' : ''),
+      style: `--pa:${j.provider.theme.accent}`,
+      title: rec?.error || (best ? best.model : ''),
+    },
+    el('span', { class: 'pbar' }),
+    el('span', { class: 'mkname' }, j.itemLabel),
+    j.itemSub ? el('span', { class: 'cur' }, j.itemSub) : null
+  );
+
+  if (!service.available) return node;
+
+  if (best) {
+    node.append(
+      el(
+        'span',
+        { class: 'price' },
+        money(best.total ?? best.perDay, best.currency),
+        el('span', { class: 'pcount' }, `${rec.offers.length} Klassen`)
+      )
+    );
+  } else if (rec?.error) {
+    node.append(el('span', { class: 'price err' }, rec.error));
+  } else {
+    node.append(el('span', { class: 'price wait' }, 'wartet …'));
+  }
+  return node;
+}
+
 function renderResults() {
   const jobs = buildJobs();
   const openable = jobs.filter((j) => j.url);
@@ -632,19 +787,7 @@ function renderResults() {
           { class: 'links' },
           ...list.map((j) =>
             j.url
-              ? el(
-                  'a',
-                  {
-                    href: j.url,
-                    target: '_blank',
-                    rel: 'noopener',
-                    class: 'lnk',
-                    style: `--pa:${j.provider.theme.accent}`,
-                  },
-                  el('span', { class: 'pbar' }),
-                  el('span', { class: 'mkname' }, j.itemLabel),
-                  j.itemSub ? el('span', { class: 'cur' }, j.itemSub) : null
-                )
+              ? renderLink(j)
               : el(
                   'span',
                   { class: 'lnk off' },
@@ -820,6 +963,21 @@ function init() {
 
   if (state.mode) enterMode(state.mode);
   else showScreen('start');
+
+  // Preisdienst suchen. Ist er da, schaltet sich der Preis-Modus frei und die
+  // URLs bekommen ihren Auftragsschlüssel — deshalb danach neu zeichnen.
+  checkService().then((ok) => {
+    const badge = $('#serviceBadge');
+    badge.hidden = false;
+    badge.className = 'svc ' + (ok ? 'on' : 'off');
+    badge.textContent = ok
+      ? 'Preisdienst verbunden — geöffnete Tabs liefern Preise zurück'
+      : 'Kein Preisdienst — reiner Link-Modus';
+    if (ok) {
+      startPolling();
+      if (state.mode && state.mode !== 'status') update();
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);
