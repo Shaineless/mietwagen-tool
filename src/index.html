@@ -64,6 +64,7 @@
   </div>
 
   <main>
+   <div class="spalte">
     <!-- Anbieterwahl: im Länder-Modus einer, im Anbieter-Modus mehrere -->
     <section class="card" id="providerCard">
       <h2>Anbieter</h2>
@@ -73,12 +74,22 @@
 
     <section class="card">
       <h2>Zeitraum</h2>
-      <div class="row">
-        <label>Abholung <input type="date" id="pickupDate"></label>
-        <label>Uhrzeit <input type="time" id="pickupTime" step="900"></label>
-        <label>Rückgabe <input type="date" id="returnDate"></label>
-        <label>Uhrzeit <input type="time" id="returnTime" step="900"></label>
+
+      <div class="zgrid">
+        <span></span>
+        <span class="zkopf">Datum</span>
+        <span class="zkopf">Uhrzeit</span>
+
+        <label class="zlabel" for="pickupDate">Abholung</label>
+        <input type="date" id="pickupDate">
+        <input type="time" id="pickupTime" step="900">
+
+        <label class="zlabel" for="returnDate">Rückgabe</label>
+        <input type="date" id="returnDate">
+        <input type="time" id="returnTime" step="900">
       </div>
+
+      <p class="dauer" id="dauer"></p>
 
       <details>
         <summary>Datums-Matrix — mehrere Termine auf einmal prüfen</summary>
@@ -96,7 +107,9 @@
         </div>
       </details>
     </section>
+   </div>
 
+   <div class="spalte">
     <!-- Länder-Modus: Station des gewählten Anbieters -->
     <section class="card" id="stationCard">
       <h2>Station</h2>
@@ -124,7 +137,7 @@
       <div id="placeDetail"></div>
     </section>
 
-    <section class="card span2" id="marketCard">
+    <section class="card" id="marketCard">
       <h2>Länderseiten</h2>
       <div class="btnrow">
         <button type="button" id="marketsDACH" class="ghost">DACH</button>
@@ -133,6 +146,7 @@
       </div>
       <div id="markets" class="markets"></div>
     </section>
+   </div>
   </main>
 
   <section class="card out">
@@ -144,7 +158,16 @@
       <button type="button" id="reset" class="ghost right">Zurücksetzen</button>
     </div>
     <p id="serviceBadge" class="svc" hidden></p>
-    <p id="queue" class="svc on" hidden></p>
+
+    <div id="fortschritt" class="fortschritt" hidden>
+      <div class="fbalken"><div class="ffuellung" id="ffuellung"></div></div>
+      <p class="ftext" id="ftext"></p>
+      <p class="fhinweis">
+        Der Abruf läuft in einem unsichtbaren Chrome-Fenster. Einfach warten —
+        das Fenster hier kann offen bleiben.
+      </p>
+    </div>
+
     <p id="warn" class="note warn" hidden></p>
     <p id="popupHint" class="note warn" hidden>
       Der Browser hat Tabs blockiert. Pop-ups für diese Seite erlauben

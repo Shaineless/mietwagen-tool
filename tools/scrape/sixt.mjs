@@ -50,16 +50,29 @@ export async function quoteSixt(q) {
 
     // Die Maske wird clientseitig aus den URL-Parametern befuellt. Erst danach
     // darf die Suche los, sonst sucht sie mit leerer Station.
-    const bereit = await page
-      .waitForFunction(
-        () => {
-          const i = document.querySelector('input[name="pickupLocation"]');
-          return i && i.value.trim().length > 0;
-        },
-        { timeout: 25000 }
-      )
-      .then(() => true)
-      .catch(() => false);
+    //
+    // Grosszuegiges Zeitfenster und ein Neuladeversuch: laufen mehrere Abrufe
+    // parallel, braucht die Seite deutlich laenger als allein. Genau daran ist
+    // sixt.at im Zweierbetrieb gescheitert, waehrend es einzeln nach drei
+    // Sekunden stand.
+    const stationDa = () =>
+      page
+        .waitForFunction(
+          () => {
+            const i = document.querySelector('input[name="pickupLocation"]');
+            return i && i.value.trim().length > 0;
+          },
+          { timeout: 40000 }
+        )
+        .then(() => true)
+        .catch(() => false);
+
+    let bereit = await stationDa();
+    if (!bereit) {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await dismissConsent(page, { versuche: 4 });
+      bereit = await stationDa();
+    }
 
     const station = await page
       .locator('input[name="pickupLocation"]')
@@ -73,11 +86,33 @@ export async function quoteSixt(q) {
 
     // Der Banner kann zwischen Aufbau und Klick aufgetaucht sein.
     await dismissConsent(page, { versuche: 2 });
-    await page.waitForTimeout(600);
 
+    // Auf manchen Laenderseiten (sixt.es) bleibt die Banner-Huelle nach dem
+    // Ablehnen im DOM stehen und faengt weiter Klicks ab. Kurz warten, ob sie
+    // von selbst geht.
+    await page
+      .waitForFunction(() => !document.querySelector('#usercentrics-cmp-ui'), { timeout: 4000 })
+      .catch(() => {});
+    await page.waitForTimeout(500);
+
+    let geklickt = false;
     try {
-      await page.locator(CTA).first().click({ timeout: 15000 });
+      await page.locator(CTA).first().click({ timeout: 12000 });
+      geklickt = true;
     } catch {
+      // Rueckfall: direkt im DOM klicken. Umgeht die Huelle, ohne dass die
+      // Seite etwas anderes zu sehen bekommt als einen Klick auf ihren Knopf.
+      geklickt = await page
+        .evaluate((sel) => {
+          const b = document.querySelector(sel);
+          if (!b) return false;
+          b.click();
+          return true;
+        }, CTA)
+        .catch(() => false);
+    }
+
+    if (!geklickt) {
       return { ok: false, station, error: 'Suche ließ sich nicht auslösen', url, ms: Date.now() - started };
     }
 

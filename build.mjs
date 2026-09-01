@@ -81,7 +81,7 @@ function flatten(code) {
 }
 
 // Reihenfolge = Abhängigkeitsreihenfolge: app.js benutzt alles Vorherige.
-const MODULES = ['providers.js', 'places.js', 'app.js'];
+const MODULES = ['providers.js', 'places.js', 'offer-classes.js', 'app.js'];
 
 const bundle = [
   '(() => {',

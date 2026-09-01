@@ -155,7 +155,9 @@ export async function withPage({ host, sichtbar = false }, fn) {
   page.setDefaultTimeout(30000);
 
   try {
-    await page.goto(`https://${host}/`, { waitUntil: 'domcontentloaded' }).catch(() => {});
+    // Nur so weit laden, dass die Herkunft steht — mehr braucht es zum Leeren
+    // des Speichers nicht, und die eigentliche Seite kommt gleich danach.
+    await page.goto(`https://${host}/`, { waitUntil: 'commit' }).catch(() => {});
     await page
       .evaluate(() => {
         localStorage.clear();

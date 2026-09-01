@@ -6,6 +6,7 @@ import {
   CONFIDENCE_LABEL,
   fold,
 } from './places.js';
+import { classify, classOrder } from './offer-classes.js';
 
 /* =========================================================== Zustand */
 
@@ -135,8 +136,13 @@ async function fetchPrices() {
       btn.disabled = false;
       return;
     }
-    flash(`${d.angenommen} Abrufe laufen — Preise erscheinen nach und nach.`);
+    // Sofort Rückmeldung geben, nicht erst beim nächsten Abfragetakt.
+    service.queue = { laufend: 1, offen: d.angenommen, erledigt: 0, gesamt: d.angenommen };
+    renderFortschritt();
+    // Zum Ergebnisbereich springen, damit der Fortschritt auch sichtbar ist.
+    $('#fortschritt').scrollIntoView({ behavior: 'smooth', block: 'center' });
     startPolling();
+    pollPrices();
   } catch {
     flash('Der Preisdienst antwortet nicht.');
     btn.disabled = false;
@@ -187,16 +193,36 @@ async function pollPrices() {
   try {
     const h = await (await fetch('/api/health', { cache: 'no-store' })).json();
     service.queue = h.queue || null;
-    const q = service.queue;
-    const aktiv = q && (q.laufend > 0 || q.offen > 0);
-    $('#queue').hidden = !aktiv;
-    if (aktiv) {
-      $('#queue').textContent = `Abruf läuft — ${q.erledigt} von ${q.gesamt} fertig`;
-    }
-    if (!aktiv) $('#getPrices').disabled = false;
+    renderFortschritt();
   } catch {
     /* egal */
   }
+}
+
+/**
+ * Zeigt an, dass gerade etwas passiert.
+ *
+ * Ein Abruf dauert um die zehn Sekunden je Länderseite. Ohne sichtbaren
+ * Fortschritt wirkt das wie ein Hänger, und man klickt erneut oder bricht ab.
+ */
+function renderFortschritt() {
+  const q = service.queue;
+  const aktiv = Boolean(q && (q.laufend > 0 || q.offen > 0));
+  const box = $('#fortschritt');
+  box.hidden = !aktiv;
+
+  const btn = $('#getPrices');
+  btn.disabled = aktiv;
+  btn.textContent = aktiv ? 'Abruf läuft …' : 'Preise holen';
+
+  if (!aktiv) return;
+
+  const gesamt = Math.max(1, q.gesamt);
+  const anteil = Math.round((q.erledigt / gesamt) * 100);
+  $('#ffuellung').style.width = `${anteil}%`;
+  $('#ftext').textContent =
+    `${q.erledigt} von ${q.gesamt} abgerufen` +
+    (q.laufend ? ` · ${q.laufend} gerade unterwegs` : '');
 }
 
 function startPolling() {
@@ -768,15 +794,11 @@ function renderPills(sel, opts, list, label, onEmpty) {
 }
 
 /**
- * Ein Eintrag der Ergebnisliste.
- *
- * Ohne Preisdienst ist das schlicht ein Link. Mit Dienst zeigt derselbe
- * Eintrag zusaetzlich den guenstigsten gelesenen Preis und die Zahl der
- * gefundenen Klassen — der Link bleibt, damit man immer nachsehen kann.
+ * Ein Eintrag der Ergebnisliste, wenn noch keine Preise da sind.
+ * Reiner Link — so sah das Tool aus, bevor der Abruf dazukam.
  */
 function renderLink(j) {
   const rec = j.key ? prices.get(j.key) : null;
-  const best = cheapest(rec);
 
   const node = el(
     'a',
@@ -784,9 +806,9 @@ function renderLink(j) {
       href: j.url,
       target: '_blank',
       rel: 'noopener',
-      class: 'lnk' + (best ? ' priced' : ''),
+      class: 'lnk',
       style: `--pa:${j.provider.theme.accent}`,
-      title: rec?.error || (best ? best.model : ''),
+      title: rec?.error || '',
     },
     el('span', { class: 'pbar' }),
     el('span', { class: 'mkname' }, j.itemLabel),
@@ -795,21 +817,185 @@ function renderLink(j) {
 
   if (!service.available) return node;
 
-  if (best) {
-    node.append(
-      el(
-        'span',
-        { class: 'price' },
-        money(best.total ?? best.perDay, best.currency),
-        el('span', { class: 'pcount' }, `${rec.offers.length} Klassen`)
-      )
-    );
-  } else if (rec?.error) {
-    node.append(el('span', { class: 'price err' }, rec.error));
-  } else {
-    node.append(el('span', { class: 'price wait' }, 'wartet …'));
-  }
+  if (rec?.error) node.append(el('span', { class: 'price err' }, rec.error));
+  else if (!rec) node.append(el('span', { class: 'price wartet' }, 'wartet'));
   return node;
+}
+
+/**
+ * Die Vergleichstabelle: Zeilen sind Fahrzeugklassen, Spalten die verglichenen
+ * Länderseiten beziehungsweise Anbieter.
+ *
+ * Das ist der eigentliche Zweck des Tools. Eine Zeile "günstigstes Angebot"
+ * je Land wäre wertlos — interessant ist, was dieselbe Klasse wo kostet.
+ *
+ * Klassen werden über offer-classes.js sprachunabhängig zugeordnet; kommt eine
+ * Klasse auf einer Seite mehrfach vor (verschiedene Modelle), zählt der
+ * günstigste Eintrag.
+ */
+function renderTable(list) {
+  const spalten = list.filter((j) => j.url);
+  const zeilen = new Map();
+
+  for (const j of spalten) {
+    const rec = prices.get(j.key);
+    for (const o of rec?.offers || []) {
+      const cls = classify(o);
+      if (!zeilen.has(cls.key)) zeilen.set(cls.key, { cls, zellen: new Map() });
+      const zeile = zeilen.get(cls.key);
+      const bisher = zeile.zellen.get(j.key);
+      const wert = o.total ?? o.perDay ?? Infinity;
+      const alt = bisher ? (bisher.total ?? bisher.perDay ?? Infinity) : Infinity;
+      if (wert < alt) zeile.zellen.set(j.key, o);
+    }
+  }
+
+  if (!zeilen.size) return null;
+
+  // Markiert wird der günstigste Preis je Währung — EUR gegen EUR ist
+  // vergleichbar, EUR gegen CHF nicht. Eine Währung, die nur in einer einzigen
+  // Spalte vorkommt, wird nicht markiert: "günstigster von einem" sagt nichts.
+  const spaltenJeWährung = new Map();
+  for (const z of zeilen.values()) {
+    for (const [jobKey, o] of z.zellen) {
+      if (!spaltenJeWährung.has(o.currency)) spaltenJeWährung.set(o.currency, new Set());
+      spaltenJeWährung.get(o.currency).add(jobKey);
+    }
+  }
+  const vergleichbar = new Set(
+    [...spaltenJeWährung].filter(([, s]) => s.size > 1).map(([w]) => w)
+  );
+  const gemischt = spaltenJeWährung.size > 1;
+
+  const sortiert = [...zeilen.values()].sort((a, b) => {
+    const oa = classOrder(a.cls.key);
+    const ob = classOrder(b.cls.key);
+    if (oa !== ob) return oa - ob;
+    return a.cls.label.localeCompare(b.cls.label);
+  });
+
+  const kopf = el(
+    'tr',
+    {},
+    el('th', { class: 'klasse' }, 'Fahrzeugklasse'),
+    ...spalten.map((j) =>
+      el(
+        'th',
+        { style: `--pa:${j.provider.theme.accent}` },
+        el('a', { href: j.url, target: '_blank', rel: 'noopener' }, j.itemLabel),
+        prices.get(j.key)
+          ? null
+          : el('span', { class: 'thwait' }, prices.get(j.key)?.error ? 'Fehler' : 'lädt …')
+      )
+    )
+  );
+
+  /** Günstigster Preis je Währung in einer Zeile, plus wie viele es je Währung gibt. */
+  function zeilenMinima(z) {
+    const min = new Map();
+    const anzahl = new Map();
+    for (const o of z.zellen.values()) {
+      const w = o.total ?? o.perDay;
+      if (w == null) continue;
+      anzahl.set(o.currency, (anzahl.get(o.currency) || 0) + 1);
+      const b = min.get(o.currency);
+      if (b == null || w < b) min.set(o.currency, w);
+    }
+    return { min, anzahl };
+  }
+
+  // Wie oft ist welche Spalte am günstigsten? Bei 30 Zeilen sieht man das
+  // sonst nicht auf einen Blick. Gezählt werden nur Zeilen, in denen
+  // tatsächlich verglichen wurde.
+  const siege = new Map();
+  let verglichen = 0;
+  for (const z of sortiert) {
+    const { min, anzahl } = zeilenMinima(z);
+    let gezählt = false;
+    for (const [jobKey, o] of z.zellen) {
+      if (!vergleichbar.has(o.currency) || (anzahl.get(o.currency) || 0) < 2) continue;
+      if ((o.total ?? o.perDay) === min.get(o.currency)) {
+        siege.set(jobKey, (siege.get(jobKey) || 0) + 1);
+        gezählt = true;
+      }
+    }
+    if (gezählt) verglichen++;
+  }
+
+  const körper = sortiert.map((z) => {
+    const { min: minJeWährung, anzahl } = zeilenMinima(z);
+
+    return el(
+      'tr',
+      {},
+      el(
+        'th',
+        { class: 'klasse', title: z.cls.exakt ? '' : 'Klasse nicht eindeutig zugeordnet' },
+        z.cls.label,
+        z.cls.exakt ? null : el('span', { class: 'ungenau' }, '?')
+      ),
+      ...spalten.map((j) => {
+        const o = z.zellen.get(j.key);
+        if (!o) {
+          const rec = prices.get(j.key);
+          return el('td', { class: 'leer' }, rec ? '—' : '');
+        }
+        const wert = o.total ?? o.perDay;
+        // Nur markieren, wenn in dieser Zeile mindestens zwei Angebote
+        // derselben Währung stehen — sonst wäre "günstigster" ein Einzelwert.
+        const billigste =
+          vergleichbar.has(o.currency) &&
+          (anzahl.get(o.currency) || 0) > 1 &&
+          wert === minJeWährung.get(o.currency);
+        return el(
+          'td',
+          { class: billigste ? 'best' : '', title: `${o.model}${o.unlimitedKm ? ' · unbegrenzte km' : ''}` },
+          el('span', { class: 'betrag' }, money(wert, o.currency)),
+          o.perDay != null && o.total != null
+            ? el('span', { class: 'proTag' }, `${money(o.perDay, '')}/Tag`)
+            : null
+        );
+      })
+    );
+  });
+
+  const sieger = [...siege.entries()].sort((a, b) => b[1] - a[1]);
+  const fazit = sieger.length
+    ? el(
+        'p',
+        { class: 'fazit' },
+        ...sieger.slice(0, 3).flatMap(([jobKey, n], i) => {
+          const j = spalten.find((x) => x.key === jobKey);
+          if (!j) return [];
+          return [
+            i ? el('span', { class: 'trenner' }, '·') : null,
+            el('strong', {}, j.itemLabel),
+            ` ${n}×`,
+          ];
+        }),
+        el('span', { class: 'fazitLabel' }, `am günstigsten von ${verglichen} vergleichbaren Klassen`)
+      )
+    : null;
+
+  return el(
+    'div',
+    { class: 'tabellenblock' },
+    fazit,
+    el(
+      'div',
+      { class: 'tabellenrahmen' },
+      el('table', { class: 'vergleich' }, el('thead', {}, kopf), el('tbody', {}, ...körper))
+    ),
+    gemischt
+      ? el(
+          'p',
+          { class: 'note' },
+          `Mehrere Währungen im Vergleich (${[...spaltenJeWährung.keys()].join(', ')}). ` +
+            'Markiert ist der günstigste Preis jeweils innerhalb derselben Währung — ' +
+            'es wird nicht umgerechnet.'
+        )
+      : null
+  );
 }
 
 function renderResults() {
@@ -862,6 +1048,7 @@ function renderResults() {
             )} ${state.returnTime} · ${f.variant.duration} Tg`
           )
         ),
+        renderTable(list),
         el(
           'div',
           { class: 'links' },
@@ -962,6 +1149,11 @@ function update() {
     renderStationPicker();
     renderMarkets();
   }
+
+  const tage = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
+  $('#dauer').textContent =
+    `${pretty(state.pickupDate)} ${state.pickupTime} → ${pretty(state.returnDate)} ${state.returnTime}` +
+    ` · ${tage} ${tage === 1 ? 'Tag' : 'Tage'}`;
 
   renderPills(
     '#shifts',

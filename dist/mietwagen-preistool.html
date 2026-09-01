@@ -55,11 +55,25 @@ h3 { font-size: 15px; margin: 0 0 8px; }
 
 .sub { color: var(--muted); margin: 0 0 20px; }
 
+/* Zwei Spalten mit eigener Stapelung statt eines Rasters aus Einzelkarten:
+   im Raster richtet sich die Zeilenhöhe nach der höchsten Karte, darunter
+   entsteht toter Raum. So füllen sich beide Spalten dicht. */
 main {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: minmax(280px, 0.85fr) minmax(320px, 1.15fr);
   gap: 16px;
   align-items: start;
+}
+
+.spalte {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  main { grid-template-columns: 1fr; }
 }
 
 .card {
@@ -145,7 +159,7 @@ input[type=search] { margin-top: 0; }
 
 .stations {
   margin-top: 10px;
-  max-height: 260px;
+  max-height: 200px;
   overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -473,6 +487,203 @@ h2.pick {
   color: var(--muted);
 }
 .price.err { color: var(--warn); }
+
+.price.wartet {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--muted);
+}
+.price.wartet::after {
+  content: "";
+  display: inline-block;
+  width: 1.1em;
+  text-align: left;
+  animation: punkte 1.4s steps(4, end) infinite;
+}
+@keyframes punkte {
+  0%   { content: ""; }
+  25%  { content: "."; }
+  50%  { content: ".."; }
+  75%  { content: "..."; }
+}
+
+/* ============================================ Zeitraum */
+
+.zgrid {
+  display: grid;
+  grid-template-columns: auto 1fr 104px;
+  gap: 6px 10px;
+  align-items: center;
+}
+.zkopf {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+}
+.zlabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+/* In diesem Raster tragen die Felder ihre Beschriftung nicht selbst. */
+.zgrid input { margin-top: 0; }
+
+@media (max-width: 560px) {
+  .zgrid { grid-template-columns: 1fr 104px; }
+  /* Kopfzeile ganz weg: in zwei Spalten rutscht sie sonst auseinander,
+     und über Datums- und Uhrzeitfeldern braucht es keine Beschriftung. */
+  .zgrid > span { display: none; }
+  .zlabel { grid-column: 1 / -1; margin-top: 6px; }
+}
+
+.dauer {
+  margin: 10px 0 0;
+  padding: 7px 10px;
+  background: var(--bg);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+/* ============================================ Fortschritt */
+
+.fortschritt {
+  background: var(--on);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.fbalken {
+  height: 6px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.ffuellung {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width .4s ease;
+}
+.ftext { margin: 8px 0 2px; font-size: 13px; font-weight: 600; }
+.fhinweis { margin: 0; font-size: 12px; color: var(--muted); }
+
+/* ============================================ Vergleichstabelle */
+
+.tabellenblock { margin: 10px 0 14px; }
+
+.fazit {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--ink);
+}
+.fazit strong { color: var(--accent); }
+.fazit .trenner { margin: 0 8px; color: var(--muted); }
+.fazitLabel { color: var(--muted); margin-left: 8px; }
+
+.tabellenrahmen {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+table.vergleich {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+table.vergleich th,
+table.vergleich td {
+  padding: 7px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--line);
+}
+table.vergleich tbody tr:last-child th,
+table.vergleich tbody tr:last-child td { border-bottom: 0; }
+
+table.vergleich thead th {
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+  border-bottom: 2px solid var(--line);
+}
+table.vergleich thead th a { color: var(--ink); text-decoration: none; }
+table.vergleich thead th a:hover { color: var(--accent); text-decoration: underline; }
+
+/* Zwei Klassen tief, sonst gewinnt `table.vergleich th` mit text-align:right. */
+table.vergleich th.klasse {
+  text-align: left;
+  font-weight: 500;
+  color: var(--ink);
+  position: sticky;
+  left: 0;
+  background: var(--card);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+  /* Trennt die Klassenspalte optisch, wenn quer gescrollt wird. */
+  box-shadow: 1px 0 0 var(--line);
+}
+table.vergleich thead th.klasse { color: var(--muted); font-size: 11px; }
+
+/* Leichte Streifen: bei vielen Spalten verrutscht man sonst in der Zeile. */
+table.vergleich tbody tr:nth-child(even) td,
+table.vergleich tbody tr:nth-child(even) th.klasse {
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+}
+table.vergleich tbody tr:hover td,
+table.vergleich tbody tr:hover th.klasse {
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+}
+table.vergleich tbody tr:hover td.best { background: var(--on); }
+
+.betrag { font-variant-numeric: tabular-nums; }
+.proTag {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dezent halten: ist eine Spalte durchgehend am günstigsten, wäre ein
+   flächiger Hintergrund ein einziger Farbblock. */
+td.best {
+  font-weight: 700;
+  color: var(--accent);
+}
+td.best .betrag::before {
+  content: "▸";
+  margin-right: 4px;
+  font-size: 9px;
+  vertical-align: 1px;
+}
+td.best .proTag { color: var(--accent); opacity: .7; }
+td.leer { color: var(--muted); }
+
+.thwait {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--accent);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.ungenau {
+  margin-left: 5px;
+  font-size: 10px;
+  color: var(--warn);
+  cursor: help;
+}
 </style>
 
 <!-- ===================================================== Startbildschirm -->
@@ -536,6 +747,7 @@ h2.pick {
   </div>
 
   <main>
+   <div class="spalte">
     <!-- Anbieterwahl: im Länder-Modus einer, im Anbieter-Modus mehrere -->
     <section class="card" id="providerCard">
       <h2>Anbieter</h2>
@@ -545,12 +757,22 @@ h2.pick {
 
     <section class="card">
       <h2>Zeitraum</h2>
-      <div class="row">
-        <label>Abholung <input type="date" id="pickupDate"></label>
-        <label>Uhrzeit <input type="time" id="pickupTime" step="900"></label>
-        <label>Rückgabe <input type="date" id="returnDate"></label>
-        <label>Uhrzeit <input type="time" id="returnTime" step="900"></label>
+
+      <div class="zgrid">
+        <span></span>
+        <span class="zkopf">Datum</span>
+        <span class="zkopf">Uhrzeit</span>
+
+        <label class="zlabel" for="pickupDate">Abholung</label>
+        <input type="date" id="pickupDate">
+        <input type="time" id="pickupTime" step="900">
+
+        <label class="zlabel" for="returnDate">Rückgabe</label>
+        <input type="date" id="returnDate">
+        <input type="time" id="returnTime" step="900">
       </div>
+
+      <p class="dauer" id="dauer"></p>
 
       <details>
         <summary>Datums-Matrix — mehrere Termine auf einmal prüfen</summary>
@@ -568,7 +790,9 @@ h2.pick {
         </div>
       </details>
     </section>
+   </div>
 
+   <div class="spalte">
     <!-- Länder-Modus: Station des gewählten Anbieters -->
     <section class="card" id="stationCard">
       <h2>Station</h2>
@@ -596,7 +820,7 @@ h2.pick {
       <div id="placeDetail"></div>
     </section>
 
-    <section class="card span2" id="marketCard">
+    <section class="card" id="marketCard">
       <h2>Länderseiten</h2>
       <div class="btnrow">
         <button type="button" id="marketsDACH" class="ghost">DACH</button>
@@ -605,6 +829,7 @@ h2.pick {
       </div>
       <div id="markets" class="markets"></div>
     </section>
+   </div>
   </main>
 
   <section class="card out">
@@ -616,7 +841,16 @@ h2.pick {
       <button type="button" id="reset" class="ghost right">Zurücksetzen</button>
     </div>
     <p id="serviceBadge" class="svc" hidden></p>
-    <p id="queue" class="svc on" hidden></p>
+
+    <div id="fortschritt" class="fortschritt" hidden>
+      <div class="fbalken"><div class="ffuellung" id="ffuellung"></div></div>
+      <p class="ftext" id="ftext"></p>
+      <p class="fhinweis">
+        Der Abruf läuft in einem unsichtbaren Chrome-Fenster. Einfach warten —
+        das Fenster hier kann offen bleiben.
+      </p>
+    </div>
+
     <p id="warn" class="note warn" hidden></p>
     <p id="popupHint" class="note warn" hidden>
       Der Browser hat Tabs blockiert. Pop-ups für diese Seite erlauben
@@ -982,6 +1216,137 @@ function stationsAtPlace(place, providers) {
   }));
 }
 
+/**
+ * Fahrzeugklassen ueber Laendergrenzen hinweg zuordnen.
+ *
+ * Das ist der Kern des Vergleichs. Sixt beschreibt jedes Angebot nach demselben
+ * Muster — Groesse, Karosserie, Getriebe — aber in der Sprache der jeweiligen
+ * Laenderseite:
+ *
+ *   DE  Kompaktklasse Kombi Automatik
+ *   EN  Compact Wagon Automatic
+ *   ES  Compacto Familiar Automático
+ *   IT  Compatta Station wagon Automatico
+ *
+ * Alles dieselbe Klasse. Ueber die Modellnamen ginge es nicht: aus
+ * "VW GOLF VARIANT" wird auf der britischen Seite "VW GOLF ESTATE", aus
+ * "BMW 3ER TOURING" wird "BMW SERIE 3 TOURING".
+ *
+ * Die Vokabeln stammen aus echten Abrufen gegen sixt.de, .co.uk, .es und .it.
+ * Fehlt eine Sprache, faellt der Eintrag auf den Rohtext zurueck und bildet
+ * eine eigene Zeile — sichtbar unvollstaendig statt still falsch zusammen-
+ * geworfen.
+ */
+
+/** Reihenfolge = Anzeigereihenfolge, klein nach gross. */
+const GROESSEN = [
+  ['mini', 'Kleinstwagen', ['mini', 'kleinstwagen']],
+  ['economy', 'Kleinwagen', ['economy', 'economico', 'económico', 'kleinwagen', 'ökonomisch']],
+  ['compact', 'Kompaktklasse', ['compact', 'compacto', 'compatta', 'kompaktklasse', 'kompakt']],
+  ['midsize', 'Mittelklasse', ['midsize', 'mittelklasse', 'intermediate', 'mediano', 'medio', 'media']],
+  ['fullsize', 'Oberklasse', ['fullsize', 'oberklasse', 'grande', 'full size']],
+  ['premium', 'Premium', ['premium']],
+  ['luxury', 'Luxusklasse', ['luxury', 'luxusklasse', 'lujo', 'lusso']],
+  ['special', 'Special', ['special', 'spezial', 'especial', 'speciale']],
+];
+
+const KAROSSERIEN = [
+  ['sedan', 'Limousine', ['sedan', 'limousine', 'berlina', 'berline', 'saloon']],
+  ['suv', 'SUV', ['suv']],
+  ['wagon', 'Kombi', ['kombi', 'wagon', 'estate', 'familiar', 'station wagon', 'break', 'touring', 'giardinetta']],
+  ['convertible', 'Cabrio', ['cabrio', 'convertible', 'cabriolet', 'descapotable']],
+  ['coupe', 'Coupé', ['coupe', 'coupé']],
+  ['van', 'Van', ['van', 'minivan', 'monovolumen', 'monospace', 'transporter', 'people carrier']],
+  ['pickup', 'Pick-up', ['pickup', 'pick-up', 'pick up']],
+  ['truck', 'LKW', ['truck', 'lkw', 'lorry', 'camion']],
+  // Sixt verkauft auch "Ueberraschungsfahrzeuge" — das Modell steht erst bei
+  // der Abholung fest. Eigene Karosserieklasse, sonst landen sie als Rohtext
+  // in einer Extrazeile.
+  ['mystery', 'Glücksauto', ['glucksauto', 'glücksauto', 'lucky car', 'mystery car', 'coche sorpresa', 'auto a sorpresa']],
+];
+
+const GETRIEBE = [
+  ['automatic', 'Automatik', ['automatik', 'automatic', 'automático', 'automatico', 'automatique', 'automaat']],
+  ['manual', 'Schaltung', ['manuell', 'manual', 'manuale', 'manuelle', 'schaltgetriebe', 'handgeschakeld']],
+];
+
+const ELITE = ['elite'];
+
+function fold(s) {
+  return (s || '')
+    .toLowerCase()
+    .replaceAll('ä', 'a')
+    .replaceAll('ö', 'o')
+    .replaceAll('ü', 'u')
+    .replaceAll('ß', 'ss')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+}
+
+/** Ersten passenden Eintrag einer Tabelle im Text finden. */
+function treffer(tabelle, text) {
+  const t = fold(text);
+  for (const [code, label, worte] of tabelle) {
+    for (const w of worte) {
+      const f = fold(w);
+      // Wortgrenzen, damit "van" nicht in "Caravan" anschlägt.
+      if (new RegExp(`(^|[^a-z0-9])${f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`).test(t)) {
+        return { code, label };
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Ein Angebot in eine sprachunabhaengige Klasse uebersetzen.
+ *
+ * @returns {{key:string, label:string, groesse:string, karosserie:string,
+ *            getriebe:string, elite:boolean, exakt:boolean}}
+ */
+function classify(offer) {
+  const cat = offer?.category || '';
+  const g = treffer(GROESSEN, cat);
+  const k = treffer(KAROSSERIEN, cat);
+  const a = treffer(GETRIEBE, cat);
+  const elite = ELITE.some((e) => fold(cat).includes(e));
+
+  // Nur wenn alle drei Bestandteile erkannt wurden, ist die Zuordnung
+  // belastbar. Sonst bekommt der Eintrag einen eigenen Schluessel aus dem
+  // Rohtext und steht als separate Zeile da.
+  const exakt = Boolean(g && k && a);
+
+  if (!exakt) {
+    return {
+      key: 'roh:' + fold(cat),
+      label: cat || '(ohne Angabe)',
+      groesse: g?.label || '',
+      karosserie: k?.label || '',
+      getriebe: a?.label || '',
+      elite,
+      exakt: false,
+    };
+  }
+
+  return {
+    key: [g.code, k.code, elite ? 'elite' : '-', a.code].join('|'),
+    label: [g.label, elite ? 'Elite' : null, k.label, a.label].filter(Boolean).join(' · '),
+    groesse: g.label,
+    karosserie: k.label,
+    getriebe: a.label,
+    elite,
+    exakt: true,
+  };
+}
+
+/** Sortiergewicht: klein nach gross, damit die Tabelle einer Logik folgt. */
+function classOrder(key) {
+  const [g, k, e] = String(key).split('|');
+  const gi = GROESSEN.findIndex(([c]) => c === g);
+  const ki = KAROSSERIEN.findIndex(([c]) => c === k);
+  return (gi < 0 ? 99 : gi) * 100 + (ki < 0 ? 99 : ki) * 2 + (e === 'elite' ? 1 : 0);
+}
+
 /* =========================================================== Zustand */
 
 const LS_KEY = 'mwt-preistool/v2';
@@ -1110,8 +1475,13 @@ async function fetchPrices() {
       btn.disabled = false;
       return;
     }
-    flash(`${d.angenommen} Abrufe laufen — Preise erscheinen nach und nach.`);
+    // Sofort Rückmeldung geben, nicht erst beim nächsten Abfragetakt.
+    service.queue = { laufend: 1, offen: d.angenommen, erledigt: 0, gesamt: d.angenommen };
+    renderFortschritt();
+    // Zum Ergebnisbereich springen, damit der Fortschritt auch sichtbar ist.
+    $('#fortschritt').scrollIntoView({ behavior: 'smooth', block: 'center' });
     startPolling();
+    pollPrices();
   } catch {
     flash('Der Preisdienst antwortet nicht.');
     btn.disabled = false;
@@ -1162,16 +1532,36 @@ async function pollPrices() {
   try {
     const h = await (await fetch('/api/health', { cache: 'no-store' })).json();
     service.queue = h.queue || null;
-    const q = service.queue;
-    const aktiv = q && (q.laufend > 0 || q.offen > 0);
-    $('#queue').hidden = !aktiv;
-    if (aktiv) {
-      $('#queue').textContent = `Abruf läuft — ${q.erledigt} von ${q.gesamt} fertig`;
-    }
-    if (!aktiv) $('#getPrices').disabled = false;
+    renderFortschritt();
   } catch {
     /* egal */
   }
+}
+
+/**
+ * Zeigt an, dass gerade etwas passiert.
+ *
+ * Ein Abruf dauert um die zehn Sekunden je Länderseite. Ohne sichtbaren
+ * Fortschritt wirkt das wie ein Hänger, und man klickt erneut oder bricht ab.
+ */
+function renderFortschritt() {
+  const q = service.queue;
+  const aktiv = Boolean(q && (q.laufend > 0 || q.offen > 0));
+  const box = $('#fortschritt');
+  box.hidden = !aktiv;
+
+  const btn = $('#getPrices');
+  btn.disabled = aktiv;
+  btn.textContent = aktiv ? 'Abruf läuft …' : 'Preise holen';
+
+  if (!aktiv) return;
+
+  const gesamt = Math.max(1, q.gesamt);
+  const anteil = Math.round((q.erledigt / gesamt) * 100);
+  $('#ffuellung').style.width = `${anteil}%`;
+  $('#ftext').textContent =
+    `${q.erledigt} von ${q.gesamt} abgerufen` +
+    (q.laufend ? ` · ${q.laufend} gerade unterwegs` : '');
 }
 
 function startPolling() {
@@ -1743,15 +2133,11 @@ function renderPills(sel, opts, list, label, onEmpty) {
 }
 
 /**
- * Ein Eintrag der Ergebnisliste.
- *
- * Ohne Preisdienst ist das schlicht ein Link. Mit Dienst zeigt derselbe
- * Eintrag zusaetzlich den guenstigsten gelesenen Preis und die Zahl der
- * gefundenen Klassen — der Link bleibt, damit man immer nachsehen kann.
+ * Ein Eintrag der Ergebnisliste, wenn noch keine Preise da sind.
+ * Reiner Link — so sah das Tool aus, bevor der Abruf dazukam.
  */
 function renderLink(j) {
   const rec = j.key ? prices.get(j.key) : null;
-  const best = cheapest(rec);
 
   const node = el(
     'a',
@@ -1759,9 +2145,9 @@ function renderLink(j) {
       href: j.url,
       target: '_blank',
       rel: 'noopener',
-      class: 'lnk' + (best ? ' priced' : ''),
+      class: 'lnk',
       style: `--pa:${j.provider.theme.accent}`,
-      title: rec?.error || (best ? best.model : ''),
+      title: rec?.error || '',
     },
     el('span', { class: 'pbar' }),
     el('span', { class: 'mkname' }, j.itemLabel),
@@ -1770,21 +2156,185 @@ function renderLink(j) {
 
   if (!service.available) return node;
 
-  if (best) {
-    node.append(
-      el(
-        'span',
-        { class: 'price' },
-        money(best.total ?? best.perDay, best.currency),
-        el('span', { class: 'pcount' }, `${rec.offers.length} Klassen`)
-      )
-    );
-  } else if (rec?.error) {
-    node.append(el('span', { class: 'price err' }, rec.error));
-  } else {
-    node.append(el('span', { class: 'price wait' }, 'wartet …'));
-  }
+  if (rec?.error) node.append(el('span', { class: 'price err' }, rec.error));
+  else if (!rec) node.append(el('span', { class: 'price wartet' }, 'wartet'));
   return node;
+}
+
+/**
+ * Die Vergleichstabelle: Zeilen sind Fahrzeugklassen, Spalten die verglichenen
+ * Länderseiten beziehungsweise Anbieter.
+ *
+ * Das ist der eigentliche Zweck des Tools. Eine Zeile "günstigstes Angebot"
+ * je Land wäre wertlos — interessant ist, was dieselbe Klasse wo kostet.
+ *
+ * Klassen werden über offer-classes.js sprachunabhängig zugeordnet; kommt eine
+ * Klasse auf einer Seite mehrfach vor (verschiedene Modelle), zählt der
+ * günstigste Eintrag.
+ */
+function renderTable(list) {
+  const spalten = list.filter((j) => j.url);
+  const zeilen = new Map();
+
+  for (const j of spalten) {
+    const rec = prices.get(j.key);
+    for (const o of rec?.offers || []) {
+      const cls = classify(o);
+      if (!zeilen.has(cls.key)) zeilen.set(cls.key, { cls, zellen: new Map() });
+      const zeile = zeilen.get(cls.key);
+      const bisher = zeile.zellen.get(j.key);
+      const wert = o.total ?? o.perDay ?? Infinity;
+      const alt = bisher ? (bisher.total ?? bisher.perDay ?? Infinity) : Infinity;
+      if (wert < alt) zeile.zellen.set(j.key, o);
+    }
+  }
+
+  if (!zeilen.size) return null;
+
+  // Markiert wird der günstigste Preis je Währung — EUR gegen EUR ist
+  // vergleichbar, EUR gegen CHF nicht. Eine Währung, die nur in einer einzigen
+  // Spalte vorkommt, wird nicht markiert: "günstigster von einem" sagt nichts.
+  const spaltenJeWährung = new Map();
+  for (const z of zeilen.values()) {
+    for (const [jobKey, o] of z.zellen) {
+      if (!spaltenJeWährung.has(o.currency)) spaltenJeWährung.set(o.currency, new Set());
+      spaltenJeWährung.get(o.currency).add(jobKey);
+    }
+  }
+  const vergleichbar = new Set(
+    [...spaltenJeWährung].filter(([, s]) => s.size > 1).map(([w]) => w)
+  );
+  const gemischt = spaltenJeWährung.size > 1;
+
+  const sortiert = [...zeilen.values()].sort((a, b) => {
+    const oa = classOrder(a.cls.key);
+    const ob = classOrder(b.cls.key);
+    if (oa !== ob) return oa - ob;
+    return a.cls.label.localeCompare(b.cls.label);
+  });
+
+  const kopf = el(
+    'tr',
+    {},
+    el('th', { class: 'klasse' }, 'Fahrzeugklasse'),
+    ...spalten.map((j) =>
+      el(
+        'th',
+        { style: `--pa:${j.provider.theme.accent}` },
+        el('a', { href: j.url, target: '_blank', rel: 'noopener' }, j.itemLabel),
+        prices.get(j.key)
+          ? null
+          : el('span', { class: 'thwait' }, prices.get(j.key)?.error ? 'Fehler' : 'lädt …')
+      )
+    )
+  );
+
+  /** Günstigster Preis je Währung in einer Zeile, plus wie viele es je Währung gibt. */
+  function zeilenMinima(z) {
+    const min = new Map();
+    const anzahl = new Map();
+    for (const o of z.zellen.values()) {
+      const w = o.total ?? o.perDay;
+      if (w == null) continue;
+      anzahl.set(o.currency, (anzahl.get(o.currency) || 0) + 1);
+      const b = min.get(o.currency);
+      if (b == null || w < b) min.set(o.currency, w);
+    }
+    return { min, anzahl };
+  }
+
+  // Wie oft ist welche Spalte am günstigsten? Bei 30 Zeilen sieht man das
+  // sonst nicht auf einen Blick. Gezählt werden nur Zeilen, in denen
+  // tatsächlich verglichen wurde.
+  const siege = new Map();
+  let verglichen = 0;
+  for (const z of sortiert) {
+    const { min, anzahl } = zeilenMinima(z);
+    let gezählt = false;
+    for (const [jobKey, o] of z.zellen) {
+      if (!vergleichbar.has(o.currency) || (anzahl.get(o.currency) || 0) < 2) continue;
+      if ((o.total ?? o.perDay) === min.get(o.currency)) {
+        siege.set(jobKey, (siege.get(jobKey) || 0) + 1);
+        gezählt = true;
+      }
+    }
+    if (gezählt) verglichen++;
+  }
+
+  const körper = sortiert.map((z) => {
+    const { min: minJeWährung, anzahl } = zeilenMinima(z);
+
+    return el(
+      'tr',
+      {},
+      el(
+        'th',
+        { class: 'klasse', title: z.cls.exakt ? '' : 'Klasse nicht eindeutig zugeordnet' },
+        z.cls.label,
+        z.cls.exakt ? null : el('span', { class: 'ungenau' }, '?')
+      ),
+      ...spalten.map((j) => {
+        const o = z.zellen.get(j.key);
+        if (!o) {
+          const rec = prices.get(j.key);
+          return el('td', { class: 'leer' }, rec ? '—' : '');
+        }
+        const wert = o.total ?? o.perDay;
+        // Nur markieren, wenn in dieser Zeile mindestens zwei Angebote
+        // derselben Währung stehen — sonst wäre "günstigster" ein Einzelwert.
+        const billigste =
+          vergleichbar.has(o.currency) &&
+          (anzahl.get(o.currency) || 0) > 1 &&
+          wert === minJeWährung.get(o.currency);
+        return el(
+          'td',
+          { class: billigste ? 'best' : '', title: `${o.model}${o.unlimitedKm ? ' · unbegrenzte km' : ''}` },
+          el('span', { class: 'betrag' }, money(wert, o.currency)),
+          o.perDay != null && o.total != null
+            ? el('span', { class: 'proTag' }, `${money(o.perDay, '')}/Tag`)
+            : null
+        );
+      })
+    );
+  });
+
+  const sieger = [...siege.entries()].sort((a, b) => b[1] - a[1]);
+  const fazit = sieger.length
+    ? el(
+        'p',
+        { class: 'fazit' },
+        ...sieger.slice(0, 3).flatMap(([jobKey, n], i) => {
+          const j = spalten.find((x) => x.key === jobKey);
+          if (!j) return [];
+          return [
+            i ? el('span', { class: 'trenner' }, '·') : null,
+            el('strong', {}, j.itemLabel),
+            ` ${n}×`,
+          ];
+        }),
+        el('span', { class: 'fazitLabel' }, `am günstigsten von ${verglichen} vergleichbaren Klassen`)
+      )
+    : null;
+
+  return el(
+    'div',
+    { class: 'tabellenblock' },
+    fazit,
+    el(
+      'div',
+      { class: 'tabellenrahmen' },
+      el('table', { class: 'vergleich' }, el('thead', {}, kopf), el('tbody', {}, ...körper))
+    ),
+    gemischt
+      ? el(
+          'p',
+          { class: 'note' },
+          `Mehrere Währungen im Vergleich (${[...spaltenJeWährung.keys()].join(', ')}). ` +
+            'Markiert ist der günstigste Preis jeweils innerhalb derselben Währung — ' +
+            'es wird nicht umgerechnet.'
+        )
+      : null
+  );
 }
 
 function renderResults() {
@@ -1837,6 +2387,7 @@ function renderResults() {
             )} ${state.returnTime} · ${f.variant.duration} Tg`
           )
         ),
+        renderTable(list),
         el(
           'div',
           { class: 'links' },
@@ -1937,6 +2488,11 @@ function update() {
     renderStationPicker();
     renderMarkets();
   }
+
+  const tage = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
+  $('#dauer').textContent =
+    `${pretty(state.pickupDate)} ${state.pickupTime} → ${pretty(state.returnDate)} ${state.returnTime}` +
+    ` · ${tage} ${tage === 1 ? 'Tag' : 'Tage'}`;
 
   renderPills(
     '#shifts',
