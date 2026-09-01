@@ -25,20 +25,17 @@
   --r-klein: 12px;
   --schatten: 0 1px 3px rgba(0, 0, 0, .04), 0 8px 28px rgba(0, 0, 0, .05);
 
-  /* Kritisch gedaempft, kein Ueberschwingen: die Kurve entspricht einer
-     Feder mit damping 1.0 und response ~0.4s. Ueberschwingen gehoert nur
-     dorthin, wo die Geste selbst Schwung mitbringt — hier gibt es keine
-     Wischgesten, also nirgends. */
-  --feder: cubic-bezier(.32, .72, 0, 1);
-  --antwort: .38s;
-  /* Rueckmeldung auf den Druck muss sofort kommen, nicht federn. */
-  --sofort: .1s;
+  /* Die eingebauten CSS-Kurven sind zu weich; diese haben Zug.
+     ease-in kommt nirgends vor: es startet langsam, und genau den ersten
+     Moment schaut der Nutzer am genauesten an. */
+  --raus: cubic-bezier(.23, 1, .32, 1);      /* Ein- und Austritte */
+  --rein-raus: cubic-bezier(.77, 0, .175, 1); /* Bewegung auf dem Schirm */
 
-  --glas: rgba(255, 255, 255, .72);
-}
+  /* Dauern. Alles unter 300ms, sonst fuehlt sich die Oberflaeche zaeh an. */
+  --t-druck: .16s;   /* Druckrueckmeldung */
+  --t-klein: .2s;    /* kleine Einblendungen */
+  --t-ansicht: .24s; /* Ansichtswechsel */
 
-@media (prefers-color-scheme: dark) {
-  :root { --glas: rgba(28, 28, 30, .72); }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -137,9 +134,13 @@ code {
   border: 0;
   border-radius: var(--r);
   box-shadow: var(--schatten);
-  transition: transform .22s cubic-bezier(.2, .8, .3, 1);
+  transition: transform var(--t-klein) var(--raus);
 }
-.mode:hover { transform: scale(1.012); }
+/* Nur wo es einen echten Zeiger gibt: auf Touch loest :hover beim Tippen aus
+   und die Karte bleibt danach vergroessert stehen. */
+@media (hover: hover) and (pointer: fine) {
+  .mode:hover { transform: scale(1.012); }
+}
 .mode:active { transform: scale(.995); }
 .mtitle { font-size: 21px; font-weight: 640; letter-spacing: -.022em; }
 .mdesc { font-size: 14.5px; color: var(--muted); line-height: 1.5; }
@@ -250,9 +251,11 @@ button {
   border: 0;
   background: var(--flaeche2);
   color: var(--ink);
-  transition: opacity .15s ease, transform .15s ease;
+  transition: opacity var(--t-druck) var(--raus), transform var(--t-druck) var(--raus);
 }
-button:hover:not(:disabled) { opacity: .78; }
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled) { opacity: .78; }
+}
 button:active:not(:disabled) { transform: scale(.97); }
 button:disabled { opacity: .35; cursor: default; }
 
@@ -347,7 +350,9 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 
 .fortschritt { background: var(--flaeche2); border-radius: var(--r-klein); padding: 16px 18px; margin-bottom: 18px; }
 .fbalken { height: 4px; background: var(--hairline); border-radius: 980px; overflow: hidden; }
-.ffuellung { height: 100%; width: 0; background: var(--accent); border-radius: 980px; transition: width .45s cubic-bezier(.3,.8,.3,1); }
+/* Fortschritt ist gleichfoermige Bewegung — linear, sonst luegt der Balken
+   ueber das Tempo. */
+.ffuellung { height: 100%; width: 0; background: var(--accent); border-radius: 980px; transition: width .3s linear; }
 .frow { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .ftext { margin: 12px 0 4px; font-size: 14px; font-weight: 560; }
 .fhinweis { margin: 0; font-size: 12.5px; color: var(--muted); }
@@ -552,17 +557,31 @@ table.vergleich.schutz td, table.vergleich.schutz th.klasse { vertical-align: to
  */
 
 .station, .pill, .chipbtn, .gtab, .mk, .lnk, .mode, tr.zeile {
-  transition: transform var(--sofort) ease-out, background-color var(--sofort) ease-out;
+  transition: transform var(--t-druck) var(--raus), background-color var(--t-druck) var(--raus);
 }
 .station:active, .pill:active, .chipbtn:active, .gtab:active, .lnk:active { transform: scale(.985); }
-.mode:active { transform: scale(.99); }
+.mode:active { transform: scale(.98); }
 
 /* Der Wechsel zwischen den Ansichten laeuft in beide Richtungen gleich —
-   was so hereinkommt, geht so wieder hinaus. */
-.screen:not([hidden]) { animation: auftauchen var(--antwort) var(--feder); }
+   was so hereinkommt, geht so wieder hinaus. Nicht aus scale(0): nichts in
+   der Wirklichkeit entsteht aus dem Nichts. */
+.screen:not([hidden]) { animation: auftauchen var(--t-ansicht) var(--raus); }
 @keyframes auftauchen {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(6px) scale(.995); }
   to   { opacity: 1; transform: none; }
+}
+
+/* Die zwei Startkarten kommen versetzt — kurz genug, dass es nicht bremst. */
+.modes .mode { animation: auftauchen var(--t-ansicht) var(--raus) backwards; }
+.modes .mode:nth-child(2) { animation-delay: 50ms; }
+
+/* Dynamisch eingeblendete Meldungen: Uebergang statt Keyframe, damit ein
+   schnell nachrutschender Zustand nicht bei null neu anfaengt. */
+.flash, .fortschritt {
+  transition: opacity var(--t-klein) var(--raus), transform var(--t-klein) var(--raus);
+}
+@starting-style {
+  .flash, .fortschritt { opacity: 0; transform: translateY(-4px); }
 }
 
 /* ============================================================ Rücksicht
