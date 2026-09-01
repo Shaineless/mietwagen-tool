@@ -17,7 +17,9 @@ import { join, extname, normalize, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
 import { quoteSixt } from './scrape/sixt.mjs';
+import { quoteSchutz } from './scrape/sixt-schutz.mjs';
 import { findBrowser, closeBrowser } from './browser.mjs';
+import { merkeAngebote, bekannteKlassen, katalogStand } from './katalog.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const port = Number(process.argv[2]) || 4173;
@@ -75,6 +77,7 @@ let gesamt = 0;
 const PARALLEL = 2;
 
 const ABRUF = { sixt: quoteSixt };
+const SCHUTZ_ABRUF = { sixt: quoteSchutz };
 
 function enqueue(jobs) {
   for (const j of jobs) {
@@ -101,11 +104,34 @@ async function tick() {
 
   laufend++;
   try {
-    const abruf = ABRUF[job.provider];
-    if (!abruf) throw new Error(`Anbieter ${job.provider} hat keinen Preisabruf`);
+    // Zwei Arten von Auftrag: Preisliste einer Station, oder Schutzpakete
+    // fuer eine bestimmte Fahrzeugklasse.
+    const schutz = Boolean(job.acriss);
+    const abruf = (schutz ? SCHUTZ_ABRUF : ABRUF)[job.provider];
+    if (!abruf) throw new Error(`Anbieter ${job.provider} hat keinen Abruf`);
 
-    console.log(`  → ${job.host}  Station ${job.stationCode}  ${job.pickupDate}`);
+    console.log(
+      `  → ${job.host}  Station ${job.stationCode}` +
+        (schutz ? `  Schutz ${job.acriss}` : `  ${job.pickupDate}`)
+    );
     const res = await abruf(job);
+
+    if (schutz) {
+      remember(job.key, {
+        host: job.host,
+        url: res.url || null,
+        acriss: job.acriss,
+        verfuegbar: res.verfuegbar !== false,
+        pakete: res.pakete || [],
+        error: res.error || null,
+        note: res.note || null,
+      });
+      console.log(
+        `  ← ${job.host}  ${res.error || res.note || (res.pakete?.length ?? 0) + ' Schutzpakete'}` +
+          (res.ms ? `  (${(res.ms / 1000).toFixed(1)}s)` : '')
+      );
+      return;
+    }
 
     remember(job.key, {
       host: job.host,
@@ -114,6 +140,10 @@ async function tick() {
       offers: res.offers || [],
       error: res.error || null,
     });
+
+    // Gesehene Klassen dauerhaft merken, damit spaeter "gerade nicht buchbar"
+    // von "gibt es dort nicht" unterscheidbar bleibt.
+    if (res.offers?.length) await merkeAngebote(job, res.offers).catch(() => {});
 
     const n = res.offers?.length ?? 0;
     console.log(
@@ -267,6 +297,32 @@ createServer(async (req, res) => {
     } catch (e) {
       return json(res, 400, { ok: false, error: String(e.message).slice(0, 200) });
     }
+  }
+
+  // Welche Klassen sind an dieser Station schon einmal angeboten worden?
+  if (path === '/api/katalog') {
+    const provider = url.searchParams.get('provider') || 'sixt';
+    const station = url.searchParams.get('station') || '';
+    const hosts = (url.searchParams.get('hosts') || '').split(',').filter(Boolean);
+    try {
+      const klassen = await bekannteKlassen(provider, station, hosts);
+      return json(res, 200, { ok: true, klassen });
+    } catch (e) {
+      return json(res, 200, { ok: false, klassen: {}, error: String(e.message).slice(0, 120) });
+    }
+  }
+
+  // Laufende Warteschlange abbrechen.
+  //
+  // Die bereits gestarteten Abrufe laufen zu Ende — sie mittendrin abzuwuergen
+  // hiesse, ein Chrome-Fenster mit halb geladener Seite stehen zu lassen.
+  // Alles Wartende wird verworfen.
+  if (path === '/api/cancel' && req.method === 'POST') {
+    const verworfen = queue.length;
+    queue.length = 0;
+    gesamt -= verworfen;
+    console.log(`  ! Abgebrochen: ${verworfen} wartende Abrufe verworfen`);
+    return json(res, 200, { ok: true, verworfen, nochLaufend: laufend });
   }
 
   if (path === '/api/results/clear' && req.method === 'POST') {

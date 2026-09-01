@@ -81,7 +81,9 @@ function flatten(code) {
 }
 
 // Reihenfolge = Abhängigkeitsreihenfolge: app.js benutzt alles Vorherige.
-const MODULES = ['providers.js', 'places.js', 'offer-classes.js', 'app.js'];
+// places.js liegt fuer den spaeteren Anbietervergleich bereit, wird aber
+// derzeit nicht gebraucht — vorerst nur Sixt.
+const MODULES = ['providers.js', 'offer-classes.js', 'app.js'];
 
 const bundle = [
   '(() => {',

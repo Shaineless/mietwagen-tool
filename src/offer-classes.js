@@ -1,130 +1,176 @@
 /**
- * Fahrzeugklassen ueber Laendergrenzen hinweg zuordnen.
+ * Fahrzeugklassen ueber Laendergrenzen hinweg zuordnen — ueber den ACRISS-Code.
  *
- * Das ist der Kern des Vergleichs. Sixt beschreibt jedes Angebot nach demselben
- * Muster — Groesse, Karosserie, Getriebe — aber in der Sprache der jeweiligen
- * Laenderseite:
+ * Sixt liefert ihn frei Haus: jede Angebotskachel traegt
+ * data-offer-id="CDAR-110-110", die ersten vier Zeichen sind der ACRISS-Code.
+ * Der ist per Definition sprachunabhaengig und damit die verlaessliche
+ * Vergleichsachse:
  *
- *   DE  Kompaktklasse Kombi Automatik
- *   EN  Compact Wagon Automatic
- *   ES  Compacto Familiar Automático
- *   IT  Compatta Station wagon Automatico
+ *   GWAR = Oberklasse Elite · Kombi · Automatik · mit Klima
+ *          -> "Oberklasse Elite Kombi Automatik" (DE)
+ *          -> "Fullsize Elite Wagon Automatic"   (EN)
+ *          -> "Fullsize Elite Familiar Automático" (ES)
  *
- * Alles dieselbe Klasse. Ueber die Modellnamen ginge es nicht: aus
- * "VW GOLF VARIANT" wird auf der britischen Seite "VW GOLF ESTATE", aus
- * "BMW 3ER TOURING" wird "BMW SERIE 3 TOURING".
+ * Die Dekodierung unten ergibt exakt Sixts eigene Beschriftung — geprueft
+ * gegen sixt.de, .co.uk, .es und .it.
  *
- * Die Vokabeln stammen aus echten Abrufen gegen sixt.de, .co.uk, .es und .it.
- * Fehlt eine Sprache, faellt der Eintrag auf den Rohtext zurueck und bildet
- * eine eigene Zeile — sichtbar unvollstaendig statt still falsch zusammen-
- * geworfen.
+ * Nur falls ein Angebot einmal keinen Code traegt, greift ganz unten ein
+ * Notnagel ueber den Kategorietext.
  */
 
-/** Reihenfolge = Anzeigereihenfolge, klein nach gross. */
-const GROESSEN = [
-  ['mini', 'Kleinstwagen', ['mini', 'kleinstwagen']],
-  ['economy', 'Kleinwagen', ['economy', 'economico', 'económico', 'kleinwagen', 'ökonomisch']],
-  ['compact', 'Kompaktklasse', ['compact', 'compacto', 'compatta', 'kompaktklasse', 'kompakt']],
-  ['midsize', 'Mittelklasse', ['midsize', 'mittelklasse', 'intermediate', 'mediano', 'medio', 'media']],
-  ['fullsize', 'Oberklasse', ['fullsize', 'oberklasse', 'grande', 'full size']],
-  ['premium', 'Premium', ['premium']],
-  ['luxury', 'Luxusklasse', ['luxury', 'luxusklasse', 'lujo', 'lusso']],
-  ['special', 'Special', ['special', 'spezial', 'especial', 'speciale']],
-];
+/* Zeichen 1 — Klasse. Reihenfolge = Anzeigereihenfolge, klein nach gross. */
+const KLASSE = {
+  M: ['Mini', 0],
+  N: ['Mini Elite', 1],
+  E: ['Kleinwagen', 2],
+  H: ['Kleinwagen Elite', 3],
+  C: ['Kompaktklasse', 4],
+  D: ['Kompaktklasse Elite', 5],
+  I: ['Mittelklasse', 6],
+  J: ['Mittelklasse Elite', 7],
+  S: ['Standard', 8],
+  R: ['Standard Elite', 9],
+  F: ['Oberklasse', 10],
+  G: ['Oberklasse Elite', 11],
+  P: ['Premium', 12],
+  U: ['Premium Elite', 13],
+  L: ['Luxusklasse', 14],
+  W: ['Luxusklasse Elite', 15],
+  O: ['Übergröße', 16],
+  X: ['Special', 17],
+};
 
-const KAROSSERIEN = [
-  ['sedan', 'Limousine', ['sedan', 'limousine', 'berlina', 'berline', 'saloon']],
-  ['suv', 'SUV', ['suv']],
-  ['wagon', 'Kombi', ['kombi', 'wagon', 'estate', 'familiar', 'station wagon', 'break', 'touring', 'giardinetta']],
-  ['convertible', 'Cabrio', ['cabrio', 'convertible', 'cabriolet', 'descapotable']],
-  ['coupe', 'Coupé', ['coupe', 'coupé']],
-  ['van', 'Van', ['van', 'minivan', 'monovolumen', 'monospace', 'transporter', 'people carrier']],
-  ['pickup', 'Pick-up', ['pickup', 'pick-up', 'pick up']],
-  ['truck', 'LKW', ['truck', 'lkw', 'lorry', 'camion']],
-  // Sixt verkauft auch "Ueberraschungsfahrzeuge" — das Modell steht erst bei
-  // der Abholung fest. Eigene Karosserieklasse, sonst landen sie als Rohtext
-  // in einer Extrazeile.
-  ['mystery', 'Glücksauto', ['glucksauto', 'glücksauto', 'lucky car', 'mystery car', 'coche sorpresa', 'auto a sorpresa']],
-];
+/* Zeichen 2 — Karosserie. */
+const KAROSSERIE = {
+  B: ['2–3-türig', 0],
+  C: ['2/4-türig', 1],
+  D: ['Limousine', 2],
+  W: ['Kombi', 3],
+  V: ['Van', 4],
+  // ACRISS meint mit L die Stretch-Limousine; Sixt beschriftet L als
+  // "Gran Coupé" (BMW M440 Gran Coupé = GLSR). Wir folgen Sixt.
+  L: ['Gran Coupé', 5],
+  S: ['Sport', 6],
+  T: ['Cabrio', 7],
+  F: ['SUV', 8],
+  J: ['Geländewagen offen', 9],
+  X: ['Special', 10],
+  P: ['Pick-up', 11],
+  Q: ['Pick-up Doppelkabine', 12],
+  Z: ['Sonderangebot', 13],
+  E: ['Coupé', 14],
+  M: ['Monospace', 15],
+  R: ['Wohnmobil', 16],
+  H: ['Reisemobil', 17],
+  Y: ['Zweirad', 18],
+  N: ['Roadster', 19],
+  G: ['Crossover', 20],
+  K: ['Transporter', 21],
+};
 
-const GETRIEBE = [
-  ['automatic', 'Automatik', ['automatik', 'automatic', 'automático', 'automatico', 'automatique', 'automaat']],
-  ['manual', 'Schaltung', ['manuell', 'manual', 'manuale', 'manuelle', 'schaltgetriebe', 'handgeschakeld']],
-];
+/*
+ * Zeichen 3 — Getriebe und Antrieb.
+ *
+ * S und L stehen nicht im ACRISS-Standard, Sixt benutzt sie trotzdem: bei den
+ * AMG-, M- und Porsche-Modellen (DDSR, WFLP, GELP). Beide bedeuten dort
+ * Automatik — abgeglichen mit Sixts eigener Beschriftung.
+ */
+const GETRIEBE = {
+  M: ['Schaltung', 'Schaltung'],
+  N: ['Schaltung 4x4', 'Schaltung'],
+  C: ['Schaltung Allrad', 'Schaltung'],
+  A: ['Automatik', 'Automatik'],
+  B: ['Automatik 4x4', 'Automatik'],
+  D: ['Automatik Allrad', 'Automatik'],
+  S: ['Automatik', 'Automatik'],
+  L: ['Automatik', 'Automatik'],
+};
 
-const ELITE = ['elite'];
-
-function fold(s) {
-  return (s || '')
-    .toLowerCase()
-    .replaceAll('ä', 'a')
-    .replaceAll('ö', 'o')
-    .replaceAll('ü', 'u')
-    .replaceAll('ß', 'ss')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '');
-}
-
-/** Ersten passenden Eintrag einer Tabelle im Text finden. */
-function treffer(tabelle, text) {
-  const t = fold(text);
-  for (const [code, label, worte] of tabelle) {
-    for (const w of worte) {
-      const f = fold(w);
-      // Wortgrenzen, damit "van" nicht in "Caravan" anschlägt.
-      if (new RegExp(`(^|[^a-z0-9])${f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`).test(t)) {
-        return { code, label };
-      }
-    }
-  }
-  return null;
-}
+/* Zeichen 4 — Kraftstoff und Klimaanlage. */
+const ANTRIEB = {
+  R: ['', true],
+  N: ['', false],
+  D: ['Diesel', true],
+  Q: ['Diesel', false],
+  H: ['Hybrid', true],
+  I: ['Plug-in-Hybrid', true],
+  E: ['Elektrisch', true],
+  C: ['Elektrisch', true],
+  L: ['Autogas', true],
+  S: ['Autogas', false],
+  A: ['Wasserstoff', true],
+  B: ['Wasserstoff', false],
+  M: ['Mehrstoff', true],
+  F: ['Mehrstoff', false],
+  V: ['Benzin', true],
+  Z: ['Benzin', false],
+  U: ['Ethanol', true],
+  X: ['Ethanol', false],
+  // Nicht im Standard, kommt bei Sixts Sportwagen vor (WFLP, GELP, GTLP).
+  P: ['', true],
+};
 
 /**
- * Ein Angebot in eine sprachunabhaengige Klasse uebersetzen.
- *
- * @returns {{key:string, label:string, groesse:string, karosserie:string,
- *            getriebe:string, elite:boolean, exakt:boolean}}
+ * ACRISS-Code aufschluesseln.
+ * @returns {null|{acriss:string, label:string, klasse:string, karosserie:string,
+ *                 getriebe:string, antrieb:string, klima:boolean, ordnung:number}}
  */
-export function classify(offer) {
-  const cat = offer?.category || '';
-  const g = treffer(GROESSEN, cat);
-  const k = treffer(KAROSSERIEN, cat);
-  const a = treffer(GETRIEBE, cat);
-  const elite = ELITE.some((e) => fold(cat).includes(e));
+export function decodeAcriss(code) {
+  const c = String(code || '').toUpperCase();
+  if (!/^[A-Z]{4}$/.test(c)) return null;
 
-  // Nur wenn alle drei Bestandteile erkannt wurden, ist die Zuordnung
-  // belastbar. Sonst bekommt der Eintrag einen eigenen Schluessel aus dem
-  // Rohtext und steht als separate Zeile da.
-  const exakt = Boolean(g && k && a);
+  const k = KLASSE[c[0]];
+  const b = KAROSSERIE[c[1]];
+  const g = GETRIEBE[c[2]];
+  const a = ANTRIEB[c[3]];
 
-  if (!exakt) {
-    return {
-      key: 'roh:' + fold(cat),
-      label: cat || '(ohne Angabe)',
-      groesse: g?.label || '',
-      karosserie: k?.label || '',
-      getriebe: a?.label || '',
-      elite,
-      exakt: false,
-    };
-  }
+  // Bewusst nachsichtig: Klasse und Karosserie genuegen. Unbekannte Zeichen an
+  // Stelle 3 oder 4 lassen den Code trotzdem durch — Sixt fuehrt eigene
+  // Buchstaben ein, und ein halb erkannter Code ist deutlich brauchbarer als
+  // ein Rueckfall auf den uebersetzten Rohtext, der die Zeile spaltet.
+  if (!k || !b) return null;
 
   return {
-    key: [g.code, k.code, elite ? 'elite' : '-', a.code].join('|'),
-    label: [g.label, elite ? 'Elite' : null, k.label, a.label].filter(Boolean).join(' · '),
-    groesse: g.label,
-    karosserie: k.label,
-    getriebe: a.label,
-    elite,
-    exakt: true,
+    acriss: c,
+    klasse: k[0],
+    karosserie: b[0],
+    getriebe: g ? g[0] : '',
+    unbekannt: !g,
+    antrieb: a ? a[0] : '',
+    klima: a ? a[1] : true,
+    label: [k[0], b[0], g ? g[0] : null, a && a[0] ? a[0] : null].filter(Boolean).join(' · '),
+    // Klasse schlaegt Karosserie schlaegt Getriebe.
+    ordnung: k[1] * 1000 + b[1] * 10 + (g && g[0].startsWith('Automatik') ? 1 : 0),
   };
 }
 
-/** Sortiergewicht: klein nach gross, damit die Tabelle einer Logik folgt. */
+/* ------------------------------------------------------------- Notnagel */
+
+/**
+ * Ohne ACRISS-Code bleibt nur der Kategorietext. Der ist sprachabhaengig,
+ * deshalb bekommt so ein Angebot einen eigenen Schluessel und steht als
+ * separate Zeile — sichtbar unvollstaendig statt still falsch zusammen-
+ * geworfen.
+ */
+function rohSchluessel(offer) {
+  const text = (offer?.category || '').trim();
+  return {
+    key: 'roh:' + text.toLowerCase(),
+    acriss: null,
+    label: text || '(ohne Angabe)',
+    ordnung: 99000,
+    exakt: false,
+  };
+}
+
+/** Ein Angebot in eine vergleichbare Klasse uebersetzen. */
+export function classify(offer) {
+  const d = decodeAcriss(offer?.acriss);
+  if (!d) return rohSchluessel(offer);
+  return { key: d.acriss, ...d, exakt: true };
+}
+
 export function classOrder(key) {
-  const [g, k, e] = String(key).split('|');
-  const gi = GROESSEN.findIndex(([c]) => c === g);
-  const ki = KAROSSERIEN.findIndex(([c]) => c === k);
-  return (gi < 0 ? 99 : gi) * 100 + (ki < 0 ? 99 : ki) * 2 + (e === 'elite' ? 1 : 0);
+  const d = decodeAcriss(key);
+  return d ? d.ordnung : 99000;
 }

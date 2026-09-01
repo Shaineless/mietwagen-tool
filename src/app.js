@@ -1,16 +1,11 @@
-import { PROVIDERS, READY_PROVIDERS, providerById } from './providers.js';
+import { PROVIDERS, providerById } from './providers.js';
 import { STATIONS } from './stations.js';
-import {
-  buildPlaces,
-  stationsAtPlace,
-  CONFIDENCE_LABEL,
-  fold,
-} from './places.js';
-import { classify, classOrder } from './offer-classes.js';
+import { classify, classOrder, decodeAcriss } from './offer-classes.js';
 
 /* =========================================================== Zustand */
 
-const LS_KEY = 'mwt-preistool/v2';
+const LS_KEY = 'mwt-preistool/v3';
+const PROVIDER = 'sixt'; // vorerst nur Sixt
 
 const defaults = () => {
   const t = new Date();
@@ -18,23 +13,27 @@ const defaults = () => {
   const back = new Date(t);
   back.setDate(back.getDate() + 4);
   return {
-    mode: null, // null = Startbildschirm
-    provider: 'sixt', // Länder-Modus: der eine Anbieter
-    compare: ['sixt'], // Anbieter-Modus: die verglichenen Anbieter
+    mode: null,
     pickupDate: iso(t),
     returnDate: iso(back),
     pickupTime: '10:00',
     returnTime: '10:00',
     dayShifts: [0],
     durations: [],
-    stations: ['110'], // Codes des gewählten Anbieters
+    stations: ['110'],
     returnStation: null,
-    placeId: null,
     markets: ['de', 'at', 'ch', 'nl', 'es'],
+    /** Statusrabatt in Prozent — rein rechnerisch, siehe renderStatusWahl(). */
+    statusRabatt: 0,
+    /** Nur bekannte, aber gerade nicht buchbare Klassen mitzeigen? */
+    zeigeNichtBuchbare: true,
   };
 };
 
 let state = load();
+
+/** Fahrzeugklasse, deren Schutzpakete gerade betrachtet werden. */
+let schutzAcriss = null;
 
 function load() {
   try {
@@ -56,26 +55,16 @@ function persist() {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(state));
   } catch {
-    /* privater Modus — kein Grund zu scheitern */
+    /* privater Modus */
   }
 }
 
-/* =========================================================== Preisdienst */
+/* =========================================================== Dienst */
 
-/**
- * Das Tool laeuft in zwei Betriebsarten:
- *
- *   ohne Dienst - reiner Link-Generator, eine einzelne HTML-Datei
- *   mit Dienst  - zusaetzlich echte Preise, geliefert von der Browser-
- *                 Erweiterung, die sie aus den geoeffneten Tabs abliest
- *
- * Die zweite Art schaltet sich von selbst frei, sobald der lokale Dienst
- * antwortet. Faellt er aus, bleibt das Tool benutzbar.
- */
-const service = { available: false, checked: false, chrome: false, queue: null };
-
-/** Preisergebnisse, Auftragsschluessel -> Datensatz vom Dienst. */
-const prices = new Map();
+const service = { available: false, chrome: false, queue: null };
+const prices = new Map(); // Auftragsschlüssel -> Preisergebnis
+const schutz = new Map(); // Auftragsschlüssel -> Schutzergebnis
+let katalog = {}; // ACRISS -> {bild, modelle, beispielText}
 let pollTimer = null;
 
 async function checkService() {
@@ -90,106 +79,70 @@ async function checkService() {
   } catch {
     service.available = false;
   }
-  service.checked = true;
   return service.available;
 }
 
-/**
- * Stösst den automatischen Abruf an.
- *
- * Der Dienst startet dafür ein eigenes, unsichtbares Chrome-Fenster, arbeitet
- * die Anfragen zu zweit ab und legt die Ergebnisse ab; die Oberfläche holt sie
- * über pollPrices() nach und nach ein.
- */
-async function fetchPrices() {
-  const jobs = buildJobs()
-    .filter((j) => j.key && j.url && !prices.has(j.key))
-    .map((j) => ({
-      key: j.key,
-      provider: j.provider.id,
-      host: j.market.host,
-      stationCode: j.station.code,
-      returnCode: state.returnStation || undefined,
-      pickupDate: j.variant.pickupDate,
-      returnDate: j.variant.returnDate,
-      pickupTime: state.pickupTime,
-      returnTime: state.returnTime,
-      currency: j.market.cur,
-    }));
-
-  if (!jobs.length) {
-    flash('Für diese Auswahl liegen schon alle Preise vor.');
-    return;
-  }
-
-  const btn = $('#getPrices');
-  btn.disabled = true;
-  try {
-    const r = await fetch('/api/fetch', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jobs }),
-    });
-    const d = await r.json();
-    if (!d.ok) {
-      flash(d.error || 'Abruf nicht möglich.');
-      btn.disabled = false;
-      return;
-    }
-    // Sofort Rückmeldung geben, nicht erst beim nächsten Abfragetakt.
-    service.queue = { laufend: 1, offen: d.angenommen, erledigt: 0, gesamt: d.angenommen };
-    renderFortschritt();
-    // Zum Ergebnisbereich springen, damit der Fortschritt auch sichtbar ist.
-    $('#fortschritt').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    startPolling();
-    pollPrices();
-  } catch {
-    flash('Der Preisdienst antwortet nicht.');
-    btn.disabled = false;
-  }
-}
-
-/**
- * Auftragsschluessel: identifiziert eine konkrete Anfrage eindeutig, damit
- * die Erweiterung ihr Ergebnis dem richtigen Link zuordnen kann.
- */
-function jobKey(providerId, host, stationCode, v) {
+function jobKey(host, stationCode, v, acrissCode) {
   return [
-    providerId,
+    acrissCode ? 'schutz' : 'preis',
+    PROVIDER,
     host,
     stationCode,
     v.pickupDate,
     v.returnDate,
     state.pickupTime,
     state.returnTime,
+    acrissCode || '',
   ].join('~');
 }
 
-async function pollPrices() {
-  if (!service.available) return;
-  const keys = buildJobs()
-    .filter((j) => j.key && !prices.has(j.key))
-    .map((j) => j.key);
-  if (!keys.length) return;
-
+/** Katalog laden: welche Klassen gab es an diesen Stationen schon einmal? */
+async function ladeKatalog() {
+  if (!service.available || !state.stations.length) return;
+  const hosts = marktListe().map((m) => m.host);
   try {
-    const r = await fetch(`/api/results?keys=${encodeURIComponent(keys.join(','))}`, {
-      cache: 'no-store',
-    });
-    const data = await r.json();
-    let changed = false;
-    for (const [k, v] of Object.entries(data.results || {})) {
-      if (!prices.has(k)) {
-        prices.set(k, v);
-        changed = true;
-      }
-    }
-    if (changed) renderResults();
+    const r = await fetch(
+      `/api/katalog?provider=${PROVIDER}&station=${encodeURIComponent(state.stations[0])}` +
+        `&hosts=${encodeURIComponent(hosts.join(','))}`
+    );
+    const d = await r.json();
+    if (d.ok) katalog = d.klassen || {};
   } catch {
-    /* Dienst weg — beim naechsten Durchlauf erneut versuchen */
+    /* Katalog ist Beiwerk */
+  }
+}
+
+async function pollErgebnisse() {
+  if (!service.available) return;
+
+  const offen = [...aktuelleJobs(), ...schutzJobs()]
+    .filter((j) => j.key && !prices.has(j.key) && !schutz.has(j.key))
+    .map((j) => j.key);
+
+  if (offen.length) {
+    try {
+      const r = await fetch(`/api/results?keys=${encodeURIComponent(offen.join(','))}`, {
+        cache: 'no-store',
+      });
+      const d = await r.json();
+      let neu = false;
+      for (const [k, v] of Object.entries(d.results || {})) {
+        if (k.startsWith('schutz~')) {
+          if (!schutz.has(k)) { schutz.set(k, v); neu = true; }
+        } else if (!prices.has(k)) {
+          prices.set(k, v);
+          neu = true;
+        }
+      }
+      if (neu) {
+        renderResults();
+        if (schutzAcriss) renderSchutz();
+      }
+    } catch {
+      /* nächster Durchlauf */
+    }
   }
 
-  // Fortschritt anzeigen und den Knopf wieder freigeben, wenn nichts mehr läuft.
   try {
     const h = await (await fetch('/api/health', { cache: 'no-store' })).json();
     service.queue = h.queue || null;
@@ -199,50 +152,9 @@ async function pollPrices() {
   }
 }
 
-/**
- * Zeigt an, dass gerade etwas passiert.
- *
- * Ein Abruf dauert um die zehn Sekunden je Länderseite. Ohne sichtbaren
- * Fortschritt wirkt das wie ein Hänger, und man klickt erneut oder bricht ab.
- */
-function renderFortschritt() {
-  const q = service.queue;
-  const aktiv = Boolean(q && (q.laufend > 0 || q.offen > 0));
-  const box = $('#fortschritt');
-  box.hidden = !aktiv;
-
-  const btn = $('#getPrices');
-  btn.disabled = aktiv;
-  btn.textContent = aktiv ? 'Abruf läuft …' : 'Preise holen';
-
-  if (!aktiv) return;
-
-  const gesamt = Math.max(1, q.gesamt);
-  const anteil = Math.round((q.erledigt / gesamt) * 100);
-  $('#ffuellung').style.width = `${anteil}%`;
-  $('#ftext').textContent =
-    `${q.erledigt} von ${q.gesamt} abgerufen` +
-    (q.laufend ? ` · ${q.laufend} gerade unterwegs` : '');
-}
-
 function startPolling() {
   if (pollTimer || !service.available) return;
-  pollTimer = setInterval(pollPrices, 2500);
-}
-
-/** Guenstigstes Angebot eines Ergebnisses. */
-function cheapest(record) {
-  if (!record || !record.offers?.length) return null;
-  return record.offers.reduce((best, o) => {
-    const v = o.total ?? o.perDay ?? Infinity;
-    const b = best ? (best.total ?? best.perDay ?? Infinity) : Infinity;
-    return v < b ? o : best;
-  }, null);
-}
-
-function money(v, cur) {
-  if (v == null) return '—';
-  return `${v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur || ''}`.trim();
+  pollTimer = setInterval(pollErgebnisse, 2500);
 }
 
 /* =========================================================== Datum */
@@ -271,48 +183,54 @@ function pretty(s) {
   ).padStart(2, '0')}.`;
 }
 
+function money(v, cur) {
+  if (v == null) return '—';
+  return `${v.toLocaleString('de-DE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}${cur ? ' ' + cur : ''}`;
+}
+
 /* =========================================================== Suche */
 
-const PLACES = buildPlaces(STATIONS);
-
-/**
- * Bewertet, wie gut ein Eintrag zur Eingabe passt.
- * IATA-Code und Wortanfang zählen mehr als ein Treffer irgendwo im Namen.
- */
 function score(text, iata, needle) {
   const q = fold(needle);
   const name = fold(text);
   const code = (iata || '').toLowerCase();
-
   if (code && code === q) return 1000;
   if (code && code.startsWith(q)) return 900;
   if (name.startsWith(q)) return 800;
   if (name.split(/[\s/().,-]+/).some((w) => w.startsWith(q))) return 700;
   if (name.includes(q)) return 500;
-
   let i = 0;
   for (const ch of name) if (ch === q[i]) i++;
   return i === q.length ? 100 : -1;
 }
 
-/**
- * Gemeinsame Suchlogik für Stationen und Orte.
- * Ohne Eingabe werden ALLE Einträge gezeigt — Bahnhöfe und Stadtstationen
- * sind gleichberechtigt, Flughäfen stehen nur bei Gleichstand vorn.
- */
-function rank(items, needle, textOf, iataOf, limit) {
+function fold(s) {
+  return (s || '')
+    .toLowerCase()
+    .replaceAll('ä', 'a')
+    .replaceAll('ö', 'o')
+    .replaceAll('ü', 'u')
+    .replaceAll('ß', 'ss')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+}
+
+const ALLE_STATIONEN = STATIONS.filter((s) => s.provider === PROVIDER);
+
+function suche(needle, limit = 60) {
   if (!needle.trim()) {
-    // Ohne Eingabe rein alphabetisch: Bahnhöfe, Stadt- und Hotelstationen
-    // stehen gleichberechtigt neben den Flughäfen.
-    return [...items].sort((a, b) => textOf(a).localeCompare(textOf(b))).slice(0, limit);
+    return [...ALLE_STATIONEN]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .slice(0, limit);
   }
+  let hits = ALLE_STATIONEN.map((s) => ({
+    s,
+    sc: score(`${s.name} ${s.country}`, s.iata, needle),
+  })).filter((h) => h.sc >= 0);
 
-  let hits = items
-    .map((x) => ({ x, sc: score(textOf(x), iataOf(x), needle) }))
-    .filter((h) => h.sc >= 0);
-
-  // Sobald es echte Treffer gibt, die lockeren Fuzzy-Treffer wegwerfen —
-  // sonst steht hinter "PMI" plötzlich halb Frankreich.
   const best = Math.max(0, ...hits.map((h) => h.sc));
   if (best >= 500) hits = hits.filter((h) => h.sc >= 500);
 
@@ -320,36 +238,23 @@ function rank(items, needle, textOf, iataOf, limit) {
     .sort(
       (a, b) =>
         b.sc - a.sc ||
-        Number(Boolean(iataOf(b.x))) - Number(Boolean(iataOf(a.x))) ||
-        textOf(a.x).localeCompare(textOf(b.x))
+        Number(Boolean(b.s.iata)) - Number(Boolean(a.s.iata)) ||
+        a.s.name.localeCompare(b.s.name)
     )
     .slice(0, limit)
-    .map((h) => h.x);
+    .map((h) => h.s);
 }
 
-function providerStations(providerId) {
-  return STATIONS.filter((s) => s.provider === providerId);
+function stationByCode(code) {
+  return ALLE_STATIONEN.find((s) => s.code === code);
 }
 
-function stationByCode(providerId, code) {
-  return STATIONS.find((s) => s.provider === providerId && s.code === code);
+function marktListe() {
+  return providerById(PROVIDER).markets.filter((m) => state.markets.includes(m.code));
 }
 
 /* =========================================================== Aufträge */
 
-/**
- * Haengt den Auftragsschluessel an die Ziel-URL, damit die Erweiterung das
- * Ergebnis zuordnen kann. Nur wenn der Dienst laeuft — ohne ihn hat der
- * Parameter keinen Zweck und soll die URL nicht unnötig aufblähen.
- *
- * Sixt ignoriert unbekannte Parameter; geprüft, die Suche bleibt unberührt.
- */
-function withJobKey(url, key) {
-  if (!service.available || !url) return url;
-  return url + (url.includes('?') ? '&' : '?') + 'mwt=' + encodeURIComponent(key);
-}
-
-/** Datumsvarianten aus Verschiebungen × Mietdauern. */
 function dateVariants() {
   const base = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
   const durations = state.durations.length ? state.durations : [base];
@@ -364,38 +269,26 @@ function dateVariants() {
   return out;
 }
 
-/** Länder-Modus: ein Anbieter × Stationen × Termine × Länderseiten. */
-function jobsByMarket() {
-  const provider = providerById(state.provider);
-  if (!provider || !provider.build) return [];
-
-  const markets = provider.markets.filter((m) => state.markets.includes(m.code));
-  const stations = state.stations
-    .map((c) => stationByCode(provider.id, c))
-    .filter(Boolean);
-  const ret = state.returnStation
-    ? stationByCode(provider.id, state.returnStation)
-    : null;
+function aktuelleJobs() {
+  const provider = providerById(PROVIDER);
+  const märkte = marktListe();
+  const stationen = state.stations.map(stationByCode).filter(Boolean);
+  const ret = state.returnStation ? stationByCode(state.returnStation) : null;
 
   const jobs = [];
-  for (const station of stations) {
+  for (const station of stationen) {
     for (const v of dateVariants()) {
-      for (const market of markets) {
+      for (const market of märkte) {
         const q = { ...state, pickupDate: v.pickupDate, returnDate: v.returnDate };
         const built = provider.build(q, market, station, ret);
-        const key = jobKey(provider.id, market.host, station.code, v);
+        const key = jobKey(market.host, station.code, v);
         jobs.push({
-          provider,
           market,
           station,
           variant: v,
           key,
-          groupKey: `${station.code}|${v.pickupDate}|${v.returnDate}`,
-          groupLabel: station.name,
-          itemLabel: market.label,
-          itemSub: market.cur,
-          ...built,
-          url: withJobKey(built.url, key),
+          gruppe: `${station.code}|${v.pickupDate}|${v.returnDate}`,
+          url: built.url,
         });
       }
     }
@@ -403,73 +296,30 @@ function jobsByMarket() {
   return jobs;
 }
 
-/**
- * Anbieter-Modus: ein Ort × Termine × Anbieter.
- * Anbieter ohne Station am Ort liefern absichtlich keinen Link, sondern
- * einen sichtbaren Fehlanzeige-Eintrag.
- */
-function jobsByProvider() {
-  const place = PLACES.find((p) => p.id === state.placeId);
-  if (!place) return [];
-
-  const chosen = PROVIDERS.filter((p) => state.compare.includes(p.id));
+/** Schutz-Aufträge für die gerade betrachtete Klasse. */
+function schutzJobs() {
+  if (!schutzAcriss) return [];
+  const stationen = state.stations.map(stationByCode).filter(Boolean);
+  const v = dateVariants()[0];
   const jobs = [];
-
-  for (const v of dateVariants()) {
-    for (const { provider, station } of stationsAtPlace(place, chosen)) {
-      const common = {
-        provider,
-        variant: v,
-        place,
-        groupKey: `${place.id}|${v.pickupDate}|${v.returnDate}`,
-        groupLabel: place.label,
-        itemLabel: provider.label,
-      };
-
-      if (!station || !provider.build) {
-        jobs.push({
-          ...common,
-          station,
-          url: null,
-          missing: !station ? 'keine Station an diesem Ort' : 'noch nicht angebunden',
-          fallback: provider.homepage || null,
-        });
-        continue;
-      }
-
-      // Heimatmarkt des Anbieters für den reinen Anbietervergleich.
-      const market = provider.markets[0];
-      const q = { ...state, pickupDate: v.pickupDate, returnDate: v.returnDate };
-      const built = provider.build(q, market, station, null);
-      const key = jobKey(provider.id, market.host, station.code, v);
+  for (const station of stationen) {
+    for (const market of marktListe()) {
       jobs.push({
-        ...common,
-        station,
         market,
-        key,
-        itemSub: station.name,
-        ...built,
-        url: withJobKey(built.url, key),
+        station,
+        variant: v,
+        acriss: schutzAcriss,
+        key: jobKey(market.host, station.code, v, schutzAcriss),
       });
     }
   }
   return jobs;
 }
 
-function buildJobs() {
-  return state.mode === 'providers' ? jobsByProvider() : jobsByMarket();
-}
-
-/* =========================================================== DOM-Helfer */
+/* =========================================================== DOM */
 
 const $ = (s) => document.querySelector(s);
 
-/**
- * Wie node.replaceChildren, wirft aber null/undefined weg.
- *
- * Ohne das schreibt `replaceChildren(null)` wörtlich "null" in die Seite —
- * `el()` filtert seine Kinder, replaceChildren tut das nicht.
- */
 function setChildren(node, ...kids) {
   node.replaceChildren(...kids.flat().filter((k) => k != null));
 }
@@ -490,29 +340,827 @@ function el(tag, attrs = {}, ...kids) {
   return n;
 }
 
-/* =========================================================== Ansichten */
-
 function showScreen(name) {
   $('#start').hidden = name !== 'start';
   $('#statusScreen').hidden = name !== 'status';
   $('#work').hidden = name !== 'work';
+  $('#schutzScreen').hidden = name !== 'schutz';
 }
 
-function applyTheme(provider) {
-  const root = document.documentElement;
-  if (provider && provider.theme) {
-    root.style.setProperty('--accent', provider.theme.accent);
-    root.style.setProperty('--accent-ink', provider.theme.ink);
-    root.dataset.provider = provider.id;
-  } else {
-    root.style.removeProperty('--accent');
-    root.style.removeProperty('--accent-ink');
-    delete root.dataset.provider;
+/* =========================================================== Statusrabatt */
+
+const STATUS_STUFEN = [
+  [0, 'Kein Status'],
+  [10, 'Gold · −10 %'],
+  [15, 'Platinum · −15 %'],
+  [20, 'Diamond · −20 %'],
+];
+
+/**
+ * Statusrabatt auf einen Betrag anwenden.
+ *
+ * Bewusst eine reine Rechnung: Sixt zeigt den Rabatt erst nach dem Anmelden,
+ * und er gilt nicht zwingend auf alle Bestandteile. Die Oberflaeche nennt das
+ * deshalb ausdruecklich eine Schaetzung.
+ */
+function mitStatus(v) {
+  if (v == null || !state.statusRabatt) return v;
+  return v * (1 - state.statusRabatt / 100);
+}
+
+function renderStatusWahl() {
+  return el(
+    'div',
+    { class: 'statuswahl' },
+    el('span', { class: 'swlabel' }, 'Statusrabatt'),
+    ...STATUS_STUFEN.map(([p, label]) =>
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'chipbtn' + (state.statusRabatt === p ? ' on' : ''),
+          onclick: () => {
+            state.statusRabatt = p;
+            persist();
+            renderResults();
+            if (schutzAcriss) renderSchutz();
+          },
+        },
+        label
+      )
+    ),
+    state.statusRabatt
+      ? el(
+          'span',
+          { class: 'swnote' },
+          'gerechnet, nicht abgefragt — Sixt zeigt den Rabatt erst nach dem Anmelden'
+        )
+      : null
+  );
+}
+
+/* =========================================================== Stationen */
+
+function renderStationPicker() {
+  const needle = $('#stationSearch').value;
+  const hits = suche(needle);
+  // Scrollstand merken: die Liste wird komplett neu aufgebaut, und ohne das
+  // springt sie bei jedem Klick an den Anfang zurueck.
+  const scroll = $('#stationResults').scrollTop;
+
+  $('#stationCount').textContent =
+    `${hits.length} von ${ALLE_STATIONEN.length} Stationen` +
+    (needle.trim() ? '' : ' — tippen zum Filtern');
+  $('#addAll').hidden = !needle.trim() || !hits.length;
+  $('#addAll').textContent = `Alle ${hits.length} hinzufügen`;
+
+  setChildren(
+    $('#stationResults'),
+    ...hits.map((s) => {
+      const on = state.stations.includes(s.code);
+      return el(
+        'button',
+        {
+          type: 'button',
+          class: 'station' + (on ? ' on' : ''),
+          title: `Sixt-Stationsnummer ${s.code}`,
+          onclick: () => {
+            const i = state.stations.indexOf(s.code);
+            if (i >= 0) state.stations.splice(i, 1);
+            else state.stations.push(s.code);
+            update();
+          },
+        },
+        el('span', { class: 'flag' }, s.country),
+        el('span', { class: 'sname' }, s.name),
+        s.iata ? el('span', { class: 'iata' }, s.iata) : null
+      );
+    }),
+    hits.length ? null : el('p', { class: 'empty' }, 'Keine Station gefunden.')
+  );
+  $('#stationResults').scrollTop = scroll;
+
+  const gewählt = state.stations.map(stationByCode).filter(Boolean);
+  setChildren(
+    $('#chosenStations'),
+    ...gewählt.map((s) =>
+      el(
+        'span',
+        { class: 'chip' },
+        s.name,
+        el('span', { class: 'chipid' }, s.code),
+        el('button', {
+          type: 'button',
+          class: 'x',
+          html: '&times;',
+          onclick: () => {
+            state.stations = state.stations.filter((c) => c !== s.code);
+            update();
+          },
+        })
+      )
+    ),
+    gewählt.length ? null : el('span', { class: 'empty' }, 'Noch keine Station gewählt.')
+  );
+
+  const sel = $('#returnStation');
+  setChildren(
+    sel,
+    el('option', { value: '' }, '— gleiche wie Abholung —'),
+    ...gewählt.map((s) =>
+      el('option', { value: s.code, selected: state.returnStation === s.code }, s.name)
+    )
+  );
+}
+
+/* =========================================================== Märkte, Pills */
+
+function renderMarkets() {
+  setChildren(
+    $('#markets'),
+    ...providerById(PROVIDER).markets.map((m) =>
+      el(
+        'label',
+        { class: 'mk' + (state.markets.includes(m.code) ? ' on' : '') },
+        el('input', {
+          type: 'checkbox',
+          checked: state.markets.includes(m.code),
+          onchange: (e) => {
+            if (e.target.checked) state.markets.push(m.code);
+            else state.markets = state.markets.filter((c) => c !== m.code);
+            // Nur das Ergebnis neu zeichnen: die Stationsliste anzufassen
+            // liesse sie zurueckscrollen.
+            update({ stationen: false });
+          },
+        }),
+        el('span', { class: 'mklabel' }, m.label),
+        el('span', { class: 'cur' }, m.cur)
+      )
+    )
+  );
+}
+
+function renderPills(sel, opts, list, label, onEmpty) {
+  setChildren(
+    $(sel),
+    ...opts.map((n) =>
+      el(
+        'label',
+        { class: 'pill' + (list().includes(n) ? ' on' : '') },
+        el('input', {
+          type: 'checkbox',
+          checked: list().includes(n),
+          onchange: (e) => {
+            const arr = list();
+            if (e.target.checked) arr.push(n);
+            else {
+              const i = arr.indexOf(n);
+              if (i >= 0) arr.splice(i, 1);
+            }
+            onEmpty(arr);
+            update({ stationen: false });
+          },
+        }),
+        label(n)
+      )
+    )
+  );
+}
+
+/* =========================================================== Tabelle */
+
+/**
+ * Zeilen sind Fahrzeugklassen (ACRISS), Spalten die Laenderseiten.
+ *
+ * Drei Zustaende je Zelle:
+ *   Preis            buchbar
+ *   "nicht buchbar"  Klasse dort schon einmal gesehen, heute kein Angebot
+ *   leer             dort noch nie gesehen
+ */
+function renderTable(list) {
+  const spalten = list;
+  const zeilen = new Map();
+
+  for (const j of spalten) {
+    const rec = prices.get(j.key);
+    for (const o of rec?.offers || []) {
+      const cls = classify(o);
+      if (!zeilen.has(cls.key)) zeilen.set(cls.key, { cls, zellen: new Map(), beispiel: o });
+      const z = zeilen.get(cls.key);
+
+      // Beschriftung: Sixts eigener Kategorietext schlägt meine ACRISS-
+      // Dekodierung. Sixt führt Buchstaben, die nicht im Standard stehen
+      // (S und L für Automatik, P als Antrieb) — deren Text ist damit immer
+      // richtiger als jede Tabelle, die ich pflege. Der Code bleibt die
+      // Verknüpfung über die Sprachen hinweg, der Text nur die Anzeige.
+      if (o.category && !z.eigenerText) z.eigenerText = o.category;
+      const bisher = z.zellen.get(j.key);
+      const wert = o.total ?? o.perDay ?? Infinity;
+      const alt = bisher ? (bisher.total ?? bisher.perDay ?? Infinity) : Infinity;
+      if (wert < alt) z.zellen.set(j.key, o);
+      if (!z.beispiel.image && o.image) z.beispiel = o;
+    }
+  }
+
+  // Bekannte, aktuell nicht buchbare Klassen ergaenzen.
+  if (state.zeigeNichtBuchbare) {
+    for (const [acriss, info] of Object.entries(katalog)) {
+      if (zeilen.has(acriss)) continue;
+      const d = decodeAcriss(acriss);
+      if (!d) continue;
+      zeilen.set(acriss, {
+        cls: { key: acriss, ...d, exakt: true },
+        zellen: new Map(),
+        beispiel: { image: info?.bild || null, model: (info?.modelle || [])[0] || '' },
+        nurKatalog: true,
+      });
+    }
+  }
+
+  if (!zeilen.size) return null;
+
+  const sortiert = [...zeilen.values()].sort(
+    (a, b) => classOrder(a.cls.key) - classOrder(b.cls.key) || a.cls.label.localeCompare(b.cls.label)
+  );
+
+  // Waehrungen: markiert wird nur innerhalb derselben Waehrung.
+  const spaltenJeWährung = new Map();
+  for (const z of zeilen.values()) {
+    for (const [k, o] of z.zellen) {
+      if (!spaltenJeWährung.has(o.currency)) spaltenJeWährung.set(o.currency, new Set());
+      spaltenJeWährung.get(o.currency).add(k);
+    }
+  }
+  const vergleichbar = new Set([...spaltenJeWährung].filter(([, s]) => s.size > 1).map(([w]) => w));
+  const gemischt = spaltenJeWährung.size > 1;
+
+  function minima(z) {
+    const min = new Map();
+    const anzahl = new Map();
+    for (const o of z.zellen.values()) {
+      const w = o.total ?? o.perDay;
+      if (w == null) continue;
+      anzahl.set(o.currency, (anzahl.get(o.currency) || 0) + 1);
+      const b = min.get(o.currency);
+      if (b == null || w < b) min.set(o.currency, w);
+    }
+    return { min, anzahl };
+  }
+
+  // Läuft auf einer Spalte gerade der Frühbucherrabatt?
+  const fruehbucherSpalten = new Set();
+  for (const z of zeilen.values()) {
+    for (const [k, o] of z.zellen) if (o.fruehbucher) fruehbucherSpalten.add(k);
+  }
+
+  const kopf = el(
+    'tr',
+    {},
+    el('th', { class: 'klasse' }, 'Fahrzeug'),
+    ...spalten.map((j) =>
+      el(
+        'th',
+        {},
+        el('a', { href: j.url, target: '_blank', rel: 'noopener' }, j.market.label),
+        el('span', { class: 'thcur' }, j.market.cur),
+        fruehbucherSpalten.has(j.key)
+          ? el('span', { class: 'aktion', title: 'Frühbucherrabatt aktiv' }, 'Frühbucher')
+          : prices.get(j.key)
+            ? null
+            : el('span', { class: 'thwait' }, 'lädt …')
+      )
+    )
+  );
+
+  const körper = sortiert.map((z) => {
+    const { min, anzahl } = minima(z);
+    const bild = z.beispiel?.image;
+
+    return el(
+      'tr',
+      {
+        class: 'zeile' + (z.nurKatalog ? ' nurkatalog' : ''),
+        onclick: () => öffneSchutz(z.cls.key),
+        title: 'Schutzpakete für diese Klasse vergleichen',
+      },
+      el(
+        'th',
+        { class: 'klasse' },
+        el(
+          'span',
+          { class: 'fzg' },
+          bild
+            ? el('img', { src: bild, alt: '', loading: 'lazy', class: 'fbild' })
+            : el('span', { class: 'fbild leer' }),
+          el(
+            'span',
+            { class: 'ftext2' },
+            el('span', { class: 'fmodell' }, z.beispiel?.model || z.cls.label),
+            el(
+              'span',
+              { class: 'fklasse' },
+              el('span', { class: 'acriss' }, z.cls.acriss || '—'),
+              z.eigenerText || z.cls.label
+            )
+          )
+        )
+      ),
+      ...spalten.map((j) => {
+        const o = z.zellen.get(j.key);
+        if (!o) {
+          const geladen = prices.get(j.key);
+          if (!geladen) return el('td', { class: 'leer' }, '');
+          // Bekannt, aber heute nicht im Angebot.
+          const bekannt = katalog[z.cls.key];
+          return el(
+            'td',
+            { class: 'leer' },
+            bekannt ? el('span', { class: 'nichtbuchbar' }, 'nicht buchbar') : '—'
+          );
+        }
+        const roh = o.total ?? o.perDay;
+        const wert = mitStatus(roh);
+        const billigste =
+          vergleichbar.has(o.currency) &&
+          (anzahl.get(o.currency) || 0) > 1 &&
+          roh === min.get(o.currency);
+
+        return el(
+          'td',
+          {
+            class: billigste ? 'best' : '',
+            title: `${o.model}${o.unlimitedKm ? ' · unbegrenzte km' : ''}${
+              o.aktionen?.length ? ' · ' + o.aktionen.join(' · ') : ''
+            }`,
+          },
+          el('span', { class: 'betrag' }, money(wert, o.currency)),
+          el(
+            'span',
+            { class: 'proTag' },
+            `${money(mitStatus(o.perDay), '')}/Tag`,
+            o.fruehbucher ? el('span', { class: 'fbmark', title: 'Frühbucherrabatt' }, 'FB') : null
+          )
+        );
+      })
+    );
+  });
+
+  return el(
+    'div',
+    { class: 'tabellenblock' },
+    el(
+      'div',
+      { class: 'tabellenrahmen' },
+      el('table', { class: 'vergleich' }, el('thead', {}, kopf), el('tbody', {}, ...körper))
+    ),
+    el(
+      'p',
+      { class: 'tabnote' },
+      'Zeile anklicken zeigt die Schutzpakete dieser Klasse im Ländervergleich.',
+      gemischt
+        ? ` Mehrere Währungen (${[...spaltenJeWährung.keys()].join(', ')}) — markiert wird nur innerhalb derselben Währung, es wird nicht umgerechnet.`
+        : '',
+      fruehbucherSpalten.size && fruehbucherSpalten.size < spalten.length
+        ? ' Achtung: der Frühbucherrabatt läuft nicht auf allen Länderseiten — Spalten mit „Frühbucher" sind dadurch im Vorteil.'
+        : ''
+    )
+  );
+}
+
+/* =========================================================== Ergebnisse */
+
+function renderResults() {
+  const jobs = aktuelleJobs();
+  $('#jobCount').textContent = jobs.length
+    ? `${jobs.length} Abfrage${jobs.length === 1 ? '' : 'n'}`
+    : '';
+  $('#openAll').disabled = !jobs.length;
+  $('#copyAll').disabled = !jobs.length;
+  $('#warn').hidden = jobs.length <= 12;
+  $('#warn').textContent =
+    jobs.length > 12
+      ? `${jobs.length} Abfragen — das dauert rund ${Math.ceil((jobs.length * 10) / 2 / 60)} Minuten.`
+      : '';
+
+  if (!jobs.length) {
+    setChildren($('#results'), el('p', { class: 'empty' }, 'Station und Länderseite wählen.'));
+    return;
+  }
+
+  const gruppen = new Map();
+  for (const j of jobs) {
+    if (!gruppen.has(j.gruppe)) gruppen.set(j.gruppe, []);
+    gruppen.get(j.gruppe).push(j);
+  }
+
+  const hatPreise = [...prices.values()].some((r) => r.offers?.length);
+
+  setChildren(
+    $('#results'),
+    hatPreise ? renderStatusWahl() : null,
+    ...[...gruppen.values()].map((list) => {
+      const f = list[0];
+      return el(
+        'div',
+        { class: 'group' },
+        el(
+          'h3',
+          {},
+          f.station.name,
+          el('span', { class: 'gid' }, f.station.code),
+          el(
+            'span',
+            { class: 'span' },
+            `${pretty(f.variant.pickupDate)} ${state.pickupTime} → ${pretty(
+              f.variant.returnDate
+            )} ${state.returnTime} · ${f.variant.duration} Tage`
+          )
+        ),
+        renderTable(list) ||
+          el(
+            'p',
+            { class: 'empty' },
+            service.chrome
+              ? 'Noch keine Preise — „Preise holen" drücken.'
+              : 'Kein Preisabruf verfügbar. Die Links unten führen zur Suche.'
+          ),
+        el(
+          'div',
+          { class: 'links' },
+          ...list.map((j) => {
+            const rec = prices.get(j.key);
+            return el(
+              'a',
+              { href: j.url, target: '_blank', rel: 'noopener', class: 'lnk' },
+              el('span', { class: 'mkname' }, j.market.label),
+              rec?.error ? el('span', { class: 'price err' }, rec.error) : null
+            );
+          })
+        )
+      );
+    })
+  );
+}
+
+/* =========================================================== Schutz */
+
+function öffneSchutz(acriss) {
+  if (!decodeAcriss(acriss)) return;
+  schutzAcriss = acriss;
+  showScreen('schutz');
+  renderSchutz();
+  window.scrollTo(0, 0);
+}
+
+function renderSchutz() {
+  const d = decodeAcriss(schutzAcriss);
+  if (!d) return;
+
+  const info = katalog[schutzAcriss] || {};
+  const beispiel = (() => {
+    for (const rec of prices.values()) {
+      const t = (rec.offers || []).find((o) => o.acriss === schutzAcriss);
+      if (t) return t;
+    }
+    return null;
+  })();
+
+  setChildren(
+    $('#schutzKopf'),
+    el(
+      'div',
+      { class: 'fzgkopf' },
+      beispiel?.image || info.bild
+        ? el('img', { src: beispiel?.image || info.bild, alt: '', class: 'kbild' })
+        : null,
+      el(
+        'div',
+        {},
+        el('p', { class: 'kmodell' }, beispiel?.model || (info.modelle || [])[0] || d.label),
+        el(
+          'p',
+          { class: 'kklasse' },
+          el('span', { class: 'acriss gross' }, d.acriss),
+          d.label
+        ),
+        el(
+          'p',
+          { class: 'kzeit' },
+          `${pretty(state.pickupDate)} ${state.pickupTime} → ${pretty(state.returnDate)} ${state.returnTime} · ` +
+            `${Math.max(1, daysBetween(state.pickupDate, state.returnDate))} Tage`
+        )
+      )
+    )
+  );
+
+  const jobs = schutzJobs();
+  const fertig = jobs.filter((j) => schutz.has(j.key));
+  $('#schutzHinweis').textContent = fertig.length
+    ? `${fertig.length} von ${jobs.length} Länderseiten abgerufen`
+    : `${jobs.length} Länderseiten · rund ${Math.ceil((jobs.length * 12) / 2)} Sekunden`;
+
+  // Die Paketnamen heißen in jeder Sprache anders — "Smart-Schutz",
+  // "Smart Protection", "Protección Smart". Zugeordnet wird deshalb NICHT über
+  // den Namen, sondern über den Inhalt: Gibt es eine Selbstbeteiligung, und
+  // wenn nein, ist es das günstigere oder das teurere der SB-freien Pakete?
+  // Die reine Reihenfolge wäre zu wackelig, sobald ein Land ein Paket weniger
+  // führt. Der Name der jeweiligen Länderseite steht dann in der Zelle.
+  const KANON = [
+    ['ohne', 'Ohne Extra-Schutz', 'volle Haftung bis Fahrzeugwert'],
+    ['sb', 'Mit Selbstbeteiligung', 'Basis-Schutz, Restrisiko bleibt'],
+    ['frei1', 'Ohne Selbstbeteiligung', 'das günstigere SB-freie Paket'],
+    ['frei2', 'Ohne SB, Rundum', 'das teurere SB-freie Paket'],
+  ];
+
+  function kanonisiere(pakete) {
+    const zu = {};
+    const frei = [];
+    for (const p of pakete || []) {
+      if (p.inklusive || p.proTag === 0) zu.ohne = p;
+      else if (p.sbBetrag != null && p.sbBetrag > 0) zu.sb = p;
+      else frei.push(p);
+    }
+    frei.sort((a, b) => (a.proTag ?? Infinity) - (b.proTag ?? Infinity));
+    if (frei[0]) zu.frei1 = frei[0];
+    if (frei[1]) zu.frei2 = frei[1];
+    return zu;
+  }
+
+  const proMarkt = new Map();
+  for (const j of jobs) {
+    const r = schutz.get(j.key);
+    if (r?.pakete?.length) proMarkt.set(j.key, kanonisiere(r.pakete));
+  }
+
+  const benutzt = KANON.filter(([k]) => [...proMarkt.values()].some((m) => m[k]));
+
+  if (!benutzt.length) {
+    setChildren(
+      $('#schutzBody'),
+      el(
+        'p',
+        { class: 'empty' },
+        fertig.length
+          ? 'Keine Schutzpakete gefunden — die Klasse ist dort vermutlich nicht buchbar.'
+          : 'Noch nichts abgerufen.'
+      )
+    );
+    return;
+  }
+
+  const tage = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
+
+  const kopf = el(
+    'tr',
+    {},
+    el('th', { class: 'klasse' }, 'Schutzpaket'),
+    ...jobs.map((j) =>
+      el(
+        'th',
+        {},
+        j.market.label,
+        el('span', { class: 'thcur' }, j.market.cur),
+        schutz.has(j.key) ? null : el('span', { class: 'thwait' }, 'lädt …')
+      )
+    )
+  );
+
+  const zeilen = benutzt.map(([k, titel, erklärung]) =>
+    el(
+      'tr',
+      {},
+      el(
+        'th',
+        { class: 'klasse' },
+        el('span', { class: 'pname' }, titel),
+        el('span', { class: 'psb' }, erklärung)
+      ),
+      ...jobs.map((j) => {
+        const r = schutz.get(j.key);
+        const p = proMarkt.get(j.key)?.[k];
+        if (!p) return el('td', { class: 'leer' }, r ? '—' : '');
+
+        const proTag = p.inklusive ? 0 : p.proTag;
+        const gesamtSchutz = proTag == null ? null : proTag * tage;
+
+        return el(
+          'td',
+          {},
+          // Der Name, wie ihn diese Länderseite nennt — bewusst mitgezeigt,
+          // damit man die Zuordnung nachprüfen kann.
+          el('span', { class: 'lokalname' }, p.name),
+          el(
+            'span',
+            { class: 'betrag' },
+            p.inklusive ? 'inklusive' : money(mitStatus(proTag), p.waehrung) + '/Tag'
+          ),
+          !p.inklusive && gesamtSchutz != null
+            ? el('span', { class: 'proTag' }, `${money(mitStatus(gesamtSchutz), p.waehrung)} gesamt`)
+            : null,
+          p.selbstbeteiligung
+            ? el('span', { class: 'proTag sb' }, 'SB: ' + p.selbstbeteiligung)
+            : null,
+          p.rabattProzent
+            ? el('span', { class: 'proTag rabatt' }, `−${p.rabattProzent} % Online`)
+            : null
+        );
+      })
+    )
+  );
+
+  setChildren(
+    $('#schutzBody'),
+    renderStatusWahl(),
+    el(
+      'div',
+      { class: 'tabellenrahmen' },
+      el('table', { class: 'vergleich schutz' }, el('thead', {}, kopf), el('tbody', {}, ...zeilen))
+    ),
+    el(
+      'p',
+      { class: 'tabnote' },
+      'Zugeordnet wird über den Inhalt (Selbstbeteiligung ja/nein, günstiger/teurer), ' +
+        'nicht über den Namen — der heißt auf jeder Länderseite anders. Der jeweilige ' +
+        'Originalname steht klein über dem Preis, damit die Zuordnung nachprüfbar bleibt.'
+    )
+  );
+}
+
+async function fetchSchutz() {
+  const jobs = schutzJobs().filter((j) => !schutz.has(j.key));
+  if (!jobs.length) {
+    flash('Für diese Klasse liegen schon alle Schutzpreise vor.');
+    return;
+  }
+  await sendeJobs(
+    jobs.map((j) => ({
+      key: j.key,
+      provider: PROVIDER,
+      host: j.market.host,
+      stationCode: j.station.code,
+      acriss: j.acriss,
+      pickupDate: j.variant.pickupDate,
+      returnDate: j.variant.returnDate,
+      pickupTime: state.pickupTime,
+      returnTime: state.returnTime,
+      currency: j.market.cur,
+    })),
+    $('#getSchutz')
+  );
+}
+
+/* =========================================================== Abruf */
+
+async function sendeJobs(jobs, btn) {
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/fetch', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jobs }),
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      flash(d.error || 'Abruf nicht möglich.');
+      btn.disabled = false;
+      return;
+    }
+    service.queue = { laufend: 1, offen: d.angenommen, erledigt: 0, gesamt: d.angenommen };
+    renderFortschritt();
+    startPolling();
+    pollErgebnisse();
+  } catch {
+    flash('Der Preisdienst antwortet nicht.');
+    btn.disabled = false;
   }
 }
 
+/**
+ * Warteschlange abbrechen.
+ *
+ * Was schon laeuft, laeuft zu Ende — ein Abruf mittendrin abzuwuergen liesse
+ * eine halb geladene Seite stehen. Alles Wartende wird verworfen.
+ */
+async function abbrechen() {
+  try {
+    const d = await (await fetch('/api/cancel', { method: 'POST' })).json();
+    flash(
+      d.verworfen
+        ? `${d.verworfen} Abrufe verworfen` +
+            (d.nochLaufend ? ` · ${d.nochLaufend} laufen noch zu Ende` : '')
+        : 'Es wartete nichts mehr.'
+    );
+    pollErgebnisse();
+  } catch {
+    flash('Abbruch nicht möglich — Dienst antwortet nicht.');
+  }
+}
+
+async function fetchPrices() {
+  const jobs = aktuelleJobs()
+    .filter((j) => !prices.has(j.key))
+    .map((j) => ({
+      key: j.key,
+      provider: PROVIDER,
+      host: j.market.host,
+      stationCode: j.station.code,
+      returnCode: state.returnStation || undefined,
+      pickupDate: j.variant.pickupDate,
+      returnDate: j.variant.returnDate,
+      pickupTime: state.pickupTime,
+      returnTime: state.returnTime,
+      currency: j.market.cur,
+    }));
+
+  if (!jobs.length) {
+    flash('Für diese Auswahl liegen schon alle Preise vor.');
+    return;
+  }
+  await sendeJobs(jobs, $('#getPrices'));
+  $('#fortschritt').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function renderFortschritt() {
+  const q = service.queue;
+  const aktiv = Boolean(q && (q.laufend > 0 || q.offen > 0));
+
+  for (const [box, füllung, text] of [
+    ['#fortschritt', '#ffuellung', '#ftext'],
+    ['#schutzFortschritt', '#sffuellung', '#sftext'],
+  ]) {
+    const n = $(box);
+    if (!n) continue;
+    n.hidden = !aktiv;
+    if (aktiv) {
+      const anteil = Math.round((q.erledigt / Math.max(1, q.gesamt)) * 100);
+      $(füllung).style.width = `${anteil}%`;
+      $(text).textContent =
+        `${q.erledigt} von ${q.gesamt} abgerufen` +
+        (q.laufend ? ` · ${q.laufend} unterwegs` : '');
+    }
+  }
+
+  for (const id of ['#getPrices', '#getSchutz']) {
+    const b = $(id);
+    if (!b) continue;
+    b.disabled = aktiv;
+  }
+  $('#getPrices').textContent = aktiv ? 'Abruf läuft …' : 'Preise holen';
+  $('#getSchutz').textContent = aktiv ? 'Abruf läuft …' : 'Schutzpreise holen';
+
+  if (!aktiv) ladeKatalog();
+}
+
+/* =========================================================== Aktionen */
+
+async function openAll() {
+  const jobs = aktuelleJobs();
+  const btn = $('#openAll');
+  btn.disabled = true;
+  let blockiert = 0;
+  for (let i = 0; i < jobs.length; i++) {
+    if (!window.open(jobs[i].url, '_blank', 'noopener')) blockiert++;
+    btn.textContent = `Öffne ${i + 1}/${jobs.length} …`;
+    await new Promise((r) => setTimeout(r, 260));
+  }
+  btn.textContent = 'Im Browser öffnen';
+  btn.disabled = false;
+  if (blockiert) $('#popupHint').hidden = false;
+}
+
+function copyAll() {
+  const text = aktuelleJobs()
+    .map((j) => `${j.station.name} · ${j.market.label}\n${j.url}`)
+    .join('\n\n');
+  navigator.clipboard.writeText(text).then(
+    () => flash('Links kopiert.'),
+    () => flash('Kopieren nicht möglich.')
+  );
+}
+
+let flashTimer;
+function flash(msg) {
+  const n = $('#flash');
+  n.textContent = msg;
+  n.hidden = false;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => (n.hidden = true), 3000);
+}
+
+/* =========================================================== Status */
+
+const CAP_LABEL = {
+  station: 'Station wird übernommen',
+  date: 'Datum wird übernommen',
+  time: 'Uhrzeit wird übernommen',
+  oneWay: 'Abweichende Rückgabestation',
+  vehicleClass: 'Fahrzeugklasse (Parameter wird verworfen)',
+  prepaid: 'Prepaid-Filter (Parameter wird verworfen)',
+};
+
 function renderStatus() {
-  setChildren($('#statusBody'),
+  setChildren(
+    $('#statusBody'),
     ...PROVIDERS.map((p) =>
       el(
         'div',
@@ -533,658 +1181,90 @@ function renderStatus() {
               'ul',
               { class: 'caps' },
               ...Object.entries(p.capabilities).map(([k, v]) =>
-                el(
-                  'li',
-                  { class: v ? 'yes' : 'no' },
-                  (v ? '✓ ' : '✕ ') + CAP_LABEL[k]
-                )
+                el('li', { class: v ? 'yes' : 'no' }, (v ? '✓ ' : '✕ ') + CAP_LABEL[k])
               )
             )
           : null,
         ...p.notes.map((n) => el('p', { class: 'note' }, n)),
-        p.status === 'ready'
-          ? el('p', { class: 'note' }, `${providerStations(p.id).length} Stationen hinterlegt.`)
-          : el(
-              'p',
-              { class: 'note' },
-              'Bis dahin: ',
-              el('a', { href: p.homepage, target: '_blank', rel: 'noopener' }, p.homepage)
-            )
+        p.id === PROVIDER
+          ? el('p', { class: 'note' }, `${ALLE_STATIONEN.length} Stationen hinterlegt.`)
+          : null
       )
     )
   );
-}
-
-const CAP_LABEL = {
-  station: 'Station wird übernommen',
-  date: 'Datum wird übernommen',
-  time: 'Uhrzeit wird übernommen',
-  oneWay: 'Abweichende Rückgabestation',
-  vehicleClass: 'Fahrzeugklasse (wird verworfen)',
-  prepaid: 'Prepaid-Filter (wird verworfen)',
-};
-
-function renderProviderPick() {
-  const box = $('#providerPick');
-  const multi = state.mode === 'providers';
-
-  setChildren(box,
-    ...PROVIDERS.map((p) => {
-      const on = multi ? state.compare.includes(p.id) : state.provider === p.id;
-      const dead = p.status !== 'ready';
-      return el(
-        'button',
-        {
-          type: 'button',
-          class: 'prov' + (on ? ' on' : '') + (dead ? ' dead' : ''),
-          style: on ? `--pa:${p.theme.accent}` : `--pa:#8a8a8a`,
-          title: dead ? p.notes[0] : `${providerStations(p.id).length} Stationen`,
-          onclick: () => {
-            if (multi) {
-              const i = state.compare.indexOf(p.id);
-              if (i >= 0) state.compare.splice(i, 1);
-              else state.compare.push(p.id);
-            } else {
-              if (dead) return; // Länder-Modus braucht einen echten Adapter
-              state.provider = p.id;
-              state.stations = [];
-              state.markets = p.markets.slice(0, 5).map((m) => m.code);
-            }
-            update();
-          },
-        },
-        el('span', { class: 'pbar' }),
-        el('span', { class: 'plabel' }, p.label),
-        dead ? el('span', { class: 'ptag' }, 'offen') : null
-      );
-    })
-  );
-
-  const note = $('#providerNote');
-  if (multi) {
-    const ready = state.compare.filter(
-      (id) => providerById(id)?.status === 'ready'
-    ).length;
-    note.textContent =
-      ready < 2
-        ? 'Ein echter Anbietervergleich braucht mindestens zwei angebundene Anbieter. Bisher ist nur Sixt angebunden — die übrigen erscheinen als Fehlanzeige.'
-        : `${ready} Anbieter angebunden.`;
-  } else {
-    const p = providerById(state.provider);
-    note.textContent = p ? p.notes[0] : '';
-  }
-}
-
-function renderStationPicker() {
-  const provider = providerById(state.provider);
-  const all = providerStations(provider.id);
-  const hits = rank(
-    all,
-    $('#stationSearch').value,
-    (s) => `${s.name} ${s.country}`,
-    (s) => s.iata,
-    60
-  );
-
-  $('#stationCount').textContent =
-    `${hits.length} von ${all.length} Stationen` +
-    ($('#stationSearch').value.trim() ? '' : ' — tippen zum Filtern');
-
-  setChildren($('#stationResults'),
-    ...hits.map((s) => {
-      const on = state.stations.includes(s.code);
-      return el(
-        'button',
-        {
-          type: 'button',
-          class: 'station' + (on ? ' on' : ''),
-          title: `${provider.label}-Stationscode ${s.code}`,
-          onclick: () => {
-            const i = state.stations.indexOf(s.code);
-            if (i >= 0) state.stations.splice(i, 1);
-            else state.stations.push(s.code);
-            update();
-          },
-        },
-        el('span', { class: 'flag' }, s.country),
-        el('span', { class: 'sname' }, s.name),
-        s.iata ? el('span', { class: 'iata' }, s.iata) : null
-      );
-    }),
-    hits.length ? null : el('p', { class: 'empty' }, 'Keine Station gefunden.')
-  );
-
-  setChildren($('#chosenStations'),
-    ...state.stations
-      .map((c) => stationByCode(provider.id, c))
-      .filter(Boolean)
-      .map((s) =>
-        el(
-          'span',
-          { class: 'chip' },
-          `${s.name} (${s.code})`,
-          el('button', {
-            type: 'button',
-            class: 'x',
-            html: '&times;',
-            onclick: () => {
-              state.stations = state.stations.filter((c) => c !== s.code);
-              update();
-            },
-          })
-        )
-      ),
-    state.stations.length ? null : el('span', { class: 'empty' }, 'Noch keine Station gewählt.')
-  );
-
-  const sel = $('#returnStation');
-  setChildren(sel,
-    el('option', { value: '' }, '— gleiche wie Abholung —'),
-    ...all
-      .slice()
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((s) =>
-        el('option', { value: s.code, selected: state.returnStation === s.code }, s.name)
-      )
-  );
-}
-
-function renderPlacePicker() {
-  const hits = rank(
-    PLACES,
-    $('#placeSearch').value,
-    (p) => `${p.label} ${p.country}`,
-    (p) => p.iata,
-    60
-  );
-
-  setChildren($('#placeResults'),
-    ...hits.map((p) =>
-      el(
-        'button',
-        {
-          type: 'button',
-          class: 'station' + (state.placeId === p.id ? ' on' : ''),
-          onclick: () => {
-            state.placeId = p.id;
-            update();
-          },
-        },
-        el('span', { class: 'flag' }, p.country),
-        el('span', { class: 'sname' }, p.label),
-        el('span', { class: 'cnt' }, `${p.providers.length} Anbieter`)
-      )
-    ),
-    hits.length ? null : el('p', { class: 'empty' }, 'Kein Ort gefunden.')
-  );
-
-  const place = PLACES.find((p) => p.id === state.placeId);
-  setChildren($('#placeDetail'),
-    place
-      ? el(
-          'div',
-          { class: 'field' },
-          el('span', { class: 'flabel' }, 'Zuordnung'),
-          el(
-            'p',
-            { class: 'note ' + (place.confidence === 'approx' ? 'warn' : '') },
-            el('strong', {}, CONFIDENCE_LABEL[place.confidence].text),
-            ' — ',
-            CONFIDENCE_LABEL[place.confidence].hint
-          ),
-          el(
-            'ul',
-            { class: 'caps' },
-            ...place.stations.map((s) =>
-              el('li', { class: 'yes' }, `${providerById(s.provider).label}: ${s.name}`)
-            )
-          )
-        )
-      : el('p', { class: 'empty' }, 'Noch kein Ort gewählt.')
-  );
-}
-
-function renderMarkets() {
-  const provider = providerById(state.provider);
-  setChildren($('#markets'),
-    ...provider.markets.map((m) =>
-      el(
-        'label',
-        { class: 'mk' + (state.markets.includes(m.code) ? ' on' : '') },
-        el('input', {
-          type: 'checkbox',
-          checked: state.markets.includes(m.code),
-          onchange: (e) => {
-            if (e.target.checked) state.markets.push(m.code);
-            else state.markets = state.markets.filter((c) => c !== m.code);
-            update();
-          },
-        }),
-        el('span', { class: 'mklabel' }, m.label),
-        el('span', { class: 'cur' }, m.cur)
-      )
-    )
-  );
-}
-
-function renderPills(sel, opts, list, label, onEmpty) {
-  setChildren($(sel),
-    ...opts.map((n) =>
-      el(
-        'label',
-        { class: 'pill' + (list().includes(n) ? ' on' : '') },
-        el('input', {
-          type: 'checkbox',
-          checked: list().includes(n),
-          onchange: (e) => {
-            const arr = list();
-            if (e.target.checked) arr.push(n);
-            else {
-              const i = arr.indexOf(n);
-              if (i >= 0) arr.splice(i, 1);
-            }
-            onEmpty(arr);
-            update();
-          },
-        }),
-        label(n)
-      )
-    )
-  );
-}
-
-/**
- * Ein Eintrag der Ergebnisliste, wenn noch keine Preise da sind.
- * Reiner Link — so sah das Tool aus, bevor der Abruf dazukam.
- */
-function renderLink(j) {
-  const rec = j.key ? prices.get(j.key) : null;
-
-  const node = el(
-    'a',
-    {
-      href: j.url,
-      target: '_blank',
-      rel: 'noopener',
-      class: 'lnk',
-      style: `--pa:${j.provider.theme.accent}`,
-      title: rec?.error || '',
-    },
-    el('span', { class: 'pbar' }),
-    el('span', { class: 'mkname' }, j.itemLabel),
-    j.itemSub ? el('span', { class: 'cur' }, j.itemSub) : null
-  );
-
-  if (!service.available) return node;
-
-  if (rec?.error) node.append(el('span', { class: 'price err' }, rec.error));
-  else if (!rec) node.append(el('span', { class: 'price wartet' }, 'wartet'));
-  return node;
-}
-
-/**
- * Die Vergleichstabelle: Zeilen sind Fahrzeugklassen, Spalten die verglichenen
- * Länderseiten beziehungsweise Anbieter.
- *
- * Das ist der eigentliche Zweck des Tools. Eine Zeile "günstigstes Angebot"
- * je Land wäre wertlos — interessant ist, was dieselbe Klasse wo kostet.
- *
- * Klassen werden über offer-classes.js sprachunabhängig zugeordnet; kommt eine
- * Klasse auf einer Seite mehrfach vor (verschiedene Modelle), zählt der
- * günstigste Eintrag.
- */
-function renderTable(list) {
-  const spalten = list.filter((j) => j.url);
-  const zeilen = new Map();
-
-  for (const j of spalten) {
-    const rec = prices.get(j.key);
-    for (const o of rec?.offers || []) {
-      const cls = classify(o);
-      if (!zeilen.has(cls.key)) zeilen.set(cls.key, { cls, zellen: new Map() });
-      const zeile = zeilen.get(cls.key);
-      const bisher = zeile.zellen.get(j.key);
-      const wert = o.total ?? o.perDay ?? Infinity;
-      const alt = bisher ? (bisher.total ?? bisher.perDay ?? Infinity) : Infinity;
-      if (wert < alt) zeile.zellen.set(j.key, o);
-    }
-  }
-
-  if (!zeilen.size) return null;
-
-  // Markiert wird der günstigste Preis je Währung — EUR gegen EUR ist
-  // vergleichbar, EUR gegen CHF nicht. Eine Währung, die nur in einer einzigen
-  // Spalte vorkommt, wird nicht markiert: "günstigster von einem" sagt nichts.
-  const spaltenJeWährung = new Map();
-  for (const z of zeilen.values()) {
-    for (const [jobKey, o] of z.zellen) {
-      if (!spaltenJeWährung.has(o.currency)) spaltenJeWährung.set(o.currency, new Set());
-      spaltenJeWährung.get(o.currency).add(jobKey);
-    }
-  }
-  const vergleichbar = new Set(
-    [...spaltenJeWährung].filter(([, s]) => s.size > 1).map(([w]) => w)
-  );
-  const gemischt = spaltenJeWährung.size > 1;
-
-  const sortiert = [...zeilen.values()].sort((a, b) => {
-    const oa = classOrder(a.cls.key);
-    const ob = classOrder(b.cls.key);
-    if (oa !== ob) return oa - ob;
-    return a.cls.label.localeCompare(b.cls.label);
-  });
-
-  const kopf = el(
-    'tr',
-    {},
-    el('th', { class: 'klasse' }, 'Fahrzeugklasse'),
-    ...spalten.map((j) =>
-      el(
-        'th',
-        { style: `--pa:${j.provider.theme.accent}` },
-        el('a', { href: j.url, target: '_blank', rel: 'noopener' }, j.itemLabel),
-        prices.get(j.key)
-          ? null
-          : el('span', { class: 'thwait' }, prices.get(j.key)?.error ? 'Fehler' : 'lädt …')
-      )
-    )
-  );
-
-  /** Günstigster Preis je Währung in einer Zeile, plus wie viele es je Währung gibt. */
-  function zeilenMinima(z) {
-    const min = new Map();
-    const anzahl = new Map();
-    for (const o of z.zellen.values()) {
-      const w = o.total ?? o.perDay;
-      if (w == null) continue;
-      anzahl.set(o.currency, (anzahl.get(o.currency) || 0) + 1);
-      const b = min.get(o.currency);
-      if (b == null || w < b) min.set(o.currency, w);
-    }
-    return { min, anzahl };
-  }
-
-  // Wie oft ist welche Spalte am günstigsten? Bei 30 Zeilen sieht man das
-  // sonst nicht auf einen Blick. Gezählt werden nur Zeilen, in denen
-  // tatsächlich verglichen wurde.
-  const siege = new Map();
-  let verglichen = 0;
-  for (const z of sortiert) {
-    const { min, anzahl } = zeilenMinima(z);
-    let gezählt = false;
-    for (const [jobKey, o] of z.zellen) {
-      if (!vergleichbar.has(o.currency) || (anzahl.get(o.currency) || 0) < 2) continue;
-      if ((o.total ?? o.perDay) === min.get(o.currency)) {
-        siege.set(jobKey, (siege.get(jobKey) || 0) + 1);
-        gezählt = true;
-      }
-    }
-    if (gezählt) verglichen++;
-  }
-
-  const körper = sortiert.map((z) => {
-    const { min: minJeWährung, anzahl } = zeilenMinima(z);
-
-    return el(
-      'tr',
-      {},
-      el(
-        'th',
-        { class: 'klasse', title: z.cls.exakt ? '' : 'Klasse nicht eindeutig zugeordnet' },
-        z.cls.label,
-        z.cls.exakt ? null : el('span', { class: 'ungenau' }, '?')
-      ),
-      ...spalten.map((j) => {
-        const o = z.zellen.get(j.key);
-        if (!o) {
-          const rec = prices.get(j.key);
-          return el('td', { class: 'leer' }, rec ? '—' : '');
-        }
-        const wert = o.total ?? o.perDay;
-        // Nur markieren, wenn in dieser Zeile mindestens zwei Angebote
-        // derselben Währung stehen — sonst wäre "günstigster" ein Einzelwert.
-        const billigste =
-          vergleichbar.has(o.currency) &&
-          (anzahl.get(o.currency) || 0) > 1 &&
-          wert === minJeWährung.get(o.currency);
-        return el(
-          'td',
-          { class: billigste ? 'best' : '', title: `${o.model}${o.unlimitedKm ? ' · unbegrenzte km' : ''}` },
-          el('span', { class: 'betrag' }, money(wert, o.currency)),
-          o.perDay != null && o.total != null
-            ? el('span', { class: 'proTag' }, `${money(o.perDay, '')}/Tag`)
-            : null
-        );
-      })
-    );
-  });
-
-  const sieger = [...siege.entries()].sort((a, b) => b[1] - a[1]);
-  const fazit = sieger.length
-    ? el(
-        'p',
-        { class: 'fazit' },
-        ...sieger.slice(0, 3).flatMap(([jobKey, n], i) => {
-          const j = spalten.find((x) => x.key === jobKey);
-          if (!j) return [];
-          return [
-            i ? el('span', { class: 'trenner' }, '·') : null,
-            el('strong', {}, j.itemLabel),
-            ` ${n}×`,
-          ];
-        }),
-        el('span', { class: 'fazitLabel' }, `am günstigsten von ${verglichen} vergleichbaren Klassen`)
-      )
-    : null;
-
-  return el(
-    'div',
-    { class: 'tabellenblock' },
-    fazit,
-    el(
-      'div',
-      { class: 'tabellenrahmen' },
-      el('table', { class: 'vergleich' }, el('thead', {}, kopf), el('tbody', {}, ...körper))
-    ),
-    gemischt
-      ? el(
-          'p',
-          { class: 'note' },
-          `Mehrere Währungen im Vergleich (${[...spaltenJeWährung.keys()].join(', ')}). ` +
-            'Markiert ist der günstigste Preis jeweils innerhalb derselben Währung — ' +
-            'es wird nicht umgerechnet.'
-        )
-      : null
-  );
-}
-
-function renderResults() {
-  const jobs = buildJobs();
-  const openable = jobs.filter((j) => j.url);
-
-  $('#jobCount').textContent = openable.length;
-  $('#openAll').disabled = !openable.length;
-  $('#copyAll').disabled = !openable.length;
-  $('#warn').hidden = openable.length <= 12;
-  $('#warn').textContent =
-    openable.length > 12
-      ? `${openable.length} Tabs — der Browser drosselt das eventuell. Weniger Länder oder Datumsvarianten wählen, oder unten einzeln öffnen.`
-      : '';
-
-  if (!jobs.length) {
-    setChildren($('#results'),
-      el(
-        'p',
-        { class: 'empty' },
-        state.mode === 'providers'
-          ? 'Ort und mindestens einen Anbieter wählen.'
-          : 'Station und mindestens eine Länderseite wählen.'
-      )
-    );
-    return;
-  }
-
-  const groups = new Map();
-  for (const j of jobs) {
-    if (!groups.has(j.groupKey)) groups.set(j.groupKey, []);
-    groups.get(j.groupKey).push(j);
-  }
-
-  setChildren($('#results'),
-    ...[...groups.values()].map((list) => {
-      const f = list[0];
-      return el(
-        'div',
-        { class: 'group' },
-        el(
-          'h3',
-          {},
-          f.groupLabel,
-          el(
-            'span',
-            { class: 'span' },
-            `${pretty(f.variant.pickupDate)} ${state.pickupTime} → ${pretty(
-              f.variant.returnDate
-            )} ${state.returnTime} · ${f.variant.duration} Tg`
-          )
-        ),
-        renderTable(list),
-        el(
-          'div',
-          { class: 'links' },
-          ...list.map((j) =>
-            j.url
-              ? renderLink(j)
-              : el(
-                  'span',
-                  { class: 'lnk off' },
-                  el('span', { class: 'mkname' }, j.itemLabel),
-                  el('span', { class: 'cur' }, j.missing),
-                  j.fallback
-                    ? el(
-                        'a',
-                        { href: j.fallback, target: '_blank', rel: 'noopener', class: 'tiny' },
-                        'Website'
-                      )
-                    : null
-                )
-          )
-        )
-      );
-    })
-  );
-}
-
-/* =========================================================== Aktionen */
-
-async function openAll() {
-  const jobs = buildJobs().filter((j) => j.url);
-  const btn = $('#openAll');
-  btn.disabled = true;
-  let blocked = 0;
-
-  for (let i = 0; i < jobs.length; i++) {
-    if (!window.open(jobs[i].url, '_blank', 'noopener')) blocked++;
-    btn.textContent = `Öffne ${i + 1}/${jobs.length} …`;
-    await new Promise((r) => setTimeout(r, 260));
-  }
-
-  btn.textContent = 'Alle öffnen';
-  btn.disabled = false;
-  if (blocked) $('#popupHint').hidden = false;
-}
-
-function copyAll() {
-  const text = buildJobs()
-    .filter((j) => j.url)
-    .map(
-      (j) =>
-        `${j.groupLabel} · ${j.itemLabel} · ${j.variant.pickupDate} → ${j.variant.returnDate}\n${j.url}`
-    )
-    .join('\n\n');
-  navigator.clipboard.writeText(text).then(
-    () => flash('Links kopiert.'),
-    () => flash('Kopieren nicht möglich — Links unten markieren.')
-  );
-}
-
-let flashTimer;
-function flash(msg) {
-  const n = $('#flash');
-  n.textContent = msg;
-  n.hidden = false;
-  clearTimeout(flashTimer);
-  flashTimer = setTimeout(() => (n.hidden = true), 2600);
 }
 
 /* =========================================================== Ablauf */
 
-function enterMode(mode) {
-  state.mode = mode;
-  if (mode === 'status') {
-    applyTheme(null);
-    renderStatus();
-    showScreen('status');
-    persist();
-    return;
-  }
-  showScreen('work');
-  update();
-}
-
-function update() {
+/**
+ * Neu zeichnen.
+ *
+ * `teile` grenzt ein, was wirklich neu gebaut wird. Alles blind neu zu bauen
+ * ist der Grund, warum die Seite bei jedem Klick zuckt: Listen scrollen
+ * zurueck, Hoehen aendern sich, der Blick verliert die Stelle.
+ */
+function update(teile = {}) {
+  const { stationen = true, maerkte = true, pillen = true } = teile;
   persist();
-
-  const isCompare = state.mode === 'providers';
-  $('#workTitle').textContent = isCompare ? 'Anbieter-Vergleich' : 'Länder-Vergleich';
-  $('#stationCard').hidden = isCompare;
-  $('#placeCard').hidden = !isCompare;
-  $('#marketCard').hidden = isCompare;
-
-  applyTheme(isCompare ? null : providerById(state.provider));
-
-  renderProviderPick();
-  if (isCompare) renderPlacePicker();
-  else {
-    renderStationPicker();
-    renderMarkets();
-  }
 
   const tage = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
   $('#dauer').textContent =
     `${pretty(state.pickupDate)} ${state.pickupTime} → ${pretty(state.returnDate)} ${state.returnTime}` +
     ` · ${tage} ${tage === 1 ? 'Tag' : 'Tage'}`;
 
-  renderPills(
-    '#shifts',
-    [-3, -2, -1, 0, 1, 2, 3],
-    () => state.dayShifts,
-    (n) => (n === 0 ? 'Stichtag' : (n > 0 ? `+${n}` : `${n}`) + ' Tg'),
-    (arr) => {
-      if (!arr.length) arr.push(0);
-    }
-  );
-  renderPills(
-    '#durations',
-    [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 28],
-    () => state.durations,
-    (n) => `${n} Tg`,
-    () => {}
-  );
+  $('#barnote').textContent = `${state.stations.length} Station${
+    state.stations.length === 1 ? '' : 'en'
+  } · ${state.markets.length} Länderseiten`;
 
+  if (stationen) renderStationPicker();
+  if (maerkte) renderMarkets();
+  if (pillen) {
+    renderPills(
+      '#shifts',
+      [-3, -2, -1, 0, 1, 2, 3],
+      () => state.dayShifts,
+      (n) => (n === 0 ? 'Stichtag' : (n > 0 ? `+${n}` : `${n}`) + ' Tg'),
+      (arr) => {
+        if (!arr.length) arr.push(0);
+      }
+    );
+    renderPills(
+      '#durations',
+      [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 28],
+      () => state.durations,
+      (n) => `${n} Tg`,
+      () => {}
+    );
+  }
   renderResults();
 }
 
 function init() {
   document.querySelectorAll('.mode').forEach((b) =>
-    b.addEventListener('click', () => enterMode(b.dataset.mode))
+    b.addEventListener('click', () => {
+      state.mode = b.dataset.mode;
+      persist();
+      if (state.mode === 'status') {
+        renderStatus();
+        showScreen('status');
+      } else {
+        showScreen('work');
+        update();
+      }
+    })
   );
+
   document.querySelectorAll('.back').forEach((b) =>
     b.addEventListener('click', () => {
       state.mode = null;
-      applyTheme(null);
       persist();
       showScreen('start');
+    })
+  );
+  document.querySelectorAll('.zurueckTabelle').forEach((b) =>
+    b.addEventListener('click', () => {
+      schutzAcriss = null;
+      showScreen('work');
     })
   );
 
@@ -1203,16 +1283,33 @@ function init() {
   }
 
   $('#stationSearch').addEventListener('input', renderStationPicker);
-  $('#placeSearch').addEventListener('input', renderPlacePicker);
+  $('#addAll').addEventListener('click', () => {
+    for (const s of suche($('#stationSearch').value)) {
+      if (!state.stations.includes(s.code)) state.stations.push(s.code);
+    }
+    update();
+  });
+  $('#addManual').addEventListener('click', () => {
+    const code = $('#manualStation').value.trim();
+    if (!code) return;
+    if (!state.stations.includes(code)) state.stations.push(code);
+    $('#manualStation').value = '';
+    update();
+  });
   $('#returnStation').addEventListener('change', (e) => {
     state.returnStation = e.target.value || null;
     update();
   });
 
+  $('#getPrices').addEventListener('click', fetchPrices);
+  $('#getSchutz').addEventListener('click', fetchSchutz);
+  for (const id of ['#abbrechen', '#abbrechen2']) {
+    $(id).addEventListener('click', abbrechen);
+  }
   $('#openAll').addEventListener('click', openAll);
   $('#copyAll').addEventListener('click', copyAll);
   $('#marketsAll').addEventListener('click', () => {
-    state.markets = providerById(state.provider).markets.map((m) => m.code);
+    state.markets = providerById(PROVIDER).markets.map((m) => m.code);
     update();
   });
   $('#marketsNone').addEventListener('click', () => {
@@ -1228,33 +1325,36 @@ function init() {
     location.reload();
   });
 
-  $('#cmpTag').textContent =
-    READY_PROVIDERS.length > 1
-      ? `${READY_PROVIDERS.length} Anbieter angebunden`
-      : 'nur Sixt angebunden';
+  $('#startFuss').textContent = `${ALLE_STATIONEN.length} Sixt-Stationen aus 104 Ländern hinterlegt.`;
 
-  if (state.mode) enterMode(state.mode);
-  else showScreen('start');
-
-  // Preisdienst suchen. Ist er da, schaltet sich der Preis-Modus frei und die
-  // URLs bekommen ihren Auftragsschlüssel — deshalb danach neu zeichnen.
-  $('#getPrices').addEventListener('click', fetchPrices);
+  if (state.mode === 'status') {
+    renderStatus();
+    showScreen('status');
+  } else if (state.mode) {
+    showScreen('work');
+    update();
+  } else {
+    showScreen('start');
+  }
 
   checkService().then((ok) => {
     const badge = $('#serviceBadge');
     badge.hidden = false;
     badge.className = 'svc ' + (ok && service.chrome ? 'on' : 'off');
     badge.textContent = !ok
-      ? 'Kein Preisdienst — reiner Link-Modus'
+      ? 'Kein Preisdienst — nur Links. Zum Abrufen "Preistool starten.cmd" verwenden.'
       : service.chrome
-        ? 'Preisabruf bereit — holt die Preise automatisch im Hintergrund'
-        : 'Preisdienst läuft, aber kein Chrome gefunden — nur Link-Modus';
+        ? 'Preisabruf bereit — holt die Preise unsichtbar im Hintergrund'
+        : 'Preisdienst läuft, aber kein Chrome gefunden — nur Links';
 
     $('#getPrices').hidden = !(ok && service.chrome);
+    $('#getSchutz').hidden = !(ok && service.chrome);
 
     if (ok) {
       startPolling();
-      if (state.mode && state.mode !== 'status') update();
+      ladeKatalog().then(() => {
+        if (state.mode && state.mode !== 'status') update();
+      });
     }
   });
 }

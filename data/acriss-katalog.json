@@ -1,0 +1,906 @@
+{
+ "version": 1,
+ "klassen": {
+  "GWAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-3-stw-black-2023.png",
+   "modelle": [
+    "BMW 3ER TOURING",
+    "BMW 3 SERIES TOURING",
+    "BMW 3 SERIE TOURING",
+    "BMW SÉRIE 3 TOURING",
+    "BMW SERIE 3 TOURING"
+   ],
+   "beispielText": "Oberklasse Elite Kombi Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "CDMR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-golf-5d-grey-2024.png",
+   "modelle": [
+    "VW GOLF"
+   ],
+   "beispielText": "Kompaktklasse Limousine Manuell",
+   "zuletzt": "2026-09-01"
+  },
+  "CFMR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-taigo-suv-white-2022.png",
+   "modelle": [
+    "VW TAIGO"
+   ],
+   "beispielText": "Kompaktklasse SUV Manuell",
+   "zuletzt": "2026-09-01"
+  },
+  "CTMR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-t-roc-convertible-white-open-2023.png",
+   "modelle": [
+    "VW T-ROC CABRIOLET",
+    "VW T-ROC CABRIO"
+   ],
+   "beispielText": "Kompaktklasse Cabrio Manuell",
+   "zuletzt": "2026-09-01"
+  },
+  "CDAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-golf-5d-grey-2024.png",
+   "modelle": [
+    "VW GOLF"
+   ],
+   "beispielText": "Kompaktklasse Limousine Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "CFAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-taigo-suv-white-2022.png",
+   "modelle": [
+    "VW TAIGO"
+   ],
+   "beispielText": "Kompaktklasse SUV Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "CTAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-t-roc-convertible-white-open-2023.png",
+   "modelle": [
+    "VW T-ROC CABRIOLET",
+    "VW T-ROC CABRIO"
+   ],
+   "beispielText": "Kompaktklasse Cabrio Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "IVMV": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-touran-van-grey-2021.png",
+   "modelle": [
+    "VW TOURAN"
+   ],
+   "beispielText": "Mittelklasse Van Manuell",
+   "zuletzt": "2026-09-01"
+  },
+  "IFMR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-t-roc-suv-black-2026.png",
+   "modelle": [
+    "VW T-ROC"
+   ],
+   "beispielText": "Mittelklasse SUV Manuell",
+   "zuletzt": "2026-09-01"
+  },
+  "DDAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-1-hatch-4d-black-2025.png",
+   "modelle": [
+    "BMW 1ER",
+    "BMW 1 SERIES",
+    "BMW 1 SERIE",
+    "BMW SÉRIE 1",
+    "BMW SERIE 1"
+   ],
+   "beispielText": "Kompaktklasse Elite Limousine Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "SFMR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-tiguan-suv-black-2024.png",
+   "modelle": [
+    "VW TIGUAN"
+   ],
+   "beispielText": "Standardklasse SUV Manuell",
+   "zuletzt": "2026-09-01"
+  },
+  "IFAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-t-roc-suv-black-2026.png",
+   "modelle": [
+    "VW T-ROC"
+   ],
+   "beispielText": "Mittelklasse SUV Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "IVAV": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-touran-van-grey-2021.png",
+   "modelle": [
+    "VW TOURAN"
+   ],
+   "beispielText": "Mittelklasse Van Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "DFAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/audi-q2-suv-silver-2021.png",
+   "modelle": [
+    "AUDI Q2"
+   ],
+   "beispielText": "Kompaktklasse Elite SUV Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "PFAV": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-tayron-suv-grey-2025.png",
+   "modelle": [
+    "VW TAYRON"
+   ],
+   "beispielText": "Premiumklasse SUV Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "JDAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/audi-a3-4d-grey-2021.png",
+   "modelle": [
+    "AUDI A3 LIMOUSINE",
+    "AUDI A3 SEDAN",
+    "AUDI A3 BERLINA"
+   ],
+   "beispielText": "Mittelklasse Elite Limousine Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "SFAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-tiguan-suv-black-2024.png",
+   "modelle": [
+    "VW TIGUAN"
+   ],
+   "beispielText": "Standardklasse SUV Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "DVAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-2-active-tourer-van-4d-black-2022-JV.png",
+   "modelle": [
+    "BMW 2ER ACTIVE TOURER",
+    "BMW 2 SERIES ACTIVE TOURER"
+   ],
+   "beispielText": "Kompaktklasse Elite Van Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "GDAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-3-sedan-4d-white-2023-JV.png",
+   "modelle": [
+    "BMW 3ER",
+    "BMW 3 SERIES",
+    "BMW 3 SERIE",
+    "BMW SÉRIE 3",
+    "BMW SERIE 3"
+   ],
+   "beispielText": "Oberklasse Elite Limousine Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "UDAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-e-class-4d-silver-2024.png",
+   "modelle": [
+    "MERCEDES-BENZ E-KLASSE",
+    "MERCEDES-BENZ E-CLASS"
+   ],
+   "beispielText": "Premiumklasse Elite Limousine Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "GFAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x2-suv-4d-white-2024.png",
+   "modelle": [
+    "BMW X2"
+   ],
+   "beispielText": "Oberklasse Elite SUV Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "UFAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x3-suv-silver-2025.png",
+   "modelle": [
+    "BMW X3"
+   ],
+   "beispielText": "Premiumklasse Elite SUV Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "UWAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/audi-a6-avant-stw-silver-2026.png",
+   "modelle": [
+    "AUDI A6 AVANT"
+   ],
+   "beispielText": "Premiumklasse Elite Kombi Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "GEAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-4-2d-coupe-grey-2021.png",
+   "modelle": [
+    "BMW 4ER COUPÉ",
+    "BMW 4 SERIES COUPÉ"
+   ],
+   "beispielText": "Oberklasse Elite Coupé Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "DDSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m135-hatch-4d-blue-2025.png",
+   "modelle": [
+    "BMW M135"
+   ],
+   "beispielText": "Kompaktklasse Elite Limousine Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "JDSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m235i-grancoupe-4d-blue-2023.png",
+   "modelle": [
+    "BMW M235 GRAN COUPÉ"
+   ],
+   "beispielText": "Mittelklasse Elite Limousine Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "GFSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x2-m35-suv-4d-blue-2024.png",
+   "modelle": [
+    "BMW X2 M35"
+   ],
+   "beispielText": "Oberklasse Elite SUV Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "GWSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m340i-kombi-schwarz-2020.png",
+   "modelle": [
+    "BMW M340 TOURING"
+   ],
+   "beispielText": "Oberklasse Elite Kombi Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "SVAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-caddy-maxi-silver-2021.png",
+   "modelle": [
+    "VW CADDY MAXI"
+   ],
+   "beispielText": "Standardklasse Van Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "UFSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x3-m50-suv-black-2025.png",
+   "modelle": [
+    "BMW X3 M50"
+   ],
+   "beispielText": "Premiumklasse Elite SUV Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "GLSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m440i-grancoupe-4d-grey-2023.png",
+   "modelle": [
+    "BMW M440 GRAN COUPÉ"
+   ],
+   "beispielText": "Oberklasse Elite Gran Coupé Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "XDDR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-7-sedan-4d-black-2023-JV.png",
+   "modelle": [
+    "BMW 7 SERIES XDRIVE",
+    "BMW 7ER XDRIVE",
+    "BMW 7 SERIE XDRIVE"
+   ],
+   "beispielText": "Special Berlina Automatico",
+   "zuletzt": "2026-09-01"
+  },
+  "WFSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x5-m60-suv-grey-2025.png",
+   "modelle": [
+    "BMW X5 M60"
+   ],
+   "beispielText": "Classe lusso Elite SUV Automatico",
+   "zuletzt": "2026-09-01"
+  },
+  "XFDR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x7-m60-suv-grey-2026.png",
+   "modelle": [
+    "BMW X7"
+   ],
+   "beispielText": "Spezialklasse SUV Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "XFDV": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-gls63-amg-suv-4d-white-2025.png",
+   "modelle": [
+    "MERCEDES-BENZ GLS"
+   ],
+   "beispielText": "Spezialklasse SUV Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "XDSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-s-long-sedan-4d-silver-2021-JV.png",
+   "modelle": [
+    "MERCEDES-BENZ S-KLASSE LANG",
+    "MERCEDES-BENZ S-CLASS LONG",
+    "MERCEDES-BENZ CLASSE S LONGUE",
+    "MERCEDES-BENZ CLASE S LARGA",
+    "MERCEDES-BENZ CLASSE S LUNGO"
+   ],
+   "beispielText": "Special Berlina Automatico",
+   "zuletzt": "2026-09-01"
+  },
+  "WFLP": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/porsche-cayenne-s-hybrid-suv-4d-black-2024.png",
+   "modelle": [
+    "PORSCHE CAYENNE"
+   ],
+   "beispielText": "Classe lusso Elite SUV Automatico",
+   "zuletzt": "2026-09-01"
+  },
+  "XDLP": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/porsche-panamera-sedan-4d-black-2021-JV.png",
+   "modelle": [
+    "PORSCHE PANAMERA"
+   ],
+   "beispielText": "Spezialklasse Limousine Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "WFLR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x6-m-sport-4d-grey-2023.png",
+   "modelle": [
+    "BMW X6 M COMPETITION"
+   ],
+   "beispielText": "Classe lusso Elite SUV Automatico",
+   "zuletzt": "2026-09-01"
+  },
+  "XFLR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x7-m60-suv-grey-2025.png",
+   "modelle": [
+    "BMW X7 M60"
+   ],
+   "beispielText": "Special SUV Automatico",
+   "zuletzt": "2026-09-01"
+  },
+  "GELP": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-gt-s-coupe-2d-grey-2024.png",
+   "modelle": [
+    "MERCEDES-AMG GT 63"
+   ],
+   "beispielText": "Oberklasse Elite Coupé Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "JELP": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/porsche-911-carrera-4s-coupe-2d-silver-2019-JV.png",
+   "modelle": [
+    "PORSCHE 911 CARRERA"
+   ],
+   "beispielText": "Intermedia Elite Coupé Automatico",
+   "zuletzt": "2026-09-01"
+  },
+  "GTLP": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-sl63-amg-convertible-silver-2022.png",
+   "modelle": [
+    "MERCEDES-AMG SL 63 ROADSTER"
+   ],
+   "beispielText": "Oberklasse Elite Cabrio Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "CZMR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/surprise-car-2018-1.png",
+   "modelle": [
+    "GLÜCKSAUTO"
+   ],
+   "beispielText": "Kompaktklasse Glücksauto Manuell",
+   "zuletzt": "2026-09-01"
+  },
+  "EDMR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/seat-ibiza-hatch-4d-grey-2021-JV.png",
+   "modelle": [
+    "SEAT IBIZA"
+   ],
+   "beispielText": "Economy Berlina Manuale",
+   "zuletzt": "2026-09-01"
+  },
+  "EDAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/seat-ibiza-hatch-4d-grey-2021-JV.png",
+   "modelle": [
+    "SEAT IBIZA"
+   ],
+   "beispielText": "Economy Berlina Automatico",
+   "zuletzt": "2026-09-01"
+  },
+  "EFMR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-t-cross-5d-suv-white-2024.png",
+   "modelle": [
+    "VW T-CROSS"
+   ],
+   "beispielText": "Economy SUV Manuale",
+   "zuletzt": "2026-09-01"
+  },
+  "IFAE": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/opel-frontera-suv-white-2024.png",
+   "modelle": [
+    "OPEL FRONTERA"
+   ],
+   "beispielText": "Mittelklasse SUV Automatik",
+   "zuletzt": "2026-09-01"
+  },
+  "EFAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-t-cross-5d-suv-white-2024.png",
+   "modelle": [
+    "VW T-CROSS"
+   ],
+   "beispielText": "Economy SUV Automatico",
+   "zuletzt": "2026-09-01"
+  },
+  "WFDR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x5-suv-black-2024.png",
+   "modelle": [
+    "BMW X5 XDRIVE"
+   ],
+   "beispielText": "Classe lusso Elite SUV Automatico",
+   "zuletzt": "2026-09-01"
+  },
+  "UVAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-v-class-long-van-blue-2020.png",
+   "modelle": [
+    "MERCEDES-BENZ V-KLASSE LANG",
+    "MERCEDES-BENZ CLASSE V LONGUE",
+    "MERCEDES-BENZ CLASE V LARGA",
+    "MERCEDES-BENZ CLASE V LUNGO"
+   ],
+   "beispielText": "Premium Elite Van Automatico",
+   "zuletzt": "2026-09-01"
+  },
+  "JTLP": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/porsche-911-carrera-4s-convertible-2d-blue-2024.png",
+   "modelle": [
+    "PORSCHE 911 CABRIOLET"
+   ],
+   "beispielText": "Intermedia Elite Cabrio Automatico",
+   "zuletzt": "2026-09-01"
+  },
+  "SFAE": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/cupra-tavascan-suv-silver-2024.png",
+   "modelle": [
+    "CUPRA TAVASCAN"
+   ],
+   "beispielText": "Standardklasse SUV Automatik",
+   "zuletzt": "2026-09-01"
+  }
+ },
+ "gesehen": {
+  "sixt|110|www.sixt.at": {
+   "GWAR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CTMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "CTAR": "2026-09-01",
+   "IVMV": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "IVAV": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "PFAV": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "DVAR": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "UDAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "UWAR": "2026-09-01",
+   "GEAR": "2026-09-01",
+   "DDSR": "2026-09-01",
+   "JDSR": "2026-09-01",
+   "GFSR": "2026-09-01",
+   "GWSR": "2026-09-01",
+   "SVAR": "2026-09-01",
+   "UFSR": "2026-09-01",
+   "GLSR": "2026-09-01",
+   "XDDR": "2026-09-01",
+   "WFSR": "2026-09-01",
+   "XFDR": "2026-09-01",
+   "XFDV": "2026-09-01",
+   "XDSR": "2026-09-01",
+   "WFLP": "2026-09-01",
+   "XDLP": "2026-09-01",
+   "WFLR": "2026-09-01",
+   "XFLR": "2026-09-01",
+   "GELP": "2026-09-01",
+   "JELP": "2026-09-01",
+   "GTLP": "2026-09-01"
+  },
+  "sixt|110|www.sixt.de": {
+   "GWAR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "CZMR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "CTMR": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "CTAR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "IVMV": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "DVAR": "2026-09-01",
+   "IVAV": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "UDAR": "2026-09-01",
+   "PFAV": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "UWAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "GEAR": "2026-09-01",
+   "DDSR": "2026-09-01",
+   "JDSR": "2026-09-01",
+   "GFSR": "2026-09-01",
+   "GWSR": "2026-09-01",
+   "SVAR": "2026-09-01",
+   "UFSR": "2026-09-01",
+   "GLSR": "2026-09-01",
+   "XDDR": "2026-09-01",
+   "XFDV": "2026-09-01",
+   "XFDR": "2026-09-01",
+   "WFSR": "2026-09-01",
+   "XDSR": "2026-09-01",
+   "WFLP": "2026-09-01",
+   "XDLP": "2026-09-01",
+   "WFLR": "2026-09-01",
+   "XFLR": "2026-09-01",
+   "GELP": "2026-09-01",
+   "JELP": "2026-09-01",
+   "GTLP": "2026-09-01",
+   "EDMR": "2026-09-01",
+   "EDAR": "2026-09-01",
+   "EFMR": "2026-09-01",
+   "IFAE": "2026-09-01",
+   "EFAR": "2026-09-01",
+   "WFDR": "2026-09-01",
+   "UVAR": "2026-09-01",
+   "JTLP": "2026-09-01"
+  },
+  "sixt|110|www.sixt.ch": {
+   "GWAR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "CTMR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "CTAR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IVMV": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "DVAR": "2026-09-01",
+   "IVAV": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "GEAR": "2026-09-01",
+   "UDAR": "2026-09-01",
+   "DDSR": "2026-09-01",
+   "PFAV": "2026-09-01",
+   "UWAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "JDSR": "2026-09-01",
+   "GFSR": "2026-09-01",
+   "GWSR": "2026-09-01",
+   "SVAR": "2026-09-01",
+   "UFSR": "2026-09-01",
+   "GLSR": "2026-09-01",
+   "XDDR": "2026-09-01",
+   "XFDR": "2026-09-01",
+   "XFDV": "2026-09-01",
+   "WFSR": "2026-09-01",
+   "XDSR": "2026-09-01",
+   "GELP": "2026-09-01",
+   "WFLP": "2026-09-01",
+   "XDLP": "2026-09-01",
+   "WFLR": "2026-09-01",
+   "JELP": "2026-09-01",
+   "XFLR": "2026-09-01",
+   "GTLP": "2026-09-01"
+  },
+  "sixt|110|www.sixt.nl": {
+   "GWAR": "2026-09-01",
+   "EDMR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "EDAR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "EFMR": "2026-09-01",
+   "IFAE": "2026-09-01",
+   "CTMR": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "EFAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "CTAR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "UWAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "DDSR": "2026-09-01",
+   "UFSR": "2026-09-01",
+   "WFDR": "2026-09-01",
+   "XDDR": "2026-09-01",
+   "WFSR": "2026-09-01",
+   "XDSR": "2026-09-01",
+   "UVAR": "2026-09-01",
+   "WFLP": "2026-09-01",
+   "WFLR": "2026-09-01",
+   "XFLR": "2026-09-01",
+   "JELP": "2026-09-01",
+   "JTLP": "2026-09-01"
+  },
+  "sixt|110|www.sixt.fr": {
+   "GWAR": "2026-09-01",
+   "EDMR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "EDAR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "EFMR": "2026-09-01",
+   "IFAE": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "CTMR": "2026-09-01",
+   "EFAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "CTAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "UWAR": "2026-09-01",
+   "DDSR": "2026-09-01",
+   "UFSR": "2026-09-01",
+   "WFDR": "2026-09-01",
+   "XDDR": "2026-09-01",
+   "WFSR": "2026-09-01",
+   "XDSR": "2026-09-01",
+   "UVAR": "2026-09-01",
+   "WFLP": "2026-09-01",
+   "WFLR": "2026-09-01",
+   "XFLR": "2026-09-01",
+   "JELP": "2026-09-01",
+   "JTLP": "2026-09-01"
+  },
+  "sixt|110|www.sixt.es": {
+   "GWAR": "2026-09-01",
+   "EDMR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "EDAR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "EFMR": "2026-09-01",
+   "IFAE": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "CTMR": "2026-09-01",
+   "EFAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "CTAR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "UWAR": "2026-09-01",
+   "DDSR": "2026-09-01",
+   "UFSR": "2026-09-01",
+   "WFDR": "2026-09-01",
+   "XDDR": "2026-09-01",
+   "WFSR": "2026-09-01",
+   "XDSR": "2026-09-01",
+   "UVAR": "2026-09-01",
+   "WFLP": "2026-09-01",
+   "WFLR": "2026-09-01",
+   "XFLR": "2026-09-01",
+   "JELP": "2026-09-01",
+   "JTLP": "2026-09-01"
+  },
+  "sixt|110|www.sixt.it": {
+   "GWAR": "2026-09-01",
+   "EDMR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "EDAR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "EFMR": "2026-09-01",
+   "IFAE": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "CTMR": "2026-09-01",
+   "EFAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "CTAR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "UWAR": "2026-09-01",
+   "DDSR": "2026-09-01",
+   "UFSR": "2026-09-01",
+   "WFDR": "2026-09-01",
+   "XDDR": "2026-09-01",
+   "WFSR": "2026-09-01",
+   "XDSR": "2026-09-01",
+   "UVAR": "2026-09-01",
+   "WFLP": "2026-09-01",
+   "WFLR": "2026-09-01",
+   "XFLR": "2026-09-01",
+   "JELP": "2026-09-01",
+   "JTLP": "2026-09-01"
+  },
+  "sixt|48145|www.sixt.de": {
+   "GWAR": "2026-09-01",
+   "EDMR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "EDAR": "2026-09-01",
+   "CZMR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "EFMR": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "EFAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "UWAR": "2026-09-01"
+  },
+  "sixt|48145|www.sixt.at": {
+   "GWAR": "2026-09-01",
+   "EDMR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "EDAR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "EFMR": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "EFAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "UWAR": "2026-09-01"
+  },
+  "sixt|48145|www.sixt.fr": {
+   "GWAR": "2026-09-01",
+   "EDMR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "EDAR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "EFMR": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "EFAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "UWAR": "2026-09-01"
+  },
+  "sixt|48145|www.sixt.nl": {
+   "GWAR": "2026-09-01",
+   "EDMR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "EDAR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "EFMR": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "EFAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "UWAR": "2026-09-01",
+   "UFAR": "2026-09-01"
+  },
+  "sixt|48145|www.sixt.es": {
+   "GWAR": "2026-09-01",
+   "EDMR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "EDAR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "EFMR": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "EFAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "UWAR": "2026-09-01"
+  },
+  "sixt|48145|www.sixt.it": {
+   "GWAR": "2026-09-01",
+   "EDMR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "EDAR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "EFMR": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "EFAR": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "UWAR": "2026-09-01"
+  },
+  "sixt|162|www.sixt.de": {
+   "GWAR": "2026-09-01",
+   "CDMR": "2026-09-01",
+   "CZMR": "2026-09-01",
+   "CFMR": "2026-09-01",
+   "CDAR": "2026-09-01",
+   "IFAE": "2026-09-01",
+   "CFAR": "2026-09-01",
+   "SFAE": "2026-09-01",
+   "IFMR": "2026-09-01",
+   "DDAR": "2026-09-01",
+   "SFMR": "2026-09-01",
+   "IFAR": "2026-09-01",
+   "DFAR": "2026-09-01",
+   "CTMR": "2026-09-01",
+   "JDAR": "2026-09-01",
+   "SFAR": "2026-09-01",
+   "GDAR": "2026-09-01",
+   "CTAR": "2026-09-01",
+   "UFAR": "2026-09-01",
+   "GFAR": "2026-09-01",
+   "UWAR": "2026-09-01",
+   "DDSR": "2026-09-01",
+   "GWSR": "2026-09-01",
+   "UFSR": "2026-09-01"
+  }
+ }
+}

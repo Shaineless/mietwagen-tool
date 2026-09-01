@@ -150,9 +150,19 @@ export async function quoteSixt(q) {
       letzte = n;
     }
 
-    const roh = await page.$$eval(TILE, (nodes) => nodes.map((n) => n.innerText.split('\n')));
+    // Neben dem sichtbaren Text tragen die Kacheln zwei Schaetze:
+    //   data-offer-id="CDAR-110-110"  -> ACRISS-Code, sprachunabhaengig
+    //   ein Fahrzeugbild auf transparentem Grund
+    const roh = await page.$$eval(TILE, (nodes) =>
+      nodes.map((n) => ({
+        lines: n.innerText.split('\n'),
+        offerId: n.getAttribute('data-offer-id') || '',
+        image: [...n.querySelectorAll('img')].find((i) => i.alt)?.src || '',
+      }))
+    );
+
     const offers = roh
-      .map((lines) => mwtParseTile(lines, q.currency))
+      .map((r) => mwtParseTile(r, q.currency))
       .filter((o) => o && (o.perDay != null || o.total != null));
 
     return { ok: true, station, offers, url: page.url(), ms: Date.now() - started };

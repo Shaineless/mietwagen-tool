@@ -39,10 +39,23 @@ function mwtParseAmount(line) {
   return Number.isFinite(value) ? value : null;
 }
 
-/** Eine Kachel (als Zeilenliste) in einen Datensatz uebersetzen. */
-function mwtParseTile(lines, fallbackCurrency) {
+/**
+ * Eine Kachel in einen Datensatz uebersetzen.
+ *
+ * @param {{lines:string[], offerId?:string, image?:string}|string[]} roh
+ *        Zeilen der Kachel, dazu — falls vorhanden — die offer-id
+ *        ("CDAR-110-110", die ersten vier Zeichen sind der ACRISS-Code)
+ *        und die Bildadresse.
+ */
+function mwtParseTile(roh, fallbackCurrency) {
+  const daten = Array.isArray(roh) ? { lines: roh } : roh || {};
+  const lines = daten.lines || [];
   const clean = lines.map((s) => s.trim()).filter(Boolean);
   if (!clean.length) return null;
+
+  // "CDAR-110-110" -> "CDAR". Vier Grossbuchstaben, sonst verwerfen.
+  const acrissRoh = String(daten.offerId || '').split('-')[0].toUpperCase();
+  const acriss = /^[A-Z]{4}$/.test(acrissRoh) ? acrissRoh : null;
 
   const amounts = [];
   for (const line of clean) {
@@ -64,8 +77,26 @@ function mwtParseTile(lines, fallbackCurrency) {
   else if (currency === '$') currency = 'USD';
   else currency = String(currency).toUpperCase();
 
+  // Aktionen aus dem Kacheltext. Ohne die ist ein Preisvergleich wertlos:
+  // laeuft auf einer Laenderseite gerade der Fruehbucherrabatt und auf einer
+  // anderen nicht, vergleicht man zwei verschiedene Dinge.
+  const aktionen = [];
+  let fruehbucher = false;
+  for (const l of clean) {
+    if (/frühbucher|fruehbucher|early bird|early book|prenota prima|reserva anticipada/i.test(l)) {
+      fruehbucher = true;
+      aktionen.push(l);
+    } else if (/top[- ]angebot|top deal|bestpreis|best price|special offer|aktion/i.test(l)) {
+      aktionen.push(l);
+    }
+  }
+
   const category = clean[1] || '';
   return {
+    acriss,
+    image: daten.image || null,
+    aktionen,
+    fruehbucher,
     model: clean[0],
     category,
     transmission: /automat/i.test(category)

@@ -1,7 +1,6 @@
 # SIXT-Stationen — Format: id|land|iata|name
 # Quelle: oeffentliche Stationsseiten auf sixt.de (/mietwagen/<land>/<stadt>/<station>/)
-# Geerntet: 2026-09-01 · 1779 Stationen aus 104 Laendern · Anleitung: tools/harvest-sixt.md
-# Enthaelt alle Stationsarten: Flughaefen, Bahnhoefe, Stadt-, Hotel-, Hafen- und LKW-Stationen.
+# Geerntet: 2026-09-01 · Anleitung: tools/harvest-sixt.md
 # Zeilen mit # werden ignoriert. Eigene Stationen einfach unten anhaengen.
 47419|AE||Abu Dhabi Flughafen Terminal A
 46834|AE||Abu Dhabi Yas Marina Circuit
@@ -45,6 +44,7 @@
 1771|AR||Tucuman International Flughafen
 44764|AR||Ushuaia Downtown
 44160|AR||Ushuaia Flughafen
+2589|AT||Dornbirn
 507|AT||Graz
 803|AT||Graz Flughafen
 805|AT||Innsbruck Flughafen
@@ -56,6 +56,8 @@
 48260|AT||Privatflughafen Salzburg
 801|AT||Salzburg Flughafen
 43038|AT||Salzburg Zentrum
+806|AT||Villach
+8893|AT||Weiz
 804|AT||Wien / Liesing
 882|AT|VIE|Wien Flughafen (VIE)
 40117|AT||Wien Hauptbahnhof
@@ -258,10 +260,13 @@
 8142|CH||Genf Zentrum
 8150|CH||Lausanne
 49127|CH||Lausanne/EHL
+8144|CH||Lugano Paradiso
 43458|CH||Luzern
 48823|CH||Privatflughafen Genf
 48824|CH||Privatflughafen Zürich
+49157|CH||Schaan/Hilti
 8154|CH||St. Gallen Flughafen (Altenrhein)
+8153|CH||Triesen/LI Zustellservice
 8148|CH||Zug
 8141|CH|ZRH|Zürich Flughafen (ZRH)
 46565|CH||Zürich Luchswiesenstrasse
@@ -287,6 +292,7 @@
 48764|CL||Puerto Natales Flughafen
 48778|CL||Punta Arenas
 48765|CL||Punta Arenas Flughafen
+48779|CL||Rancagua
 48780|CL||Santiago Chile Industrial Park
 48766|CL||Santiago de Chile Flughafen
 48781|CL||Santiago de Chile/W Hotel
@@ -294,22 +300,28 @@
 48767|CL||Temuco Flughafen
 48783|CL||Valdivia
 48768|CL||Valdivia Flughafen
+48784|CL||Viña del Mar/Sheraton Miramar
 45198|CO||Bogotá El Dorado Flughafen
 47820|CO||Bucaramanga Flughafen
 44532|CO||Medellín City El Poblado
 44526|CO||Medellín Flughafen José María Córdova
 44527|CO||Pereira Flughafen Matecana
 49240|CR||Bahia Golfito
+46260|CR||Ciudad Quesada
 48978|CR||Cobano Flughafen
+41474|CR||Guapiles/Zustellservice
 46216|CR||Jaco/Zustellservice
+49081|CR||La Fortuna/Royal Corin Hotel
 6098|CR||Liberia (Costa Rica) Flughafen
 49252|CR||Papagayo/Hotel Mangroove
+46261|CR||Perez Zeledon
 46592|CR||Playa Conchal/Westin Resort
 49179|CR||San Jose (Costa Rica) Off-Airp
 45827|CR||San Jose Curridabat
 6855|CR||San José Flughafen
 45952|CR||San José/La Uruca
 48979|CR||Santa Teresa Beach
+46900|CR||Tamarindo Playa
 49244|CR||Tarcoles/Hotel Santa Lucia
 40520|CW||Curacao Flughafen Hato International
 40521|CW||Willemstad Jan Thiel Beach
@@ -328,15 +340,33 @@
 3391|CZ||Prag Flughafen Vaclav Havel
 1711|CZ||Prag Hauptbahnhof
 47870|CZ||Prag Van & Truck Centre
+411|DE||Aachen
+8315|DE||Achim
+7310|DE||Ansbach
+52|DE||Arnsberg
+6102|DE||Arnstadt
+7347|DE||Aschaffenburg
 45891|DE||Augsburg
 46724|DE||Augsburg Flughafen
 42419|DE||Augsburg Hauptbahnhof 24h
+44195|DE||Aurich
+6243|DE||Köln City/Hilton am Dom
+126|DE||Bad Hersfeld/Neuenstein
+370|DE||Bad Homburg
+45368|DE||Bad Saulgau/CLAAS
+2866|DE||Bad Tölz
 6657|DE||Baden-Airpark/Karlsruhe Flughafen
 4481|DE||Baden-Baden
+2431|DE||Bamberg
+46552|DE||Bansin/Insel Usedom
+48256|DE||Bayreuth
+45111|DE||Beckum
+42698|DE||Bergen auf Rügen Bahnhof
+49|DE||Bergkamen
 40089|DE||Berlin Alexanderplatz
-46550|DE||Berlin Eastside Truck Center (LKW)
+46550|DE||Berlin Eastside Truck Center
 8|DE|BER|Berlin Flughafen (BER) T1+T2
-1726|DE||Berlin Friedrichshain
+49347|DE||Berlin Friedrichshain
 41102|DE||Berlin Gendarmenmarkt/Hilton
 47398|DE||Berlin Hardenbergplatz
 6985|DE||Berlin Hauptbahnhof
@@ -345,42 +375,96 @@
 6650|DE||Berlin Reinickendorf
 490|DE||Berlin Spandau
 40724|DE||Berlin Tempelhof
-46219|DE||Berlin Truck Center (LKW)
+46219|DE||Berlin Truck Center
 6556|DE||Berlin-Adlershof
 64|DE||Berlin-Lichtenberg
 48321|DE||Berlin/JW Marriott Hotel
+45369|DE||Biberach
+348|DE||Bielefeld
+8318|DE||Bitterfeld
+48720|DE||Bocholt
+363|DE||Bochum
+2442|DE||Bonn Bad Godesberg
+43354|DE||Bornheim bei Bonn
+6518|DE||Bottrop
+5034|DE||Braunschweig
 26|DE||Bremen Flughafen
-327|DE||Bremen Habenhausen (LKW)
+327|DE||Bremen Habenhausen
 95|DE||Bremen Hauptbahnhof
 5979|DE||Bremen Vegesack
 48818|DE||Bremen/Airbus
+42464|DE||Bremerhaven
+41286|DE||Brilon
+47|DE||Bruchsal
+57|DE||Celle
+388|DE||Chemnitz
+2428|DE||Coburg
+182|DE||Cottbus / Nähe Hauptbahnhof
+2534|DE||Crailsheim
+8840|DE||Cuxhaven
+48329|DE||Dachau
+361|DE||Darmstadt
+8049|DE||Delmenhorst
+6878|DE||Dessau
+1157|DE||Detmold
+45852|DE||Donauwörth Nähe Bahnhof
 346|DE||Dortmund Borsigplatz
 130|DE||Dortmund Flughafen
-46544|DE||Dortmund Truck Center (LKW)
+46544|DE||Dortmund Truck Center
 398|DE||Dresden Flughafen
 188|DE||Dresden Nähe Hauptbahnhof
-399|DE||Dresden Truck Center (LKW)
-5599|DE||Duesseldorf Lkw Center (LKW)
+399|DE||Dresden Truck Center
+5599|DE||Duesseldorf Lkw Center
+164|DE||Duisburg
+6688|DE||Düren
 177|DE||Düsseldorf Bahnhof Zentrum
 8086|DE||Düsseldorf Königsallee
 7095|DE||Düsseldorf Seestern
 1352|DE||Düsseldorf-Derendorf
 7145|DE||Egelsbach Flughafen
+42982|DE||Eisenach
+41|DE||Elmshorn
+42943|DE||Erding
+387|DE||Erfurt
 5051|DE||Erlangen Tennenlohe
+343|DE||Essen Limbecker Platz
+47778|DE||Essen Nord
+2069|DE||Esslingen
+47821|DE||Esslingen/Eberspächer KEYBOX
+46554|DE||Euskirchen
+42926|DE||Flensburg
 115|DE|DUS|Flughafen Düsseldorf (DUS)
 477|DE||Flughafen Frankfurt Ost
-300|DE||Frankfurt a. M. Eschborn
-48695|DE||Frankfurt Eschborn Truck Ctr (LKW)
+49348|DE||Frankfurt a. M. Eschborn
+48695|DE||Frankfurt Eschborn Truck Ctr
 110|DE|FRA|Frankfurt Flughafen (FRA)
 48145|DE||Frankfurt Offenbach
-46543|DE||Frankfurt Truck Center (LKW)
-4452|DE||Frankfurt-Hahn Flughafen
+46543|DE||Frankfurt Truck Center
 162|DE||Frankfurt/Main Hauptbahnhof
 1269|DE||Frankfurt/Main West/Messe
 10|DE||Frankfurt/Main Zentrum/Zeil
+45206|DE||Frechen
+378|DE||Freiburg Güterbahnhof
+6059|DE||Freilassing
+41491|DE||Freising bei München
 42887|DE||Friedrichshafen
 245|DE||Friedrichshafen Flughafen
+2097|DE||Fulda
 40775|DE||Fürth
+45892|DE||Garmisch-Partenkirchen
+7029|DE||Gelsenkirchen
+46541|DE||Gera
+5797|DE||Gießen
+41057|DE||Göppingen
+8202|DE||Görlitz
+6998|DE||Goslar
+42983|DE||Gotha
+5206|DE||Göttingen
+46553|DE||Greifswald
+42594|DE||Grevenbroich
+42918|DE||Gütersloh
+770|DE||Haigerloch (bei Balingen)
+9285|DE||Halle (Saale) Zentrum
 5163|DE||Hamburg Altona Stresemannstr.
 47632|DE||Hamburg Bergedorf
 46811|DE||Hamburg Bleichenhof
@@ -394,37 +478,95 @@
 46549|DE||Hamburg Hauptbahnhof
 7372|DE||Hamburg Nord/Poppenbüttel
 6521|DE||Hamburg Reeperbahn
-45321|DE||Hamburg Truck Center (LKW)
+45321|DE||Hamburg Truck Center
 46563|DE||Hamburg Uhlenhorst
 320|DE||Hamburg Wandsbek
 20|DE||Hamburg Zentrum
 6520|DE||Hamburg-Altona Bahnhof
+48405|DE||Hameln
+157|DE||Hamm
+364|DE||Hanau
 196|DE||Hannover Buchholz
 24|DE||Hannover Flughafen Langenhagen
 47805|DE||Hannover Hauptbahnhof
 41480|DE||Hannover Süd
 330|DE||Hannover Vahrenwald
+46131|DE||Heide
+369|DE||Heidelberg
+47842|DE||Heidenheim
+473|DE||Heilbronn
+4431|DE||Heppenheim
 47873|DE||Heringsdorf Flughafen
+2820|DE||Hildesheim
+48255|DE||Hof
+49242|DE||Hoyerswerda
+45799|DE||Husum
 2426|DE||Ingolstadt Hauptbahnhof
 40748|DE||Ingolstadt-Manching Flughafen
-350|DE||Koeln Truck Center (LKW)
-6243|DE||Köln City/Hilton am Dom
+46130|DE||Itzehoe
+132|DE||Jena
+42303|DE||Kaiserslautern
+307|DE||Karlsruhe Knielingen
+44383|DE||Karlsruhe Rüppurr
+43955|DE||Kassel
+93|DE||Kassel-Wilhelmshöhe Bahnhof
+6648|DE||Kaufbeuren
+49189|DE||Kaufering/Hilti
+43624|DE||Kempten (Allgäu)
+454|DE||Kevelaer
+294|DE||Kiel Hauptbahnhof
+323|DE||Kiel Zentrum
+6964|DE||Kleve
+354|DE||Koblenz
+350|DE||Koeln Truck Center
 495|DE||Köln Hauptbahnhof
 48146|DE||Köln Mülheim
 46562|DE||Köln Nord Bilderstöckchen
 4485|DE||Köln Porz Gremberghoven
 40272|DE||Köln Zentrum/Maritim Hotel
 17|DE||Köln/Bonn Flughafen
+641|DE||Konstanz
+341|DE||Krefeld
+44479|DE||Künzelsau
+44097|DE||Lahr am Flughafen
+45766|DE||Landau i.d. Pfalz
+44415|DE||Landsberg am Lech
+42593|DE||Landshut
+486|DE||Langen
+44194|DE||Leer/Ostfriesland
 72|DE||Leipzig Hauptbahnhof
-394|DE||Leipzig Truck Center (LKW)
+394|DE||Leipzig Truck Center
 395|DE||Leipzig Zentrum/Thomasium
 393|DE||Leipzig/Halle Flughafen
+337|DE||Leverkusen Zentrum//Bayer Tor 1
+44733|DE||Limburg Offheim
+47587|DE||Lindau
+5635|DE||Lingen
+44115|DE||Lippstadt
+7353|DE||Lörrach
 314|DE||Lübeck
 46024|DE||Lübeck Flughafen
+7013|DE||Lüdenscheid
+9239|DE||Ludwigsburg Bahnhof
+42877|DE||Ludwigsfelde
+2222|DE||Ludwigshafen
+8703|DE||Lüneburg
+4778|DE||Magdeburg
+365|DE||Mainz City-Port
+40967|DE||Mainz Wiesbaden Truck
+279|DE||Mannheim Hauptbahnhof
+2436|DE||Mannheim Neckarau
 43591|DE||Memmingen Flughafen
 43564|DE||Memmingen Zentrum
-2|DE||Muenchen Freimann Truck Center (LKW)
-46548|DE||Muenchen Ost Truck Center (LKW)
+40042|DE||Merseburg im Skyhotel
+42924|DE||Minden
+41009|DE||Mönchengladbach
+49131|DE||Mönchengladbach/MB Herbrand
+8088|DE||Mosbach
+2|DE||Muenchen Freimann Truck Center
+46548|DE||Muenchen Ost Truck Center
+7147|DE||Mühldorf
+7332|DE||Mülheim an der Ruhr
 1|DE||München Altstadt-Lehel
 11|DE|MUC|München Flughafen (MUC)
 41137|DE||München Freiham
@@ -433,7 +575,6 @@
 380|DE||München Haidhausen
 168|DE||München Hauptbahnhof
 8006|DE||München Höllriegelskreuth Bhf
-46860|DE||München Isartor
 40196|DE||München Laim Bahnhof 24h
 49346|DE||München Ostbahnhof
 1225|DE||München Ottobrunn
@@ -443,18 +584,35 @@
 5254|DE||München Stachus (Zentrum)
 44673|DE||München Trudering
 40257|DE||München/Hotel Bayerischer Hof
-44483|DE||München/Hotel Westin Grand
 6647|DE||München/Messestadt Riem
 166|DE||Münster Osnabrück Flughafen
+344|DE||Münster-Loddenheide
+42437|DE||Neu-Ulm
+49125|DE||Neubrandenburg
+46129|DE||Neumünster
+47823|DE||Neunkirchen/Eberspächer KEYBOX
+336|DE||Neuss
+49103|DE||Neustadt a.d. Weinstraße
+45826|DE||Niebüll Nähe Bahnhof
 326|DE||Norderstedt
-46545|DE||Nuernberg Truck Center (LKW)
+2599|DE||Nordhausen
+6213|DE||Nordhorn
+46545|DE||Nuernberg Truck Center
 6|DE||Nürnberg Flughafen
 435|DE||Nürnberg Hauptbahnhof
 7374|DE||Nürnberg Südstadt
 155|DE||Nürnberg Zentrum
+434|DE||Oberhausen
 44786|DE||Oberpfaffenhofen Flughafen
+43623|DE||Offenburg
+48130|DE||Oldenburg/Oldb. (Nieders.)
+345|DE||Osnabrück
 42920|DE||Paderborn
 47054|DE||Paderborn Flughafen
+655|DE||Passau
+7160|DE||Pforzheim
+43454|DE||Plattling bei Deggendorf
+186|DE||Potsdam Babelsberg
 48281|DE||Privatflughafen Berlin GAT
 48280|DE||Privatflughafen Düsseldorf GAT
 48282|DE||Privatflughafen Frankfurt GAT
@@ -462,24 +620,76 @@
 48277|DE||Privatflughafen Köln/Bonn GAT
 48283|DE||Privatflughafen München GAT
 48278|DE||Privatflughafen Stuttgart GAT
+6068|DE||Ramstein
+49102|DE||Rastatt
+40375|DE||Ratingen
+45367|DE||Ravensburg/Weingarten
+8199|DE||Recklinghausen
+2424|DE||Regensburg
+43852|DE||Rendsburg-Büdelsdorf
+41003|DE||Rosenheim
+41002|DE||Rosenheim Bahnhof
 298|DE||Rostock gegenüber Hbf.
 8301|DE||Rostock Laage Flughafen
 180|DE||Rostock Lütten Klein
+45248|DE||Saalfeld
+366|DE||Saarbrücken
+6057|DE||Saarlouis
 45057|DE||Schwabach
+2432|DE||Schweinfurt Hauptbahnhof
+181|DE||Schwerin
+47780|DE||Siegburg/Bonn Hauptbahnhof
+4432|DE||Siegen
+9237|DE||Sindelfingen
+6488|DE||Singen
+8087|DE||Sinsheim
+48184|DE||Soest
+40557|DE||Solingen
+195|DE||Stade-Dollern
+6505|DE||Stockach/Moll
+2012|DE||Stralsund
+1164|DE||Straubing
 225|DE||Stuttgart Flughafen
 171|DE||Stuttgart Hauptbahnhof
-46542|DE||Stuttgart Truck Center (LKW)
+46542|DE||Stuttgart Truck Center
 41089|DE||Stuttgart Vaihingen
 301|DE||Stuttgart Zentrum
 42966|DE||Sylt Flughafen
 42931|DE||Sylt/Westerland Nähe Bahnhof
+7298|DE||Trier Ottostr
+47397|DE||Tübingen
+44354|DE||Ueberlingen
+8709|DE||Uelzen
+42328|DE||Ulm Bahnhofpassage
+42441|DE||Unna
+43090|DE||Unterlüß/Rheinmetall
+640|DE||Villingen-Schwenningen
+5427|DE||Waiblingen
+8114|DE||Walldorf/SAP-Implant
+5869|DE||Walsrode
+2011|DE||Wedel
 5399|DE||Weeze/Niederrhein Flughafen
+47098|DE||Weiden
+3859|DE||Weimar
+8127|DE||Wernigerode
+48105|DE||Wesel
+44736|DE||Wetzlar
+362|DE||Wiesbaden Zentrum/Hauptbahnhof
+41515|DE||Wilhelmshaven
+5625|DE||Wolfsburg
+2446|DE||Wunstorf
+356|DE||Wuppertal Zentrum
+2430|DE||Würzburg
+2429|DE||Würzburg Hauptbahnhof
+6366|DE||Zella-Mehlis
 6907|DK||Aalborg Flughafen
 8471|DK||Aarhus Flughafen
 40708|DK||Aarhus Zentrum
 6800|DK||Billund Flughafen
 1853|DK||Dänemark/Zustellservice
 40081|DK||Fredericia Bahnhof
+46902|DK||Frederikssund
+1202|DK||Grenaa/Stena Line Ferry Terminal
 44122|DK||Hirtshals Fährterminal
 6228|DK||Kopenhagen Dragør
 6204|DK||Kopenhagen Flughafen
@@ -516,7 +726,6 @@
 41014|EG||Kairo-New Cairo/Downtown Einkaufszentrum
 43463|EG||Kairo-Obour City
 41061|EG||Kairo/Citystars Mall
-45664|EG||Kairo/Zustellservice
 45287|EG||Luxor International Flughafen
 47680|EG||Madinaty/Open Air Mall
 45288|EG||Marsa Alam Flughafen
@@ -549,11 +758,14 @@
 45151|ES||Bilbao Abando Bahnhof
 1886|ES||Bilbao Flughafen
 1799|ES||Bilbao Zentrum
+1830|ES||Chiclana de la Frontera
 43409|ES||Cordoba AVE/Busbahnhof
 48819|ES||Córdoba Flughafen
+8897|ES||Estepona/Kempinski Hotel Bahia
 7277|ES||Flughafen Barcelona
 2853|ES||Flughafen Barcelona T2
 44396|ES|FUE|Fuerteventura Flughafen (FUE)
+48391|ES||Gijón Zentrum
 44183|ES||Girona Bahnhof
 43469|ES|GRO|Girona Flughafen (GRO)
 42699|ES|LPA|Gran Canaria Flughafen (LPA)
@@ -583,7 +795,10 @@
 48471|ES||Mallorca Palma Hafen
 6842|ES||Mallorca Playa de Palma
 8753|ES||Mallorca Poligono Son Oms
+6952|ES||Marbella
+49084|ES||Marbella Les Roches
 42454|ES|MAH|Menorca Mahon Flughafen (MAH)
+48323|ES||Pamplona Bahnhof
 47230|ES||Privatflughafen Barcelona
 48268|ES||Privatflughafen Cuatro Vientos
 47218|ES||Privatflughafen Ibiza
@@ -593,6 +808,7 @@
 48267|ES||Privatflughafen Sevilla
 48266|ES||Privatflughafen Valencia
 42179|ES|REU|Reus Flughafen (REU)
+41422|ES||Salou
 42230|ES||San Sebastian
 47866|ES||San Sebastián Flughafen
 48106|ES||Santander Bahnhof
@@ -605,6 +821,8 @@
 8029|ES|SVQ|Sevilla Flughafen (SVQ)
 47440|ES||Sevilla La Negrilla
 45187|ES||Sevilla Plaza de Armas
+41357|ES||Tarragona
+42327|ES||Tarragona AVE
 45189|ES||Teneriffa Costa Adeje
 44267|ES||Teneriffa Nord Flughafen
 42489|ES|TFS|Teneriffa Süd Flughafen (TFS)
@@ -613,6 +831,7 @@
 45480|ES||Valencia Paterna
 1829|ES||Valencia Sorolla Train Station
 44350|ES||Vigo Flughafen
+47876|FI||Espoo/Zustellservice
 48828|FI||Helsinki Hauptbahnhof
 1366|FI||Helsinki Hilton Kalastajatorppa
 2252|FI||Helsinki Kalasatama/REDI
@@ -620,19 +839,17 @@
 42585|FI||Helsinki/Zustellservice
 45985|FI||Jakobstad-Pedersöre Station
 48935|FI||Jyväskylä
-2260|FI||Jyväskylä Flughafen
 48404|FI||Jyväskylä/Autotarvike
 1297|FI||Kemi-Tornio Flughafen
 2259|FI||Kittilä Flughafen
 40508|FI||Kokkola Bahnhof
-1805|FI||Kokkola-Pietarsaari Flughafen
 2257|FI||Kuopio Flughafen
+48934|FI||Lahti
 48936|FI||Mikkeli
 2057|FI||Oulu Äimärautio/Wetteri
 2247|FI||Oulu Flughafen
 2508|FI||Oulu Zentrum
 49161|FI||Oulu/Zustellservice
-2258|FI||Pori Flughafen
 2248|FI||Rovaniemi Bahnhof
 2249|FI||Rovaniemi Flughafen
 9227|FI||Rovaniemi/Arctic City Hotel
@@ -645,15 +862,34 @@
 46262|FI||Vaasa Bahnhof
 2255|FI||Vaasa Flughafen
 48159|FI||Vaasa/Zustellservice
+48938|FI||Vantaa Äyritie
 48933|FI||Ylivieska Bahnhof
 46867|FO||Vagar Flughafen
+40129|FR||Agen
+2087|FR||Aix-en-Provence
+6977|FR||Aix-en-Provence TGV Bahnhof
+44562|FR||Amiens Bahnhof
+40873|FR||Amiens Zentrum
+46540|FR||Angers
+40579|FR||Angers Bahnhof TGV
+47841|FR||Angouleme Bahnhof
+1608|FR||Annecy Nähe Hauptbahnhof
+8403|FR||Antibes
+1377|FR||Antibes Bahnhof
 48063|FR||Argenteuil Bahnhof
+44684|FR||Arpajon
 48064|FR||Asnieres Sur Seine Bahnhof
 42968|FR||Athis-Mons
+45415|FR||Aubagne Bahnhof
+2588|FR||Avignon Bahnhof TGV
+42971|FR||Avignon Cap Sud
+44558|FR||Bayonne
+45274|FR||Bayonne Bahnhof
 6899|FR||Beauvais Flughafen
 48096|FR||Begles Bahnfof
 48155|FR||Belfort-Montbéliard Gare TGV
 40130|FR||Bergerac Perigord Flughafen
+44561|FR||Beziers Bahnhof
 6780|FR||Biarritz Bahnhof
 4245|FR||Biarritz Flughafen
 42346|FR||Bordeaux Clemenceau
@@ -665,34 +901,51 @@
 1610|FR||Caen Bahnhof
 41272|FR||Caen-Carpiquet Flughafen
 47836|FR||Calvi Flughafen
+40580|FR||Cannes Bahnhof SNCF
+523|FR||Cannes Croisette
 48252|FR||Carcassonne Bahnhof
 48065|FR||Cergy Prefecture Bahnhof SNCF
+44182|FR||Chalon-sur-Saône
 6897|FR||Chambéry Flughafen
 6467|FR||Chambéry Zentrum/Bahnhof
+4230|FR||Chessy Bahnhof Marne-la-Vallée
 6106|FR||Clermont-Ferrand Flughafen
 6113|FR||Clermont-Ferrand Zentrum
 47248|FR||Courbevoie Verdun
 48940|FR||Cros de Cagnes Bahnhof
 40002|FR||Deauville Flughafen
+40581|FR||Dijon Bahnhof
+40874|FR||Dünkirchen
+48087|FR||Dünkirchen Bahnhof
 47837|FR||Flughafen Carcassonne
 45733|FR||Flughafen Nizza Terminal 1
 42874|FR||Flughafen Paris Charles de Gaulle
+7295|FR||Grenoble Bahnhof
 6108|FR||Korsika Ajaccio Flughafen
 6107|FR||Korsika Bastia Flughafen
 44740|FR||Korsika Figari Flughafen
 1681|FR||La Rochelle Bahnhof
 1628|FR||La Rochelle Flughafen
+4281|FR||Le Creusot Bahnhof TGV
+40025|FR||Le Havre Centre Cruise Terminal
+40582|FR||Le Mans Bahnhof TGV
+48066|FR||Les Grésillons Bahnhof SNCF
+44091|FR||Les Ulis/Villebon-sur-Yvette
 1579|FR||Levallois-Perret Clichy
 40583|FR||Lille Bahnhof Europe
 45423|FR||Lille Lomme
 1524|FR||Lille-Lesquin Flughafen
+43985|FR||Limoges Bahnhof
+48905|FR||Limoges Montjovis Bahnhof
 43980|FR||Lyon Bron
 500|FR||Lyon Flughafen St Exupéry
 8821|FR||Lyon Part Dieu Bahnhof
 40585|FR||Lyon Perrache Bahnhof
 42348|FR||Lyon/Avenue Berthelot
 42347|FR||Lyon/Cours Franklin Roosevelt
+44699|FR||Mantes-la-Jolie
 8729|FR||Marcq-en-Baroeul
+4220|FR||Marne la Vallée Val d'Europe
 48093|FR||Marseille Arenc Euromed
 3775|FR||Marseille Flughafen
 46599|FR||Marseille La Valentine-Aubagne
@@ -700,20 +953,30 @@
 1742|FR||Marseille Vélodrome
 40587|FR||Massy Palaiseau TGV
 41413|FR||Massy-Antony
+40118|FR||Metz Bahnhof
+45420|FR||Metz Woippy
+5438|FR||Montceau-les-Mines
 8820|FR||Montpellier Bahnhof St. Roch
 44408|FR||Montpellier Bhf. Sud-de-France
 4729|FR||Montpellier Flughafen
 46623|FR||Montpellier Près d'Arènes
 535|FR||Mülhausen Basel Flughafen FR
 1542|FR||Mülhausen Hauptbahnhof
+40119|FR||Nancy Bahnhof
 2085|FR||Nantes Atlantique Flughafen
 47494|FR||Nantes Paridis
 42349|FR||Nantes Saint-Herblain
 2086|FR||Nantes TGV Bahnhof
+45402|FR||Nimes Bahnhof Pont Du Gard
+40817|FR||Nîmes Bahnhof SNCF
+48407|FR||Niort
+49082|FR||Niort Bahnhof
 40588|FR||Nizza Bahnhof
 562|FR|NCE|Nizza Flughafen (NCE)
 48092|FR||Nizza/Cagnes Langzeit LKW
 6232|FR||Nizza/Promenade des Anglais
+4274|FR||Orléans Bahnhof SNCF
+1131|FR||Orléans Fleury-les-Aubrais
 7461|FR||Paris 02 Vendôme Opéra
 3259|FR||Paris 06 St-Germain-des-Prés
 42343|FR||Paris 07 Ecole Militaire
@@ -739,18 +1002,30 @@
 40106|FR||Paris Nanterre-Rueil Malmaison
 554|FR||Paris Orly Flughafen
 5514|FR||Paris Saint-Ouen/Saint-Denis
+43990|FR||Paris Vélizy/BMW
+48390|FR||Pau Bahnhof
 1683|FR||Pau-Pyrenäen Flughafen
+48785|FR||Perpignan SNCF Bahnhof
 45306|FR||Pierrelaye
 40877|FR||Poitiers Bahnhof
 42574|FR||Poitiers-Biard Flughafen
+46177|FR||Private Luftfahrt Avignon
 48153|FR||Privatflughafen Bordeaux
 44312|FR||Privatflughafen Le Bourget
 47738|FR||Privatflughafen Nizza
 48820|FR||Privatflughafen Toulouse
+40872|FR||Reims Bahnhof
+41273|FR||Reims Champagne-Ardenne TGV
 46248|FR||Rennes - Saint Gregoire
 44412|FR||Rennes Bahnhof TGV
 44411|FR||Rennes Flughafen
+40655|FR||Rouen Bahnhof
+4576|FR||Rouen Rive Gauche
+5598|FR||Saint-Étienne Hauptbahnhof
 43983|FR||Saint-Germain-en-Laye
+47442|FR||Saint-Malo Bahnhof TGV
+48086|FR||Saint-Priest Bahnhof
+40589|FR||Saint-Raphaël Bahnhof
 6562|FR||Saint-Tropez
 2781|FR||Saint-Tropez Flughafen
 8012|FR||Straßburg Bahnhof
@@ -764,6 +1039,19 @@
 1769|FR||Toulouse Minimes
 6503|FR||Toulouse-Blagnac Flughafen
 6978|FR||Toulouse-Matabiau Bahnhof
+1695|FR||Tours St-Pierre-des-Corps Bhf
+45739|FR||Troyes Bahnhof
+44559|FR||Troyes La Chapelle-Saint-Luc
+40591|FR||Valence Bahnhof TGV/SNCF
+44189|FR||Valence Bahnhof Zentrum
+45077|FR||Vannes Bahnhof TGV
+48088|FR||Vénissieux Bahnhof
+43989|FR||Versailles Chantiers
+48061|FR||Versailles Rive Droite Bahnhof
+42147|FR||Villefranche Bahnhof SNCF
+41185|FR||Villefranche-sur-Saône/Limas
+48089|FR||Villeneuve-Loubet Bahnhof
+48067|FR||Villepinte Bahnhof
 44560|FR||Vincennes
 48090|FR||Vitrolles
 7433|GB||Aberdeen Flughafen
@@ -774,9 +1062,12 @@
 7636|GB||Birmingham Flughafen
 46555|GB||Birmingham New Street Bahnhof
 7410|GB||Birmingham Zentrum
+48871|GB||Brighton Bahnhof
 42329|GB||Bristol Flughafen
 45026|GB||Bristol Temple Meads Bahnhof
 42882|GB||Bristol Zentrum
+45776|GB||Broughton/Airbus
+44475|GB||Cambridge
 7434|GB||Edinburgh Flughafen
 47851|GB||Edinburgh Old Town
 40356|GB||Edinburgh Zentrum/Waverley
@@ -785,7 +1076,10 @@
 40670|GB||Glasgow
 43628|GB||Glasgow Flughafen
 40860|GB||Glasgow Hauptbahnhof
+48994|GB||Guernsey Flughafen
 45186|GB||Inverness Flughafen
+48326|GB||Jersey Flughafen
+41215|GB||Leeds
 7601|GB||Liverpool Flughafen
 48627|GB||London Battersea Power Station
 40316|GB||London Bloomsbury
@@ -814,17 +1108,25 @@
 7639|GB||Manchester Flughafen
 7411|GB||Manchester Piccadilly Bahnhof
 4548|GB||Manchester/Salford
+44474|GB||Milton Keynes
+45114|GB||Milton Keynes Hauptbahnhof
 40983|GB||Newcastle Flughafen
+2402|GB||Newtownards
+40965|GB||Nottingham Bahnhof
 48945|GB||Privatflgh. Manchester
 48952|GB||Privatflughafen Aberdeen
 48259|GB||Privatflughafen Biggin Hill
+48951|GB||Privatflughafen Cardiff
+48950|GB||Privatflughafen East Midlands
 48949|GB||Privatflughafen Edinburgh
+48944|GB||Privatflughafen Farnborough
 48948|GB||Privatflughafen Gatwick
 48947|GB||Privatflughafen Heathrow
 48946|GB||Privatflughafen Inverness
 48291|GB||Privatflughafen Luton
 48953|GB||Privatflughafen Southampton
 48290|GB||Privatflughafen Stansted
+48556|GB||Sheffield Bahnhof
 44004|GB||Southampton Flughafen
 45343|GB||Southampton Parkway Bahnhof
 1165|GE||Batumi Flughafen International
@@ -870,12 +1172,16 @@
 41190|HR||Dubrovnik/Hotel Rixos
 42448|HR||Osijek Flughafen
 40676|HR||Osijek/Opel PSC
+41188|HR||Porec/Hotel Porec
 42447|HR||Pula Busbahnhof
 2563|HR||Pula Flughafen
 40677|HR||Rijeka
 2564|HR||Rijeka Flughafen
+43413|HR||Rovinj
+45069|HR||Sibenik
 41189|HR||Split
 2565|HR||Split Flughafen
+44174|HR||Umag
 2566|HR||Zadar
 2567|HR||Zadar Flughafen
 46916|HR||Zagreb Busbahnhof
@@ -909,14 +1215,27 @@
 44982|IE||Dublin Süd/Conrad Hotel
 42491|IE||Dublin Zentrum
 44772|IE||Shannon Flughafen
+7284|IL||Afula
 5195|IL||Ashdod
+4968|IL||Beer Sheva
+7287|IL||Bet Schemesch
+2080|IL||Bney Brak
+4970|IL||Cholon
 45147|IL||Eilat Ramon Flughafen
 4969|IL||Eilat Zentrum
 4971|IL||Haifa
+4972|IL||Herzilya
 4974|IL||Jerusalem Mamilla Mall
 46833|IL||Jerusalem Talpiyot
 1343|IL||Jerusalem Zentrum
+4975|IL||Kiryat Shmona
 1858|IL||Modiin
+8121|IL||Nahariya
+6559|IL||Netanya
+4977|IL||Petach Tikva
+7286|IL||Raanana
+4978|IL||Rehovot
+8270|IL||Rishon Letzion
 4973|IL||Tel Aviv Hayarkon
 4979|IL||Tel Aviv Int. Flughafen
 8269|IL||Tel Aviv Merkaz
@@ -934,6 +1253,7 @@
 48656|IT||Bologna Borgo Panigale
 44695|IT||Bologna Flughafen
 48641|IT||Bologna Hauptbahnhof
+46614|IT||Bozen Piazza Walther
 43584|IT||Brindisi Flughafen
 43587|IT|CAG|Cagliari Flughafen (CAG)
 44697|IT|CTA|Catania Flughafen (CTA)
@@ -959,6 +1279,7 @@
 48606|IT||Neapel Hauptbahnhof
 43588|IT|OLB|Olbia Flughafen (OLB)
 48129|IT|PMO|Palermo Flughafen (PMO)
+48698|IT||Parma
 46606|IT||Perugia Airport
 46609|IT||Pescara Flughafen
 43410|IT|PSA|Pisa Flughafen (PSA)
@@ -976,12 +1297,14 @@
 45422|IT||Rom Tiburtina Bahnhof
 44624|IT||Rom Via Veneto/Marriott Hotel
 44623|IT||Rom/Waldorf Astoria
+45414|IT||Salerno Hauptbahnhof
 44568|IT||Sardinien Alghero Flughafen
 45426|IT||Sardinien Porto Cervo
 48843|IT||Segrate
 46611|IT||Sizilien Catania Zentrum
 45425|IT||Sizilien Palermo Hafen
 46026|IT||Sizilien Trapani Flughafen
+48841|IT||Treviglio
 48301|IT||Treviso Flughafen
 46617|IT||Triest Flughafen
 43433|IT|TRN|Turin Flughafen (TRN)
@@ -1015,12 +1338,15 @@
 44444|JP||Fukuoka Flughafen
 44445|JP||Fukuoka Hakata-guchi Bahnhof
 49087|JP||Fukuoka Tenjin Bahnhof Daimyo
+49218|JP||Gifu Bahnhof
+49219|JP||Gifu Hashima Bahnhof
 48531|JP||Higashi Matsudo Bahnhof
 45879|JP||Hiroshima Flughafen
 49248|JP||Hiroshima Hatsukaichi Bahnhof
 49251|JP||Hiroshima Shinkansen Bahnhof
 45749|JP||Hokkaido Asahikawa Bahnhof
 45756|JP||Hokkaido Asahikawa Flughafen
+45746|JP||Hokkaido Atsubetsu Nishi St.
 45748|JP||Hokkaido Hakodate Bahnhof
 45755|JP||Hokkaido Hakodate Flughafen
 45751|JP||Hokkaido Kitami Bahnhof
@@ -1037,20 +1363,34 @@
 48963|JP||Iriomotejima Ohara
 48540|JP||Ishigaki Yaeyama
 44442|JP||Kagawa Takamatsu Flughafen
+49247|JP||Kagawa Utazu Station
+48524|JP||Kamakura-Ofuna Bahnhof
 44439|JP||Kansai Flughafen
 44443|JP||Kitakyushu Flughafen
 49142|JP||Kobe Sannomiya Bahnhof
 49225|JP||Kumejima Flughafen
+49222|JP||Kyoto Shichijo Horikawa
+44438|JP||Kyoto Shinkansen Bahnhof
+49217|JP||Mie Yokkaichi Bahnhof
+44436|JP||Miyagi Sendai Bahnhof
 44431|JP||Miyagi Sendai Flughafen
 48537|JP||Miyako Shimojishima Flughafen
 48539|JP||Miyakojima Flughafen
 45880|JP||Miyazaki Flughafen
+44446|JP||Morioka Bahnhof
+49140|JP||Nagano JR Bahnhof
+48958|JP||Nagano Matsumoto Bahnhof
 48535|JP||Nagasaki Flughafen
 48526|JP||Nagoya Chubu Centrair Flughafen
+44437|JP||Nagoya Shinkansen Bahnhof
 49223|JP||Nara JR Station
 49224|JP||Nara Kintetsu Bahnhof
 48538|JP||New Ishigaki Flughafen Yuna
+49085|JP||Niigata Bahnhof Higashi Odori
+45878|JP||Nobeoka Bahnhof
+48523|JP||Odawara Bahnhof
 48536|JP||Oita Flughafen
+49144|JP||Okayama Nishi Bahnhof
 44450|JP||Okinawa Naha Chatan Fisharena
 44405|JP||Okinawa Naha Flughafen
 44449|JP||Okinawa Naha Miebashi Bahnhof
@@ -1064,15 +1404,23 @@
 49143|JP||Osaka Kitahama Bahnhof
 44441|JP||Osaka Shinsaibashi Bahnhof
 48525|JP||Shibuya Udagawacho Bahnhof
+49221|JP||Shiga Maibara Station
+49246|JP||Shimane Matsue Bahnhof
 45803|JP||Shin Hakodate Hokuto Bahnhof
 45782|JP||Shin-Aomori Bahnhof
 48529|JP||Shin-Fuji Shinkansen Bahnhof
 48530|JP||Shin-Osaka Bahnhof
+49145|JP||Shin-Yamaguchi Bahnhof
+48521|JP||Shin-Yokohama Bahnhof
 48956|JP||Shizuoka Gotemba Bahnhof
 48957|JP||Shizuoka Hamamatsu Bahnhof
 49089|JP||Shizuoka Mishima Bahnhof
 49220|JP||Shizuoka Shimizu
+45802|JP||Suzuka Kintetsu Shirkao St.
 49141|JP||Tachikawa JR Bahnhof
+48960|JP||Takasaki Nishi-guchi Bahnhof
+45760|JP||Tochigi Nasushiobara Bahnhof
+44435|JP||Tochigi Utsunomiya Bahnhof
 48520|JP||Tokio Akihabara Bahnhof
 45819|JP||Tokio Shinjuku Bahnhof
 49214|JP||Tokio Tennozu Aisle Bahnhof
@@ -1083,6 +1431,7 @@
 49216|JP||Tokyo Ayase Bahnhof
 44433|JP||Tokyo Haneda Flughafen
 49215|JP||Tokyo Shinbashi Bahnhof
+48959|JP||Yamanashi Kofu Bahnhof
 40793|KW||Kuwait Flughafen
 48683|KY||Grand Cayman Flughafen
 44608|LA||Luang Prabang Flughafen
@@ -1176,6 +1525,7 @@
 43543|MK||Skopje/Marriott Hotel
 48450|MK||Tetovo/Mercure Hotel
 44180|MN||Dalandsadgad Flughafen
+40699|MN||Darchan Bahnhof
 40700|MN||Erdenet Bahnhof
 44187|MN||Moron Flughafen
 44188|MN||Olgii Flughafen
@@ -1186,15 +1536,24 @@
 46817|MQ||Le Lamentin Lareinty
 40222|MQ||Martinique Flughafen
 3394|MT||Malta Flughafen Luqa
+6261|MU||Mauritius / Coin de Mire Attitude
+41362|MU||Mauritius Creole Club
 6210|MU||Mauritius Flughafen
+8790|MU||Mauritius Marina Paladien
+6211|MU||Mauritius Quatre Bornes
 6258|MU||Mauritius Sugar Beach Resort
 8791|MU||Mauritius Tropical Attitude
 43070|MU||Mauritius/Friday Attitude
+43069|MU||Mauritius/Ravenala Attitude
+43068|MU||Mauritius/Récif Attitude Hotel
+44528|MU||Mauritius/Shanti Maurice
+43071|MU||Mauritius/Sunrise Attitude
 6262|MU||Mauritius/Zilwa Attitude Hotel
 6000|MU||Mauritius/Zustellservice
 48502|MX||Cancun Flughafen
 48503|MX||Guadalajara Flughafen
 48504|MX||Guadalajara/Holiday Inn Expo
+48508|MX||Los Barriles/Palmas de Cortez
 48505|MX||Los Cabos Flughafen
 48507|MX||Los Cabos Malecon San Jose
 48506|MX||Los Cabos/Krystal Grand Hotel
@@ -1202,6 +1561,7 @@
 48510|MX||Mexiko Stadt/Barceló Hotel
 48511|MX||Monterrey Flughafen
 48512|MX||Monterrey/Wyndham Hotel
+48513|MX||Playa del Carmen
 48514|MX||Puerto Vallarta Flughafen
 48515|MX||Tulum
 41496|MY||Johor Bahru
@@ -1227,33 +1587,51 @@
 1635|NG||Lagos Victoria Island
 1622|NG||Port Harcourt
 43450|NG||Uyo/Le Méridien Ibom Hotel
+5595|NL||Almere
 202|NL||Amsterdam Amstel Business Park
 6192|NL||Amsterdam Hauptbahnhof
 8361|NL||Amsterdam RAI
 699|NL||Amsterdam Schiphol Flughafen
 44591|NL||Amsterdam Sloterdijk
 42224|NL||Amsterdam West
+1206|NL||Apeldoorn
+42881|NL||Breda
 1423|NL||Den Haag Hauptbahnhof
 4652|NL||Eindhoven
 5164|NL||Eindhoven Flughafen
 40713|NL||Groningen Flughafen
 9286|NL||Groningen Hauptbahnhof
+4649|NL||Hoofddorp
 5095|NL||Maastricht
 42838|NL||Maastricht Aachen Flughafen
 334|NL||Rotterdam Alexander
 925|NL||Rotterdam Den Haag Flughafen
 204|NL||Rotterdam Hofplein
+4651|NL||Utrecht Hauptbahnhof
+48001|NO||Ålesund
 6363|NO||Ålesund Flughafen
 3337|NO||Alta
 6356|NO||Alta Flughafen
+3339|NO||Arendal
+41403|NO||Åsane/Ulset
+46594|NO||Askim
 44124|NO||Bardufoss
 3340|NO||Bardufoss Flughafen
+3338|NO||Båtsfjord
 6173|NO||Bergen (NO) Flughafen Flesland
 3343|NO||Bodø
 6359|NO||Bodø Flughafen
+46040|NO||Bryne
 44125|NO||Drammen
 1572|NO||Drammen Bahnhof
+46041|NO||Egersund
+45436|NO||Etne
+3431|NO||Farsund
+46537|NO||Flekkefjord
+3347|NO||Fredrikstad/Sarpsborg
 3798|NO||Gjovik
+3436|NO||Grimstad
+3428|NO||Halden
 3800|NO||Hamar
 6358|NO||Harstad/Narvik Flughafen
 3336|NO||Haugesund
@@ -1261,30 +1639,39 @@
 44167|NO||Haugesund Hafen
 3236|NO||Kirkenes
 8792|NO||Kirkenes Flughafen
+46217|NO||Kleppe
 44153|NO||Kongsberg
 3429|NO||Kristiansand
 6176|NO||Kristiansand Flughafen Kjevik
 46965|NO||Kristiansand Sørlandsparken
-6361|NO||Kristiansund  Flughafen
+6361|NO||Kristiansund Flughafen
 45317|NO||Lakselv
 9283|NO||Lakselv Flughafen
 43970|NO||Leknes Flughafen
 8794|NO||Lillehammer
+3430|NO||Lyngdal
 8796|NO||Mo i Rana
 42377|NO||Mo i Rana Bahnhof
 8298|NO||Mo i Rana Flughafen
 6362|NO||Molde Flughafen
 6360|NO||Mosjøen Flughafen
+1701|NO||Moss
 49190|NO||Oslo Downtown/Aker Brygge
 4447|NO||Oslo Flughafen Gardermoen
+47400|NO||Oslo Fornebu
 43478|NO||Oslo Helsfyr
+44453|NO||Porsgrunn
+1720|NO||Rud/Baerum
 6177|NO||Sandefjord Torp Flughafen
+46099|NO||Sandnes
 44477|NO||Sandnessjøen
 44476|NO||Sandnessjøen Flughafen
 46098|NO||Sauda
+2378|NO||Ski
 3433|NO||Stavanger
 6175|NO||Stavanger Flughafen Sola
 8804|NO||Stord Flughafen
+45447|NO||Sveio
 43560|NO||Svolvær
 43501|NO||Svolvær Flughafen
 3435|NO||Tromsø
@@ -1334,6 +1721,7 @@
 47751|PL||Lublin Flughafen
 6532|PL||Posen Flughafen
 40337|PL||Posen Hauptbahnhof
+46241|PL||Rzeszow Hauptbahnhof
 2045|PL||Rzeszów Jasionka Flughafen
 5084|PL||Warschau Chopin-Flughafen
 7394|PL||Warschau Hotel Intercontinental
@@ -1341,16 +1729,28 @@
 1770|PL||Warschau-Modlin Flughafen
 40857|PR||Aguadilla Flughafen
 40528|PR||San Juan Flughafen
+45376|PT||Albufeira Terrace
+47082|PT||Almada
+43653|PT||Angra do Heroismo
+47083|PT||Aveiro
 43651|PT||Azoren Faial Flughafen
 43646|PT||Azoren Flores Flughafen
 43650|PT||Azoren Pico Flughafen
+43654|PT||Azoren Pico Maritime Terminal
 43558|PT||Azoren Ponta Delgada Flughafen
 43648|PT||Azoren Santa Maria Flughafen
 43647|PT||Azoren Sao Jorge Flughafen
 43649|PT||Azoren Terceira Flughafen
+48837|PT||Beja
+44455|PT||Braga
+48517|PT||Bragança
+45933|PT||Comporta-Carvalhal/Deliveries
 42231|PT|FAO|Faro Flughafen (FAO)
 44469|PT||Faro Flughafen Shuttle
 47091|PT||Faro Montenegro
+44291|PT||Guimarães
+43655|PT||Horta
+46179|PT||Leiria
 41019|PT|LIS|Lissabon Flughafen (LIS)
 44485|PT||Lissabon Flughafen Shuttle
 42103|PT||Lissabon Nord
@@ -1359,13 +1759,20 @@
 42977|PT||Lissabon Zentrum/Picoas
 43601|PT||Lissabon/Tivoli
 42693|PT||Madeira Flughafen
+43039|PT||Madeira Funchal Zentrum
+44290|PT||Paredes Japautomotive
+46295|PT||Portimao
 43044|PT||Porto Boavista
 41020|PT||Porto Flughafen
 42506|PT||Porto Flughafen Shuttle
 47092|PT||Porto Nord
 46759|PT||Porto Zona Industrial
 48836|PT||Portugal/Luxury Car Delivery
+45801|PT||Sines
+44670|PT||Sintra
 43652|PT||Vila de Velas
+44292|PT||Vila Real
+47112|PT||Viseu
 49067|PY||Asuncion Aviadores del Chaco
 46726|PY||Asuncion Flughafen
 47750|PY||Asuncion/La Mision Hotel
@@ -1401,6 +1808,9 @@
 47668|RS||Belgrad/Sava Centar
 41214|RS||Niš Flughafen
 46737|RS||Novi Sad/Hotel Sheraton
+46803|SA||Al Hofuf Bahnhof
+46802|SA||Al Qassim Bahnhof
+48491|SA||Al-Dschubail
 46758|SA||Dammam Bahnhof
 45958|SA||Dammam Flughafen
 47681|SA||Dammam Flughafen Aramco
@@ -1423,25 +1833,47 @@
 5077|SC||Seychellen Flughafen
 2830|SC||Seychellen Victoria
 43561|SE||Åkersberga/Biljouren
+8928|SE||Alvesta Hauptbahnhof
 7159|SE||Ängelholm
 5581|SE||Ängelholm-Helsingborg Flughafen
 4273|SE||Åre Bahnhof
 1521|SE||Åre Östersund Flughafen
 7009|SE||Arvidsjaur Flughafen
+2208|SE||Båstad/Delivery Service
+5533|SE||Borås
+5532|SE||Borås Bahnhof
+5531|SE||Borlänge
+5530|SE||Borlänge Hbf/Best Western
+9251|SE||Branäs
+8875|SE||Danderyd RM Bilservice
+8181|SE||Enköping/Zustellservice
+5534|SE||Eskilstuna Hauptbahnhof
+8936|SE||Eskilstuna Svensk Bilskadeteknik
+5535|SE||Eskilstuna/Bilia BMW
+7012|SE||Falkenberg
+7212|SE||Falkenberg Bahnhof
+5536|SE||Falun Bahnhof
+5537|SE||Falun/Bilkompaniet Mercedes
+7213|SE||Finspång Sonstorps Bilservice
 5538|SE||Göteborg Flughafen Landvetter
+1216|SE||Göteborg Hauptbahnhof
 5540|SE||Halmstad
 7217|SE||Halmstad Bahnhof
 5539|SE||Halmstad Flughafen
 49171|SE||Hässleholm Hauptbahnhof
+5524|SE||Helsingborg
 5553|SE||Jönköping
 48449|SE||Jönköping Bahnhof
 5542|SE||Jönköping Flughafen
 5547|SE||Kalmar
 5545|SE||Kalmar Flughafen
 5546|SE||Kalmar Hauptbahnhof
+42646|SE||Karlshamn/Best Western Hotel
+40053|SE||Karlskrona Bahnhof
 5550|SE||Karlstad
 5548|SE||Karlstad Flughafen
 5549|SE||Karlstad Hauptbahnhof
+1192|SE||Kil Bahnhof
 44080|SE||Kiruna
 40001|SE||Kiruna Flughafen
 44277|SE||Kiruna Hauptbahnhof
@@ -1452,37 +1884,56 @@
 5580|SE||Linköping Flughafen
 8188|SE||Luleå Hauptbahnhof
 8189|SE||Luleå Kallax Flughafen
+42591|SE||Lund Hauptbahnhof
+7206|SE||Lund/BMW
 5522|SE||Malmö
 5559|SE||Malmö Flughafen Sturup
 2357|SE||Malmö Hauptbahnhof
+8762|SE||Mjölby
+7220|SE||Mjölby Bahnhof
+5558|SE||Motala
+7221|SE||Motala Bahnhof
 5560|SE||Norrköping Bahnhof
 43418|SE||Norrköping Butängen
 7017|SE||Norrköping Flughafen
 7222|SE||Nyköping Bahnhof
 1323|SE||Nyköping/Bilcenter
 7223|SE||Nyköping/Proauto
+1193|SE||Ödeshög
 5570|SE||Örebro Flughafen
 5571|SE||Örebro Hauptbahnhof
 1416|SE||Örebro/Werksta
+44611|SE||Oskarshamn
+40051|SE||Östersund
+1782|SE||Östersund Hauptbahnhof
+7224|SE||Oxelösund
 40062|SE||Ronneby Flughafen
+46240|SE||Skövde
+7229|SE||Söderköping/Walls bilplåt
 5564|SE||Stockholm Arlanda Flughafen
 46063|SE||Stockholm Haninge/Werksta
 6090|SE||Stockholm Hauptbahnhof
 43629|SE||Stockholm Kista/Mercedes-Benz
 44141|SE||Stockholm Länna/Mercedes-Benz
+5919|SE||Stockholm Nord Danderyd
 42455|SE||Stockholm Odenplan
 6996|SE||Stockholm-Västerås Flughafen
 7380|SE||Stockholm/Bromma Flughafen
 7064|SE||Stockholm/Skavsta Flughafen
+1284|SE||Strängnäs Bahnhof
 4231|SE||Sundsvall Hauptbahnhof
 5544|SE||Sundsvall Midlanda Flughafen
+8166|SE||Tranås Hauptbahnhof
 5565|SE||Umeå Flughafen
 45541|SE||Umeå Hafen
 8001|SE||Umeå Hauptbahnhof
 5567|SE||Umeå/BMW
+5568|SE||Uppsala Hauptbahnhof
+1890|SE||Värnamo Hauptbahnhof
 5790|SE||Västerås
 8003|SE||Västerås Bahnhof
 3214|SE||Västerås/Landrins Bil Mercedes
+4590|SE||Västervik
 8930|SE||Växjö Bahnhof
 8929|SE||Växjö Flughafen
 8890|SE||Växjö/Dahlqvists Bil
@@ -1491,12 +1942,14 @@
 7279|SG||Singapur Flughafen Changi
 8900|SI||Bled
 7307|SI||Celje
+7073|SI||Koper
 7072|SI||Ljubljana Flughafen
 7071|SI||Ljubljana Hauptbahnhof
 2206|SI||Maribor
 8000|SI||Maribor Flughafen
 8004|SI||Portoroz
 2203|SI||Portorož Flughafen
+1271|SI||Rogaska Slatina/Zustellservice
 47855|SK||Bratislava Flughafen
 47854|SK||Bratislava/Aston Hotel
 47856|SK||Kosice Flughafen
@@ -1537,10 +1990,16 @@
 8445|TR||Antalya Domestic Flughafen
 8444|TR|AYT|Antalya Flughafen (AYT)
 8229|TR||Bodrum Flughafen
+46777|TR||Bursa
+47877|TR||Corlu
 8256|TR||Dalaman Flughafen
+47878|TR||Denizli
 48380|TR||Diyarbakir Flughafen
+46755|TR||Edremit
 43405|TR||Erzurum Flughafen
+48180|TR||Eskisehir
 1894|TR||Gaziantep Oguzeli Flughafen
+48937|TR||Hatay Iskenderun
 45213|TR||Istanbul Bakirkoy AVM
 47719|TR||Istanbul Cekmekoy
 45203|TR||Istanbul Flughafen
@@ -1554,6 +2013,8 @@
 47113|TR||Izmir Alsancak
 8375|TR||Kayseri Flughafen Domestic
 8376|TR||Kayseri Flughafen International
+49233|TR||Kocaeli
+46771|TR||Malatya
 47720|TR||Mardin Flughafen
 2479|TR||Mersin Cukurova Flughafen
 46801|TR||Sakarya
@@ -1579,6 +2040,7 @@
 43099|UA||Kiew Hauptbahnhof
 1120|UA||Kiew Schuljany Flughafen
 46019|UA||Kiew/Hilton Hotel
+43037|UA||Krywyj Rih/Reikartz Aurora Htl
 8407|UA||Lwiw Flughafen
 43275|UA||Lwiw Hauptbahnhof
 2261|UA||Odessa Flughafen
@@ -1596,11 +2058,11 @@
 2300|US||Atlanta Flughafen Hartsfield
 42433|US||Aventura/North Miami
 45435|US||Baltimore Flughafen
+1122|US||bei Fort Lauderdale Flughafen
 40729|US||Beverly Hills
 44051|US||Big Island Kona Flughafen
 40155|US||Boca Raton nahe Mizner Park
-45916|US||Boise Flughafen (ab 1.9.)
-1122|US|BOS|Boston Flughafen (BOS)
+45916|US||Boise Flughafen
 46647|US||Boston/Westin Seaport
 47341|US||Boulder/Embassy Suites
 47562|US||Cambridge/Courtyard Marriott
@@ -1625,6 +2087,7 @@
 45973|US||Fort Lauderdale Beach/Westin
 40139|US||Fort Lauderdale Downtown
 43998|US||Fort Myers Flughafen
+47263|US||Fort Worth
 47559|US||Hallandale Beach/Gulfstream
 47078|US||Hickam (auf Militärbasis)
 48068|US||Hollywood/Seminole Hard Rock
@@ -1640,6 +2103,7 @@
 41335|US||Indianapolis Int. Flughafen
 46536|US||Indianapolis Metropolitan FBO
 46940|US||Jacksonville Flughafen
+47261|US||Jersey City/Newport Centre
 44413|US||John Wayne SNA Flughafen
 47072|US||Kansas City Flughafen
 44052|US||Kauai Lihue Flughafen
@@ -1655,6 +2119,8 @@
 45771|US||Los Angeles Studio City
 41206|US||Los Angeles Venice Beach
 44049|US||Maui Kahului Flughafen
+47403|US||Maui/Deliveries
+46939|US||Maui/Four Seasons
 1378|US||Miami Beach (5th Street)
 40101|US||Miami Beach Collins Ave
 40138|US||Miami Beach Lincoln Road
@@ -1666,6 +2132,7 @@
 47554|US||Milwaukee Mitchell Flughafen
 47260|US||Minneapolis
 47731|US||Minneapolis Flughafen
+46055|US||Mountain View/Deliveries
 47567|US||Naperville/Marriott
 47585|US||Nashville
 45434|US||Nashville Airport
@@ -1710,7 +2177,7 @@
 46648|US||San Diego/InterContinental
 42354|US||San Francisco Fishermans Wharf
 46779|US||San Francisco/Fairmont Hotel
-40668|US||San Jose (USA) Int. Flughafen
+40668|US|USA|San Jose (USA) Int. Flughafen
 48156|US||San Rafael
 40682|US||Santa Monica/Shore Hotel
 48157|US||Sarasota Flughafen
@@ -1773,12 +2240,15 @@
 48034|ZA||Kapstadt Flughafen
 48098|ZA||Kapstadt Green Point
 48602|ZA||Kapstadt Industria
+48049|ZA||Kathu
 48050|ZA||Kruger Mpumalanga Intl Airport
+48993|ZA||Pietermaritzburg
 48052|ZA||Polokwane Flughafen
 48051|ZA||Port Elizabeth Int. Flughafen
 48057|ZA||Port Elizabeth Walmer
 48047|ZA||Pretoria Centurion
 48044|ZA||Pretoria Hatfield
 48046|ZA||Randburg
+48053|ZA||Rustenburg
 48045|ZA||Sandton/Radisson Blu Gautrain
 48054|ZA||Umtata Matanzima Flughafen

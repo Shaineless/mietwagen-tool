@@ -6,45 +6,36 @@
 <!-- ===================================================== Startbildschirm -->
 <section id="start" class="screen">
   <header class="hero">
+    <p class="marke">Sixt · Länderpreis-Vergleich</p>
     <h1>Mietwagen-Preistool</h1>
     <p class="sub">
-      Vergleicht Mietwagenpreise über Länderseiten und Anbieter hinweg —
-      auf Wunsch vollautomatisch im Hintergrund.
+      Dieselbe Anfrage auf allen Sixt-Länderseiten, Klasse für Klasse
+      gegenübergestellt — inklusive der Schutzpakete, die den Preis am Ende
+      wirklich bestimmen.
     </p>
   </header>
 
-  <h2 class="pick">Was möchtest du vergleichen?</h2>
   <div class="modes">
     <button type="button" class="mode" data-mode="markets">
-      <span class="micon">🌍</span>
-      <span class="mtitle">Länder-Vergleich</span>
+      <span class="mtitle">Preise vergleichen</span>
       <span class="mdesc">
-        Ein Anbieter, dieselbe Suche auf allen Länderseiten. Sixt ruft für
-        identische Anfragen je nach Landesdomain andere Preise auf.
+        Station und Zeitraum wählen, Länderseiten ankreuzen. Die Preise werden
+        automatisch im Hintergrund geholt und nach ACRISS-Klasse aufgestellt.
       </span>
-      <span class="mtag ok">funktioniert für Sixt</span>
+      <span class="mgo">Los →</span>
     </button>
 
-    <button type="button" class="mode" data-mode="providers">
-      <span class="micon">⚖️</span>
-      <span class="mtitle">Anbieter-Vergleich</span>
-      <span class="mdesc">
-        Ein Ort und ein Zeitraum, mehrere Vermieter nebeneinander. Ordnet die
-        unterschiedlichen Stationen über eine Ortsebene einander zu.
-      </span>
-      <span class="mtag warn" id="cmpTag">nur Sixt angebunden</span>
-    </button>
-
-    <button type="button" class="mode" data-mode="status">
-      <span class="micon">📋</span>
+    <button type="button" class="mode ghostmode" data-mode="status">
       <span class="mtitle">Was geht gerade?</span>
       <span class="mdesc">
-        Ehrlicher Stand je Anbieter: welche Suchparameter nachweislich
-        ausgewertet werden — und welche stillschweigend verworfen.
+        Ehrlicher Stand: welche Suchparameter Sixt heute noch auswertet und
+        welche stillschweigend verworfen werden.
       </span>
-      <span class="mtag">Übersicht</span>
+      <span class="mgo">Ansehen →</span>
     </button>
   </div>
+
+  <p class="fuss" id="startFuss"></p>
 </section>
 
 <!-- ===================================================== Statusübersicht -->
@@ -60,21 +51,14 @@
 <section id="work" class="screen" hidden>
   <div class="bar">
     <button type="button" class="back">← Zurück</button>
-    <h1 id="workTitle">…</h1>
+    <h1>Preise vergleichen</h1>
+    <span class="barnote" id="barnote"></span>
   </div>
 
   <main>
    <div class="spalte">
-    <!-- Anbieterwahl: im Länder-Modus einer, im Anbieter-Modus mehrere -->
-    <section class="card" id="providerCard">
-      <h2>Anbieter</h2>
-      <div id="providerPick" class="provpick"></div>
-      <p id="providerNote" class="note"></p>
-    </section>
-
     <section class="card">
       <h2>Zeitraum</h2>
-
       <div class="zgrid">
         <span></span>
         <span class="zkopf">Datum</span>
@@ -88,14 +72,12 @@
         <input type="date" id="returnDate">
         <input type="time" id="returnTime" step="900">
       </div>
-
       <p class="dauer" id="dauer"></p>
 
       <details>
-        <summary>Datums-Matrix — mehrere Termine auf einmal prüfen</summary>
+        <summary>Datums-Matrix — mehrere Termine auf einmal</summary>
         <p class="note">
-          Preise hängen stark am Wochentag und an der Mietdauer. Statt einzeln
-          zu klicken, lässt sich hier ein Raster aufspannen.
+          Preise hängen stark am Wochentag und an der Mietdauer.
         </p>
         <div class="field">
           <span class="flabel">Abholtag verschieben um</span>
@@ -106,35 +88,6 @@
           <div id="durations" class="pills"></div>
         </div>
       </details>
-    </section>
-   </div>
-
-   <div class="spalte">
-    <!-- Länder-Modus: Station des gewählten Anbieters -->
-    <section class="card" id="stationCard">
-      <h2>Station</h2>
-      <input type="search" id="stationSearch" placeholder="Suchen: FRA, Hauptbahnhof, München …" autocomplete="off">
-      <p class="hint" id="stationCount"></p>
-      <div id="stationResults" class="stations"></div>
-      <div class="field">
-        <span class="flabel">Gewählt</span>
-        <div id="chosenStations" class="chips"></div>
-      </div>
-      <label class="wide">Rückgabestation
-        <select id="returnStation"></select>
-      </label>
-    </section>
-
-    <!-- Anbieter-Modus: Ort statt Station -->
-    <section class="card" id="placeCard" hidden>
-      <h2>Ort</h2>
-      <p class="note">
-        Vermieter haben nicht dieselben Stationen. Der Vergleich läuft deshalb
-        über Orte — und zeigt an, wie belastbar die Zuordnung ist.
-      </p>
-      <input type="search" id="placeSearch" placeholder="Suchen: FRA, München, Mallorca …" autocomplete="off">
-      <div id="placeResults" class="stations"></div>
-      <div id="placeDetail"></div>
     </section>
 
     <section class="card" id="marketCard">
@@ -147,48 +100,115 @@
       <div id="markets" class="markets"></div>
     </section>
    </div>
+
+   <div class="spalte">
+    <section class="card" id="stationCard">
+      <h2>Stationen</h2>
+      <input type="search" id="stationSearch" placeholder="FRA · Hauptbahnhof · München · Mallorca …" autocomplete="off">
+      <div class="suchzeile">
+        <p class="hint" id="stationCount"></p>
+        <button type="button" id="addAll" class="ghost mini">Alle Treffer hinzufügen</button>
+      </div>
+      <div id="stationResults" class="stations"></div>
+
+      <div class="field">
+        <span class="flabel">Gewählt</span>
+        <div id="chosenStations" class="chips"></div>
+      </div>
+
+      <details>
+        <summary>Station fehlt? Nummer von Hand eintragen</summary>
+        <p class="note">
+          Die Liste stammt aus Sixts öffentlichen Stationsseiten. Fehlt eine
+          Station, findet man ihre Nummer im Quelltext der Stationsseite
+          (Strg+U, dann nach <code>stationId</code> suchen).
+        </p>
+        <div class="btnrow">
+          <input type="text" id="manualStation" placeholder="z. B. 110" inputmode="numeric">
+          <button type="button" id="addManual" class="ghost">Hinzufügen</button>
+        </div>
+      </details>
+
+      <label class="wide">Rückgabestation
+        <select id="returnStation"></select>
+      </label>
+    </section>
+   </div>
   </main>
 
   <section class="card out">
-    <h2>Ergebnis <span class="count"><span id="jobCount">0</span> Aufrufe</span></h2>
+    <div class="outkopf">
+      <h2>Ergebnis</h2>
+      <span class="count" id="jobCount"></span>
+    </div>
+
     <div class="btnrow">
       <button type="button" id="getPrices" class="primary" hidden>Preise holen</button>
-      <button type="button" id="openAll" class="ghost">Alle öffnen</button>
+      <button type="button" id="openAll" class="ghost">Im Browser öffnen</button>
       <button type="button" id="copyAll" class="ghost">Links kopieren</button>
       <button type="button" id="reset" class="ghost right">Zurücksetzen</button>
     </div>
+
     <p id="serviceBadge" class="svc" hidden></p>
 
     <div id="fortschritt" class="fortschritt" hidden>
       <div class="fbalken"><div class="ffuellung" id="ffuellung"></div></div>
-      <p class="ftext" id="ftext"></p>
+      <div class="frow">
+        <p class="ftext" id="ftext"></p>
+        <button type="button" id="abbrechen" class="ghost mini">Abbrechen</button>
+      </div>
       <p class="fhinweis">
-        Der Abruf läuft in einem unsichtbaren Chrome-Fenster. Einfach warten —
-        das Fenster hier kann offen bleiben.
+        Läuft in einem unsichtbaren Chrome-Fenster. Das Fenster hier kann offen
+        bleiben.
       </p>
     </div>
 
     <p id="warn" class="note warn" hidden></p>
     <p id="popupHint" class="note warn" hidden>
-      Der Browser hat Tabs blockiert. Pop-ups für diese Seite erlauben
-      (Chrome: Symbol rechts in der Adressleiste) und erneut klicken — oder die
-      Links unten einzeln anklicken.
+      Der Browser hat Tabs blockiert. Pop-ups für diese Seite erlauben und
+      erneut klicken — oder die Links einzeln anklicken.
     </p>
     <p id="flash" class="flash" hidden></p>
     <div id="results"></div>
   </section>
 </section>
 
+<!-- ===================================================== Schutzpakete -->
+<section id="schutzScreen" class="screen" hidden>
+  <div class="bar">
+    <button type="button" class="zurueckTabelle">← Zur Tabelle</button>
+    <h1>Schutzpakete im Vergleich</h1>
+  </div>
+
+  <div class="fahrzeugkopf card" id="schutzKopf"></div>
+
+  <div class="card">
+    <div class="btnrow">
+      <button type="button" id="getSchutz" class="primary">Schutzpreise holen</button>
+      <span class="hint" id="schutzHinweis"></span>
+    </div>
+
+    <div id="schutzFortschritt" class="fortschritt" hidden>
+      <div class="fbalken"><div class="ffuellung" id="sffuellung"></div></div>
+      <div class="frow">
+        <p class="ftext" id="sftext"></p>
+        <button type="button" id="abbrechen2" class="ghost mini">Abbrechen</button>
+      </div>
+    </div>
+
+    <div id="schutzBody"></div>
+  </div>
+</section>
+
 <footer>
   <p>
-    Läuft vollständig lokal. Keine Datenübertragung an Dritte: der Preisabruf
-    öffnet die Anbieterseiten in einem eigenen Chrome-Fenster auf diesem
-    Rechner, die Ergebnisse bleiben hier. Farbthemen dienen der Orientierung;
-    dies ist kein Angebot der genannten Unternehmen.
+    Läuft vollständig lokal. Der Preisabruf öffnet die Anbieterseiten in einem
+    eigenen Chrome-Fenster auf diesem Rechner; die Ergebnisse bleiben hier.
+    Fahrzeugbilder und Preise stammen von Sixt. Dies ist kein Angebot der
+    Sixt SE.
   </p>
   <p class="credit">
     Idee nach dem MWT-Preistool von Sloth &amp; Crazer (mietwagen-talk.de, 2020).
-    Neu gebaut mit aktuellen URL-Formaten.
   </p>
 </footer>
 
