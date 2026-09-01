@@ -1,0 +1,11 @@
+{
+  "name": "mietwagen-preistool",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Öffnet dieselbe Mietwagensuche gleichzeitig auf allen Sixt-Länderseiten",
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "node build.mjs && node tools/serve.mjs"
+  }
+}

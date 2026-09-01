@@ -1,0 +1,133 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mietwagen-Preistool</title>
+<style>/*STYLES*/</style>
+
+<header>
+  <h1>Mietwagen-Preistool</h1>
+  <p class="sub">
+    Öffnet dieselbe Suche auf allen Sixt-Länderseiten gleichzeitig.
+    <span id="stationCount">0</span> Stationen hinterlegt.
+  </p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>1 · Zeitraum</h2>
+    <div class="row">
+      <label>Abholung
+        <input type="date" id="pickupDate">
+      </label>
+      <label>Uhrzeit
+        <input type="time" id="pickupTime" step="900">
+      </label>
+      <label>Rückgabe
+        <input type="date" id="returnDate">
+      </label>
+      <label>Uhrzeit
+        <input type="time" id="returnTime" step="900">
+      </label>
+    </div>
+
+    <details>
+      <summary>Datums-Matrix — mehrere Termine auf einmal prüfen</summary>
+      <p class="note">
+        Sixt-Preise hängen stark am Wochentag und an der Mietdauer. Statt einzeln
+        zu klicken, lässt sich hier ein ganzes Raster aufspannen.
+      </p>
+      <div class="field">
+        <span class="flabel">Abholtag verschieben um</span>
+        <div id="shifts" class="pills"></div>
+      </div>
+      <div class="field">
+        <span class="flabel">Mietdauer</span>
+        <div id="durations" class="pills"></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>2 · Station</h2>
+    <input type="search" id="stationSearch" placeholder="Suchen: FRA, München, Palma …" autocomplete="off">
+    <div id="stationResults" class="stations"></div>
+    <div class="field">
+      <span class="flabel">Gewählt</span>
+      <div id="chosenStations" class="chips"></div>
+    </div>
+    <label class="wide">Rückgabestation
+      <select id="returnStation"></select>
+    </label>
+  </section>
+
+  <section class="card">
+    <h2>3 · Fahrzeug</h2>
+    <label class="wide">Klasse (ACRISS)
+      <select id="group"></select>
+    </label>
+    <label class="check">
+      <input type="checkbox" id="prepaid">
+      Nur Prepaid-Tarife anzeigen
+    </label>
+  </section>
+
+  <section class="card span2">
+    <h2>4 · Länderseiten</h2>
+    <div class="btnrow">
+      <button type="button" id="marketsDACH" class="ghost">DACH</button>
+      <button type="button" id="marketsAll" class="ghost">Alle</button>
+      <button type="button" id="marketsNone" class="ghost">Keine</button>
+    </div>
+    <div id="markets" class="markets"></div>
+  </section>
+
+  <section class="card">
+    <h2>5 · Login <span class="opt">optional</span></h2>
+    <p class="note warn">
+      Kundennummer und Passwort stehen im Klartext in der aufgerufenen URL —
+      das ist bei Sixt technisch so vorgesehen, aber sichtbar in Verlauf und
+      Server-Logs. Für den reinen Preisvergleich nicht nötig.
+    </p>
+    <div class="row">
+      <label>Kundennummer
+        <input type="text" id="customerNo" autocomplete="off">
+      </label>
+      <label>Passwort
+        <input type="password" id="password" autocomplete="off">
+      </label>
+    </div>
+    <label class="check">
+      <input type="checkbox" id="saveLogin">
+      Zugangsdaten in diesem Browser speichern
+    </label>
+  </section>
+</main>
+
+<section class="card out">
+  <h2>Ergebnis <span class="count"><span id="jobCount">0</span> Aufrufe</span></h2>
+  <div class="btnrow">
+    <button type="button" id="openAll" class="primary">Alle öffnen</button>
+    <button type="button" id="copyAll" class="ghost">Links kopieren</button>
+    <button type="button" id="reset" class="ghost right">Zurücksetzen</button>
+  </div>
+  <p id="warn" class="note warn" hidden></p>
+  <p id="popupHint" class="note warn" hidden>
+    Der Browser hat Tabs blockiert. Pop-ups für diese Seite erlauben
+    (Chrome: Symbol rechts in der Adressleiste) und erneut klicken — oder die
+    Links unten einzeln anklicken.
+  </p>
+  <p id="flash" class="flash" hidden></p>
+  <div id="results"></div>
+</section>
+
+<footer>
+  <p>
+    Läuft vollständig lokal im Browser. Keine Server, keine Datenübertragung an
+    Dritte, kein Abruf von Preisen — das Tool baut nur Links und öffnet sie.
+  </p>
+  <p class="credit">
+    Idee nach dem MWT-Preistool von Sloth &amp; Crazer (mietwagen-talk.de, 2020).
+    Neu gebaut mit aktuellen URL-Formaten.
+  </p>
+</footer>
+
+<script>/*SCRIPT*/</script>
