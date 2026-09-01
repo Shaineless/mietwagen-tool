@@ -62,10 +62,14 @@
 
 * { box-sizing: border-box; }
 
+/* Die Grundfarbe sitzt am Dokument, damit der Schleier (z-index -1) darueber
+   liegt und nicht hinter einem deckenden Body-Hintergrund verschwindet. */
+html { background: var(--bg); }
+
 body {
   margin: 0;
   padding: 32px 24px 96px;
-  background: var(--bg);
+  background: transparent;
   color: var(--ink);
   font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
     system-ui, Roboto, sans-serif;
@@ -77,6 +81,110 @@ body {
 }
 
 .screen, footer { max-width: 1180px; margin-inline: auto; }
+
+/* ============================================================ Schleier
+ *
+ * Ein sehr langsam wandernder Farbnebel hinter der Seite. Zwei Regeln halten
+ * ihn aus dem Weg: er faellt nach oben hin aus (unter Preisen, die man liest,
+ * bewegt sich nichts) und er laeuft nur ueber transform/opacity, damit kein
+ * Layout dafuer neu gerechnet wird.
+ */
+.schleier {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  /* Unten ausblenden: die Tabelle bekommt eine ruhige, leere Flaeche. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 34%, transparent 68%);
+  mask-image: linear-gradient(to bottom, #000 0, #000 34%, transparent 68%);
+}
+.wolke {
+  position: absolute;
+  width: 62vmax;
+  height: 62vmax;
+  border-radius: 50%;
+  will-change: transform;
+}
+.w1 {
+  top: -26vmax; left: -14vmax;
+  background: radial-gradient(circle at 50% 50%,
+    rgba(255, 95, 0, .16) 0%, rgba(255, 95, 0, .07) 42%, transparent 68%);
+  animation: treiben1 68s var(--rein-raus) infinite;
+}
+.w2 {
+  top: -34vmax; right: -18vmax;
+  background: radial-gradient(circle at 50% 50%,
+    rgba(88, 86, 214, .14) 0%, rgba(88, 86, 214, .06) 44%, transparent 70%);
+  animation: treiben2 91s var(--rein-raus) infinite;
+}
+.w3 {
+  top: -8vmax; left: 34vmax;
+  width: 46vmax; height: 46vmax;
+  background: radial-gradient(circle at 50% 50%,
+    rgba(0, 178, 255, .1) 0%, rgba(0, 178, 255, .04) 46%, transparent 72%);
+  animation: treiben3 113s var(--rein-raus) infinite;
+}
+
+/* Drei verschieden lange Umlaeufe, damit sich das Bild nie sichtbar
+   wiederholt. Kein Zoom ueber 1.12 — darueber wird die Bewegung bemerkbar. */
+@keyframes treiben1 {
+  0%, 100% { transform: none; }
+  33%      { transform: translate3d(14vmax, 6vmax, 0) scale(1.1); }
+  66%      { transform: translate3d(4vmax, -5vmax, 0) scale(.94); }
+}
+@keyframes treiben2 {
+  0%, 100% { transform: none; }
+  40%      { transform: translate3d(-16vmax, 8vmax, 0) scale(1.12); }
+  70%      { transform: translate3d(-6vmax, -4vmax, 0) scale(.96); }
+}
+@keyframes treiben3 {
+  0%, 100% { transform: none; }
+  50%      { transform: translate3d(-10vmax, 12vmax, 0) scale(1.08); }
+}
+
+/* Im Dunkeln traegt Schwarz die Farbe kaum — dort darf der Nebel deutlich
+   kraeftiger sein als auf hellem Grund, wo dieselbe Staerke schmutzig wirkt. */
+@media (prefers-color-scheme: dark) {
+  .w1 {
+    background: radial-gradient(circle at 50% 50%,
+      rgba(255, 110, 20, .30) 0%, rgba(255, 90, 0, .12) 42%, transparent 68%);
+  }
+  .w2 {
+    background: radial-gradient(circle at 50% 50%,
+      rgba(120, 90, 255, .28) 0%, rgba(90, 70, 220, .11) 44%, transparent 70%);
+  }
+  .w3 {
+    background: radial-gradient(circle at 50% 50%,
+      rgba(0, 190, 255, .20) 0%, rgba(0, 150, 230, .07) 46%, transparent 72%);
+  }
+
+  /* Sternenstaub — nur im Dunkeln, wo er als solcher gelesen wird. Auf Weiss
+     waeren es bloss Schmutzpunkte. Drei gekachelte Ebenen mit ungleichen
+     Kachelgroessen: das Muster wiederholt sich sichtbar erst weit ausserhalb
+     des Bildschirms. */
+  .schleier::before {
+    content: "";
+    position: absolute;
+    inset: -25%;
+    background-image:
+      radial-gradient(1.5px 1.5px at 24px 32px,  rgba(255,255,255,.85), transparent),
+      radial-gradient(1.2px 1.2px at 118px 76px, rgba(255,255,255,.55), transparent),
+      radial-gradient(1px 1px     at 62px 148px, rgba(255,255,255,.45), transparent),
+      radial-gradient(1.8px 1.8px at 196px 22px, rgba(255,235,215,.7),  transparent),
+      radial-gradient(1.1px 1.1px at 152px 196px, rgba(215,230,255,.5), transparent),
+      radial-gradient(1.3px 1.3px at 88px 244px, rgba(255,255,255,.4),  transparent);
+    background-size: 233px 281px, 233px 281px, 233px 281px,
+                     397px 337px, 397px 337px, 311px 293px;
+    opacity: .55;
+    will-change: transform;
+    animation: sterne 160s linear infinite;
+  }
+}
+@keyframes sterne {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(3vmax, -4vmax, 0); }
+}
 
 h1 { font-size: 30px; letter-spacing: -.028em; margin: 0 0 8px; font-weight: 660; }
 h2 { font-size: 19px; letter-spacing: -.02em; margin: 0 0 18px; font-weight: 620; }
@@ -164,19 +272,161 @@ code {
   font-weight: 480;
 }
 .back:hover, .zurueckTabelle:hover { opacity: .7; }
-.barnote { margin-left: auto; font-size: 13px; color: var(--muted); }
 
-/* ============================================================ Spalten */
+/* ---------------------------------------------------- Mitlaufende Zeile
+ *
+ * Die Einstellung ist nach dem ersten Abruf Nebensache. Sie schrumpft auf
+ * eine Zeile, die oben stehen bleibt; der Bildschirm gehoert dem Ergebnis.
+ */
+.oben {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: -32px -24px 0;
+  padding: 24px 24px 0;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+/* Die Arbeitsansicht selbst wird randlos, damit das Glasband der Kopfzeile
+   ueber die ganze Fensterbreite laeuft. Die Breitenbegrenzung wandert dafuer
+   auf die Bloecke darin. */
+#work { max-width: none; }
+#work main, #work .out, .obenzeile, .held {
+  max-width: 1180px;
+  margin-inline: auto;
+}
 
-main {
+.obenzeile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 16px;
+  box-shadow: inset 0 -1px 0 var(--hairline2);
+}
+.oben .back { padding: 6px 4px; font-size: 17px; line-height: 1; }
+
+.kurz {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.kurz b {
+  color: var(--ink);
+  font-weight: 580;
+  max-width: 34ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kurz button {
+  padding: 6px 13px;
+  border: 0;
+  border-radius: 980px;
+  background: var(--flaeche2);
+  color: var(--ink2);
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: background var(--t-druck) var(--raus), color var(--t-druck) var(--raus);
+}
+.kurz button[data-offen] { background: var(--accent-weich); color: var(--accent); }
+.los { margin-left: auto; flex: none; }
+
+/* ---------------------------------------------------- Aufklappende Bereiche */
+
+main { display: block; }
+/* Wichtig auf :not([hidden]): ein display-Wert auf dem Element selbst
+   ueberschreibt sonst die eingebaute Regel fuer [hidden], und der Bereich
+   bleibt trotz Attribut sichtbar. */
+.panel:not([hidden]) {
   display: grid;
-  grid-template-columns: minmax(300px, .82fr) minmax(340px, 1.18fr);
   gap: 20px;
-  align-items: start;
+  padding-top: 20px;
+  animation: aufklappen var(--t-ansicht) var(--raus);
+}
+@keyframes aufklappen {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
 }
 .spalte { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 
-@media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+/* ---------------------------------------------------- Die Bühne
+ *
+ * Der Fund fuehrt, nicht das Formular: ein Satz, ein Bild, drei Zahlen.
+ */
+.held {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  flex-wrap: wrap;
+  padding: 48px 0 36px;
+}
+.heldbild {
+  width: 340px;
+  max-width: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity var(--t-ansicht) var(--raus);
+}
+.heldbild.geladen { opacity: 1; }
+.heldtext { flex: 1; min-width: 280px; }
+.held .lab {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.held h2 {
+  margin: 0 0 14px;
+  font-size: clamp(30px, 4.4vw, 46px);
+  line-height: 1.05;
+  letter-spacing: -.035em;
+  font-weight: 670;
+}
+.held h2 em { font-style: normal; color: var(--accent); }
+.held .unter { margin: 0; color: var(--muted); font-size: 15.5px; max-width: 52ch; }
+
+.heldleer .lab { color: var(--muted); }
+.heldleer h2 { color: var(--ink); }
+
+.werte { display: flex; gap: 34px; margin-top: 26px; flex-wrap: wrap; }
+.werte div { display: flex; flex-direction: column; gap: 3px; }
+.werte .z {
+  font-size: 22px;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+}
+.werte .w { font-size: 12.5px; color: var(--muted); }
+
+.nachlauf { margin: 22px 0 0; }
+
+/* Schmale Fenster: die Kopfzeile bricht sonst in einen vierzeiligen Klotz.
+   Stattdessen bleibt oben "zurueck / los", die Zusammenfassung rutscht in
+   eine eigene, seitlich schiebbare Zeile darunter. */
+@media (max-width: 640px) {
+  .obenzeile { flex-wrap: wrap; row-gap: 10px; }
+  .kurz {
+    order: 3;
+    flex: 0 0 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .kurz::-webkit-scrollbar { display: none; }
+  .kurz > * { flex: none; }
+  .kurz b { max-width: 22ch; }
+  .held { gap: 24px; padding: 32px 0 28px; }
+  .heldbild { width: 260px; margin-inline: auto; }
+  .werte { gap: 22px; margin-top: 20px; }
+}
 
 /* ============================================================ Felder */
 
@@ -353,8 +603,6 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 /* ============================================================ Ergebnis */
 
 .out { margin-top: 20px; }
-.outkopf { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; }
-.outkopf h2 { margin: 0; }
 .count { font-size: 13px; color: var(--muted); }
 
 .svc { font-size: 13px; padding: 9px 14px; border-radius: var(--r-klein); margin: 0 0 14px; display: inline-block; }
@@ -636,12 +884,27 @@ tr.mietzeile .betrag { color: var(--ink2); font-weight: 500; }
   .mode:hover, .mode:active, .station:active, .pill:active { transform: none; }
   .screen:not([hidden]) { animation: einblenden .2s ease; }
   @keyframes einblenden { from { opacity: 0; } to { opacity: 1; } }
+  /* Der Schleier bleibt als Farbe stehen, aber er wandert nicht mehr. Die
+     Regel oben wuerde ihn sonst in 0,01ms ans Ende der Kurve schieben. */
+  .wolke, .schleier::before { animation: none !important; transform: none !important; }
 }
 
 @media (prefers-reduced-transparency: reduce) {
   /* Weiche Kanten sind selbst schon eine Transparenzwirkung — hier lieber
      die eindeutige Linie. */
   table.vergleich thead th { box-shadow: inset 0 -1px 0 var(--hairline); }
+  .oben {
+    background: var(--bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  /* Der Schleier bleibt: diese Einstellung meint durchscheinende Flaechen
+     ueber Inhalt, nicht den Grund, auf dem die Seite steht. */
+}
+
+@media (prefers-contrast: more) {
+  /* Farbnebel hinter Text ist genau das, was hier stoert. */
+  .schleier { display: none; }
 }
 
 @media (prefers-contrast: more) {
@@ -690,6 +953,15 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
 .credit { opacity: .75; }
 </style>
 
+<!-- Farbschleier im Hintergrund. Liegt hinter allem, bewegt sich sehr langsam
+     und endet weit oberhalb der Tabelle — unter Zahlen, die man liest, darf
+     nichts wandern. -->
+<div class="schleier" aria-hidden="true">
+  <span class="wolke w1"></span>
+  <span class="wolke w2"></span>
+  <span class="wolke w3"></span>
+</div>
+
 <!-- ===================================================== Startbildschirm -->
 <section id="start" class="screen">
   <header class="hero">
@@ -736,14 +1008,24 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
 
 <!-- ===================================================== Arbeitsansicht -->
 <section id="work" class="screen" hidden>
-  <div class="bar">
-    <button type="button" class="back">← Zurück</button>
-    <h1>Preise vergleichen</h1>
-    <span class="barnote" id="barnote"></span>
+  <!-- Mitlaufende Kopfzeile: die Einstellung schrumpft auf eine Zeile,
+       der Bildschirm gehört dem Ergebnis. -->
+  <div class="oben">
+    <div class="obenzeile">
+      <button type="button" class="back" aria-label="Zurück">←</button>
+      <div class="kurz">
+        <b id="kurzStation">—</b>
+        <span id="kurzZeit">—</span>
+        <button type="button" data-panel="station" id="knopfStation">Station</button>
+        <button type="button" data-panel="zeit">Zeitraum</button>
+        <button type="button" data-panel="land" id="knopfLand">Länderseiten</button>
+      </div>
+      <button type="button" id="getPrices" class="los" hidden>Preise holen</button>
+    </div>
   </div>
 
   <main>
-   <div class="spalte">
+   <div class="panel" id="panelZeit" hidden>
     <section class="card">
       <h2>Zeitraum</h2>
       <div class="zgrid">
@@ -776,7 +1058,9 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
         </div>
       </details>
     </section>
+   </div>
 
+   <div class="panel" id="panelLand" hidden>
     <section class="card" id="marketCard">
       <h2>Länderseiten</h2>
       <div class="btnrow">
@@ -788,7 +1072,7 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
     </section>
    </div>
 
-   <div class="spalte">
+   <div class="panel" id="panelStation" hidden>
     <section class="card" id="stationCard">
       <h2>Stationen</h2>
       <input type="search" id="stationSearch" placeholder="FRA · Hauptbahnhof · München · Mallorca …" autocomplete="off">
@@ -823,19 +1107,10 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
    </div>
   </main>
 
-  <section class="card out">
-    <div class="outkopf">
-      <h2>Ergebnis</h2>
-      <span class="count" id="jobCount"></span>
-    </div>
+  <!-- Die Bühne: der Fund führt, nicht das Formular. -->
+  <div class="held" id="held"></div>
 
-    <div class="btnrow">
-      <button type="button" id="getPrices" class="primary" hidden>Preise holen</button>
-      <button type="button" id="openAll" class="ghost">Im Browser öffnen</button>
-      <button type="button" id="copyAll" class="ghost">Links kopieren</button>
-      <button type="button" id="reset" class="ghost right">Zurücksetzen</button>
-    </div>
-
+  <section class="out">
     <p id="serviceBadge" class="svc" hidden></p>
 
     <div id="fortschritt" class="fortschritt" hidden>
@@ -857,6 +1132,13 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
     </p>
     <p id="flash" class="flash" hidden></p>
     <div id="results"></div>
+
+    <div class="btnrow nachlauf">
+      <span class="count" id="jobCount"></span>
+      <button type="button" id="openAll" class="ghost mini">Im Browser öffnen</button>
+      <button type="button" id="copyAll" class="ghost mini">Links kopieren</button>
+      <button type="button" id="reset" class="ghost mini right">Zurücksetzen</button>
+    </div>
   </section>
 </section>
 
@@ -1968,6 +2250,154 @@ function renderTable(list) {
   );
 }
 
+/* =========================================================== Bühne */
+
+/**
+ * Der Fund als Satz — die Bühne oben auf der Seite.
+ *
+ * Zeigt das guenstigste Angebot ueber alle abgerufenen Laenderseiten und
+ * wieviel es gegenueber der teuersten Seite derselben Klasse spart. Solange
+ * nichts abgerufen ist, steht hier die Aufforderung statt einer Zahl — eine
+ * leere Buehne waere schlimmer als gar keine.
+ */
+function renderHeld() {
+  const held = $('#held');
+  const jobs = aktuelleJobs();
+
+  const tage = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
+  const zeit = `${pretty(state.pickupDate)} → ${pretty(state.returnDate)} · ${tage} Tage`;
+
+  // Bestes Angebot je Klasse suchen, nur innerhalb derselben Waehrung.
+  let bester = null;
+  for (const j of jobs) {
+    for (const o of prices.get(j.key)?.offers || []) {
+      const wert = o.total ?? o.perDay;
+      if (wert == null) continue;
+      if (!bester || wert < bester.wert) bester = { wert, o, job: j };
+    }
+  }
+
+  if (!bester) {
+    setChildren(
+      held,
+      el(
+        'div',
+        { class: 'heldleer' },
+        el('p', { class: 'lab' }, 'Bereit'),
+        el(
+          'h2',
+          {},
+          state.stations.length
+            ? `${state.stations.length} Station${state.stations.length === 1 ? '' : 'en'} · ${
+                state.markets.length
+              } Länderseiten`
+            : 'Station wählen'
+        ),
+        el('p', { class: 'unter' }, zeit)
+      )
+    );
+    return;
+  }
+
+  // Teuerste Seite derselben Klasse und Waehrung — daraus die Ersparnis.
+  let teuerste = null;
+  for (const j of jobs) {
+    const t = (prices.get(j.key)?.offers || []).find(
+      (o) => o.acriss === bester.o.acriss && o.currency === bester.o.currency
+    );
+    const wert = t?.total ?? t?.perDay;
+    if (wert != null && (teuerste == null || wert > teuerste)) teuerste = wert;
+  }
+  const spart = teuerste != null ? teuerste - bester.wert : null;
+
+  setChildren(
+    held,
+    bester.o.image
+      ? el('img', {
+          src: bester.o.image,
+          alt: '',
+          class: 'heldbild',
+          onload: (e) => e.target.classList.add('geladen'),
+          onerror: (e) => e.target.classList.add('geladen'),
+        })
+      : null,
+    el(
+      'div',
+      { class: 'heldtext' },
+      el('p', { class: 'lab' }, 'Günstigster Fund'),
+      el(
+        'h2',
+        {},
+        // Kein zusammengebautes Adjektiv aus dem Landesnamen — daraus wird
+        // schnell "spanienen". Der Host sagt ohnehin mehr aus.
+        `${bester.o.model} für `,
+        el('em', {}, money(bester.wert, bester.o.currency)),
+        ` auf ${bester.job.market.host.replace(/^www\./, '')}.`
+      ),
+      spart && spart > 0.5
+        ? el(
+            'p',
+            { class: 'unter' },
+            `${money(spart, bester.o.currency)} weniger als auf der teuersten geprüften Seite — ` +
+              'gleiche Station, gleicher Zeitraum, gleiche Klasse.'
+          )
+        : el('p', { class: 'unter' }, 'Auf allen geprüften Länderseiten gleich teuer.'),
+      el(
+        'div',
+        { class: 'werte' },
+        el(
+          'div',
+          {},
+          el('span', { class: 'z' }, `${tage} Tage`),
+          el('span', { class: 'w' }, zeit.split(' · ')[0])
+        ),
+        el(
+          'div',
+          {},
+          el('span', { class: 'z' }, String(new Set(jobs.map((j) => j.key)).size)),
+          el('span', { class: 'w' }, 'Abfragen')
+        ),
+        el(
+          'div',
+          {},
+          el('span', { class: 'z' }, bester.o.acriss || '—'),
+          el('span', { class: 'w' }, 'günstigste Klasse')
+        )
+      )
+    )
+  );
+}
+
+/** Kopfzeile: die Einstellung auf eine Zeile eingedampft. */
+function renderKopf() {
+  const gewählt = state.stations.map(stationByCode).filter(Boolean);
+  $('#kurzStation').textContent = gewählt.length
+    ? gewählt.length === 1
+      ? gewählt[0].name
+      : `${gewählt.length} Stationen`
+    : 'Keine Station';
+  $('#kurzZeit').textContent =
+    `${pretty(state.pickupDate)} ${state.pickupTime} → ${pretty(state.returnDate)} ${state.returnTime}`;
+  $('#knopfLand').textContent = `${state.markets.length} Länderseiten`;
+}
+
+/** Aufklappende Bereiche: immer nur einer offen. */
+let offenerBereich = null;
+
+function zeigeBereich(name) {
+  offenerBereich = offenerBereich === name ? null : name;
+  for (const [n, sel] of [
+    ['station', '#panelStation'],
+    ['zeit', '#panelZeit'],
+    ['land', '#panelLand'],
+  ]) {
+    $(sel).hidden = offenerBereich !== n;
+  }
+  document.querySelectorAll('[data-panel]').forEach((b) =>
+    b.toggleAttribute('data-offen', b.dataset.panel === offenerBereich)
+  );
+}
+
 /* =========================================================== Ergebnisse */
 
 /** Kennung dessen, was die Ergebnisansicht darstellt. */
@@ -2011,6 +2441,8 @@ function renderResults({ erzwingen = false } = {}) {
   const sig = ergebnisSignatur(jobs);
   if (!erzwingen && sig === letzteSignatur) return;
   letzteSignatur = sig;
+
+  renderHeld();
 
   if (!jobs.length) {
     setChildren($('#results'), el('p', { class: 'empty' }, 'Station und Länderseite wählen.'));
@@ -2658,9 +3090,7 @@ function update(teile = {}) {
     `${pretty(state.pickupDate)} ${state.pickupTime} → ${pretty(state.returnDate)} ${state.returnTime}` +
     ` · ${tage} ${tage === 1 ? 'Tag' : 'Tage'}`;
 
-  $('#barnote').textContent = `${state.stations.length} Station${
-    state.stations.length === 1 ? '' : 'en'
-  } · ${state.markets.length} Länderseiten`;
+  renderKopf();
 
   if (stationen) renderStationPicker();
   if (maerkte) renderMarkets();
@@ -2698,6 +3128,8 @@ function init() {
       } else {
         showScreen('work');
         update();
+        // Ohne Station gibt es nichts zu zeigen — dann führt die Wahl.
+        if (!state.stations.length) zeigeBereich('station');
       }
     })
   );
@@ -2748,6 +3180,11 @@ function init() {
     state.returnStation = e.target.value || null;
     update();
   });
+
+  // Einstellungen klappen auf, statt dauerhaft Platz zu nehmen.
+  document.querySelectorAll('[data-panel]').forEach((b) =>
+    b.addEventListener('click', () => zeigeBereich(b.dataset.panel))
+  );
 
   $('#getPrices').addEventListener('click', fetchPrices);
   $('#getSchutz').addEventListener('click', fetchSchutz);

@@ -3,6 +3,15 @@
 <title>Mietwagen-Preistool</title>
 <style>/*STYLES*/</style>
 
+<!-- Farbschleier im Hintergrund. Liegt hinter allem, bewegt sich sehr langsam
+     und endet weit oberhalb der Tabelle — unter Zahlen, die man liest, darf
+     nichts wandern. -->
+<div class="schleier" aria-hidden="true">
+  <span class="wolke w1"></span>
+  <span class="wolke w2"></span>
+  <span class="wolke w3"></span>
+</div>
+
 <!-- ===================================================== Startbildschirm -->
 <section id="start" class="screen">
   <header class="hero">
@@ -49,14 +58,24 @@
 
 <!-- ===================================================== Arbeitsansicht -->
 <section id="work" class="screen" hidden>
-  <div class="bar">
-    <button type="button" class="back">← Zurück</button>
-    <h1>Preise vergleichen</h1>
-    <span class="barnote" id="barnote"></span>
+  <!-- Mitlaufende Kopfzeile: die Einstellung schrumpft auf eine Zeile,
+       der Bildschirm gehört dem Ergebnis. -->
+  <div class="oben">
+    <div class="obenzeile">
+      <button type="button" class="back" aria-label="Zurück">←</button>
+      <div class="kurz">
+        <b id="kurzStation">—</b>
+        <span id="kurzZeit">—</span>
+        <button type="button" data-panel="station" id="knopfStation">Station</button>
+        <button type="button" data-panel="zeit">Zeitraum</button>
+        <button type="button" data-panel="land" id="knopfLand">Länderseiten</button>
+      </div>
+      <button type="button" id="getPrices" class="los" hidden>Preise holen</button>
+    </div>
   </div>
 
   <main>
-   <div class="spalte">
+   <div class="panel" id="panelZeit" hidden>
     <section class="card">
       <h2>Zeitraum</h2>
       <div class="zgrid">
@@ -89,7 +108,9 @@
         </div>
       </details>
     </section>
+   </div>
 
+   <div class="panel" id="panelLand" hidden>
     <section class="card" id="marketCard">
       <h2>Länderseiten</h2>
       <div class="btnrow">
@@ -101,7 +122,7 @@
     </section>
    </div>
 
-   <div class="spalte">
+   <div class="panel" id="panelStation" hidden>
     <section class="card" id="stationCard">
       <h2>Stationen</h2>
       <input type="search" id="stationSearch" placeholder="FRA · Hauptbahnhof · München · Mallorca …" autocomplete="off">
@@ -136,19 +157,10 @@
    </div>
   </main>
 
-  <section class="card out">
-    <div class="outkopf">
-      <h2>Ergebnis</h2>
-      <span class="count" id="jobCount"></span>
-    </div>
+  <!-- Die Bühne: der Fund führt, nicht das Formular. -->
+  <div class="held" id="held"></div>
 
-    <div class="btnrow">
-      <button type="button" id="getPrices" class="primary" hidden>Preise holen</button>
-      <button type="button" id="openAll" class="ghost">Im Browser öffnen</button>
-      <button type="button" id="copyAll" class="ghost">Links kopieren</button>
-      <button type="button" id="reset" class="ghost right">Zurücksetzen</button>
-    </div>
-
+  <section class="out">
     <p id="serviceBadge" class="svc" hidden></p>
 
     <div id="fortschritt" class="fortschritt" hidden>
@@ -170,6 +182,13 @@
     </p>
     <p id="flash" class="flash" hidden></p>
     <div id="results"></div>
+
+    <div class="btnrow nachlauf">
+      <span class="count" id="jobCount"></span>
+      <button type="button" id="openAll" class="ghost mini">Im Browser öffnen</button>
+      <button type="button" id="copyAll" class="ghost mini">Links kopieren</button>
+      <button type="button" id="reset" class="ghost mini right">Zurücksetzen</button>
+    </div>
   </section>
 </section>
 

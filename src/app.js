@@ -703,6 +703,154 @@ function renderTable(list) {
   );
 }
 
+/* =========================================================== Bühne */
+
+/**
+ * Der Fund als Satz — die Bühne oben auf der Seite.
+ *
+ * Zeigt das guenstigste Angebot ueber alle abgerufenen Laenderseiten und
+ * wieviel es gegenueber der teuersten Seite derselben Klasse spart. Solange
+ * nichts abgerufen ist, steht hier die Aufforderung statt einer Zahl — eine
+ * leere Buehne waere schlimmer als gar keine.
+ */
+function renderHeld() {
+  const held = $('#held');
+  const jobs = aktuelleJobs();
+
+  const tage = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
+  const zeit = `${pretty(state.pickupDate)} → ${pretty(state.returnDate)} · ${tage} Tage`;
+
+  // Bestes Angebot je Klasse suchen, nur innerhalb derselben Waehrung.
+  let bester = null;
+  for (const j of jobs) {
+    for (const o of prices.get(j.key)?.offers || []) {
+      const wert = o.total ?? o.perDay;
+      if (wert == null) continue;
+      if (!bester || wert < bester.wert) bester = { wert, o, job: j };
+    }
+  }
+
+  if (!bester) {
+    setChildren(
+      held,
+      el(
+        'div',
+        { class: 'heldleer' },
+        el('p', { class: 'lab' }, 'Bereit'),
+        el(
+          'h2',
+          {},
+          state.stations.length
+            ? `${state.stations.length} Station${state.stations.length === 1 ? '' : 'en'} · ${
+                state.markets.length
+              } Länderseiten`
+            : 'Station wählen'
+        ),
+        el('p', { class: 'unter' }, zeit)
+      )
+    );
+    return;
+  }
+
+  // Teuerste Seite derselben Klasse und Waehrung — daraus die Ersparnis.
+  let teuerste = null;
+  for (const j of jobs) {
+    const t = (prices.get(j.key)?.offers || []).find(
+      (o) => o.acriss === bester.o.acriss && o.currency === bester.o.currency
+    );
+    const wert = t?.total ?? t?.perDay;
+    if (wert != null && (teuerste == null || wert > teuerste)) teuerste = wert;
+  }
+  const spart = teuerste != null ? teuerste - bester.wert : null;
+
+  setChildren(
+    held,
+    bester.o.image
+      ? el('img', {
+          src: bester.o.image,
+          alt: '',
+          class: 'heldbild',
+          onload: (e) => e.target.classList.add('geladen'),
+          onerror: (e) => e.target.classList.add('geladen'),
+        })
+      : null,
+    el(
+      'div',
+      { class: 'heldtext' },
+      el('p', { class: 'lab' }, 'Günstigster Fund'),
+      el(
+        'h2',
+        {},
+        // Kein zusammengebautes Adjektiv aus dem Landesnamen — daraus wird
+        // schnell "spanienen". Der Host sagt ohnehin mehr aus.
+        `${bester.o.model} für `,
+        el('em', {}, money(bester.wert, bester.o.currency)),
+        ` auf ${bester.job.market.host.replace(/^www\./, '')}.`
+      ),
+      spart && spart > 0.5
+        ? el(
+            'p',
+            { class: 'unter' },
+            `${money(spart, bester.o.currency)} weniger als auf der teuersten geprüften Seite — ` +
+              'gleiche Station, gleicher Zeitraum, gleiche Klasse.'
+          )
+        : el('p', { class: 'unter' }, 'Auf allen geprüften Länderseiten gleich teuer.'),
+      el(
+        'div',
+        { class: 'werte' },
+        el(
+          'div',
+          {},
+          el('span', { class: 'z' }, `${tage} Tage`),
+          el('span', { class: 'w' }, zeit.split(' · ')[0])
+        ),
+        el(
+          'div',
+          {},
+          el('span', { class: 'z' }, String(new Set(jobs.map((j) => j.key)).size)),
+          el('span', { class: 'w' }, 'Abfragen')
+        ),
+        el(
+          'div',
+          {},
+          el('span', { class: 'z' }, bester.o.acriss || '—'),
+          el('span', { class: 'w' }, 'günstigste Klasse')
+        )
+      )
+    )
+  );
+}
+
+/** Kopfzeile: die Einstellung auf eine Zeile eingedampft. */
+function renderKopf() {
+  const gewählt = state.stations.map(stationByCode).filter(Boolean);
+  $('#kurzStation').textContent = gewählt.length
+    ? gewählt.length === 1
+      ? gewählt[0].name
+      : `${gewählt.length} Stationen`
+    : 'Keine Station';
+  $('#kurzZeit').textContent =
+    `${pretty(state.pickupDate)} ${state.pickupTime} → ${pretty(state.returnDate)} ${state.returnTime}`;
+  $('#knopfLand').textContent = `${state.markets.length} Länderseiten`;
+}
+
+/** Aufklappende Bereiche: immer nur einer offen. */
+let offenerBereich = null;
+
+function zeigeBereich(name) {
+  offenerBereich = offenerBereich === name ? null : name;
+  for (const [n, sel] of [
+    ['station', '#panelStation'],
+    ['zeit', '#panelZeit'],
+    ['land', '#panelLand'],
+  ]) {
+    $(sel).hidden = offenerBereich !== n;
+  }
+  document.querySelectorAll('[data-panel]').forEach((b) =>
+    b.toggleAttribute('data-offen', b.dataset.panel === offenerBereich)
+  );
+}
+
 /* =========================================================== Ergebnisse */
 
 /** Kennung dessen, was die Ergebnisansicht darstellt. */
@@ -746,6 +894,8 @@ function renderResults({ erzwingen = false } = {}) {
   const sig = ergebnisSignatur(jobs);
   if (!erzwingen && sig === letzteSignatur) return;
   letzteSignatur = sig;
+
+  renderHeld();
 
   if (!jobs.length) {
     setChildren($('#results'), el('p', { class: 'empty' }, 'Station und Länderseite wählen.'));
@@ -1393,9 +1543,7 @@ function update(teile = {}) {
     `${pretty(state.pickupDate)} ${state.pickupTime} → ${pretty(state.returnDate)} ${state.returnTime}` +
     ` · ${tage} ${tage === 1 ? 'Tag' : 'Tage'}`;
 
-  $('#barnote').textContent = `${state.stations.length} Station${
-    state.stations.length === 1 ? '' : 'en'
-  } · ${state.markets.length} Länderseiten`;
+  renderKopf();
 
   if (stationen) renderStationPicker();
   if (maerkte) renderMarkets();
@@ -1433,6 +1581,8 @@ function init() {
       } else {
         showScreen('work');
         update();
+        // Ohne Station gibt es nichts zu zeigen — dann führt die Wahl.
+        if (!state.stations.length) zeigeBereich('station');
       }
     })
   );
@@ -1483,6 +1633,11 @@ function init() {
     state.returnStation = e.target.value || null;
     update();
   });
+
+  // Einstellungen klappen auf, statt dauerhaft Platz zu nehmen.
+  document.querySelectorAll('[data-panel]').forEach((b) =>
+    b.addEventListener('click', () => zeigeBereich(b.dataset.panel))
+  );
 
   $('#getPrices').addEventListener('click', fetchPrices);
   $('#getSchutz').addEventListener('click', fetchSchutz);
