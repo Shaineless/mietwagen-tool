@@ -368,6 +368,16 @@ function buildJobs() {
 
 const $ = (s) => document.querySelector(s);
 
+/**
+ * Wie node.replaceChildren, wirft aber null/undefined weg.
+ *
+ * Ohne das schreibt `replaceChildren(null)` wörtlich "null" in die Seite —
+ * `el()` filtert seine Kinder, replaceChildren tut das nicht.
+ */
+function setChildren(node, ...kids) {
+  node.replaceChildren(...kids.flat().filter((k) => k != null));
+}
+
 function el(tag, attrs = {}, ...kids) {
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -406,7 +416,7 @@ function applyTheme(provider) {
 }
 
 function renderStatus() {
-  $('#statusBody').replaceChildren(
+  setChildren($('#statusBody'),
     ...PROVIDERS.map((p) =>
       el(
         'div',
@@ -462,7 +472,7 @@ function renderProviderPick() {
   const box = $('#providerPick');
   const multi = state.mode === 'providers';
 
-  box.replaceChildren(
+  setChildren(box,
     ...PROVIDERS.map((p) => {
       const on = multi ? state.compare.includes(p.id) : state.provider === p.id;
       const dead = p.status !== 'ready';
@@ -524,7 +534,7 @@ function renderStationPicker() {
     `${hits.length} von ${all.length} Stationen` +
     ($('#stationSearch').value.trim() ? '' : ' — tippen zum Filtern');
 
-  $('#stationResults').replaceChildren(
+  setChildren($('#stationResults'),
     ...hits.map((s) => {
       const on = state.stations.includes(s.code);
       return el(
@@ -548,7 +558,7 @@ function renderStationPicker() {
     hits.length ? null : el('p', { class: 'empty' }, 'Keine Station gefunden.')
   );
 
-  $('#chosenStations').replaceChildren(
+  setChildren($('#chosenStations'),
     ...state.stations
       .map((c) => stationByCode(provider.id, c))
       .filter(Boolean)
@@ -572,7 +582,7 @@ function renderStationPicker() {
   );
 
   const sel = $('#returnStation');
-  sel.replaceChildren(
+  setChildren(sel,
     el('option', { value: '' }, '— gleiche wie Abholung —'),
     ...all
       .slice()
@@ -592,7 +602,7 @@ function renderPlacePicker() {
     60
   );
 
-  $('#placeResults').replaceChildren(
+  setChildren($('#placeResults'),
     ...hits.map((p) =>
       el(
         'button',
@@ -613,7 +623,7 @@ function renderPlacePicker() {
   );
 
   const place = PLACES.find((p) => p.id === state.placeId);
-  $('#placeDetail').replaceChildren(
+  setChildren($('#placeDetail'),
     place
       ? el(
           'div',
@@ -640,7 +650,7 @@ function renderPlacePicker() {
 
 function renderMarkets() {
   const provider = providerById(state.provider);
-  $('#markets').replaceChildren(
+  setChildren($('#markets'),
     ...provider.markets.map((m) =>
       el(
         'label',
@@ -662,7 +672,7 @@ function renderMarkets() {
 }
 
 function renderPills(sel, opts, list, label, onEmpty) {
-  $(sel).replaceChildren(
+  setChildren($(sel),
     ...opts.map((n) =>
       el(
         'label',
@@ -746,7 +756,7 @@ function renderResults() {
       : '';
 
   if (!jobs.length) {
-    $('#results').replaceChildren(
+    setChildren($('#results'),
       el(
         'p',
         { class: 'empty' },
@@ -764,7 +774,7 @@ function renderResults() {
     groups.get(j.groupKey).push(j);
   }
 
-  $('#results').replaceChildren(
+  setChildren($('#results'),
     ...[...groups.values()].map((list) => {
       const f = list[0];
       return el(
