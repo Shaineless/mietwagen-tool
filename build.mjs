@@ -41,7 +41,9 @@ function parseStations(file, providerId) {
     seen.add(id);
 
     out.push({
-      id: Number(id),
+      // `code` ist der anbietereigene Stationsschlüssel — bei Sixt eine Zahl
+      // (der uci-Parameter), bei anderen Anbietern oft ein Buchstabencode.
+      code: id.trim(),
       country: (country || '').trim(),
       iata: (iata || '').trim(),
       name,
@@ -78,12 +80,14 @@ function flatten(code) {
     .trim();
 }
 
+// Reihenfolge = Abhängigkeitsreihenfolge: app.js benutzt alles Vorherige.
+const MODULES = ['providers.js', 'places.js', 'app.js'];
+
 const bundle = [
   '(() => {',
   '"use strict";',
   flatten(stationsModule),
-  flatten(readFileSync(src('providers.js'), 'utf8')),
-  flatten(readFileSync(src('app.js'), 'utf8')),
+  ...MODULES.map((m) => flatten(readFileSync(src(m), 'utf8'))),
   '})();',
 ].join('\n\n');
 

@@ -3,126 +3,162 @@
 <title>Mietwagen-Preistool</title>
 <style>/*STYLES*/</style>
 
-<header>
-  <h1>Mietwagen-Preistool</h1>
-  <p class="sub">
-    Öffnet dieselbe Suche auf allen Sixt-Länderseiten gleichzeitig.
-    <span id="stationCount">0</span> Stationen hinterlegt.
-  </p>
-</header>
-
-<main>
-  <section class="card">
-    <h2>1 · Zeitraum</h2>
-    <div class="row">
-      <label>Abholung
-        <input type="date" id="pickupDate">
-      </label>
-      <label>Uhrzeit
-        <input type="time" id="pickupTime" step="900">
-      </label>
-      <label>Rückgabe
-        <input type="date" id="returnDate">
-      </label>
-      <label>Uhrzeit
-        <input type="time" id="returnTime" step="900">
-      </label>
-    </div>
-
-    <details>
-      <summary>Datums-Matrix — mehrere Termine auf einmal prüfen</summary>
-      <p class="note">
-        Sixt-Preise hängen stark am Wochentag und an der Mietdauer. Statt einzeln
-        zu klicken, lässt sich hier ein ganzes Raster aufspannen.
-      </p>
-      <div class="field">
-        <span class="flabel">Abholtag verschieben um</span>
-        <div id="shifts" class="pills"></div>
-      </div>
-      <div class="field">
-        <span class="flabel">Mietdauer</span>
-        <div id="durations" class="pills"></div>
-      </div>
-    </details>
-  </section>
-
-  <section class="card">
-    <h2>2 · Station</h2>
-    <input type="search" id="stationSearch" placeholder="Suchen: FRA, München, Palma …" autocomplete="off">
-    <div id="stationResults" class="stations"></div>
-    <div class="field">
-      <span class="flabel">Gewählt</span>
-      <div id="chosenStations" class="chips"></div>
-    </div>
-    <label class="wide">Rückgabestation
-      <select id="returnStation"></select>
-    </label>
-  </section>
-
-  <section class="card">
-    <h2>3 · Fahrzeug</h2>
-    <label class="wide">Klasse (ACRISS)
-      <select id="group"></select>
-    </label>
-    <label class="check">
-      <input type="checkbox" id="prepaid">
-      Nur Prepaid-Tarife anzeigen
-    </label>
-  </section>
-
-  <section class="card span2">
-    <h2>4 · Länderseiten</h2>
-    <div class="btnrow">
-      <button type="button" id="marketsDACH" class="ghost">DACH</button>
-      <button type="button" id="marketsAll" class="ghost">Alle</button>
-      <button type="button" id="marketsNone" class="ghost">Keine</button>
-    </div>
-    <div id="markets" class="markets"></div>
-  </section>
-
-  <section class="card">
-    <h2>5 · Login <span class="opt">optional</span></h2>
-    <p class="note warn">
-      Kundennummer und Passwort stehen im Klartext in der aufgerufenen URL —
-      das ist bei Sixt technisch so vorgesehen, aber sichtbar in Verlauf und
-      Server-Logs. Für den reinen Preisvergleich nicht nötig.
+<!-- ===================================================== Startbildschirm -->
+<section id="start" class="screen">
+  <header class="hero">
+    <h1>Mietwagen-Preistool</h1>
+    <p class="sub">
+      Baut Suchlinks und öffnet sie gebündelt. Ruft selbst keine Preise ab —
+      die Suche läuft auf der Anbieterseite, wo sie hingehört.
     </p>
-    <div class="row">
-      <label>Kundennummer
-        <input type="text" id="customerNo" autocomplete="off">
-      </label>
-      <label>Passwort
-        <input type="password" id="password" autocomplete="off">
-      </label>
-    </div>
-    <label class="check">
-      <input type="checkbox" id="saveLogin">
-      Zugangsdaten in diesem Browser speichern
-    </label>
-  </section>
-</main>
+  </header>
 
-<section class="card out">
-  <h2>Ergebnis <span class="count"><span id="jobCount">0</span> Aufrufe</span></h2>
-  <div class="btnrow">
-    <button type="button" id="openAll" class="primary">Alle öffnen</button>
-    <button type="button" id="copyAll" class="ghost">Links kopieren</button>
-    <button type="button" id="reset" class="ghost right">Zurücksetzen</button>
+  <h2 class="pick">Was möchtest du vergleichen?</h2>
+  <div class="modes">
+    <button type="button" class="mode" data-mode="markets">
+      <span class="micon">🌍</span>
+      <span class="mtitle">Länder-Vergleich</span>
+      <span class="mdesc">
+        Ein Anbieter, dieselbe Suche auf allen Länderseiten. Sixt ruft für
+        identische Anfragen je nach Landesdomain andere Preise auf.
+      </span>
+      <span class="mtag ok">funktioniert für Sixt</span>
+    </button>
+
+    <button type="button" class="mode" data-mode="providers">
+      <span class="micon">⚖️</span>
+      <span class="mtitle">Anbieter-Vergleich</span>
+      <span class="mdesc">
+        Ein Ort und ein Zeitraum, mehrere Vermieter nebeneinander. Ordnet die
+        unterschiedlichen Stationen über eine Ortsebene einander zu.
+      </span>
+      <span class="mtag warn" id="cmpTag">nur Sixt angebunden</span>
+    </button>
+
+    <button type="button" class="mode" data-mode="status">
+      <span class="micon">📋</span>
+      <span class="mtitle">Was geht gerade?</span>
+      <span class="mdesc">
+        Ehrlicher Stand je Anbieter: welche Suchparameter nachweislich
+        ausgewertet werden — und welche stillschweigend verworfen.
+      </span>
+      <span class="mtag">Übersicht</span>
+    </button>
   </div>
-  <p id="warn" class="note warn" hidden></p>
-  <p id="popupHint" class="note warn" hidden>
-    Der Browser hat Tabs blockiert. Pop-ups für diese Seite erlauben
-    (Chrome: Symbol rechts in der Adressleiste) und erneut klicken — oder die
-    Links unten einzeln anklicken.
-  </p>
-  <p id="flash" class="flash" hidden></p>
-  <div id="results"></div>
+</section>
+
+<!-- ===================================================== Statusübersicht -->
+<section id="statusScreen" class="screen" hidden>
+  <div class="bar">
+    <button type="button" class="back">← Zurück</button>
+    <h1>Stand der Anbieter</h1>
+  </div>
+  <div id="statusBody"></div>
+</section>
+
+<!-- ===================================================== Arbeitsansicht -->
+<section id="work" class="screen" hidden>
+  <div class="bar">
+    <button type="button" class="back">← Zurück</button>
+    <h1 id="workTitle">…</h1>
+  </div>
+
+  <main>
+    <!-- Anbieterwahl: im Länder-Modus einer, im Anbieter-Modus mehrere -->
+    <section class="card" id="providerCard">
+      <h2>Anbieter</h2>
+      <div id="providerPick" class="provpick"></div>
+      <p id="providerNote" class="note"></p>
+    </section>
+
+    <section class="card">
+      <h2>Zeitraum</h2>
+      <div class="row">
+        <label>Abholung <input type="date" id="pickupDate"></label>
+        <label>Uhrzeit <input type="time" id="pickupTime" step="900"></label>
+        <label>Rückgabe <input type="date" id="returnDate"></label>
+        <label>Uhrzeit <input type="time" id="returnTime" step="900"></label>
+      </div>
+
+      <details>
+        <summary>Datums-Matrix — mehrere Termine auf einmal prüfen</summary>
+        <p class="note">
+          Preise hängen stark am Wochentag und an der Mietdauer. Statt einzeln
+          zu klicken, lässt sich hier ein Raster aufspannen.
+        </p>
+        <div class="field">
+          <span class="flabel">Abholtag verschieben um</span>
+          <div id="shifts" class="pills"></div>
+        </div>
+        <div class="field">
+          <span class="flabel">Mietdauer</span>
+          <div id="durations" class="pills"></div>
+        </div>
+      </details>
+    </section>
+
+    <!-- Länder-Modus: Station des gewählten Anbieters -->
+    <section class="card" id="stationCard">
+      <h2>Station</h2>
+      <input type="search" id="stationSearch" placeholder="Suchen: FRA, Hauptbahnhof, München …" autocomplete="off">
+      <p class="hint" id="stationCount"></p>
+      <div id="stationResults" class="stations"></div>
+      <div class="field">
+        <span class="flabel">Gewählt</span>
+        <div id="chosenStations" class="chips"></div>
+      </div>
+      <label class="wide">Rückgabestation
+        <select id="returnStation"></select>
+      </label>
+    </section>
+
+    <!-- Anbieter-Modus: Ort statt Station -->
+    <section class="card" id="placeCard" hidden>
+      <h2>Ort</h2>
+      <p class="note">
+        Vermieter haben nicht dieselben Stationen. Der Vergleich läuft deshalb
+        über Orte — und zeigt an, wie belastbar die Zuordnung ist.
+      </p>
+      <input type="search" id="placeSearch" placeholder="Suchen: FRA, München, Mallorca …" autocomplete="off">
+      <div id="placeResults" class="stations"></div>
+      <div id="placeDetail"></div>
+    </section>
+
+    <section class="card span2" id="marketCard">
+      <h2>Länderseiten</h2>
+      <div class="btnrow">
+        <button type="button" id="marketsDACH" class="ghost">DACH</button>
+        <button type="button" id="marketsAll" class="ghost">Alle</button>
+        <button type="button" id="marketsNone" class="ghost">Keine</button>
+      </div>
+      <div id="markets" class="markets"></div>
+    </section>
+  </main>
+
+  <section class="card out">
+    <h2>Ergebnis <span class="count"><span id="jobCount">0</span> Aufrufe</span></h2>
+    <div class="btnrow">
+      <button type="button" id="openAll" class="primary">Alle öffnen</button>
+      <button type="button" id="copyAll" class="ghost">Links kopieren</button>
+      <button type="button" id="reset" class="ghost right">Zurücksetzen</button>
+    </div>
+    <p id="warn" class="note warn" hidden></p>
+    <p id="popupHint" class="note warn" hidden>
+      Der Browser hat Tabs blockiert. Pop-ups für diese Seite erlauben
+      (Chrome: Symbol rechts in der Adressleiste) und erneut klicken — oder die
+      Links unten einzeln anklicken.
+    </p>
+    <p id="flash" class="flash" hidden></p>
+    <div id="results"></div>
+  </section>
 </section>
 
 <footer>
   <p>
     Läuft vollständig lokal im Browser. Keine Server, keine Datenübertragung an
     Dritte, kein Abruf von Preisen — das Tool baut nur Links und öffnet sie.
+    Farbthemen dienen der Orientierung; dies ist kein Angebot der genannten
+    Unternehmen.
   </p>
   <p class="credit">
     Idee nach dem MWT-Preistool von Sloth &amp; Crazer (mietwagen-talk.de, 2020).

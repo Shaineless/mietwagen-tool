@@ -1,9 +1,15 @@
-import { PROVIDERS, SIXT_MARKETS, SIXT_GROUPS } from './providers.js';
+import { PROVIDERS, READY_PROVIDERS, providerById } from './providers.js';
 import { STATIONS } from './stations.js';
+import {
+  buildPlaces,
+  stationsAtPlace,
+  CONFIDENCE_LABEL,
+  fold,
+} from './places.js';
 
 /* =========================================================== Zustand */
 
-const LS_KEY = 'mwt-preistool/v1';
+const LS_KEY = 'mwt-preistool/v2';
 
 const defaults = () => {
   const t = new Date();
@@ -11,21 +17,19 @@ const defaults = () => {
   const back = new Date(t);
   back.setDate(back.getDate() + 4);
   return {
+    mode: null, // null = Startbildschirm
+    provider: 'sixt', // Länder-Modus: der eine Anbieter
+    compare: ['sixt'], // Anbieter-Modus: die verglichenen Anbieter
     pickupDate: iso(t),
     returnDate: iso(back),
     pickupTime: '10:00',
     returnTime: '10:00',
-    dayShifts: [0], // Abholdatum um n Tage verschieben
-    durations: [], // leer = Rückgabedatum wie eingestellt
-    stations: [110], // Frankfurt Flughafen
-    returnStation: null, // null = gleiche Station
+    dayShifts: [0],
+    durations: [],
+    stations: ['110'], // Codes des gewählten Anbieters
+    returnStation: null,
+    placeId: null,
     markets: ['de', 'at', 'ch', 'nl', 'es'],
-    group: '',
-    prepaid: false,
-    vehicleType: 'car',
-    sixtCustomerNo: '',
-    sixtPassword: '',
-    saveLogin: false,
   };
 };
 
@@ -33,16 +37,9 @@ let state = load();
 
 function load() {
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return defaults();
-    const saved = JSON.parse(raw);
+    const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+    if (!saved) return defaults();
     const merged = { ...defaults(), ...saved };
-    // Zugangsdaten nur zurückholen, wenn der Nutzer das ausdrücklich wollte.
-    if (!merged.saveLogin) {
-      merged.sixtCustomerNo = '';
-      merged.sixtPassword = '';
-    }
-    // Abgelaufene Daten auf sinnvolle Werte zurücksetzen.
     if (merged.pickupDate < iso(new Date())) {
       const d = defaults();
       merged.pickupDate = d.pickupDate;
@@ -55,164 +52,148 @@ function load() {
 }
 
 function persist() {
-  const copy = { ...state };
-  if (!state.saveLogin) {
-    copy.sixtCustomerNo = '';
-    copy.sixtPassword = '';
-  }
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify(copy));
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
   } catch {
-    /* privater Modus o.ä. — kein Grund, das Tool scheitern zu lassen */
+    /* privater Modus — kein Grund zu scheitern */
   }
 }
 
-/* =========================================================== Datums-Helfer */
+/* =========================================================== Datum */
 
 function iso(d) {
   const p = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-function addDays(isoStr, n) {
-  const d = new Date(isoStr + 'T12:00:00');
+function addDays(s, n) {
+  const d = new Date(s + 'T12:00:00');
   d.setDate(d.getDate() + n);
   return iso(d);
 }
 
 function daysBetween(a, b) {
-  return Math.round(
-    (new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000
-  );
+  return Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000);
 }
 
 const WD = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 
-function pretty(isoStr) {
-  const d = new Date(isoStr + 'T12:00:00');
+function pretty(s) {
+  const d = new Date(s + 'T12:00:00');
   return `${WD[d.getDay()]} ${String(d.getDate()).padStart(2, '0')}.${String(
     d.getMonth() + 1
   ).padStart(2, '0')}.`;
 }
 
-/* =========================================================== Stationssuche */
+/* =========================================================== Suche */
+
+const PLACES = buildPlaces(STATIONS);
 
 /**
- * Bewertet, wie gut eine Station zur Eingabe passt.
- * Treffer im IATA-Code und am Wortanfang zählen mehr als Treffer irgendwo.
- * Gibt -1 zurück, wenn die Station nicht passt.
+ * Bewertet, wie gut ein Eintrag zur Eingabe passt.
+ * IATA-Code und Wortanfang zählen mehr als ein Treffer irgendwo im Namen.
  */
-function score(station, needle) {
-  if (!needle) return 0;
+function score(text, iata, needle) {
   const q = fold(needle);
-  const name = fold(station.name);
-  const iata = (station.iata || '').toLowerCase();
+  const name = fold(text);
+  const code = (iata || '').toLowerCase();
 
-  if (iata && iata === q) return 1000;
-  if (iata && iata.startsWith(q)) return 900;
+  if (code && code === q) return 1000;
+  if (code && code.startsWith(q)) return 900;
   if (name.startsWith(q)) return 800;
-
-  // Wortanfang
-  const words = name.split(/[\s/().,-]+/);
-  if (words.some((w) => w.startsWith(q))) return 700;
+  if (name.split(/[\s/().,-]+/).some((w) => w.startsWith(q))) return 700;
   if (name.includes(q)) return 500;
 
-  // Alle Zeichen der Eingabe in Reihenfolge (lockere Fuzzy-Suche)
   let i = 0;
   for (const ch of name) if (ch === q[i]) i++;
   return i === q.length ? 100 : -1;
 }
 
-/** Umlaute und Akzente vereinheitlichen, damit "munchen" auch München findet. */
-function fold(s) {
-  return s
-    .toLowerCase()
-    .replaceAll('ä', 'a')
-    .replaceAll('ö', 'o')
-    .replaceAll('ü', 'u')
-    .replaceAll('ß', 'ss')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '');
-}
-
-function searchStations(needle, limit = 40) {
+/**
+ * Gemeinsame Suchlogik für Stationen und Orte.
+ * Ohne Eingabe werden ALLE Einträge gezeigt — Bahnhöfe und Stadtstationen
+ * sind gleichberechtigt, Flughäfen stehen nur bei Gleichstand vorn.
+ */
+function rank(items, needle, textOf, iataOf, limit) {
   if (!needle.trim()) {
-    return STATIONS.filter((s) => s.iata).slice(0, limit);
+    // Ohne Eingabe rein alphabetisch: Bahnhöfe, Stadt- und Hotelstationen
+    // stehen gleichberechtigt neben den Flughäfen.
+    return [...items].sort((a, b) => textOf(a).localeCompare(textOf(b))).slice(0, limit);
   }
 
-  let hits = STATIONS.map((s) => ({ s, sc: score(s, needle) })).filter(
-    (x) => x.sc >= 0
-  );
+  let hits = items
+    .map((x) => ({ x, sc: score(textOf(x), iataOf(x), needle) }))
+    .filter((h) => h.sc >= 0);
 
   // Sobald es echte Treffer gibt, die lockeren Fuzzy-Treffer wegwerfen —
   // sonst steht hinter "PMI" plötzlich halb Frankreich.
-  const best = Math.max(0, ...hits.map((x) => x.sc));
-  if (best >= 500) hits = hits.filter((x) => x.sc >= 500);
+  const best = Math.max(0, ...hits.map((h) => h.sc));
+  if (best >= 500) hits = hits.filter((h) => h.sc >= 500);
 
   return hits
     .sort(
       (a, b) =>
         b.sc - a.sc ||
-        // Bei Gleichstand zuerst Flughäfen — danach wird am häufigsten gesucht.
-        Number(Boolean(b.s.iata)) - Number(Boolean(a.s.iata)) ||
-        a.s.name.localeCompare(b.s.name)
+        Number(Boolean(iataOf(b.x))) - Number(Boolean(iataOf(a.x))) ||
+        textOf(a.x).localeCompare(textOf(b.x))
     )
     .slice(0, limit)
-    .map((x) => x.s);
+    .map((h) => h.x);
 }
 
-function stationById(id) {
-  return STATIONS.find((s) => s.id === id);
+function providerStations(providerId) {
+  return STATIONS.filter((s) => s.provider === providerId);
 }
 
-/* =========================================================== Kombinationen */
+function stationByCode(providerId, code) {
+  return STATIONS.find((s) => s.provider === providerId && s.code === code);
+}
 
-/**
- * Erzeugt aus dem Zustand alle konkreten Suchanfragen.
- * Achse 1: Stationen · Achse 2: Datumsvarianten · Achse 3: Länderseiten
- */
-function buildJobs() {
-  const jobs = [];
-  const provider = PROVIDERS[0]; // aktuell nur Sixt
-  const markets = SIXT_MARKETS.filter((m) => state.markets.includes(m.code));
-  const stations = state.stations.map(stationById).filter(Boolean);
-  const returnStation = state.returnStation
-    ? stationById(state.returnStation)
-    : null;
+/* =========================================================== Aufträge */
 
-  const baseDuration = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
-  const durations = state.durations.length ? state.durations : [baseDuration];
+/** Datumsvarianten aus Verschiebungen × Mietdauern. */
+function dateVariants() {
+  const base = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
+  const durations = state.durations.length ? state.durations : [base];
   const shifts = state.dayShifts.length ? state.dayShifts : [0];
-
-  const dateVariants = [];
+  const out = [];
   for (const shift of shifts) {
     for (const dur of durations) {
       const pickupDate = addDays(state.pickupDate, shift);
-      dateVariants.push({
-        pickupDate,
-        returnDate: addDays(pickupDate, dur),
-        duration: dur,
-        shift,
-      });
+      out.push({ pickupDate, returnDate: addDays(pickupDate, dur), duration: dur });
     }
   }
+  return out;
+}
 
+/** Länder-Modus: ein Anbieter × Stationen × Termine × Länderseiten. */
+function jobsByMarket() {
+  const provider = providerById(state.provider);
+  if (!provider || !provider.build) return [];
+
+  const markets = provider.markets.filter((m) => state.markets.includes(m.code));
+  const stations = state.stations
+    .map((c) => stationByCode(provider.id, c))
+    .filter(Boolean);
+  const ret = state.returnStation
+    ? stationByCode(provider.id, state.returnStation)
+    : null;
+
+  const jobs = [];
   for (const station of stations) {
-    for (const v of dateVariants) {
+    for (const v of dateVariants()) {
       for (const market of markets) {
-        const q = {
-          ...state,
-          pickupDate: v.pickupDate,
-          returnDate: v.returnDate,
-        };
-        const req = provider.build(q, market, station, returnStation);
+        const q = { ...state, pickupDate: v.pickupDate, returnDate: v.returnDate };
         jobs.push({
           provider,
           market,
           station,
-          returnStation,
           variant: v,
-          ...req,
+          groupKey: `${station.code}|${v.pickupDate}|${v.returnDate}`,
+          groupLabel: station.name,
+          itemLabel: market.label,
+          itemSub: market.cur,
+          ...provider.build(q, market, station, ret),
         });
       }
     }
@@ -220,41 +201,232 @@ function buildJobs() {
   return jobs;
 }
 
-/* =========================================================== Oberfläche */
+/**
+ * Anbieter-Modus: ein Ort × Termine × Anbieter.
+ * Anbieter ohne Station am Ort liefern absichtlich keinen Link, sondern
+ * einen sichtbaren Fehlanzeige-Eintrag.
+ */
+function jobsByProvider() {
+  const place = PLACES.find((p) => p.id === state.placeId);
+  if (!place) return [];
 
-const $ = (sel) => document.querySelector(sel);
-const el = (tag, attrs = {}, ...kids) => {
+  const chosen = PROVIDERS.filter((p) => state.compare.includes(p.id));
+  const jobs = [];
+
+  for (const v of dateVariants()) {
+    for (const { provider, station } of stationsAtPlace(place, chosen)) {
+      const common = {
+        provider,
+        variant: v,
+        place,
+        groupKey: `${place.id}|${v.pickupDate}|${v.returnDate}`,
+        groupLabel: place.label,
+        itemLabel: provider.label,
+      };
+
+      if (!station || !provider.build) {
+        jobs.push({
+          ...common,
+          station,
+          url: null,
+          missing: !station ? 'keine Station an diesem Ort' : 'noch nicht angebunden',
+          fallback: provider.homepage || null,
+        });
+        continue;
+      }
+
+      // Heimatmarkt des Anbieters für den reinen Anbietervergleich.
+      const market = provider.markets[0];
+      const q = { ...state, pickupDate: v.pickupDate, returnDate: v.returnDate };
+      jobs.push({
+        ...common,
+        station,
+        market,
+        itemSub: station.name,
+        ...provider.build(q, market, station, null),
+      });
+    }
+  }
+  return jobs;
+}
+
+function buildJobs() {
+  return state.mode === 'providers' ? jobsByProvider() : jobsByMarket();
+}
+
+/* =========================================================== DOM-Helfer */
+
+const $ = (s) => document.querySelector(s);
+
+function el(tag, attrs = {}, ...kids) {
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
+    if (v === null || v === false || v === undefined) continue;
     if (k === 'class') n.className = v;
     else if (k === 'html') n.innerHTML = v;
     else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
-    else if (v !== null && v !== false) n.setAttribute(k, v);
+    else n.setAttribute(k, v === true ? '' : v);
   }
   for (const kid of kids.flat()) {
     if (kid == null) continue;
     n.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
   }
   return n;
+}
+
+/* =========================================================== Ansichten */
+
+function showScreen(name) {
+  $('#start').hidden = name !== 'start';
+  $('#statusScreen').hidden = name !== 'status';
+  $('#work').hidden = name !== 'work';
+}
+
+function applyTheme(provider) {
+  const root = document.documentElement;
+  if (provider && provider.theme) {
+    root.style.setProperty('--accent', provider.theme.accent);
+    root.style.setProperty('--accent-ink', provider.theme.ink);
+    root.dataset.provider = provider.id;
+  } else {
+    root.style.removeProperty('--accent');
+    root.style.removeProperty('--accent-ink');
+    delete root.dataset.provider;
+  }
+}
+
+function renderStatus() {
+  $('#statusBody').replaceChildren(
+    ...PROVIDERS.map((p) =>
+      el(
+        'div',
+        { class: 'card statusrow' },
+        el(
+          'h3',
+          {},
+          el('span', { class: 'dot', style: `background:${p.theme?.accent || '#888'}` }),
+          p.label,
+          el(
+            'span',
+            { class: 'mtag ' + (p.status === 'ready' ? 'ok' : 'warn') },
+            p.status === 'ready' ? 'angebunden' : 'noch nicht angebunden'
+          )
+        ),
+        p.status === 'ready'
+          ? el(
+              'ul',
+              { class: 'caps' },
+              ...Object.entries(p.capabilities).map(([k, v]) =>
+                el(
+                  'li',
+                  { class: v ? 'yes' : 'no' },
+                  (v ? '✓ ' : '✕ ') + CAP_LABEL[k]
+                )
+              )
+            )
+          : null,
+        ...p.notes.map((n) => el('p', { class: 'note' }, n)),
+        p.status === 'ready'
+          ? el('p', { class: 'note' }, `${providerStations(p.id).length} Stationen hinterlegt.`)
+          : el(
+              'p',
+              { class: 'note' },
+              'Bis dahin: ',
+              el('a', { href: p.homepage, target: '_blank', rel: 'noopener' }, p.homepage)
+            )
+      )
+    )
+  );
+}
+
+const CAP_LABEL = {
+  station: 'Station wird übernommen',
+  date: 'Datum wird übernommen',
+  time: 'Uhrzeit wird übernommen',
+  oneWay: 'Abweichende Rückgabestation',
+  vehicleClass: 'Fahrzeugklasse (wird verworfen)',
+  prepaid: 'Prepaid-Filter (wird verworfen)',
 };
 
-function renderStationPicker() {
-  const box = $('#stationResults');
-  const needle = $('#stationSearch').value;
-  const hits = searchStations(needle);
+function renderProviderPick() {
+  const box = $('#providerPick');
+  const multi = state.mode === 'providers';
+
   box.replaceChildren(
-    ...hits.map((s) => {
-      const active = state.stations.includes(s.id);
+    ...PROVIDERS.map((p) => {
+      const on = multi ? state.compare.includes(p.id) : state.provider === p.id;
+      const dead = p.status !== 'ready';
       return el(
         'button',
         {
-          class: 'station' + (active ? ' on' : ''),
           type: 'button',
-          title: `Sixt-ID ${s.id}`,
+          class: 'prov' + (on ? ' on' : '') + (dead ? ' dead' : ''),
+          style: on ? `--pa:${p.theme.accent}` : `--pa:#8a8a8a`,
+          title: dead ? p.notes[0] : `${providerStations(p.id).length} Stationen`,
           onclick: () => {
-            const i = state.stations.indexOf(s.id);
+            if (multi) {
+              const i = state.compare.indexOf(p.id);
+              if (i >= 0) state.compare.splice(i, 1);
+              else state.compare.push(p.id);
+            } else {
+              if (dead) return; // Länder-Modus braucht einen echten Adapter
+              state.provider = p.id;
+              state.stations = [];
+              state.markets = p.markets.slice(0, 5).map((m) => m.code);
+            }
+            update();
+          },
+        },
+        el('span', { class: 'pbar' }),
+        el('span', { class: 'plabel' }, p.label),
+        dead ? el('span', { class: 'ptag' }, 'offen') : null
+      );
+    })
+  );
+
+  const note = $('#providerNote');
+  if (multi) {
+    const ready = state.compare.filter(
+      (id) => providerById(id)?.status === 'ready'
+    ).length;
+    note.textContent =
+      ready < 2
+        ? 'Ein echter Anbietervergleich braucht mindestens zwei angebundene Anbieter. Bisher ist nur Sixt angebunden — die übrigen erscheinen als Fehlanzeige.'
+        : `${ready} Anbieter angebunden.`;
+  } else {
+    const p = providerById(state.provider);
+    note.textContent = p ? p.notes[0] : '';
+  }
+}
+
+function renderStationPicker() {
+  const provider = providerById(state.provider);
+  const all = providerStations(provider.id);
+  const hits = rank(
+    all,
+    $('#stationSearch').value,
+    (s) => `${s.name} ${s.country}`,
+    (s) => s.iata,
+    60
+  );
+
+  $('#stationCount').textContent =
+    `${hits.length} von ${all.length} Stationen` +
+    ($('#stationSearch').value.trim() ? '' : ' — tippen zum Filtern');
+
+  $('#stationResults').replaceChildren(
+    ...hits.map((s) => {
+      const on = state.stations.includes(s.code);
+      return el(
+        'button',
+        {
+          type: 'button',
+          class: 'station' + (on ? ' on' : ''),
+          title: `${provider.label}-Stationscode ${s.code}`,
+          onclick: () => {
+            const i = state.stations.indexOf(s.code);
             if (i >= 0) state.stations.splice(i, 1);
-            else state.stations.push(s.id);
+            else state.stations.push(s.code);
             update();
           },
         },
@@ -262,66 +434,110 @@ function renderStationPicker() {
         el('span', { class: 'sname' }, s.name),
         s.iata ? el('span', { class: 'iata' }, s.iata) : null
       );
-    })
+    }),
+    hits.length ? null : el('p', { class: 'empty' }, 'Keine Station gefunden.')
   );
-  if (!hits.length) {
-    box.append(el('p', { class: 'empty' }, 'Keine Station gefunden.'));
-  }
-}
 
-function renderChosenStations() {
-  const box = $('#chosenStations');
-  const chosen = state.stations.map(stationById).filter(Boolean);
-  box.replaceChildren(
-    ...chosen.map((s) =>
-      el(
-        'span',
-        { class: 'chip' },
-        `${s.name} (${s.id})`,
-        el('button', {
-          type: 'button',
-          class: 'x',
-          title: 'entfernen',
-          onclick: () => {
-            state.stations = state.stations.filter((id) => id !== s.id);
-            update();
-          },
-          html: '&times;',
-        })
-      )
-    )
+  $('#chosenStations').replaceChildren(
+    ...state.stations
+      .map((c) => stationByCode(provider.id, c))
+      .filter(Boolean)
+      .map((s) =>
+        el(
+          'span',
+          { class: 'chip' },
+          `${s.name} (${s.code})`,
+          el('button', {
+            type: 'button',
+            class: 'x',
+            html: '&times;',
+            onclick: () => {
+              state.stations = state.stations.filter((c) => c !== s.code);
+              update();
+            },
+          })
+        )
+      ),
+    state.stations.length ? null : el('span', { class: 'empty' }, 'Noch keine Station gewählt.')
   );
-  if (!chosen.length) {
-    box.append(el('span', { class: 'empty' }, 'Noch keine Station gewählt.'));
-  }
 
-  // Rückgabestation nur anbieten, wenn genau eine Abholstation gewählt ist.
   const sel = $('#returnStation');
   sel.replaceChildren(
     el('option', { value: '' }, '— gleiche wie Abholung —'),
-    ...chosen
-      .concat(STATIONS.filter((s) => s.iata).slice(0, 60))
-      .filter((s, i, a) => a.findIndex((x) => x.id === s.id) === i)
+    ...all
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
       .map((s) =>
-        el(
-          'option',
-          { value: s.id, ...(state.returnStation === s.id ? { selected: '' } : {}) },
-          s.name
-        )
+        el('option', { value: s.code, selected: state.returnStation === s.code }, s.name)
       )
+  );
+}
+
+function renderPlacePicker() {
+  const hits = rank(
+    PLACES,
+    $('#placeSearch').value,
+    (p) => `${p.label} ${p.country}`,
+    (p) => p.iata,
+    60
+  );
+
+  $('#placeResults').replaceChildren(
+    ...hits.map((p) =>
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'station' + (state.placeId === p.id ? ' on' : ''),
+          onclick: () => {
+            state.placeId = p.id;
+            update();
+          },
+        },
+        el('span', { class: 'flag' }, p.country),
+        el('span', { class: 'sname' }, p.label),
+        el('span', { class: 'cnt' }, `${p.providers.length} Anbieter`)
+      )
+    ),
+    hits.length ? null : el('p', { class: 'empty' }, 'Kein Ort gefunden.')
+  );
+
+  const place = PLACES.find((p) => p.id === state.placeId);
+  $('#placeDetail').replaceChildren(
+    place
+      ? el(
+          'div',
+          { class: 'field' },
+          el('span', { class: 'flabel' }, 'Zuordnung'),
+          el(
+            'p',
+            { class: 'note ' + (place.confidence === 'approx' ? 'warn' : '') },
+            el('strong', {}, CONFIDENCE_LABEL[place.confidence].text),
+            ' — ',
+            CONFIDENCE_LABEL[place.confidence].hint
+          ),
+          el(
+            'ul',
+            { class: 'caps' },
+            ...place.stations.map((s) =>
+              el('li', { class: 'yes' }, `${providerById(s.provider).label}: ${s.name}`)
+            )
+          )
+        )
+      : el('p', { class: 'empty' }, 'Noch kein Ort gewählt.')
   );
 }
 
 function renderMarkets() {
-  const box = $('#markets');
-  box.replaceChildren(
-    ...SIXT_MARKETS.map((m) =>
+  const provider = providerById(state.provider);
+  $('#markets').replaceChildren(
+    ...provider.markets.map((m) =>
       el(
         'label',
         { class: 'mk' + (state.markets.includes(m.code) ? ' on' : '') },
         el('input', {
           type: 'checkbox',
-          ...(state.markets.includes(m.code) ? { checked: '' } : {}),
+          checked: state.markets.includes(m.code),
           onchange: (e) => {
             if (e.target.checked) state.markets.push(m.code);
             else state.markets = state.markets.filter((c) => c !== m.code);
@@ -335,105 +551,66 @@ function renderMarkets() {
   );
 }
 
-function renderGroups() {
-  const sel = $('#group');
-  sel.replaceChildren(
-    ...SIXT_GROUPS.map((g) =>
-      el(
-        'option',
-        { value: g.code, ...(state.group === g.code ? { selected: '' } : {}) },
-        g.label
-      )
-    )
-  );
-}
-
-function renderShifts() {
-  const box = $('#shifts');
-  const opts = [-3, -2, -1, 0, 1, 2, 3];
-  box.replaceChildren(
+function renderPills(sel, opts, list, label, onEmpty) {
+  $(sel).replaceChildren(
     ...opts.map((n) =>
       el(
         'label',
-        { class: 'pill' + (state.dayShifts.includes(n) ? ' on' : '') },
+        { class: 'pill' + (list().includes(n) ? ' on' : '') },
         el('input', {
           type: 'checkbox',
-          ...(state.dayShifts.includes(n) ? { checked: '' } : {}),
+          checked: list().includes(n),
           onchange: (e) => {
-            if (e.target.checked) state.dayShifts.push(n);
-            else state.dayShifts = state.dayShifts.filter((x) => x !== n);
-            if (!state.dayShifts.length) state.dayShifts = [0];
+            const arr = list();
+            if (e.target.checked) arr.push(n);
+            else {
+              const i = arr.indexOf(n);
+              if (i >= 0) arr.splice(i, 1);
+            }
+            onEmpty(arr);
             update();
           },
         }),
-        n === 0 ? 'Stichtag' : (n > 0 ? `+${n}` : `${n}`) + ' Tg'
+        label(n)
       )
-    )
-  );
-}
-
-function renderDurations() {
-  const box = $('#durations');
-  const base = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
-  const opts = [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 28];
-  box.replaceChildren(
-    ...opts.map((n) =>
-      el(
-        'label',
-        { class: 'pill' + (state.durations.includes(n) ? ' on' : '') },
-        el('input', {
-          type: 'checkbox',
-          ...(state.durations.includes(n) ? { checked: '' } : {}),
-          onchange: (e) => {
-            if (e.target.checked) state.durations.push(n);
-            else state.durations = state.durations.filter((x) => x !== n);
-            update();
-          },
-        }),
-        `${n} Tg`
-      )
-    ),
-    el(
-      'span',
-      { class: 'hint' },
-      state.durations.length
-        ? `${state.durations.length} Dauer(n) gewählt`
-        : `keine Auswahl = ${base} Tg laut Datum`
     )
   );
 }
 
 function renderResults() {
   const jobs = buildJobs();
-  const box = $('#results');
-  const count = jobs.length;
+  const openable = jobs.filter((j) => j.url);
 
-  $('#jobCount').textContent = count;
-  $('#openAll').disabled = count === 0;
-  $('#copyAll').disabled = count === 0;
-  $('#warn').hidden = count <= 12;
+  $('#jobCount').textContent = openable.length;
+  $('#openAll').disabled = !openable.length;
+  $('#copyAll').disabled = !openable.length;
+  $('#warn').hidden = openable.length <= 12;
   $('#warn').textContent =
-    count > 12
-      ? `${count} Tabs — der Browser wird das eventuell drosseln. Weniger Länder oder Datumsvarianten wählen, oder die Links unten einzeln öffnen.`
+    openable.length > 12
+      ? `${openable.length} Tabs — der Browser drosselt das eventuell. Weniger Länder oder Datumsvarianten wählen, oder unten einzeln öffnen.`
       : '';
 
-  if (!count) {
-    box.replaceChildren(
-      el('p', { class: 'empty' }, 'Station und mindestens eine Länderseite wählen.')
+  if (!jobs.length) {
+    $('#results').replaceChildren(
+      el(
+        'p',
+        { class: 'empty' },
+        state.mode === 'providers'
+          ? 'Ort und mindestens einen Anbieter wählen.'
+          : 'Station und mindestens eine Länderseite wählen.'
+      )
     );
     return;
   }
 
-  // Nach Station + Datumsvariante gruppieren, damit die Länder direkt vergleichbar sind.
   const groups = new Map();
   for (const j of jobs) {
-    const key = `${j.station.id}|${j.variant.pickupDate}|${j.variant.returnDate}`;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(j);
+    if (!groups.has(j.groupKey)) groups.set(j.groupKey, []);
+    groups.get(j.groupKey).push(j);
   }
 
-  box.replaceChildren(
-    ...[...groups.entries()].map(([, list]) => {
+  $('#results').replaceChildren(
+    ...[...groups.values()].map((list) => {
       const f = list[0];
       return el(
         'div',
@@ -441,7 +618,7 @@ function renderResults() {
         el(
           'h3',
           {},
-          f.station.name,
+          f.groupLabel,
           el(
             'span',
             { class: 'span' },
@@ -454,12 +631,33 @@ function renderResults() {
           'div',
           { class: 'links' },
           ...list.map((j) =>
-            el(
-              'a',
-              { href: j.url, target: '_blank', rel: 'noopener', class: 'lnk' },
-              el('span', { class: 'mkname' }, j.market.label),
-              el('span', { class: 'cur' }, j.market.cur)
-            )
+            j.url
+              ? el(
+                  'a',
+                  {
+                    href: j.url,
+                    target: '_blank',
+                    rel: 'noopener',
+                    class: 'lnk',
+                    style: `--pa:${j.provider.theme.accent}`,
+                  },
+                  el('span', { class: 'pbar' }),
+                  el('span', { class: 'mkname' }, j.itemLabel),
+                  j.itemSub ? el('span', { class: 'cur' }, j.itemSub) : null
+                )
+              : el(
+                  'span',
+                  { class: 'lnk off' },
+                  el('span', { class: 'mkname' }, j.itemLabel),
+                  el('span', { class: 'cur' }, j.missing),
+                  j.fallback
+                    ? el(
+                        'a',
+                        { href: j.fallback, target: '_blank', rel: 'noopener', class: 'tiny' },
+                        'Website'
+                      )
+                    : null
+                )
           )
         )
       );
@@ -469,42 +667,34 @@ function renderResults() {
 
 /* =========================================================== Aktionen */
 
-/**
- * Oeffnet alle Treffer nacheinander.
- * Gestaffelt, weil Browser Rudel von window.open() sonst als Popup-Flut werten.
- */
 async function openAll() {
-  const jobs = buildJobs();
-  if (!jobs.length) return;
+  const jobs = buildJobs().filter((j) => j.url);
   const btn = $('#openAll');
   btn.disabled = true;
   let blocked = 0;
 
   for (let i = 0; i < jobs.length; i++) {
-    const w = window.open(jobs[i].url, '_blank', 'noopener');
-    if (!w) blocked++;
+    if (!window.open(jobs[i].url, '_blank', 'noopener')) blocked++;
     btn.textContent = `Öffne ${i + 1}/${jobs.length} …`;
     await new Promise((r) => setTimeout(r, 260));
   }
 
   btn.textContent = 'Alle öffnen';
   btn.disabled = false;
-
-  if (blocked) {
-    $('#popupHint').hidden = false;
-  }
+  if (blocked) $('#popupHint').hidden = false;
 }
 
 function copyAll() {
   const text = buildJobs()
+    .filter((j) => j.url)
     .map(
       (j) =>
-        `${j.station.name} · ${j.market.label} · ${j.variant.pickupDate} → ${j.variant.returnDate}\n${j.url}`
+        `${j.groupLabel} · ${j.itemLabel} · ${j.variant.pickupDate} → ${j.variant.returnDate}\n${j.url}`
     )
     .join('\n\n');
   navigator.clipboard.writeText(text).then(
     () => flash('Links kopiert.'),
-    () => flash('Kopieren nicht möglich — Links unten manuell markieren.')
+    () => flash('Kopieren nicht möglich — Links unten markieren.')
   );
 }
 
@@ -517,65 +707,97 @@ function flash(msg) {
   flashTimer = setTimeout(() => (n.hidden = true), 2600);
 }
 
-/* =========================================================== Verdrahtung */
+/* =========================================================== Ablauf */
 
-function bindInput(sel, key, transform = (v) => v) {
-  const n = $(sel);
-  n.value = state[key];
-  n.addEventListener('input', () => {
-    state[key] = transform(n.value);
-    update();
-  });
+function enterMode(mode) {
+  state.mode = mode;
+  if (mode === 'status') {
+    applyTheme(null);
+    renderStatus();
+    showScreen('status');
+    persist();
+    return;
+  }
+  showScreen('work');
+  update();
 }
 
 function update() {
   persist();
-  renderStationPicker();
-  renderChosenStations();
-  renderMarkets();
-  renderShifts();
-  renderDurations();
+
+  const isCompare = state.mode === 'providers';
+  $('#workTitle').textContent = isCompare ? 'Anbieter-Vergleich' : 'Länder-Vergleich';
+  $('#stationCard').hidden = isCompare;
+  $('#placeCard').hidden = !isCompare;
+  $('#marketCard').hidden = isCompare;
+
+  applyTheme(isCompare ? null : providerById(state.provider));
+
+  renderProviderPick();
+  if (isCompare) renderPlacePicker();
+  else {
+    renderStationPicker();
+    renderMarkets();
+  }
+
+  renderPills(
+    '#shifts',
+    [-3, -2, -1, 0, 1, 2, 3],
+    () => state.dayShifts,
+    (n) => (n === 0 ? 'Stichtag' : (n > 0 ? `+${n}` : `${n}`) + ' Tg'),
+    (arr) => {
+      if (!arr.length) arr.push(0);
+    }
+  );
+  renderPills(
+    '#durations',
+    [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 28],
+    () => state.durations,
+    (n) => `${n} Tg`,
+    () => {}
+  );
+
   renderResults();
 }
 
 function init() {
-  bindInput('#pickupDate', 'pickupDate');
-  bindInput('#returnDate', 'returnDate');
-  bindInput('#pickupTime', 'pickupTime');
-  bindInput('#returnTime', 'returnTime');
-  bindInput('#customerNo', 'sixtCustomerNo');
-  bindInput('#password', 'sixtPassword');
+  document.querySelectorAll('.mode').forEach((b) =>
+    b.addEventListener('click', () => enterMode(b.dataset.mode))
+  );
+  document.querySelectorAll('.back').forEach((b) =>
+    b.addEventListener('click', () => {
+      state.mode = null;
+      applyTheme(null);
+      persist();
+      showScreen('start');
+    })
+  );
+
+  for (const [sel, key] of [
+    ['#pickupDate', 'pickupDate'],
+    ['#returnDate', 'returnDate'],
+    ['#pickupTime', 'pickupTime'],
+    ['#returnTime', 'returnTime'],
+  ]) {
+    const n = $(sel);
+    n.value = state[key];
+    n.addEventListener('input', () => {
+      state[key] = n.value;
+      update();
+    });
+  }
 
   $('#stationSearch').addEventListener('input', renderStationPicker);
-
+  $('#placeSearch').addEventListener('input', renderPlacePicker);
   $('#returnStation').addEventListener('change', (e) => {
-    state.returnStation = e.target.value ? Number(e.target.value) : null;
-    update();
-  });
-
-  renderGroups();
-  $('#group').addEventListener('change', (e) => {
-    state.group = e.target.value;
-    update();
-  });
-
-  $('#prepaid').checked = state.prepaid;
-  $('#prepaid').addEventListener('change', (e) => {
-    state.prepaid = e.target.checked;
-    update();
-  });
-
-  $('#saveLogin').checked = state.saveLogin;
-  $('#saveLogin').addEventListener('change', (e) => {
-    state.saveLogin = e.target.checked;
+    state.returnStation = e.target.value || null;
     update();
   });
 
   $('#openAll').addEventListener('click', openAll);
   $('#copyAll').addEventListener('click', copyAll);
-
   $('#marketsAll').addEventListener('click', () => {
-    state.markets = SIXT_MARKETS.map((m) => m.code);
+    state.markets = providerById(state.provider).markets.map((m) => m.code);
     update();
   });
   $('#marketsNone').addEventListener('click', () => {
@@ -586,15 +808,18 @@ function init() {
     state.markets = ['de', 'at', 'ch'];
     update();
   });
-
   $('#reset').addEventListener('click', () => {
-    state = defaults();
+    localStorage.removeItem(LS_KEY);
     location.reload();
   });
 
-  $('#stationCount').textContent = STATIONS.length;
+  $('#cmpTag').textContent =
+    READY_PROVIDERS.length > 1
+      ? `${READY_PROVIDERS.length} Anbieter angebunden`
+      : 'nur Sixt angebunden';
 
-  update();
+  if (state.mode) enterMode(state.mode);
+  else showScreen('start');
 }
 
 document.addEventListener('DOMContentLoaded', init);

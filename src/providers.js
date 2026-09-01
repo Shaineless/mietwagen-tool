@@ -1,22 +1,23 @@
 /**
- * Anbieter-Adapter.
+ * Anbieter-Register.
  *
- * Jeder Adapter beschreibt, wie aus einer Suchanfrage (Query) eine aufrufbare
- * Anfrage wird. Zwei Transportarten werden unterstuetzt:
+ * Jeder Anbieter beschreibt drei Dinge:
+ *   1. welche Laenderseiten es gibt      -> markets
+ *   2. wie aus einer Anfrage ein Aufruf wird -> build()
+ *   3. was davon nachweislich funktioniert   -> status / capabilities
  *
- *   method: 'GET'   -> { url }                       ... normaler Link
- *   method: 'POST'  -> { url, fields: {name: wert} } ... Auto-Submit-Formular
+ * Punkt 3 ist bewusst Teil der Datenstruktur. Das Vorgaengertool bot
+ * Bedienelemente an, die Sixt inzwischen ignoriert (Fahrzeugklasse, Prepaid) —
+ * die Oberflaeche soll so etwas gar nicht erst als funktionierend darstellen.
  *
- * Das Original-Tool aus dem MWT-Forum konnte nur GET. Anbieter wie Avis
- * erwarten aber ein POST-Formular; deshalb kennt der Runner beide Wege.
- *
- * `status` ist ehrlich gemeint und wird in der Oberflaeche angezeigt:
- *   'verified'  - Deep-Link wurde gegen die Live-Seite geprueft
- *   'untested'  - Format plausibel, aber nicht geprueft
+ * Transportarten:
+ *   method: 'GET'  -> { url }
+ *   method: 'POST' -> { url, fields } ... wird als Auto-Submit-Formular geoeffnet
  */
 
-/** Verfuegbare Sixt-Laenderseiten. Preise unterscheiden sich je Domain. */
-export const SIXT_MARKETS = [
+/* ============================================================ Sixt */
+
+const SIXT_MARKETS = [
   { code: 'de', host: 'www.sixt.de', label: 'Deutschland', cur: 'EUR' },
   { code: 'at', host: 'www.sixt.at', label: 'Österreich', cur: 'EUR' },
   { code: 'ch', host: 'www.sixt.ch', label: 'Schweiz', cur: 'CHF' },
@@ -40,88 +41,125 @@ export const SIXT_MARKETS = [
   { code: 'gr', host: 'www.sixt.gr', label: 'Griechenland', cur: 'EUR' },
   { code: 'tr', host: 'www.sixt.com.tr', label: 'Türkei', cur: 'TRY' },
   { code: 'com', host: 'www.sixt.com', label: 'International (.com)', cur: 'EUR' },
-  { code: 'us', host: 'www.sixt.com/us', label: 'USA', cur: 'USD' },
 ];
 
-/** ACRISS-Klassen, die Sixt ueber `grp` direkt ansteuern kann. */
-export const SIXT_GROUPS = [
-  { code: '', label: '— Übersicht (alle Klassen) —' },
-  { code: 'MBMR', label: 'MBMR · Mini' },
-  { code: 'EDMR', label: 'EDMR · Economy' },
-  { code: 'CDMR', label: 'CDMR · Compact' },
-  { code: 'CDAR', label: 'CDAR · Compact Automatik' },
-  { code: 'CWAR', label: 'CWAR · Compact Kombi Automatik' },
-  { code: 'IDAR', label: 'IDAR · Intermediate Automatik' },
-  { code: 'IWAR', label: 'IWAR · Intermediate Kombi' },
-  { code: 'SDAR', label: 'SDAR · Standard Automatik' },
-  { code: 'SWAR', label: 'SWAR · Standard Kombi' },
-  { code: 'FDAR', label: 'FDAR · Fullsize Automatik' },
-  { code: 'FWAR', label: 'FWAR · Fullsize Kombi' },
-  { code: 'PDAR', label: 'PDAR · Premium' },
-  { code: 'PWAR', label: 'PWAR · Premium Kombi' },
-  { code: 'LDAR', label: 'LDAR · Luxury' },
-  { code: 'XDAR', label: 'XDAR · Special' },
-  { code: 'XSAR', label: 'XSAR · Special SUV' },
-  { code: 'XFAR', label: 'XFAR · Special Fullsize' },
-  { code: 'ECAR', label: 'ECAR · Economy 2/4-türig' },
-  { code: 'ECMR', label: 'ECMR · Economy Schaltung' },
-  { code: 'IFAR', label: 'IFAR · Intermediate SUV' },
-  { code: 'SFAR', label: 'SFAR · Standard SUV' },
-  { code: 'FFAR', label: 'FFAR · Fullsize SUV' },
-  { code: 'PFAR', label: 'PFAR · Premium SUV' },
-];
-
-/* ---------------------------------------------------------------- Helfer */
-
-/** 2026-12-01 -> 20261201 (das Format, das Sixt heute tatsaechlich auswertet). */
-function sixtDate(iso) {
-  return iso.replaceAll('-', '');
-}
-
-/** '10:00' -> '1000' */
-function hhmm(t) {
-  return t.replace(':', '');
-}
-
-/* -------------------------------------------------------------- Adapter */
+/**
+ * Farbthemen zur Orientierung — angelehnt an die Hausfarben der Vermieter,
+ * damit beim Umschalten sofort klar ist, wessen Suche gerade gebaut wird.
+ * Bewusst nur Akzentfarben: keine Logos, keine Nachbildung der Originalseiten.
+ */
+const THEMES = {
+  sixt: { accent: '#ff5f00', ink: '#ffffff' },
+  avis: { accent: '#d4002a', ink: '#ffffff' },
+  europcar: { accent: '#7ab800', ink: '#0d2b00' },
+  hertz: { accent: '#ffd100', ink: '#1a1a00' },
+  enterprise: { accent: '#00693c', ink: '#ffffff' },
+  carvia: { accent: '#2f6fed', ink: '#ffffff' },
+  arndt: { accent: '#1f5f8b', ink: '#ffffff' },
+};
 
 const sixt = {
   id: 'sixt',
   label: 'Sixt',
-  status: 'verified',
+  status: 'ready',
   method: 'GET',
+  theme: THEMES.sixt,
   markets: SIXT_MARKETS,
-  /** Sixt adressiert Stationen ueber eine numerische ID (Legacy-Parameter `uci`). */
-  stationKey: 'sixt',
-  note:
-    'Öffnet die Länderseite mit vorbelegter Suchmaske. Ein Klick auf "Suche" ' +
-    'zeigt die Preise. Ein Direktsprung in die Trefferliste ist nicht möglich — ' +
-    'Sixt verlangt dafür eine stationsspezifische UUID, die sich nicht aus der ' +
-    'Stations-ID ableiten lässt.',
+  landing: 'form', // Suchmaske vorbelegt, ein Klick auf "Suche" fehlt noch
+  capabilities: {
+    // Nachweislich ausgewertet (gegen die Live-Seite geprueft, 09/2026):
+    station: true,
+    date: true,
+    time: true,
+    oneWay: true,
+    // Nachweislich NICHT mehr ausgewertet — die Parameter werden verworfen:
+    vehicleClass: false,
+    prepaid: false,
+  },
+  notes: [
+    'Datum muss als yyyymmdd übergeben werden. Das vom Original-Tool benutzte ' +
+      'dd-mm-yyyy wird stillschweigend ignoriert.',
+    'Die Parameter grp (Fahrzeugklasse) und prpd (Prepaid) werden von Sixt ' +
+      'heute verworfen — geprüft: die Trefferliste startet mit leerem Filter.',
+    'Ein Direktsprung in die Trefferliste ist nicht möglich; Sixt adressiert ' +
+      'Stationen dort über eine UUID, die sich aus der Stations-ID nicht ' +
+      'ableiten lässt. Das Tool belegt die Suchmaske vor.',
+  ],
 
   build(q, market, station, returnStation) {
     const p = new URLSearchParams();
-    p.set('uci', String(station.id));
-    p.set('rci', String((returnStation || station).id));
-    p.set('uda', sixtDate(q.pickupDate));
-    p.set('rda', sixtDate(q.returnDate));
-    p.set('uti', hhmm(q.pickupTime));
-    p.set('rti', hhmm(q.returnTime));
-    if (q.vehicleType !== 'truck') p.set('ctyp', 'P');
-    if (q.group) p.set('grp', q.group);
-    if (q.prepaid) p.set('prpd', 'Y');
-    // Kundennummer/Passwort landen im Klartext in der URL — bewusst optional.
-    if (q.sixtCustomerNo) p.set('kdnr', q.sixtCustomerNo);
-    if (q.sixtPassword) p.set('pasw', q.sixtPassword);
-
-    const base = market.host.includes('/')
-      ? `https://${market.host}/`
-      : `https://${market.host}/`;
-    return { url: `${base}?${p.toString()}` };
+    p.set('uci', String(station.code));
+    p.set('rci', String((returnStation || station).code));
+    p.set('uda', q.pickupDate.replaceAll('-', ''));
+    p.set('rda', q.returnDate.replaceAll('-', ''));
+    p.set('uti', q.pickupTime.replace(':', ''));
+    p.set('rti', q.returnTime.replace(':', ''));
+    p.set('ctyp', 'P');
+    return { url: `https://${market.host}/?${p.toString()}` };
   },
 };
 
-export const PROVIDERS = [sixt];
+/* ============================================================ Geplant */
+
+/**
+ * Anbieter, deren Link-Format noch nicht aus einer echten Suche abgeleitet
+ * wurde. Sie erscheinen in der Oberflaeche, liefern aber bewusst keinen
+ * konstruierten Link — ein geratener Link waere schlechter als gar keiner.
+ *
+ * `homepage` dient als ehrlicher Notausgang: Suche dort von Hand.
+ */
+function planned(id, label, homepage, why) {
+  return {
+    id,
+    label,
+    status: 'planned',
+    method: 'GET',
+    // Auch geplante Anbieter brauchen ein Thema: die Oberfläche färbt jede
+    // Zeile nach Anbieter ein, auch die Fehlanzeigen.
+    theme: THEMES[id] || { accent: '#8a8a8a', ink: '#ffffff' },
+    markets: [],
+    homepage,
+    capabilities: {},
+    notes: [why],
+    build: null,
+  };
+}
+
+const avis = planned(
+  'avis',
+  'Avis',
+  'https://www.avis.de/',
+  'Sendet die Suche per POST an secure.avis.de. Die Feldnamen sind bekannt ' +
+    '(hire-location, return-location, pickupDateTime, returnDateTime, awdcode), ' +
+    'das erwartete Datumsformat noch nicht.'
+);
+
+const europcar = planned(
+  'europcar',
+  'Europcar',
+  'https://www.europcar.de/',
+  'Suchmaske ist vollständig JS-gesteuert, kein GET-Formular. Das Link-Format ' +
+    'muss aus einer echten Suche abgeleitet werden.'
+);
+
+const hertz = planned('hertz', 'Hertz', 'https://www.hertz.de/', 'Noch nicht untersucht.');
+const enterprise = planned(
+  'enterprise',
+  'Enterprise',
+  'https://www.enterprise.de/',
+  'Noch nicht untersucht.'
+);
+const carvia = planned('carvia', 'Carvia', 'https://www.carvia.de/', 'Noch nicht untersucht.');
+const arndt = planned(
+  'arndt',
+  'Arndt',
+  'https://www.arndt-autovermietung.de/',
+  'Noch nicht untersucht.'
+);
+
+export const PROVIDERS = [sixt, avis, europcar, hertz, enterprise, carvia, arndt];
+
+export const READY_PROVIDERS = PROVIDERS.filter((p) => p.status === 'ready');
 
 export function providerById(id) {
   return PROVIDERS.find((p) => p.id === id);
