@@ -1,9 +1,14 @@
 {
-  "name": "mietwagen-preistool",
+  "name": "tracker",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Öffnet dieselbe Mietwagensuche gleichzeitig auf allen Sixt-Länderseiten",
+  "description": "TRACKER — dieselbe Mietwagensuche auf allen Sixt-Länderseiten gegenübergestellt",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shaineless/mietwagen-tool.git"
+  },
   "scripts": {
     "build": "node build.mjs",
     "serve": "node build.mjs && node tools/serve.mjs",

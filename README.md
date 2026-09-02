@@ -217,3 +217,15 @@ Fahrzeugbilder und Preise stammen von Sixt. Die Farbthemen sind an die
 Hausfarben der Vermieter angelehnt und dienen der Orientierung. Keine Logos,
 keine Nachbildung der Originalseiten; dies ist kein Angebot der genannten
 Unternehmen.
+
+## Lizenz
+
+[MIT](LICENSE) für den Quelltext. Marken, Logos, Fahrzeugbilder und Preisdaten
+der Sixt SE gehören ihr und sind davon nicht erfasst. Dieses Projekt steht in
+keiner Verbindung zur Sixt SE.
+
+Das Werkzeug ist für die eigene Suche gedacht. Wer es weitergibt oder
+öffentlich betreibt, sollte vorher klären, ob das mit Sixts
+Nutzungsbedingungen vereinbar ist — beim Abrufen im eigenen Browser ist die
+Lage eine andere als bei einem Dienst, der für viele Leute gleichzeitig
+abfragt.
