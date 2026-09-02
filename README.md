@@ -24,6 +24,7 @@ keine Anmeldung, keine Daten nach draußen.
 
 - [Was TRACKER beantwortet](#was-tracker-beantwortet)
 - [Loslegen](#loslegen)
+  - [Wenn der Browser warnt](#wenn-der-browser-warnt)
 - [Die Funktionen im Einzelnen](#die-funktionen-im-einzelnen)
 - [Was es nicht kann](#was-es-nicht-kann)
 - [Selbst bauen](#selbst-bauen)
@@ -69,11 +70,52 @@ erspart später das Rätselraten. Wenn alles läuft, lässt es sich abstellen.
 eigenes, unsichtbares Browserfenster. Ohne einen der beiden bleibt der
 Link-Modus: die Suchen werden gebaut, geöffnet werden sie von Hand.
 
-**Windows wird warnen.** Die EXE ist nicht signiert, ein Zertifikat kostet
-mehrere hundert Euro im Jahr. SmartScreen meldet deshalb „Unbekannter
-Herausgeber". Wer das nicht anklicken mag, hat eine bessere Möglichkeit als
-Vertrauen: der komplette Quellcode liegt hier, und [selbst bauen](#selbst-bauen)
-sind drei Befehle.
+**Der Browser wird warnen.** Siehe den nächsten Abschnitt, dort steht, warum
+und was zu tun ist.
+
+### Wenn der Browser warnt
+
+> „Tracker.exe wird häufig nicht heruntergeladen. Stellen Sie sicher, dass Sie
+> Tracker.exe vertrauen, bevor Sie sie öffnen."
+
+Diese Meldung kommt beim Herunterladen, und sie verunsichert zu Recht. Deshalb
+ausführlich:
+
+**Was sie bedeutet.** Wörtlich das, was dasteht: die Datei wird *selten*
+heruntergeladen. Chrome und Edge führen für jede Datei einen Ruf, der sich aus
+der Zahl der Downloads speist. TRACKER haben bisher eine Handvoll Menschen
+geladen, also gibt es keinen Ruf, also warnt der Browser. **Das ist eine
+Aussage über die Verbreitung, nicht über den Inhalt.** Kein Virenfund.
+
+**Warum es nicht einfach wegzumachen ist.** Die Datei ist nicht signiert. Ein
+Signaturzertifikat kostet je nach Art zwischen zweihundert und sechshundert
+Euro im Jahr, für ein Werkzeug, das nichts kostet und niemandem gehört. Die
+Warnung verschwindet auch von allein, sobald genug Menschen die Datei geladen
+haben, nur dauert das.
+
+**Wie man weiterkommt.** In Chrome auf die drei Punkte neben der Datei in der
+Downloadleiste, dann „Beibehalten". Fragt Windows danach noch einmal:
+„Weitere Informationen" und dann „Trotzdem ausführen".
+
+**Wie man sich vergewissert, statt zu vertrauen.** Das ist der ehrlichere Weg,
+und es gibt ihn hier:
+
+- Der **komplette Quellcode** liegt offen. Jede Zeile, die in der EXE steckt,
+  ist hier nachlesbar.
+- **Selbst bauen** sind [drei Befehle](#selbst-bauen). Dann stammt die Datei
+  vom eigenen Rechner.
+- Zu jeder veröffentlichten Datei steht auf der
+  [Releases-Seite](../../releases) eine **Prüfsumme** (`sha256:…`). Damit
+  lässt sich nachrechnen, dass die heruntergeladene Datei genau die ist, die
+  hier gebaut wurde:
+
+  ```powershell
+  Get-FileHash Tracker.exe -Algorithm SHA256
+  ```
+
+- Das Programm **läuft nur auf dem eigenen Rechner**. Es horcht ausschließlich
+  auf `127.0.0.1`, ist aus dem Netz nicht erreichbar, hat kein Konto und
+  schickt nichts an Dritte. Es redet mit sixt.de, sonst mit niemandem.
 
 ---
 
@@ -350,6 +392,23 @@ beantwortet, nie mit *Einverstanden*.
 ## Selbst bauen
 
 Voraussetzung: [Node.js](https://nodejs.org) 20 oder neuer.
+
+### Ohne EXE, mit einem Doppelklick
+
+Der einfachste Weg für alle, die die fertige Datei nicht ausführen möchten:
+
+1. Auf der [Releases-Seite](../../releases) unter **„Source code (zip)"**
+   herunterladen.
+2. **Die ZIP-Datei entpacken.** Rechtsklick, „Alle extrahieren". Das ist
+   wichtig: klickt man die Startdatei direkt im Archiv an, entpackt Windows
+   nur sie allein und der Start misslingt.
+3. Im entpackten Ordner **`TRACKER starten.cmd`** doppelklicken.
+
+Beim ersten Mal holt sich die Datei die benötigten Bausteine selbst, das dauert
+wenige Sekunden. Danach baut sie die Oberfläche und öffnet den Browser. Fehlt
+Node.js, sagt sie das und nennt die Adresse zum Herunterladen.
+
+### Von Hand
 
 ```bash
 git clone https://github.com/Shaineless/mietwagen-tool.git
