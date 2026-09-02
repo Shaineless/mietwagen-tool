@@ -84,15 +84,85 @@ function remember(key, record) {
 
 /**
  * Der Preisabruf laeuft im Hintergrund, damit die Oberflaeche waehrenddessen
- * bedienbar bleibt. Zwei Anfragen gleichzeitig — mehr waere gegenueber den
- * Anbieterseiten unhoeflich und bringt auch nichts, weil ohnehin jede Seite
- * ihre Ladezeit braucht.
+ * bedienbar bleibt. Wie viele Abrufe gleichzeitig laufen, regelt sich selbst —
+ * siehe unten. Der Mindestabstand je Host in browser.mjs bleibt davon
+ * unberuehrt: er ist die Hoeflichkeitsgrenze und wird nicht angetastet.
  */
 const queue = [];
 let laufend = 0;
 let erledigt = 0;
 let gesamt = 0;
-const PARALLEL = 2;
+
+/* --------------------------------------------- Wie viele auf einmal?
+ *
+ * Feste Zahl geht nicht: gemessen vertrug ein kraeftiger Rechner sechs
+ * gleichzeitige Abrufe (12 Abrufe in 17,6s statt 23,4s bei vier), waehrend auf
+ * einem schwaecheren Geraet die Zeit je Abruf schneller steigt und die
+ * Saettigung frueher kommt. Zwei zu nehmen, weil es ueberall geht, verschenkt
+ * auf dem einen die Haelfte; sechs zu nehmen, weil es hier geht, koennte den
+ * anderen ueberladen.
+ *
+ * Deshalb faengt es klein an und tastet sich hoch, solange der Durchsatz
+ * dabei steigt. Faellt er, geht es einen Schritt zurueck und bleibt dort.
+ *
+ * Die Obergrenze ist nicht willkuerlich: bei sechs lag der Durchsatz bei
+ * einem Abruf je 1,47 Sekunden — und MIN_GAP_MS in browser.mjs laesst je Host
+ * ohnehin nur einen alle 1,5 Sekunden zu. Mehr Arbeiter warten dann bloss
+ * gemeinsam. Gemessen brachte acht denn auch nichts mehr gegenueber sechs.
+ */
+const PARALLEL_MIN = 2;
+const PARALLEL_MAX = 6;
+let parallel = PARALLEL_MIN;
+
+/** Die letzten Abrufdauern, jüngste zuerst. */
+let dauern = [];
+/** Bester bisher gesehener Mittelwert — der Massstab fuer "wird es schlechter?". */
+let besteDauer = null;
+
+function mittelwert(werte) {
+  if (!werte.length) return null;
+  return werte.reduce((a, b) => a + b, 0) / werte.length;
+}
+
+/**
+ * Nach jedem Abruf nachjustieren.
+ *
+ * Bewusst traege: erst ab vier Messungen, und nur um einen Schritt. Ein
+ * Regler, der bei jedem Ausreisser springt, pendelt und wird dadurch
+ * langsamer als eine feste Zahl.
+ */
+function regleParallel(dauerMs) {
+  dauern.unshift(dauerMs);
+  if (dauern.length > 6) dauern.pop();
+  if (dauern.length < 4) return;
+
+  const jetzt = mittelwert(dauern.slice(0, 4));
+  if (besteDauer == null || jetzt < besteDauer) besteDauer = jetzt;
+
+  // Deutlich langsamer als im besten Fall: einen Schritt zurueck. Der Faktor
+  // ist grosszuegig, weil die Zeit je Abruf mit mehr Arbeitern natuerlich
+  // steigt — entscheidend ist der Durchsatz, nicht der einzelne Abruf.
+  if (jetzt > besteDauer * 2.2 && parallel > PARALLEL_MIN) {
+    parallel--;
+    dauern = [];
+    console.log(`  ⇣ ${parallel} gleichzeitig — es wurde langsamer`);
+    return;
+  }
+
+  // Laeuft es rund und wartet genug Arbeit, einen Schritt hoch.
+  if (jetzt < besteDauer * 1.5 && parallel < PARALLEL_MAX && queue.length > parallel) {
+    parallel++;
+    dauern = [];
+    console.log(`  ⇡ ${parallel} gleichzeitig`);
+  }
+}
+
+/** Vor einem neuen Durchlauf wieder klein anfangen. */
+function setzeParallelZurueck() {
+  parallel = PARALLEL_MIN;
+  dauern = [];
+  besteDauer = null;
+}
 
 const ABRUF = { sixt: quoteSixt };
 const SCHUTZ_ABRUF = { sixt: quoteSchutz };
@@ -158,7 +228,7 @@ async function enqueue(jobs) {
     gesamt++;
   }
   if (abgelehnt) console.log(`  ! ${abgelehnt} Auftraege mit unbekanntem Ziel abgelehnt`);
-  for (let i = laufend; i < PARALLEL; i++) tick();
+  for (let i = laufend; i < parallel; i++) tick();
 }
 
 /**
@@ -236,7 +306,7 @@ function deuteFehler(text) {
 const VERSUCHE_MAX = 3;
 
 async function tick() {
-  if (laufend >= PARALLEL) return;
+  if (laufend >= parallel) return;
   const job = queue.shift();
   if (!job) {
     // Nichts mehr zu tun: Zaehler zuruecksetzen, damit der naechste Lauf
@@ -244,11 +314,15 @@ async function tick() {
     if (laufend === 0) {
       erledigt = 0;
       gesamt = 0;
+      // Auch den Regler: der naechste Lauf kann ein ganz anderer sein — eine
+      // Laenderseite statt fuenfzig Kalendertagen.
+      setzeParallelZurueck();
     }
     return;
   }
 
   laufend++;
+  const begonnen = Date.now();
   try {
     const wartet = START_ABSTAND_MS - (Date.now() - letzterStart);
     if (wartet > 0) await new Promise((r) => setTimeout(r, wartet));
@@ -357,7 +431,11 @@ async function tick() {
   } finally {
     laufend--;
     erledigt++;
-    tick();
+    regleParallel(Date.now() - begonnen);
+    // So viele nachstarten, wie der Regler jetzt erlaubt — nach einem
+    // Hochschalten sind das zwei statt einem, sonst bliebe die neue Stufe
+    // bis zum naechsten Auftrag ungenutzt.
+    for (let i = laufend; i < parallel; i++) tick();
   }
 }
 
