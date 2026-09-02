@@ -149,9 +149,14 @@ Die Richtung wechselt je Datum, am 4. September war dieselbe Station um 13:30
 einer Faustregel.
 
 Abhol- und Rückgabezeit lassen sich getrennt setzen; jedes Paar ist eine eigene
-Abfrage mit eigenem Reiter. Auch im Kalender: dort zeigt jeder Abholtag die
-günstigste seiner Uhrzeiten, und die Tagesansicht listet alle auf, günstigste
-zuerst, mit dem Aufschlag daneben.
+Abfrage mit eigenem Reiter.
+
+**Im Kalender** steht die günstigste Uhrzeit direkt im Tagesfeld unter dem
+Preis, beim besten Tag mit einem Stern. Darüber sagt eine Kennzahl, welche
+Uhrzeit insgesamt vorn liegt („Beste Abholzeit 10:00, an 6 von 7 Tagen vorn").
+Die Tagesansicht listet auf Klick alle Uhrzeiten auf, günstigste zuerst, mit
+dem Aufschlag daneben. Gemessen: an einem Tag gewann 16:00, am nächsten 10:00 —
+ein pauschales „morgens ist billiger" gibt es nicht.
 
 ### 4 · Preiskalender, wann ist es billig?
 

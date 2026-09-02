@@ -1179,6 +1179,10 @@ td.unstimmig .betrag {
 #kalCsv { white-space: nowrap; font-size: .6875rem; padding: 10px 15px; }
 #kalCsv span { margin-left: 8px; }
 .calendar-insights { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 21px 4px; margin-bottom: 24px; background: #f6f7f9; border-radius: 17px; }
+/* Bei mehreren Uhrzeiten kommt "Beste Abholzeit" als vierte Kennzahl dazu.
+   Ohne eigene Spalte braeche sie in eine zweite Zeile um und stuende dort
+   allein herum. */
+.calendar-insights.vier { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .calendar-insight { padding: 0 22px; min-width: 0; }
 .calendar-insight + .calendar-insight { border-left: 1px solid var(--hairline); }
 .calendar-insight-label { display: block; color: var(--muted); font-size: .6875rem; margin-bottom: 7px; }
@@ -1249,11 +1253,15 @@ button.ktag { display: flex; flex-direction: column; align-items: flex-start; ju
   .calendar-result-heading h2 { font-size: 1.3rem; }
   #kalCsv { padding: 8px 10px; font-size: .625rem; }
   #kalCsv span { display: none; }
-  .calendar-insights { grid-template-columns: 1fr 1fr; row-gap: 15px; }
-  .calendar-insight:nth-child(3) { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--hairline); padding-top: 12px; margin-inline: 12px; padding-inline: 0; display: flex; gap: 9px; align-items: baseline; }
-  .calendar-insight:nth-child(3) .calendar-insight-label { margin: 0; }
-  .calendar-insight:nth-child(3) .calendar-insight-value { font-size: .875rem; }
-  .calendar-insight:nth-child(3) .calendar-insight-note { display: none; }
+  .calendar-insights, .calendar-insights.vier { grid-template-columns: 1fr 1fr; row-gap: 15px; }
+  /* Bei vier Kennzahlen ergeben zwei mal zwei ein sauberes Feld, die dritte
+     braucht dann keine Sonderrolle. */
+  .calendar-insights.vier .calendar-insight:nth-child(n+3) { border-top: 1px solid var(--hairline); padding-top: 13px; }
+  .calendar-insights.vier .calendar-insight:nth-child(3) { border-left: 0; }
+  .calendar-insights:not(.vier) .calendar-insight:nth-child(3) { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--hairline); padding-top: 12px; margin-inline: 12px; padding-inline: 0; display: flex; gap: 9px; align-items: baseline; }
+  .calendar-insights:not(.vier) .calendar-insight:nth-child(3) .calendar-insight-label { margin: 0; }
+  .calendar-insights:not(.vier) .calendar-insight:nth-child(3) .calendar-insight-value { font-size: .875rem; }
+  .calendar-insights:not(.vier) .calendar-insight:nth-child(3) .calendar-insight-note { display: none; }
   table.kalender { border-spacing: 3px 5px; width: calc(100% + 6px); margin-inline: -3px; }
   .kalender th { font-size: .5625rem; }
   button.ktag { height: 74px; padding: 7px 3px; border-radius: 9px; align-items: center; text-align: center; }

@@ -1186,6 +1186,10 @@ td.unstimmig .betrag {
 #kalCsv { white-space: nowrap; font-size: .6875rem; padding: 10px 15px; }
 #kalCsv span { margin-left: 8px; }
 .calendar-insights { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 21px 4px; margin-bottom: 24px; background: #f6f7f9; border-radius: 17px; }
+/* Bei mehreren Uhrzeiten kommt "Beste Abholzeit" als vierte Kennzahl dazu.
+   Ohne eigene Spalte braeche sie in eine zweite Zeile um und stuende dort
+   allein herum. */
+.calendar-insights.vier { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .calendar-insight { padding: 0 22px; min-width: 0; }
 .calendar-insight + .calendar-insight { border-left: 1px solid var(--hairline); }
 .calendar-insight-label { display: block; color: var(--muted); font-size: .6875rem; margin-bottom: 7px; }
@@ -1256,11 +1260,15 @@ button.ktag { display: flex; flex-direction: column; align-items: flex-start; ju
   .calendar-result-heading h2 { font-size: 1.3rem; }
   #kalCsv { padding: 8px 10px; font-size: .625rem; }
   #kalCsv span { display: none; }
-  .calendar-insights { grid-template-columns: 1fr 1fr; row-gap: 15px; }
-  .calendar-insight:nth-child(3) { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--hairline); padding-top: 12px; margin-inline: 12px; padding-inline: 0; display: flex; gap: 9px; align-items: baseline; }
-  .calendar-insight:nth-child(3) .calendar-insight-label { margin: 0; }
-  .calendar-insight:nth-child(3) .calendar-insight-value { font-size: .875rem; }
-  .calendar-insight:nth-child(3) .calendar-insight-note { display: none; }
+  .calendar-insights, .calendar-insights.vier { grid-template-columns: 1fr 1fr; row-gap: 15px; }
+  /* Bei vier Kennzahlen ergeben zwei mal zwei ein sauberes Feld, die dritte
+     braucht dann keine Sonderrolle. */
+  .calendar-insights.vier .calendar-insight:nth-child(n+3) { border-top: 1px solid var(--hairline); padding-top: 13px; }
+  .calendar-insights.vier .calendar-insight:nth-child(3) { border-left: 0; }
+  .calendar-insights:not(.vier) .calendar-insight:nth-child(3) { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--hairline); padding-top: 12px; margin-inline: 12px; padding-inline: 0; display: flex; gap: 9px; align-items: baseline; }
+  .calendar-insights:not(.vier) .calendar-insight:nth-child(3) .calendar-insight-label { margin: 0; }
+  .calendar-insights:not(.vier) .calendar-insight:nth-child(3) .calendar-insight-value { font-size: .875rem; }
+  .calendar-insights:not(.vier) .calendar-insight:nth-child(3) .calendar-insight-note { display: none; }
   table.kalender { border-spacing: 3px 5px; width: calc(100% + 6px); margin-inline: -3px; }
   .kalender th { font-size: .5625rem; }
   button.ktag { height: 74px; padding: 7px 3px; border-radius: 9px; align-items: center; text-align: center; }
@@ -1967,7 +1975,7 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
     </div>
 
     <div id="kalKennzahlen" class="calendar-insights"></div>
-    <div class="calendar-legend"><span><i class="calendar-best-dot" aria-hidden="true"></i> Günstigster Tag</span><span id="kalLegendeAlt" hidden><i class="calendar-old-dot" aria-hidden="true"></i> Aus dem gespeicherten Preisverlauf</span><span>Gesamtpreis für die gewählte Mietdauer</span></div>
+    <div class="calendar-legend"><span><i class="calendar-best-dot" aria-hidden="true"></i> Günstigster Tag</span><span id="kalLegendeAlt" hidden><i class="calendar-old-dot" aria-hidden="true"></i> Aus dem gespeicherten Preisverlauf</span><span id="kalLegendeZeit" hidden>Die Uhrzeit im Feld ist die günstigste des Tages</span><span>Gesamtpreis für die gewählte Mietdauer</span></div>
     <div id="kalBild"></div>
     <div id="kalAuswahl" class="calendar-selection" role="status" aria-live="polite"></div>
     <p class="calendar-note">Tagesfeld auswählen, um den genauen Preis und den Rückgabetag zu sehen. <span class="kal-mobile-note">Die Kalenderfelder zeigen auf kleinen Bildschirmen gerundete Beträge.</span> „, “ bedeutet: kein Preis vorhanden. „…“ bedeutet: noch nicht abgerufen.</p>
@@ -5379,6 +5387,7 @@ function renderKalBild() {
   $('#kalErgebnis').hidden = false;
   // Die Legende erklärt den Punkt nur, wenn es auch welche gibt.
   $('#kalLegendeAlt').hidden = !tage.some((t) => t.ausAufzeichnung);
+  $('#kalLegendeZeit').hidden = d.zeiten.length < 2;
   $('#kalCsv').disabled = !werte.length;
   $('#kalTitel').textContent = 'Dein Preiskalender';
   $('#kalUntertitel').textContent = `${d.station.name} · ${d.markt.label} · ${state.kalender.klasse || 'Günstigste Klasse je Tag'}`;
@@ -5388,10 +5397,38 @@ function renderKalBild() {
     el('strong', { class: 'calendar-insight-value' }, wert),
     el('span', { class: 'calendar-insight-note' }, note)
   );
+  // Bei mehreren Uhrzeiten die Frage beantworten, die man dann hat: welche
+  // gewinnt eigentlich? Ohne diese Zahl müsste man Tag für Tag anklicken.
+  const zeitBilanz = () => {
+    if (d.zeiten.length < 2) return null;
+    const siege = new Map();
+    let mitPreis = 0;
+    for (const t of tage) {
+      if (t.preis == null || !t.uhr) continue;
+      mitPreis++;
+      const k = t.rueckUhr && t.rueckUhr !== t.uhr ? `${t.uhr}→${t.rueckUhr}` : t.uhr;
+      siege.set(k, (siege.get(k) || 0) + 1);
+    }
+    if (!siege.size) return null;
+    const [zeit, n] = [...siege].sort((a, b) => b[1] - a[1])[0];
+    return { zeit, n, mitPreis, geteilt: siege.size > 1 };
+  };
+  const bilanz = zeitBilanz();
+
+  $('#kalKennzahlen').classList.toggle('vier', Boolean(bilanz));
   setChildren($('#kalKennzahlen'),
     kennzahl('Bester Gesamtpreis', min == null ? '–' : kalBetrag(min, d.markt.cur),
       beste.length ? `${kalDatum(beste[0].datum)}${beste.length > 1 ? ` und ${beste.length - 1} ${beste.length === 2 ? 'weiterer Tag' : 'weitere Tage'}` : ''}` : 'Sobald die ersten Preise vorliegen'),
     kennzahl('Preisunterschied', min == null ? '–' : kalBetrag(max - min, d.markt.cur), 'Zwischen günstigstem und teuerstem Abholtag'),
+    bilanz
+      ? kennzahl(
+          'Beste Abholzeit',
+          bilanz.zeit,
+          bilanz.geteilt
+            ? `an ${bilanz.n} von ${bilanz.mitPreis} Tagen vorn`
+            : `an allen ${bilanz.mitPreis} Tagen vorn`
+        )
+      : null,
     kennzahl('Tage mit Preis', `${werte.length} / ${tage.length}`, `${state.kalender.dauer} ${state.kalender.dauer === 1 ? 'Tag' : 'Tage'} Mietdauer · ${d.markt.cur}`)
   );
 
@@ -5441,7 +5478,24 @@ function renderKalBild() {
           el('span', { class: 'kdatum', 'aria-hidden': 'true' }, String(new Date(t.datum + 'T12:00:00').getDate())),
           el('span', { 'aria-hidden': 'true' },
             el('span', { class: 'kpreis' }, el('span', { class: 'kpreis-genau' }, exakt), el('span', { class: 'kpreis-kurz' }, kurz)),
-            el('span', { class: 'kal-day-note' }, istBest ? 'Bestpreis' : t.preis == null ? (t.geladen ? 'kein Preis' : 'offen') : '')
+            // Bei mehreren Uhrzeiten steht die siegreiche im Feld selbst. Sie
+            // nur in den Tooltip zu legen hiess: unsichtbar auf dem Touchgerät
+            // und uebersehen auf jedem anderen.
+            el(
+              'span',
+              { class: 'kal-day-note' },
+              t.preis == null
+                ? t.geladen
+                  ? 'kein Preis'
+                  : 'offen'
+                : d.zeiten.length > 1 && t.uhr
+                  ? (istBest ? '★ ' : '') +
+                    t.uhr +
+                    (t.rueckUhr && t.rueckUhr !== t.uhr ? `→${t.rueckUhr}` : '')
+                  : istBest
+                    ? 'Bestpreis'
+                    : ''
+            )
           )));
         }))))
       )
