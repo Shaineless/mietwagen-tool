@@ -1,6 +1,15 @@
 node_modules/
 tools/_probe*
 
+# Der Projektstand vor dem Redesign. Bleibt auf der Platte, gehoert aber nicht
+# ins Repo: ein zweiter halber Quellbaum verwirrt jeden, der hineinschaut.
+alt/
+
+# Oertliche Werkzeug- und Editoreinstellungen — auf jedem Rechner andere.
+.claude/
+.vscode/
+.idea/
+
 # Betriebsdaten, keine Quellen: entstehen beim Benutzen und sind auf jedem
 # Rechner andere. Der ACRISS-Katalog bleibt bewusst drin — er ist mühsam
 # gesammeltes Wissen darüber, welche Klassen es wo gibt.
@@ -17,4 +26,3 @@ build/
 dist/*.exe
 dist/Tracker-Daten/
 data/verbesserungen.jsonl
-RELEASE-*.md
