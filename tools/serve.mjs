@@ -97,13 +97,55 @@ const PARALLEL = 2;
 const ABRUF = { sixt: quoteSixt };
 const SCHUTZ_ABRUF = { sixt: quoteSchutz };
 
-function enqueue(jobs) {
+/**
+ * Erlaubte Zieladressen.
+ *
+ * Der Host aus einem Auftrag landet ungeprueft in einer Adresse, die der
+ * Dienst dann im Browser oeffnet. Ohne diese Liste koennte jede Seite, die im
+ * Browser offen ist, den Dienst ueber /api/fetch dazu bringen, eine beliebige
+ * Adresse aufzurufen — auch im Heimnetz, etwa die Weboberflaeche des Routers.
+ * Deshalb: nur die Laenderseiten, die im Anbieterregister stehen.
+ *
+ * Die Liste wird einmal aus src/providers.js gelesen, damit sie nicht an zwei
+ * Stellen gepflegt werden muss und nicht auseinanderlaufen kann.
+ */
+let erlaubteHosts = null;
+
+async function hostErlaubt(host) {
+  if (!erlaubteHosts) {
+    erlaubteHosts = new Set();
+    try {
+      const roh = (await leseVorrat('src/providers.js'))?.toString('utf8') || '';
+      for (const t of roh.matchAll(/host:\s*'([^']+)'/g)) erlaubteHosts.add(t[1]);
+    } catch {
+      /* unten abgefangen */
+    }
+    // Aus der EXE heraus gibt es keine Quelldatei; dann kommt die Liste aus
+    // dem gebauten Bundle, in dem dieselben Zeilen stehen.
+    if (!erlaubteHosts.size) {
+      const roh = (await leseVorrat('dist/tracker.html'))?.toString('utf8') || '';
+      for (const t of roh.matchAll(/host:\s*"([^"]+\.sixt\.[^"]+|[^"]*sixt\.com[^"]*)"/g)) {
+        erlaubteHosts.add(t[1]);
+      }
+      for (const t of roh.matchAll(/host:\s*'([^']+)'/g)) erlaubteHosts.add(t[1]);
+    }
+  }
+  return erlaubteHosts.has(String(host));
+}
+
+async function enqueue(jobs) {
+  let abgelehnt = 0;
   for (const j of jobs) {
     if (!j?.key || results.has(j.key)) continue;
     if (queue.some((q) => q.key === j.key)) continue;
+    if (!(await hostErlaubt(j.host))) {
+      abgelehnt++;
+      continue;
+    }
     queue.push(j);
     gesamt++;
   }
+  if (abgelehnt) console.log(`  ! ${abgelehnt} Auftraege mit unbekanntem Ziel abgelehnt`);
   for (let i = laufend; i < PARALLEL; i++) tick();
 }
 
@@ -221,6 +263,33 @@ function json(res, status, body) {
   res.end(payload);
 }
 
+/**
+ * Darf diese Anfrage etwas veraendern?
+ *
+ * Der Dienst hoert nur auf 127.0.0.1 — von aussen kommt niemand heran. Aber
+ * jede Seite, die der Nutzer im Browser offen hat, kann an localhost senden.
+ * Ohne Pruefung koennte eine beliebige Webseite dem Dienst Auftraege geben,
+ * waehrend TRACKER laeuft.
+ *
+ * Erlaubt sind deshalb nur: die eigene Oberflaeche (gleicher Ursprung), die
+ * Browser-Erweiterung (chrome-extension://) und Aufrufe ganz ohne Ursprung —
+ * das sind Werkzeuge wie curl, die kein Browser sind und bei denen es keine
+ * fremde Seite gibt, die jemanden hereinlegen koennte.
+ */
+function darfAendern(req) {
+  const ursprung = req.headers.origin;
+  if (!ursprung) return true;
+  if (ursprung.startsWith('chrome-extension://') || ursprung.startsWith('moz-extension://')) {
+    return true;
+  }
+  try {
+    const u = new URL(ursprung);
+    return u.hostname === '127.0.0.1' || u.hostname === 'localhost' || u.hostname === '[::1]';
+  } catch {
+    return false;
+  }
+}
+
 async function readBody(req, limit = 1_000_000) {
   const chunks = [];
   let size = 0;
@@ -260,6 +329,13 @@ async function weckerRunde({ sofort = false } = {}) {
     for (const w of zuTun) {
       // Zwischendurch abbrechen, sobald jemand selbst etwas sucht.
       if (laufend > 0 || queue.length) break;
+      // Der Wecker ruft am Auftragsweg vorbei direkt ab — die Zielpruefung
+      // muss er deshalb selbst machen. Ein Wecker mit fremdem Ziel waere
+      // sonst eine Anweisung, die sich alle sechs Stunden wiederholt.
+      if (!(await hostErlaubt(w.host))) {
+        await vermerkePruefung(w.id, { fehler: 'Unbekannte Länderseite' }).catch(() => {});
+        continue;
+      }
       try {
         const r = await quoteSixt({
           host: w.host,
@@ -416,6 +492,14 @@ const server = createServer(async (req, res) => {
     return res.end();
   }
 
+  // Alles, was etwas veraendert oder anstoesst, nur vom eigenen Ursprung.
+  // Lesende Abfragen bleiben offen — sie richten keinen Schaden an, und die
+  // Erweiterung fragt aus dem Kontext der Anbieterseite.
+  if (req.method === 'POST' && !darfAendern(req)) {
+    console.log(`  ! Abgewiesen: POST ${path} von ${req.headers.origin}`);
+    return json(res, 403, { ok: false, error: 'Nur von der eigenen Oberfläche.' });
+  }
+
   // Lebenszeichen — die Oberflaeche schaltet daran den Preis-Modus frei.
   if (path === '/api/health') {
     return json(res, 200, {
@@ -441,7 +525,7 @@ const server = createServer(async (req, res) => {
         });
       }
       const vorher = queue.length + laufend;
-      enqueue(jobs);
+      await enqueue(jobs);
       return json(res, 200, { ok: true, angenommen: queue.length + laufend - vorher });
     } catch (e) {
       return json(res, 400, { ok: false, error: String(e.message).slice(0, 200) });
