@@ -108,6 +108,8 @@ Dazu:
 
 ### 2 · Stationen gegenübergestellt
 
+<img src="docs/bilder/08-Stationsvergleich.png" alt="Stationsvergleich">
+
 Sind mehrere Stationen gewählt, entstehen Reiter, und man klickt hin und her.
 Ein Kasten über den Reitern sagt stattdessen direkt, welche günstiger ist.
 
@@ -125,6 +127,8 @@ Getrennt je Währung. Stationen ohne Ergebnis werden benannt, nicht
 stillschweigend weggelassen, sonst wüsste man nicht, dass eine fehlt.
 
 ### 3 · Uhrzeiten, der unterschätzte Hebel
+
+<img src="docs/bilder/07-Uhrzeiten.png" alt="Uhrzeiten">
 
 Sixt rechnet nach Uhrzeit ab, nicht nach Kalendertag. Das schlägt härter durch
 als jede Länderseite, und kaum jemand prüft es.
@@ -181,6 +185,8 @@ frei eintragbar bis 90.
 
 ### 5 · Mehrere Stationen über einen ganzen Zeitraum
 
+<img src="docs/bilder/09-Mehrere-Stationen.png" alt="Mehrere Stationen">
+
 Eigener Bereich im Kalender: denselben Zeitraum an mehreren Stationen
 durchrechnen. Gewertet wird über die Abholtage, die an **allen** Stationen einen
 Preis haben, sonst verglichen sich zwei verschiedene Zeiträume.
@@ -203,10 +209,11 @@ Das ist die Stelle, an der die meisten Vergleiche falsch liegen. TRACKER klickt
 angezeigten Tagespreis mit den Miettagen zu multiplizieren. Gemessen lagen
 beide Wege bis zu **26 %** auseinander.
 
-Zugeordnet werden die Pakete über ihren **Inhalt**. Selbstbeteiligung ja/nein,
-günstiger/teurer, , nicht über den Namen: der heißt auf jeder Länderseite
-anders. Der jeweilige Originalname steht klein über dem Preis, damit die
-Zuordnung nachprüfbar bleibt.
+Zugeordnet werden die Pakete über ihren **Inhalt**, also danach, ob eine
+Selbstbeteiligung bleibt und ob das Paket das günstigere oder das teurere ist.
+Nicht über den Namen: der heißt auf jeder Länderseite anders. Der jeweilige
+Originalname steht klein über dem Preis, damit die Zuordnung nachprüfbar
+bleibt.
 
 > **Beispiel** · Frankfurt, vier Tage, Golf-Klasse:
 > „Ohne SB, Rundum" kostet **441,20 €** auf sixt.de und **507,90 €** auf
@@ -253,6 +260,8 @@ zwischen zwei Abholzeiten wäre alles andere ein falscher Alarm.
 > Stornobedingungen deiner Buchung, die kennt dieses Werkzeug nicht.
 
 ### 9 · Excel-Ausgabe
+
+<img src="docs/bilder/10-Excel.png" alt="Excel-Ausgabe">
 
 Eine echte `.xlsx` mit Kopfblock (Station, Zeitraum, Abrufmodus, Zeitpunkt),
 fixierter Kopfzeile, Autofilter und festen Spaltenbreiten. Beträge sind **Zahlen
@@ -420,7 +429,7 @@ nicht durchgeht.
 | --- | --- |
 | `build.mjs` | Bündelt Module, Stile und Stationen zu einer HTML-Datei und verteilt den Parser |
 | `build-exe.mjs` | Baut daraus die einzelne Windows-EXE (Node-Laufzeit eingebettet, ohne Konsolenfenster) |
-| `Preistool starten.cmd` | Bauen, Dienst starten, Fenster öffnen, in einem Doppelklick |
+| `TRACKER starten.cmd` | Bauen, Dienst starten, Fenster öffnen, in einem Doppelklick |
 
 ### Was **nicht** im Repository liegt
 
