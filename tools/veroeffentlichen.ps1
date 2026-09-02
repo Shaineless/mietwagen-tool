@@ -2,10 +2,11 @@
 #
 # Ein Durchlauf macht alles, was zum Hochladen noetig ist:
 #
-#   1. baut die EXE neu, wenn eine Quelldatei juenger ist als die vorhandene
-#   2. schiebt offene Commits hoch
-#   3. legt das Release an (Version aus package.json)
-#   4. haengt die EXE als Datei an und nennt am Ende die Adresse
+#   1. bricht sofort ab, wenn gerade nicht main ausgecheckt ist
+#   2. baut die EXE neu, wenn eine Quelldatei juenger ist als die vorhandene
+#   3. schiebt offene Commits hoch
+#   4. legt das Release an (Version aus package.json)
+#   5. haengt die EXE als Datei an und nennt am Ende die Adresse
 #
 # Die Zugangsdaten kommen aus dem Windows-Anmeldeinformationsspeicher, in dem
 # Git sie beim ersten Push abgelegt hat. Sie werden nirgends angezeigt und
@@ -41,7 +42,23 @@ $repo = $Matches[2]
 Write-Host "  Version:    $version"
 Write-Host "  Ziel:       $besitzer/$repo"
 
-# --- 1. EXE bauen, wenn noetig ---------------------------------------------
+# --- 1. Nur von main veroeffentlichen ---------------------------------------
+
+# Diese Pruefung steht ganz vorn, vor dem Bauen. Beim Ausprobieren liegt man auf
+# einem Nebenzweig, und ein Doppelklick aus Versehen soll dort nichts anfassen:
+# kein laufendes TRACKER beenden, keine zwei Minuten bauen, um am Ende doch
+# abzulehnen. Erst recht keinen halbfertigen Stand online stellen, denn das
+# laesst sich schlecht zuruecknehmen.
+$zweig = git rev-parse --abbrev-ref HEAD
+
+if ($zweig -ne 'main') {
+  Schlecht "Veroeffentlicht wird nur von main. Du bist gerade auf '$zweig'."
+  Write-Host "  Das ist Absicht: auf einem Nebenzweig wird ausprobiert, nicht ausgeliefert." -ForegroundColor Yellow
+  Write-Host "  Wenn der Stand wirklich raus soll, erst nach main holen." -ForegroundColor Yellow
+  exit 1
+}
+
+# --- 2. EXE bauen, wenn noetig ---------------------------------------------
 
 $exe = 'dist\Tracker.exe'
 
@@ -70,25 +87,13 @@ if ((-not (Test-Path $exe)) -or ($neuste -and (Get-Item $exe).LastWriteTime -lt 
 $exeInfo = Get-Item $exe
 Write-Host "              $([math]::Round($exeInfo.Length/1MB,1)) MB"
 
-# --- 2. Commits hochschieben ------------------------------------------------
+# --- 3. Commits hochschieben ------------------------------------------------
 
 $offen = git status --porcelain
 if ($offen) {
   Schlecht "Es liegen ungespeicherte Aenderungen vor:"
   git status --short
   Write-Host "`n  Erst committen, dann veroeffentlichen. Abgebrochen." -ForegroundColor Yellow
-  exit 1
-}
-
-$zweig = git rev-parse --abbrev-ref HEAD
-
-# Nur von main veroeffentlichen. Beim Ausprobieren liegt man auf einem
-# Nebenzweig, und ein Doppelklick aus Versehen wuerde sonst einen halbfertigen
-# Stand als Release online stellen. Das laesst sich schlecht zuruecknehmen.
-if ($zweig -ne 'main') {
-  Schlecht "Veroeffentlicht wird nur von main. Du bist gerade auf '$zweig'."
-  Write-Host "  Das ist Absicht: auf einem Nebenzweig wird ausprobiert, nicht ausgeliefert." -ForegroundColor Yellow
-  Write-Host "  Wenn der Stand wirklich raus soll, erst nach main holen." -ForegroundColor Yellow
   exit 1
 }
 
@@ -106,7 +111,7 @@ if (-not $erfolg) {
 }
 Gut "Stand ist oben."
 
-# --- 3. Zugangsdaten holen --------------------------------------------------
+# --- 4. Zugangsdaten holen --------------------------------------------------
 
 Schritt "Anmeldung bei GitHub ..."
 # Ueber eine Datei statt ueber die Pipe: "git credential fill" erwartet die
@@ -137,7 +142,7 @@ $kopf = @{
   'User-Agent'  = 'tracker-release'
 }
 
-# --- 4. Release anlegen -----------------------------------------------------
+# --- 5. Release anlegen -----------------------------------------------------
 
 $notizen = "docs\release-notes-$version.md"
 # Ausdruecklich als UTF-8 lesen: sonst kommen die Umlaute aus der Notizdatei
@@ -175,7 +180,7 @@ try {
   }
 }
 
-# --- 5. EXE anhaengen -------------------------------------------------------
+# --- 6. EXE anhaengen -------------------------------------------------------
 
 # Eine gleichnamige Datei zuerst wegnehmen: GitHub weist ein Duplikat sonst ab.
 foreach ($a in $release.assets) {
