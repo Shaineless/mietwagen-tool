@@ -168,9 +168,9 @@ const html = readFileSync(src('index.html'), 'utf8')
   .replace('/*SCRIPT*/', () => bundle.replace('/*INTRO*/', () => intro));
 
 mkdirSync(join(root, 'dist'), { recursive: true });
-const outFile = join(root, 'dist', 'mietwagen-preistool.html');
+const outFile = join(root, 'dist', 'tracker.html');
 writeFileSync(outFile, html);
 
 const kb = (Buffer.byteLength(html) / 1024).toFixed(1);
-console.log(`\nFertig: dist/mietwagen-preistool.html (${kb} kB)`);
+console.log(`\nFertig: dist/tracker.html (${kb} kB)`);
 console.log('Einfach im Browser öffnen — kein Server nötig.');

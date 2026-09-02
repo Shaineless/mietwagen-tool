@@ -2,12 +2,13 @@
 setlocal
 rem UTF-8, sonst werden die Umlaute in der Konsole zerlegt.
 chcp 65001 >nul 2>nul
-title Mietwagen-Preistool
+title TRACKER
 cd /d "%~dp0"
 
 echo.
-echo   Mietwagen-Preistool
-echo   ===================
+echo   TRACKER
+echo   Mietwagen. Vergleichen. Losfahren.
+echo   ==================================
 echo.
 
 rem Node vorhanden?

@@ -20,7 +20,7 @@ Programmfenster — keine Konsole, keine Adresszeile, keine Tabs, eigener Eintra
 in der Taskleiste. Fenster zu heisst Programm beendet. Alles, was es schreibt,
 landet im Ordner `Tracker-Daten` daneben.
 
-**Aus dem Quellbaum:** Doppelklick auf `Preistool starten.cmd`, oder von Hand:
+**Aus dem Quellbaum:** Doppelklick auf `TRACKER starten.cmd`, oder von Hand:
 
 ```bash
 node build.mjs
@@ -29,8 +29,8 @@ node tools/serve.mjs
 
 Dann <http://127.0.0.1:4173/> öffnen.
 
-Ohne den Dienst läuft `dist/mietwagen-preistool.html` auch per Doppelklick aus
-dem Dateisystem — dann allerdings nur als Linkliste, ohne Preisabruf. Die
+Ohne den Dienst läuft `dist/tracker.html` auch per Doppelklick aus dem
+Dateisystem — dann allerdings nur als Linkliste, ohne Preisabruf. Die
 Oberfläche erkennt beim Start selbst, welche Betriebsart verfügbar ist, und sagt
 es oben an.
 
@@ -55,7 +55,7 @@ Browser genauso zeichnet. Und da ist ohnehin eines: der Preisabruf braucht ein
 echtes, installiertes Chrome, weil ein mitgebrachtes von Sixt abgewiesen würde.
 
 Weil die EXE kein Konsolenfenster mehr hat, schreibt sie ihr Protokoll nach
-`Preistool-Daten/preistool.log`, und was den Start verhindert, kommt als
+`Tracker-Daten/tracker.log`, und was den Start verhindert, kommt als
 Meldungsfenster auf den Bildschirm. Wann das Programm endet, sagt die Seite im
 Fenster selbst: sie meldet sich alle 15 Sekunden und verabschiedet sich beim
 Schliessen. Am Chrome-Prozess lässt sich das nicht ablesen — Chrome reicht
@@ -69,7 +69,7 @@ gebauten SEA-Dateien misstrauisch.
 
 ## Was es tut
 
-- **Preise je Länderseite.** 23 Sixt-Domains, dieselbe Station, derselbe
+- **Preise je Länderseite.** 29 Sixt-Domains, dieselbe Station, derselbe
   Zeitraum. Der Abruf läuft in einem eigenen Chrome-Fenster außerhalb des
   sichtbaren Bereichs; man merkt nichts davon.
 - **ACRISS-Codes als Vergleichsschlüssel.** Die Klassennamen unterscheiden sich
@@ -98,8 +98,11 @@ gebauten SEA-Dateien misstrauisch.
 - **Als CSV speichern**, Notiz je gespeicherter Suche, Einweg-Miete direkt in
   der Stationsauswahl.
 - **Abbrechen** mitten im Abruf.
-- **Hintergrund wählbar** — Space, Sakura, Sixt-Orange oder aus. Die Bewegung
-  bleibt oben und endet oberhalb der Preistabelle.
+- **Startanimation und Hintergrund.** Beim Öffnen läuft der Vorspann; ein Klick
+  überspringt ihn. Der Hintergrund ist wählbar — Tracker (mintfarbene
+  Lichtspuren), Space, Sakura, Sixt-Orange oder aus. Die Bewegung bleibt oben
+  und endet oberhalb der Preistabelle: unter Zahlen, die man vergleicht, darf
+  nichts wandern.
 
 Was bewusst **nicht** drin ist: Währungsumrechnung (verglichen wird nur innerhalb
 derselben Währung), Statusrabatte für Gold/Platin/Diamond (gezeigt werden nur
@@ -146,7 +149,7 @@ liegen im Arbeitsspeicher und verfallen nach einer Stunde.
 
 | Anbieter | Status |
 | --- | --- |
-| Sixt | **fertig** — Preise, Schutzpakete, 2250 Stationen in 108 Ländern, 23 Länderseiten |
+| Sixt | **fertig** — Preise, Schutzpakete, 2250 Stationen in 108 Ländern, 29 Länderseiten |
 | Avis | offen — POST-Formular an `secure.avis.de`, Feldnamen bekannt, Datumsformat noch nicht |
 | Europcar, Hertz, Enterprise, Carvia, Arndt | offen — Suchmasken sind JS-gesteuert, das Link-Format muss je Anbieter aus einer echten Suche abgeleitet werden |
 
@@ -158,13 +161,16 @@ POST-Formulare ausgelegt.
 ```
 src/
   index.html            Grundgerüst
-  styles.css            Darstellung, hell und dunkel
+  styles.css            Darstellung: Nachtblau, Mint, Bahnschrift
   app.js                Zustand, Suche, Tabellen, Oberfläche
   hintergrund.js        bewegter Hintergrund, Themen und Auswahl
   providers.js          Anbieter-Adapter (URL-Bau, Status, Farbthemen)
   offer-classes.js      ACRISS-Decoder, inklusive Sixts eigener Buchstaben
   offer-parse.js        Auswertung der Angebotskacheln — einzige Quelle
   places.js             Ortsebene, vorbereitet für den Anbietervergleich
+  bilder/
+    tracker-logo.png    Logo, vom Build eingebettet
+    tracker-intro.mp4   Startanimation, vom Build eingebettet
   data/
     stations.sixt.txt   Stationsliste, von Hand erweiterbar
   stations.js           erzeugt vom Build — nicht bearbeiten
@@ -187,11 +193,13 @@ tools/
   scrape/sixt-schutz.mjs Schutzpakete in der Kasse durchklicken
   try-quote.mjs         Handprobe: eine Preisliste auslesen
   try-schutz.mjs        Handprobe: die Schutzpakete einer Klasse
+  try-laender.mjs       prüft Länderseiten, die noch nicht im Register stehen
+  try-waehrung.mjs      zeigt, wie eine Länderseite ihre Preise schreibt
   harvest-sixt.md       Anleitung: Stationen nachladen
   README-preise.md      warum der Preisabruf so läuft, wie er läuft
 build.mjs               bündelt alles und verteilt den Parser
 build-exe.mjs           baut daraus die einzelne Windows-EXE
-Preistool starten.cmd   bauen, Dienst starten, Browser öffnen
+TRACKER starten.cmd     bauen, Dienst starten, Browser öffnen
 ```
 
 ## Stationsliste erweitern

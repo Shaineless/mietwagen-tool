@@ -129,7 +129,7 @@ writeFileSync(
       output: join(bau, 'preistool.blob'),
       disableExperimentalSEAWarning: true,
       assets: {
-        'dist/mietwagen-preistool.html': join(root, 'dist', 'mietwagen-preistool.html'),
+        'dist/tracker.html': join(root, 'dist', 'tracker.html'),
       },
     },
     null,

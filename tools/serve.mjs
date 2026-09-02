@@ -637,7 +637,7 @@ const server = createServer(async (req, res) => {
 
   /* ---------------------------------------------------- Statische Dateien */
 
-  const file = path === '/' ? '/dist/mietwagen-preistool.html' : path;
+  const file = path === '/' ? '/dist/tracker.html' : path;
   // Erst normalisieren, dann fuehrende Schraegstriche und Aufstiege abtragen —
   // und zwar so lange, bis nichts mehr uebrig ist. Nur einmal zu ersetzen
   // laesst "/../x" stehen. Die eigentliche Sperre sitzt zusaetzlich in
