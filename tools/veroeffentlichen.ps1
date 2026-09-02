@@ -44,6 +44,16 @@ Write-Host "  Ziel:       $besitzer/$repo"
 # --- 1. EXE bauen, wenn noetig ---------------------------------------------
 
 $exe = 'dist\Tracker.exe'
+
+# Ein laufendes TRACKER haelt die Datei fest — dann laesst sie sich weder neu
+# bauen noch hochladen. Beenden statt mit einer Sperrmeldung abbrechen: wer
+# veroeffentlicht, will nicht erst im Taskmanager suchen.
+$laeuft = Get-Process 'Tracker' -ErrorAction SilentlyContinue
+if ($laeuft) {
+  Schritt "Ein laufendes TRACKER haelt die Datei fest — es wird beendet."
+  $laeuft | Stop-Process -Force
+  Start-Sleep -Seconds 2
+}
 $neuste = Get-ChildItem 'src', 'tools', 'build.mjs', 'build-exe.mjs' -Recurse -File -ErrorAction SilentlyContinue |
   Where-Object { $_.Extension -in '.js', '.mjs', '.html', '.css', '.txt', '.png' } |
   Sort-Object LastWriteTime -Descending | Select-Object -First 1
