@@ -5,7 +5,7 @@
  * andere: dort kann Chrome fehlen, der Datenordner schreibgeschützt sein, eine
  * Firewall dazwischenfunken, der Cookie-Banner anders aussehen oder Sixt die
  * Sitzung abweisen. Ohne Prüfung merkt der Nutzer das erst an einer leeren
- * Tabelle — und weiss dann nicht, woran es lag.
+ * Tabelle, und weiss dann nicht, woran es lag.
  *
  * Der Test geht die Kette von unten nach oben durch und hält beim ersten
  * echten Bruch an. Weiterzumachen wäre sinnlos: ohne Browser kein Abruf, und
@@ -33,7 +33,7 @@ function testTermin() {
  *
  * Genau diese drei, weil dort die SIXT-ONE-Fenster aufgehen, die
  * dismissPopups() wegräumen muss. Das ist die Stelle, an der ein fremder
- * Rechner am ehesten anders reagiert als der, auf dem entwickelt wurde —
+ * Rechner am ehesten anders reagiert als der, auf dem entwickelt wurde,
  * andere Sprache, anderer Banner, andere Zufallsauswahl.
  */
 export const WEITERE_SEITEN = [
@@ -63,7 +63,7 @@ export async function pruefeSeite({ host, label }) {
     if (res.error) {
       return {
         name: label,
-        // Eine einzelne Seite, die klemmt, ist kein Bruch der Kette — die
+        // Eine einzelne Seite, die klemmt, ist kein Bruch der Kette, die
         // anderen liefern ja. Deshalb "mittel", nicht "schlecht".
         stand: 'mittel',
         text: res.error,
@@ -117,7 +117,7 @@ export async function selbsttest(melde = () => {}) {
       'Datenordner',
       'schlecht',
       `Nicht beschreibbar: ${datenOrdner}`,
-      'Das Programm in einen Ordner legen, in dem geschrieben werden darf — ' +
+      'Das Programm in einen Ordner legen, in dem geschrieben werden darf, ' +
         'etwa auf den Desktop statt nach C:\\Programme.'
     );
     return schritte;
@@ -131,7 +131,7 @@ export async function selbsttest(melde = () => {}) {
       'schlecht',
       'Weder Chrome noch Edge gefunden',
       'Der Preisabruf braucht Chrome oder Edge. Ohne einen der beiden bleibt ' +
-        'es beim Erzeugen der Links — die Suche muss dann von Hand geöffnet werden.'
+        'es beim Erzeugen der Links, die Suche muss dann von Hand geöffnet werden.'
     );
     return schritte;
   }
@@ -143,7 +143,7 @@ export async function selbsttest(melde = () => {}) {
   try {
     res = await quoteSixt({
       host: 'www.sixt.de',
-      stationCode: '110', // Frankfurt Flughafen — grösste Station, immer belegt
+      stationCode: '110', // Frankfurt Flughafen, grösste Station, immer belegt
       ...termin,
       pickupTime: '10:00',
       returnTime: '10:00',
@@ -187,7 +187,7 @@ export async function selbsttest(melde = () => {}) {
       'mittel',
       'Seite geladen, aber kein einziges Angebot gelesen',
       'Die Kette funktioniert bis zur Trefferliste. Dass dort nichts steht, ' +
-        'kann am Termin liegen — häufiger hat Sixt den Seitenaufbau geändert ' +
+        'kann am Termin liegen, häufiger hat Sixt den Seitenaufbau geändert ' +
         'und die Angebote sind nicht mehr dort, wo das Werkzeug sie sucht.'
     );
     return schritte;

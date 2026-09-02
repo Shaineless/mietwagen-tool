@@ -1,4 +1,4 @@
-# Preisleser — Browser-Erweiterung
+# Preisleser. Browser-Erweiterung
 
 Liest die Preise aus Trefferlisten, die du selbst öffnest, und reicht sie an den
 lokal laufenden Dienst weiter.
@@ -7,7 +7,7 @@ lokal laufenden Dienst weiter.
 
 **Für den Alltag wird sie nicht gebraucht.** Der Preisabruf läuft heute über ein
 eigenes, unsichtbares Chrome-Fenster, das der Dienst selbst startet und per CDP
-steuert — ohne Erweiterung, ohne sichtbare Tabs. Warum ausgerechnet so und
+steuert, ohne Erweiterung, ohne sichtbare Tabs. Warum ausgerechnet so und
 welche Wege daran gescheitert sind, steht in
 [../tools/README-preise.md](../tools/README-preise.md).
 
@@ -32,7 +32,7 @@ Klick auf das Neuladen-Symbol der Erweiterung.
 ## Benutzen
 
 1. Dienst starten: `node tools/serve.mjs`
-2. <http://127.0.0.1:4173/> öffnen — oben im Ergebnisbereich muss der
+2. <http://127.0.0.1:4173/> öffnen, oben im Ergebnisbereich muss der
    Preisdienst als laufend gemeldet sein.
 3. Suche zusammenstellen, **Im Browser öffnen** klicken.
 4. Die Tabs laden, suchen selbständig und melden ihre Preise zurück. Die
@@ -42,11 +42,11 @@ Die Tabs können danach geschlossen werden; die Preise bleiben im Tool stehen.
 
 ## Was sie tut, und was nicht
 
-Sie wird **nur** aktiv, wenn die URL den Parameter `mwt=` trägt — den setzt
+Sie wird **nur** aktiv, wenn die URL den Parameter `mwt=` trägt, den setzt
 ausschließlich das Preistool. Ein normaler Besuch auf sixt.de bleibt komplett
 unberührt: kein Auslesen, kein Senden, kein Klick.
 
-Gesendet wird ausschließlich an `127.0.0.1` — an den Dienst auf deinem eigenen
+Gesendet wird ausschließlich an `127.0.0.1`, an den Dienst auf deinem eigenen
 Rechner. Nichts verlässt die Maschine. Der Dienst hält die Ergebnisse nur im
 Arbeitsspeicher und vergisst sie nach einer Stunde.
 
@@ -58,7 +58,7 @@ Der Cookie-Banner wird mit **Ablehnen** beantwortet, nicht mit „Einverstanden"
 | --- | --- |
 | `manifest.json` | Rechte und Domains |
 | `content.src.js` | Ablauf im Tab: warten, Suche auslösen, Kacheln lesen |
-| `content.js` | **erzeugt** — `src/offer-parse.js` + `content.src.js` |
+| `content.js` | **erzeugt**, `src/offer-parse.js` + `content.src.js` |
 | `background.js` | Weiterleitung an `127.0.0.1` |
 
 `content.js` nicht von Hand bearbeiten: die Auswertung der Kacheln steht in

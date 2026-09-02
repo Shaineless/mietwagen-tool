@@ -1,5 +1,5 @@
 /**
- * Content-Script — laeuft auf den Sixt-Laenderseiten.
+ * Content-Script, laeuft auf den Sixt-Laenderseiten.
  *
  * Aufgabe: auf einer Trefferliste, die der Nutzer ohnehin geoeffnet hat, die
  * Preise ablesen und an das lokal laufende Preistool weiterreichen.
@@ -11,13 +11,13 @@
  *
  * Ablauf:
  *   1. Landet die Seite mit ?mwt=<key>, wird der Schluessel fuer diesen Tab
- *      gemerkt (sessionStorage) — die Suche wechselt gleich auf
+ *      gemerkt (sessionStorage), die Suche wechselt gleich auf
  *      /betafunnel/#/offerlist und wirft den Query-String weg.
  *   2. Sobald die Suchmaske befuellt ist, wird die Suche ausgeloest.
  *   3. Sobald Kacheln da sind und sich die Anzahl beruhigt hat, wird gelesen
  *      und an localhost geschickt.
  *
- * Die Parserfunktionen (mwtParseTile, mwtParseAmount) stehen darueber —
+ * Die Parserfunktionen (mwtParseTile, mwtParseAmount) stehen darueber,
  * build.mjs setzt sie aus src/offer-parse.js davor.
  */
 
@@ -77,7 +77,7 @@
     return false;
   }
 
-  /** Warten, bis `test()` wahr wird — oder aufgeben. */
+  /** Warten, bis `test()` wahr wird, oder aufgeben. */
   async function until(test, { timeout = 40000, step = 400 } = {}) {
     const end = Date.now() + timeout;
     while (Date.now() < end) {

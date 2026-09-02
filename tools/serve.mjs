@@ -4,7 +4,7 @@
  *
  *   node tools/serve.mjs [port]
  *
- * Ohne diesen Dienst funktioniert das Tool weiterhin — dann eben als reiner
+ * Ohne diesen Dienst funktioniert das Tool weiterhin, dann eben als reiner
  * Link-Generator. Die Oberflaeche prueft beim Start, ob der Dienst da ist.
  *
  * Bindet absichtlich nur an 127.0.0.1: die gesammelten Daten sollen den
@@ -33,13 +33,13 @@ import {
 } from './wecker.mjs';
 
 const argumente = process.argv.slice(2);
-// Den Port aus dem ersten Zahlenargument holen, nicht aus argv[2] — sonst
+// Den Port aus dem ersten Zahlenargument holen, nicht aus argv[2], sonst
 // verschiebt ein vorangestellter Schalter ihn. PORT aus der Umgebung kommt
 // danach: Werkzeuge, die den Dienst starten, teilen ihn so zu, ohne dass am
 // Aufruf etwas geaendert werden muss.
 const port =
   Number(argumente.find((a) => /^\d+$/.test(a))) || Number(process.env.PORT) || 4173;
-/** Kein Fenster aufmachen — fuer Pruefläufe und stille Starts. */
+/** Kein Fenster aufmachen, fuer Pruefläufe und stille Starts. */
 const stillerStart = argumente.includes('--kein-browser');
 
 /**
@@ -84,7 +84,7 @@ function remember(key, record) {
 
 /**
  * Der Preisabruf laeuft im Hintergrund, damit die Oberflaeche waehrenddessen
- * bedienbar bleibt. Wie viele Abrufe gleichzeitig laufen, regelt sich selbst —
+ * bedienbar bleibt. Wie viele Abrufe gleichzeitig laufen, regelt sich selbst,
  * siehe unten. Der Mindestabstand je Host in browser.mjs bleibt davon
  * unberuehrt: er ist die Hoeflichkeitsgrenze und wird nicht angetastet.
  */
@@ -106,7 +106,7 @@ let gesamt = 0;
  * dabei steigt. Faellt er, geht es einen Schritt zurueck und bleibt dort.
  *
  * Die Obergrenze ist nicht willkuerlich: bei sechs lag der Durchsatz bei
- * einem Abruf je 1,47 Sekunden — und MIN_GAP_MS in browser.mjs laesst je Host
+ * einem Abruf je 1,47 Sekunden, und MIN_GAP_MS in browser.mjs laesst je Host
  * ohnehin nur einen alle 1,5 Sekunden zu. Mehr Arbeiter warten dann bloss
  * gemeinsam. Gemessen brachte acht denn auch nichts mehr gegenueber sechs.
  */
@@ -116,7 +116,7 @@ let parallel = PARALLEL_MIN;
 
 /** Die letzten Abrufdauern, jüngste zuerst. */
 let dauern = [];
-/** Bester bisher gesehener Mittelwert — der Massstab fuer "wird es schlechter?". */
+/** Bester bisher gesehener Mittelwert, der Massstab fuer "wird es schlechter?". */
 let besteDauer = null;
 
 function mittelwert(werte) {
@@ -141,11 +141,11 @@ function regleParallel(dauerMs) {
 
   // Deutlich langsamer als im besten Fall: einen Schritt zurueck. Der Faktor
   // ist grosszuegig, weil die Zeit je Abruf mit mehr Arbeitern natuerlich
-  // steigt — entscheidend ist der Durchsatz, nicht der einzelne Abruf.
+  // steigt, entscheidend ist der Durchsatz, nicht der einzelne Abruf.
   if (jetzt > besteDauer * 2.2 && parallel > PARALLEL_MIN) {
     parallel--;
     dauern = [];
-    console.log(`  ⇣ ${parallel} gleichzeitig — es wurde langsamer`);
+    console.log(`  ⇣ ${parallel} gleichzeitig, es wurde langsamer`);
     return;
   }
 
@@ -173,7 +173,7 @@ const SCHUTZ_ABRUF = { sixt: quoteSchutz };
  * Der Host aus einem Auftrag landet ungeprueft in einer Adresse, die der
  * Dienst dann im Browser oeffnet. Ohne diese Liste koennte jede Seite, die im
  * Browser offen ist, den Dienst ueber /api/fetch dazu bringen, eine beliebige
- * Adresse aufzurufen — auch im Heimnetz, etwa die Weboberflaeche des Routers.
+ * Adresse aufzurufen, auch im Heimnetz, etwa die Weboberflaeche des Routers.
  * Deshalb: nur die Laenderseiten, die im Anbieterregister stehen.
  *
  * Die Liste wird einmal aus src/providers.js gelesen, damit sie nicht an zwei
@@ -204,7 +204,7 @@ async function hostErlaubt(host) {
 }
 
 async function enqueue(jobs) {
-  // Ein Abruf ohne Cookies faengt mit einem leeren Profil an — sonst waere
+  // Ein Abruf ohne Cookies faengt mit einem leeren Profil an, sonst waere
   // nur der allererste wirklich einer. Aber nur, wenn gerade nichts laeuft:
   // mitten im Durchlauf das Chrome zu beenden, risse die offenen Abrufe ab.
   if (queue.length === 0 && laufend === 0 && jobs.some((j) => j?.inkognito)) {
@@ -212,7 +212,7 @@ async function enqueue(jobs) {
     console.log(
       leer
         ? '  ⌾ Ohne Cookies: Profil geleert'
-        : '  ! Ohne Cookies: Profil ließ sich nicht ganz leeren — Chrome hält noch Dateien'
+        : '  ! Ohne Cookies: Profil ließ sich nicht ganz leeren. Chrome hält noch Dateien'
     );
   }
 
@@ -234,11 +234,11 @@ async function enqueue(jobs) {
 /**
  * Mindestabstand zwischen zwei Startvorgaengen.
  *
- * browser.mjs bremst je Host — bei einem Rundumschlag ueber dreissig
+ * browser.mjs bremst je Host, bei einem Rundumschlag ueber dreissig
  * verschiedene Laenderseiten greift das nie, weil jeder Host nur einmal
  * drankommt. Der Abruf lief dadurch dauerhaft mit zwei parallelen Zugriffen
  * auf Sixt, und im Test stiegen dabei reihenweise Seiten mit "Station wurde
- * nicht uebernommen" aus — einzeln aufgerufen liefen dieselben Seiten
+ * nicht uebernommen" aus, einzeln aufgerufen liefen dieselben Seiten
  * einwandfrei. Eine dreiviertel Sekunde Abstand kostet bei dreissig Seiten
  * gut zehn Sekunden und erspart das Nachfassen.
  */
@@ -254,7 +254,7 @@ let letzterStart = 0;
  * hilft? Genau das entscheidet auch, ob nachgefasst wird.
  *
  * `nochmal: false` heisst: wiederholen bringt nichts. Tschechien und die
- * Türkei nehmen eine deutsche Station gar nicht erst an — gemessen, vier von
+ * Türkei nehmen eine deutsche Station gar nicht erst an, gemessen, vier von
  * vier Versuchen. Da noch dreimal anzuklopfen kostet nur Zeit.
  */
 function deuteFehler(text) {
@@ -295,7 +295,7 @@ function deuteFehler(text) {
     return {
       code: 'ZEIT',
       klartext: 'Die Seite hat zu lange gebraucht.',
-      rat: 'Bei vielen Länderseiten gleichzeitig kommt das vor — nachfassen hilft meist.',
+      rat: 'Bei vielen Länderseiten gleichzeitig kommt das vor, nachfassen hilft meist.',
       nochmal: true,
     };
   }
@@ -314,7 +314,7 @@ async function tick() {
     if (laufend === 0) {
       erledigt = 0;
       gesamt = 0;
-      // Auch den Regler: der naechste Lauf kann ein ganz anderer sein — eine
+      // Auch den Regler: der naechste Lauf kann ein ganz anderer sein, eine
       // Laenderseite statt fuenfzig Kalendertagen.
       setzeParallelZurueck();
     }
@@ -348,8 +348,8 @@ async function tick() {
         acriss: job.acriss,
         // Nur als verfuegbar merken, wenn der Abruf auch geklappt hat.
         // Vorher galt ein gescheiterter Abruf als verfuegbar, weil
-        // `undefined !== false` wahr ist — die Oberflaeche zeigte dann ein
-        // nichtssagendes "—" statt der Fehlermeldung.
+        // `undefined !== false` wahr ist, die Oberflaeche zeigte dann ein
+        // nichtssagendes "–" statt der Fehlermeldung.
         verfuegbar: res.ok === true && res.verfuegbar !== false,
         pakete: res.pakete || [],
         error: res.error || null,
@@ -362,7 +362,7 @@ async function tick() {
       return;
     }
 
-    // Gescheitert? Dann nicht gleich aufgeben — aber auch nicht stur
+    // Gescheitert? Dann nicht gleich aufgeben, aber auch nicht stur
     // wiederholen, wo es nachweislich nichts bringt.
     if (res.error && (job.versuch || 1) < VERSUCHE_MAX) {
       const d = deuteFehler(res.error);
@@ -374,7 +374,7 @@ async function tick() {
         queue.push(job);
         gesamt++;
         console.log(
-          `  ↻ ${job.host}  ${d.code} — Versuch ${job.versuch} von ${VERSUCHE_MAX}`
+          `  ↻ ${job.host}  ${d.code}. Versuch ${job.versuch} von ${VERSUCHE_MAX}`
         );
         return;
       }
@@ -400,7 +400,7 @@ async function tick() {
     // Gesehene Klassen dauerhaft merken, damit spaeter "gerade nicht buchbar"
     // von "gibt es dort nicht" unterscheidbar bleibt.
     if (res.offers?.length) await merkeAngebote(job, res.offers).catch(() => {});
-    // Und den Preis fuer die Kurve — jeder Abruf ist ein Messpunkt.
+    // Und den Preis fuer die Kurve, jeder Abruf ist ein Messpunkt.
     await merkeAbruf(job, res).catch(() => {});
 
     const n = res.offers?.length ?? 0;
@@ -415,7 +415,7 @@ async function tick() {
       job.versuch = (job.versuch || 1) + 1;
       queue.push(job);
       gesamt++;
-      console.log(`  ↻ ${job.host}  ${d.code} — Versuch ${job.versuch} von ${VERSUCHE_MAX}`);
+      console.log(`  ↻ ${job.host}  ${d.code}. Versuch ${job.versuch} von ${VERSUCHE_MAX}`);
       return;
     }
     remember(job.key, {
@@ -432,7 +432,7 @@ async function tick() {
     laufend--;
     erledigt++;
     regleParallel(Date.now() - begonnen);
-    // So viele nachstarten, wie der Regler jetzt erlaubt — nach einem
+    // So viele nachstarten, wie der Regler jetzt erlaubt, nach einem
     // Hochschalten sind das zwei statt einem, sonst bliebe die neue Stufe
     // bis zum naechsten Auftrag ungenutzt.
     for (let i = laufend; i < parallel; i++) tick();
@@ -459,13 +459,13 @@ function json(res, status, body) {
 /**
  * Darf diese Anfrage etwas veraendern?
  *
- * Der Dienst hoert nur auf 127.0.0.1 — von aussen kommt niemand heran. Aber
+ * Der Dienst hoert nur auf 127.0.0.1, von aussen kommt niemand heran. Aber
  * jede Seite, die der Nutzer im Browser offen hat, kann an localhost senden.
  * Ohne Pruefung koennte eine beliebige Webseite dem Dienst Auftraege geben,
  * waehrend TRACKER laeuft.
  *
  * Erlaubt sind deshalb nur: die eigene Oberflaeche (gleicher Ursprung), die
- * Browser-Erweiterung (chrome-extension://) und Aufrufe ganz ohne Ursprung —
+ * Browser-Erweiterung (chrome-extension://) und Aufrufe ganz ohne Ursprung,
  * das sind Werkzeuge wie curl, die kein Browser sind und bei denen es keine
  * fremde Seite gibt, die jemanden hereinlegen koennte.
  */
@@ -496,7 +496,7 @@ async function readBody(req, limit = 1_000_000) {
 
 /* ------------------------------------------------------ Weckerrunde
  *
- * Faellige Wecker der Reihe nach nachpruefen — einzeln und nur, wenn sonst
+ * Faellige Wecker der Reihe nach nachpruefen, einzeln und nur, wenn sonst
  * nichts laeuft. Eine Weckerrunde darf niemals eine Suche ausbremsen, die
  * jemand gerade angestossen hat: die wartet einer an, die Runde nicht.
  */
@@ -522,7 +522,7 @@ async function weckerRunde({ sofort = false } = {}) {
     for (const w of zuTun) {
       // Zwischendurch abbrechen, sobald jemand selbst etwas sucht.
       if (laufend > 0 || queue.length) break;
-      // Der Wecker ruft am Auftragsweg vorbei direkt ab — die Zielpruefung
+      // Der Wecker ruft am Auftragsweg vorbei direkt ab, die Zielpruefung
       // muss er deshalb selbst machen. Ein Wecker mit fremdem Ziel waere
       // sonst eine Anweisung, die sich alle sechs Stunden wiederholt.
       if (!(await hostErlaubt(w.host))) {
@@ -543,7 +543,7 @@ async function weckerRunde({ sofort = false } = {}) {
           returnTime: zeitRueck,
           currency: w.waehrung || undefined,
         });
-        // Die Uhrzeit gehoert auch in den Messpunkt — sonst faellt er in der
+        // Die Uhrzeit gehoert auch in den Messpunkt, sonst faellt er in der
         // Kurve wieder mit den anderen Uhrzeiten zusammen.
         await merkeAbruf(
           {
@@ -571,8 +571,8 @@ async function weckerRunde({ sofort = false } = {}) {
             `${w.acriss} auf ${w.host.replace(/^www\./, '')}\n\n` +
             (buchung
               ? `${treffer.total} ${w.waehrung} statt gebuchter ${w.gebucht} ${w.waehrung}.\n` +
-                `Das sind ${gespart} ${w.waehrung} weniger — Umbuchen prüfen.\n`
-              : `${treffer.total} ${w.waehrung} — unter deiner Grenze von ${w.grenze}.\n`) +
+                `Das sind ${gespart} ${w.waehrung} weniger. Umbuchen prüfen.\n`
+              : `${treffer.total} ${w.waehrung}, unter deiner Grenze von ${w.grenze}.\n`) +
             `${w.von} bis ${w.bis}`;
           console.log(
             `  ⏰ AUSGELÖST: ${w.acriss} ${treffer.total} ${w.waehrung}` +
@@ -605,7 +605,7 @@ function starteWeckerTakt() {
  *
  * Nicht vom Chrome-Prozess: Chrome reicht Fenster zwischen seinen Prozessen
  * weiter, der gestartete Prozess endet dabei, das Fenster bleibt stehen. Wer
- * daran das Programmende haengt, beendet sich nach Sekunden von selbst —
+ * daran das Programmende haengt, beendet sich nach Sekunden von selbst,
  * genau das ist passiert.
  *
  * Also sagt es die Seite selbst: sie meldet sich regelmaessig und schickt beim
@@ -623,7 +623,7 @@ function starteWeckerTakt() {
  */
 const offeneFenster = new Map(); // Kennung -> zuletzt gesehen
 
-/** So lange nach dem letzten Fenster gewartet wird — ein Neuladen dauert kürzer. */
+/** So lange nach dem letzten Fenster gewartet wird, ein Neuladen dauert kürzer. */
 const NACHFRIST_MS = 4000;
 
 /** Ohne Lebenszeichen gilt ein Fenster nach dieser Zeit als abgestürzt. */
@@ -635,7 +635,7 @@ let schliessTimer = null;
  * Hat sich seit dem Start ueberhaupt schon einmal ein Fenster gemeldet?
  *
  * Ohne diese Frage schlaegt der Waechter beim Start zu: die Liste ist dann
- * leer, weil die Seite noch laedt — und vier Sekunden spaeter beendet sich
+ * leer, weil die Seite noch laedt, und vier Sekunden spaeter beendet sich
  * das Programm, waehrend der Vorspann noch laeuft. Genau das ist passiert.
  * Solange noch nie ein Fenster da war, wird nur die grosszuegige Startfrist
  * abgewartet; erst danach gilt "niemand da" als Grund zu gehen.
@@ -662,7 +662,7 @@ function pruefeObNochWer() {
   // Nicht sofort: ein Neuladen meldet sich ab und gleich darauf neu an.
   schliessTimer = setTimeout(() => {
     if (offeneFenster.size > 0) return;
-    console.log('Letztes Fenster geschlossen — Programm beendet.');
+    console.log('Letztes Fenster geschlossen. Programm beendet.');
     beenden();
   }, NACHFRIST_MS);
 }
@@ -707,14 +707,14 @@ const server = createServer(async (req, res) => {
   }
 
   // Alles, was etwas veraendert oder anstoesst, nur vom eigenen Ursprung.
-  // Lesende Abfragen bleiben offen — sie richten keinen Schaden an, und die
+  // Lesende Abfragen bleiben offen, sie richten keinen Schaden an, und die
   // Erweiterung fragt aus dem Kontext der Anbieterseite.
   if (req.method === 'POST' && !darfAendern(req)) {
     console.log(`  ! Abgewiesen: POST ${path} von ${req.headers.origin}`);
     return json(res, 403, { ok: false, error: 'Nur von der eigenen Oberfläche.' });
   }
 
-  // Lebenszeichen — die Oberflaeche schaltet daran den Preis-Modus frei.
+  // Lebenszeichen, die Oberflaeche schaltet daran den Preis-Modus frei.
   if (path === '/api/health') {
     return json(res, 200, {
       ok: true,
@@ -735,7 +735,7 @@ const server = createServer(async (req, res) => {
       if (!findBrowser()) {
         return json(res, 200, {
           ok: false,
-          error: 'Chrome wurde nicht gefunden — automatischer Abruf nicht möglich.',
+          error: 'Chrome wurde nicht gefunden, automatischer Abruf nicht möglich.',
         });
       }
       const vorher = queue.length + laufend;
@@ -798,7 +798,7 @@ const server = createServer(async (req, res) => {
       if (!valid.length) return json(res, 400, { ok: false, error: 'keine gültigen Zeilen' });
 
       const head = [
-        '# SIXT-Stationen — Format: id|land|iata|name',
+        '# SIXT-Stationen. Format: id|land|iata|name',
         '# Quelle: oeffentliche Stationsseiten auf sixt.de (/mietwagen/<land>/<stadt>/<station>/)',
         `# Geerntet: ${new Date().toISOString().slice(0, 10)} · Anleitung: tools/harvest-sixt.md`,
         '# Zeilen mit # werden ignoriert. Eigene Stationen einfach unten anhaengen.',
@@ -901,7 +901,7 @@ const server = createServer(async (req, res) => {
   }
 
   if (path === '/api/wecker/pruefen' && req.method === 'POST') {
-    // Von Hand angestossen — ohne Rücksicht auf den Mindestabstand.
+    // Von Hand angestossen, ohne Rücksicht auf den Mindestabstand.
     weckerRunde({ sofort: true }).catch(() => {});
     return json(res, 200, { ok: true });
   }
@@ -911,7 +911,7 @@ const server = createServer(async (req, res) => {
     if (laufend > 0 || queue.length) {
       return json(res, 200, {
         ok: false,
-        error: 'Erst den laufenden Abruf abwarten — beides gleichzeitig verfälscht das Ergebnis.',
+        error: 'Erst den laufenden Abruf abwarten, beides gleichzeitig verfälscht das Ergebnis.',
       });
     }
     try {
@@ -949,7 +949,7 @@ const server = createServer(async (req, res) => {
   }
 
   if (path === '/api/results/clear' && req.method === 'POST') {
-    // Ohne Angabe alles — das ist der grosse Reset. Mit einer Schluesselliste
+    // Ohne Angabe alles, das ist der grosse Reset. Mit einer Schluesselliste
     // nur diese: der Kalender misst seinen Zeitraum neu, ohne nebenbei die
     // Preistabelle zu leeren, die jemand daneben offen hat.
     try {
@@ -970,7 +970,7 @@ const server = createServer(async (req, res) => {
   /* ---------------------------------------------------- Statische Dateien */
 
   const file = path === '/' ? '/dist/mietwagen-preistool.html' : path;
-  // Erst normalisieren, dann fuehrende Schraegstriche und Aufstiege abtragen —
+  // Erst normalisieren, dann fuehrende Schraegstriche und Aufstiege abtragen,
   // und zwar so lange, bis nichts mehr uebrig ist. Nur einmal zu ersetzen
   // laesst "/../x" stehen. Die eigentliche Sperre sitzt zusaetzlich in
   // leseVorrat; hier geht es darum, gar nicht erst danach zu fragen.
@@ -980,7 +980,7 @@ const server = createServer(async (req, res) => {
     name = name.replace(/^\/+/, '').replace(/^(\.\.?\/)+/, '');
   }
 
-  // Ausgeliefert wird nur, was in dist/ liegt — die gebaute Oberflaeche.
+  // Ausgeliefert wird nur, was in dist/ liegt, die gebaute Oberflaeche.
   // Alles andere braucht die Seite nicht: sie ist eine einzige Datei, die
   // Daten kommen ueber /api/. Der Dienst hoert zwar nur auf 127.0.0.1, aber
   // jede beliebige offene Seite im Browser kann ihn ansprechen, und dann muss
@@ -1051,7 +1051,7 @@ function versucheLauschen(p) {
  *
  * Wann das Programm endet, entscheidet nicht dieser Prozess, sondern die
  * Seite darin (siehe Lebenszeichen weiter unten). Chrome reicht Fenster
- * zwischen eigenen Prozessen weiter, wie es ihm passt — der hier gestartete
+ * zwischen eigenen Prozessen weiter, wie es ihm passt, der hier gestartete
  * Prozess kann längst beendet sein, während das Fenster offen auf dem
  * Bildschirm steht. Ihn als Ausschalter zu nehmen, hat genau das getan:
  * das Programm beendete sich nach ein paar Sekunden von selbst.
@@ -1069,7 +1069,7 @@ function oeffneProgrammfenster(adresse) {
   }
 
   if (art === 'browser') {
-    console.log('Kein Chrome und kein Edge gefunden — geöffnet im Standardbrowser.');
+    console.log('Kein Chrome und kein Edge gefunden, geöffnet im Standardbrowser.');
     zeigeMeldung(
       'Chrome oder Edge wurde nicht gefunden.\n\n' +
         'TRACKER ist im Standardbrowser geöffnet, aber der Preisabruf ' +
@@ -1094,7 +1094,7 @@ async function starteDienst() {
       const adresse = `http://127.0.0.1:${p}/`;
       console.log(`TRACKER läuft bereits auf ${adresse}`);
       if (istExe && !stillerStart) {
-        // Nur ein weiteres Fenster dazu — der laufende Dienst bleibt der Chef,
+        // Nur ein weiteres Fenster dazu, der laufende Dienst bleibt der Chef,
         // deshalb hier ohne Ende-Kopplung.
         oeffneFenster(adresse, datenOrdner);
         setTimeout(() => process.exit(0), 2500);
@@ -1104,7 +1104,7 @@ async function starteDienst() {
     }
 
     if (!(await versucheLauschen(p))) {
-      console.log(`Port ${p} ist belegt — versuche ${p + 1} …`);
+      console.log(`Port ${p} ist belegt, versuche ${p + 1} …`);
       continue;
     }
 
@@ -1112,7 +1112,7 @@ async function starteDienst() {
     const chrome = findBrowser();
     console.log(`TRACKER:              ${adresse}`);
     console.log(
-      `Preisabruf:           ${chrome ? chrome : 'kein Chrome gefunden — nur Link-Modus'}`
+      `Preisabruf:           ${chrome ? chrome : 'kein Chrome gefunden, nur Link-Modus'}`
     );
     if (istExe) {
       console.log(`Daten:                ${datenOrdner}`);
@@ -1134,7 +1134,7 @@ async function starteDienst() {
  * Fehler sichtbar machen.
  *
  * Ohne Konsolenfenster gibt es niemanden, der eine Ausgabe liest. Was den
- * Start verhindert, muss deshalb als Fenster auf den Bildschirm — mit einem
+ * Start verhindert, muss deshalb als Fenster auf den Bildschirm, mit einem
  * Verweis auf das Protokoll, in dem die Einzelheiten stehen.
  */
 function melde(ueberschrift, fehler) {
@@ -1173,7 +1173,7 @@ async function beenden(code = 0) {
   try {
     await closeBrowser();
   } catch {
-    /* dann eben nicht — beenden ist wichtiger */
+    /* dann eben nicht, beenden ist wichtiger */
   }
   process.exit(code);
 }

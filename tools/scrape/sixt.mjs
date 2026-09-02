@@ -9,7 +9,7 @@
  * CSS-Klassen: die Klassennamen sind generiert (sc-79f1dc24-8) und wechseln bei
  * jedem Deploy.
  *
- * Geprueft gegen sixt.de und sixt.co.uk — beide Sprachen, beide Zahlenformate.
+ * Geprueft gegen sixt.de und sixt.co.uk, beide Sprachen, beide Zahlenformate.
  */
 
 import { withPage, dismissConsent, dismissPopups } from '../browser.mjs';
@@ -55,7 +55,7 @@ export async function quoteSixt(q) {
     // parallel, braucht die Seite deutlich laenger als allein. Genau daran ist
     // sixt.at im Zweierbetrieb gescheitert, waehrend es einzeln nach drei
     // Sekunden stand.
-    // waitForFunction(fn, arg, options) — die Optionen gehoeren an die dritte
+    // waitForFunction(fn, arg, options), die Optionen gehoeren an die dritte
     // Stelle, sonst greift still der Vorgabe-Timeout.
     const stationDa = () =>
       page
@@ -91,7 +91,7 @@ export async function quoteSixt(q) {
     }
 
     // Auf manchen Laenderseiten (sixt.es) bleibt die Banner-Huelle nach dem
-    // Ablehnen im DOM stehen und faengt weiter Klicks ab — dafuer gibt es
+    // Ablehnen im DOM stehen und faengt weiter Klicks ab, dafuer gibt es
     // unten den Rueckfall auf einen direkten DOM-Klick.
     await page.waitForTimeout(250);
     // Werbefenster wegklicken, bevor der Klick auf "Suchen" darin haengen
@@ -173,8 +173,8 @@ export async function quoteSixt(q) {
       .filter((o) => o && (o.perDay != null || o.total != null));
 
     // Stimmigkeitspruefung: der Gesamtpreis muss zum Tagespreis mal Mietdauer
-    // passen. Zwei Mal ist ein Zahlenformat still danebengegangen — spanische
-    // Betraege ohne Tausendertrenner, danach Schweizer mit Apostroph — und
+    // passen. Zwei Mal ist ein Zahlenformat still danebengegangen, spanische
+    // Betraege ohne Tausendertrenner, danach Schweizer mit Apostroph, und
     // beide Male stand einfach eine falsche Zahl in der Tabelle. Eine Ziffer
     // zu verlieren ist schlimmer als gar nichts zu lesen, deshalb wird das
     // hier gemeldet statt hingenommen.
@@ -198,13 +198,13 @@ export async function quoteSixt(q) {
       ok: true,
       station,
       offers,
-      // Nur melden, wenn wirklich etwas nicht stimmt — sonst steht in jedem
+      // Nur melden, wenn wirklich etwas nicht stimmt, sonst steht in jedem
       // Ergebnis ein leeres Feld herum.
       ...(unstimmig.length
         ? {
             warnung:
               `${unstimmig.length} von ${offers.length} Preisen passen nicht zum Tagespreis ` +
-              `(${unstimmig.slice(0, 3).join(', ')}) — vermutlich ein unbekanntes Zahlenformat.`,
+              `(${unstimmig.slice(0, 3).join(', ')}), vermutlich ein unbekanntes Zahlenformat.`,
           }
         : {}),
       url: page.url(),

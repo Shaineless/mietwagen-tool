@@ -2,7 +2,7 @@
  * Katalog der jemals gesehenen Fahrzeugklassen.
  *
  * Warum: Eine Klasse, die heute nicht buchbar ist, taucht in der Trefferliste
- * gar nicht auf. In der Vergleichstabelle waere sie damit unsichtbar — und man
+ * gar nicht auf. In der Vergleichstabelle waere sie damit unsichtbar, und man
  * koennte "gibt es dort nicht" nicht von "heute ausgebucht" unterscheiden.
  *
  * Der Katalog haelt fest, welche ACRISS-Klassen an welcher Station auf welcher
@@ -52,7 +52,7 @@ function sichereBald() {
       await mkdir(datenOrdner, { recursive: true });
       await writeFile(DATEI, JSON.stringify(katalog, null, 1));
     } catch {
-      /* nicht schreibbar — der Katalog ist Beiwerk, kein Grund zu scheitern */
+      /* nicht schreibbar, der Katalog ist Beiwerk, kein Grund zu scheitern */
     }
   }, 1500);
 }

@@ -1,7 +1,7 @@
 # Sixt-Stationen erneuern
 
 Die Stationsliste in `src/data/stations.sixt.txt` stammt aus **Sixts eigener
-Sitemap** — der Liste, die Sixt selbst für Suchmaschinen veröffentlicht:
+Sitemap**, der Liste, die Sixt selbst für Suchmaschinen veröffentlicht:
 
 ```
 https://www.sixt.de/robots.txt          →  Sitemap: /sitemap_index.xml
@@ -20,7 +20,7 @@ Genau diese Nummer ist der `uci`-Parameter, den das Tool baut.
 
 Der erste Anlauf lief über `/mietwagen/<land>/` → Städteseiten → Stationsseiten
 und fand 1779 Stationen. Das klang vollständig, war es aber nicht: Sixt verlinkt
-auf den Städteseiten nur einen Teil. **476 Stationen fehlten** — vor allem die
+auf den Städteseiten nur einen Teil. **476 Stationen fehlten**, vor allem die
 Agenturen: Bonn Bad Godesberg, Bonn Zentrum, Euskirchen, Siegburg und viele
 mehr. Über die Sitemap sind es 2250.
 
@@ -102,17 +102,17 @@ console.log(zeilen.join('\n'));
 ```
 
 4. Ergebnis nach `src/data/stations.sixt.txt` (Kopfzeilen mit `#` behalten).
-5. `node build.mjs` — doppelte Nummern werden gemeldet und übersprungen.
+5. `node build.mjs`, doppelte Nummern werden gemeldet und übersprungen.
 
 ## Wichtig: nicht gleichzeitig Preise abrufen
 
 Während der Ernte laufen 2255 Abrufe gegen sixt.de. Läuft parallel ein
 Preisabruf, wird der ausgebremst und scheitert reihenweise mit „Station wurde
-nicht übernommen" — nachgemessen. Also erst ernten, dann Preise holen.
+nicht übernommen", nachgemessen. Also erst ernten, dann Preise holen.
 
 ## Einzelne Station ergänzen
 
-Schneller, wenn nur eine fehlt — geht auch direkt in der Oberfläche unter
+Schneller, wenn nur eine fehlt, geht auch direkt in der Oberfläche unter
 „Station fehlt? Nummer von Hand eintragen":
 
 1. Stationsseite auf sixt.de öffnen.
@@ -128,4 +128,4 @@ id|land|iata|name
 ```
 
 Zeilen mit `#` sind Kommentare. Das `iata`-Feld darf leer bleiben; es dient der
-Suche — die Eingabe `FRA` findet die Station sofort.
+Suche, die Eingabe `FRA` findet die Station sofort.

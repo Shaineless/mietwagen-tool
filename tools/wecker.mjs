@@ -7,7 +7,7 @@
  *
  * Die eine Einschränkung, die offen dastehen muss: geprüft wird nur, solange
  * das Programm läuft. Ein Dienst, der im Hintergrund startet und sich in den
- * Autostart einträgt, wäre eine andere Sorte Programm — und niemand rechnet
+ * Autostart einträgt, wäre eine andere Sorte Programm, und niemand rechnet
  * damit, wenn er ein Vergleichswerkzeug öffnet. Die Oberfläche sagt das dazu.
  */
 
@@ -55,7 +55,7 @@ export async function alleWecker() {
 export async function legeWecker(w) {
   await laden();
   // Zwei Sorten. "wunsch": ich hätte den Wagen gern unter X. "buchung": ich
-  // habe für X gebucht, sag mir, wenn es billiger wird — dann kann ich
+  // habe für X gebucht, sag mir, wenn es billiger wird, dann kann ich
   // stornieren und neu buchen. Die zweite läuft weiter, nachdem sie einmal
   // gemeldet hat: der Preis kann noch tiefer fallen, und jedes weitere Mal
   // ist wieder Geld.
@@ -73,13 +73,13 @@ export async function legeWecker(w) {
     // und gemessen lagen 12:30 und 13:30 am selben Tag 57 % auseinander. Wer
     // bei 13:30 sucht, bekaeme sonst Alarm ueber einen Preis, den er nie
     // gesehen hat. '10:00' als Rueckfall, weil aeltere Wecker so geprueft
-    // wurden — sie verhalten sich damit unveraendert.
+    // wurden, sie verhalten sich damit unveraendert.
     zeit: w.zeit || '10:00',
     zeitRueck: w.zeitRueck || w.zeit || '10:00',
     host: w.host,
     hostLabel: w.hostLabel || w.host,
     acriss: w.acriss,
-    // Bei einer Buchung ist der gezahlte Preis die Grenze — etwas anderes
+    // Bei einer Buchung ist der gezahlte Preis die Grenze, etwas anderes
     // einzutragen ergäbe keinen Sinn.
     grenze: art === 'buchung' ? gebucht : Number(w.grenze),
     gebucht,
@@ -123,11 +123,11 @@ export async function faelligeWecker() {
   const jetzt = Date.now();
   const heute = new Date().toISOString().slice(0, 10);
   return alle.filter((w) => {
-    // Abgelaufene Termine nicht mehr prüfen — der Wagen ist längst weg.
+    // Abgelaufene Termine nicht mehr prüfen, der Wagen ist längst weg.
     // Bei einer Buchung zählt der Abholtag: ab da ist nichts mehr umzubuchen.
     if ((w.art === 'buchung' ? w.von : w.bis) < heute) return false;
     // Ein Wunschwecker hat seine Aufgabe erfüllt, sobald er einmal gemeldet
-    // hat. Ein Buchungswecker nicht — der Preis kann weiter fallen.
+    // hat. Ein Buchungswecker nicht, der Preis kann weiter fallen.
     if (w.ausgeloest && w.art !== 'buchung') return false;
     return !w.zuletztGeprueft || jetzt - w.zuletztGeprueft > MIN_ABSTAND_MS;
   });
@@ -152,7 +152,7 @@ export async function vermerkePruefung(id, { preis = null, fehler = null } = {})
   let loest = false;
   if (preis != null) {
     if (w.art === 'buchung') {
-      // Melden nur bei einem neuen Tiefstand unter dem gezahlten Preis —
+      // Melden nur bei einem neuen Tiefstand unter dem gezahlten Preis,
       // sonst käme alle sechs Stunden dieselbe Nachricht über denselben
       // Preis, und man hörte irgendwann weg.
       loest = preis < w.gebucht && (w.gemeldet == null || preis < w.gemeldet);

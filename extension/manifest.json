@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Mietwagen-Preistool — Preisleser",
+  "name": "Mietwagen-Preistool. Preisleser",
   "version": "1.0.0",
   "description": "Liest Preise aus geöffneten Mietwagen-Trefferlisten und reicht sie an das lokal laufende Mietwagen-Preistool weiter.",
   "permissions": ["storage"],

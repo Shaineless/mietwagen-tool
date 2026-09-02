@@ -1,5 +1,5 @@
 /**
- * Ortsebene — das Bindeglied fuer den Anbietervergleich.
+ * Ortsebene, das Bindeglied fuer den Anbietervergleich.
  *
  * Das Problem: Autovermieter haben nicht dieselben Stationen. Sixt sitzt am
  * Flughafen im Parkhaus P4, Europcar im Terminal, Enterprise 3 km weiter im
@@ -11,9 +11,9 @@
  *
  * Zuordnung, in absteigender Verlaesslichkeit:
  *
- *   1. manuelle Zuordnung   (data/places.overrides.txt) — schlaegt alles
- *   2. IATA-Code            — Flughaefen, anbieteruebergreifend eindeutig
- *   3. Stadt + Stationsart  — "Muenchen"+"Hauptbahnhof", nur ungefaehr
+ *   1. manuelle Zuordnung   (data/places.overrides.txt), schlaegt alles
+ *   2. IATA-Code. Flughaefen, anbieteruebergreifend eindeutig
+ *   3. Stadt + Stationsart, "Muenchen"+"Hauptbahnhof", nur ungefaehr
  *
  * Wichtig: die Verlaesslichkeit wird mitgefuehrt und angezeigt. Ein Vergleich
  * zwischen "Flughafen-Schalter" und "Stadtbuero 8 km entfernt" ist kein
@@ -129,7 +129,7 @@ export function buildPlaces(stations, overrides = new Map()) {
   }
 
   return [...places.values()].sort((a, b) => {
-    // Orte mit mehreren Anbietern zuerst — sie sind der eigentliche Zweck.
+    // Orte mit mehreren Anbietern zuerst, sie sind der eigentliche Zweck.
     const d = (b.providers.length || 1) - (a.providers.length || 1);
     return d || a.label.localeCompare(b.label);
   });
@@ -143,13 +143,13 @@ export const CONFIDENCE_LABEL = {
   manual: { text: 'zugeordnet', hint: 'Von Hand zugeordnet.' },
   exact: {
     text: 'gleicher Flughafen',
-    hint: 'Über den IATA-Code eindeutig — dieselbe Anlage bei allen Anbietern.',
+    hint: 'Über den IATA-Code eindeutig, dieselbe Anlage bei allen Anbietern.',
   },
   approx: {
     text: 'ungefähr',
     hint:
       'Nur über Ortsname und Stationsart zugeordnet. Die Stationen können ' +
-      'mehrere Kilometer auseinanderliegen — Preise sind nicht 1:1 vergleichbar.',
+      'mehrere Kilometer auseinanderliegen. Preise sind nicht 1:1 vergleichbar.',
   },
 };
 

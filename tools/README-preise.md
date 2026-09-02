@@ -3,7 +3,7 @@
 Kurzfassung: Der Dienst startet **dein eigenes, installiertes Chrome** mit einem
 separaten Profil und einem Debug-Port, hängt sich per CDP daran, öffnet die
 Anbieterseiten und liest die Preise. Das Fenster steht außerhalb des
-sichtbaren Bildschirmbereichs — man merkt nichts davon.
+sichtbaren Bildschirmbereichs, man merkt nichts davon.
 
 ## Warum ausgerechnet so
 
@@ -29,7 +29,7 @@ Das sieht kürzer aus und funktioniert nicht.
 
 ## Was bewusst nicht drin ist
 
-Es gäbe eine Tarnkappen-Schicht — `navigator.webdriver` fälschen, Fingerabdruck
+Es gäbe eine Tarnkappen-Schicht, `navigator.webdriver` fälschen, Fingerabdruck
 angleichen, `playwright-extra` mit Stealth-Plugin. Die ist **nicht** eingebaut,
 und zwar nicht aus Bequemlichkeit: eine ausdrücklich ausgesprochene
 Zugriffssperre gezielt zu umgehen ist etwas anderes, als öffentliche Seiten zu
@@ -41,7 +41,7 @@ braucht sie ohnehin nicht.
 ```
 tools/browser.mjs        Chrome finden, starten, verbinden; Cookie-Banner
 tools/scrape/sixt.mjs    Ablauf je Anfrage, Trefferliste auslesen
-src/offer-parse.js       Kachel-Auswertung — einzige Quelle, vom Build verteilt
+src/offer-parse.js       Kachel-Auswertung, einzige Quelle, vom Build verteilt
 tools/serve.mjs          Warteschlange (2 parallel), Ergebnisspeicher, API
 ```
 
@@ -55,7 +55,7 @@ Ergebnisse liegen nur im Arbeitsspeicher und verfallen nach einer Stunde.
 - **Chrome oder Edge muss installiert sein.** Ohne bleibt der Link-Modus; die
   Oberfläche sagt das, statt es stillschweigend zu versuchen.
 - **Es bricht, wenn Sixt umbaut.** Angesprochen wird alles über
-  `data-testid`-Haken, die seit Jahren stabil sind — aber eine Garantie ist das
+  `data-testid`-Haken, die seit Jahren stabil sind, aber eine Garantie ist das
   nicht. Bricht es, meldet der Eintrag „Trefferliste kam nicht" statt still
   falsche Zahlen zu zeigen.
 - **Preise sind Momentaufnahmen.** Es gibt bewusst kein Dauer-Tracking.
@@ -64,5 +64,5 @@ Ergebnisse liegen nur im Arbeitsspeicher und verfallen nach einer Stunde.
 
 Unter `extension/` liegt zusätzlich eine Erweiterung, die Preise aus Tabs liest,
 die du selbst öffnest. Sie war der ursprüngliche Weg, bevor sich der CDP-Ansatz
-als tragfähig erwies, und bleibt als Rückfallebene erhalten — etwa falls Chrome
+als tragfähig erwies, und bleibt als Rückfallebene erhalten, etwa falls Chrome
 den Debug-Port irgendwann sperrt. Für den Alltag wird sie nicht gebraucht.

@@ -2,7 +2,7 @@
  * Baut aus den Quellen unter src/ eine einzige, in sich geschlossene HTML-Datei.
  *
  * Warum ein Build? Der Quellcode soll in Module aufgeteilt bleiben (lesbar,
- * erweiterbar), das Ergebnis aber per Doppelklick aus dem Dateisystem laufen —
+ * erweiterbar), das Ergebnis aber per Doppelklick aus dem Dateisystem laufen,
  * genau wie beim Original-Tool. ES-Module funktionieren unter file:// nicht,
  * deshalb werden sie hier zu einem klassischen Script zusammengefasst.
  *
@@ -23,7 +23,7 @@ const src = (f) => join(root, 'src', f);
  *
  * Entscheidet ueber die Form der Stationsadresse: Flughafenstationen tragen
  * bei Sixt das Kuerzel `ap`, alle uebrigen `dt`. Das IATA-Feld taugt dafuer
- * nicht — nur 43 der 2250 Stationen haben eines, waehrend ueber 700 dem Namen
+ * nicht, nur 43 der 2250 Stationen haben eines, waehrend ueber 700 dem Namen
  * nach Flughaefen sind. Also entscheidet der Name.
  *
  * Die Namen stammen von sixt.de und sind deshalb deutsch; die uebrigen
@@ -50,20 +50,20 @@ function parseStations(file, providerId) {
       return;
     }
     if (seen.has(id)) {
-      console.warn(`  ! ${file}:${i + 1} doppelte ID ${id} — übersprungen`);
+      console.warn(`  ! ${file}:${i + 1} doppelte ID ${id}, übersprungen`);
       return;
     }
     seen.add(id);
 
     out.push({
-      // `code` ist der anbietereigene Stationsschlüssel — bei Sixt eine Zahl
+      // `code` ist der anbietereigene Stationsschlüssel, bei Sixt eine Zahl
       // (der uci-Parameter), bei anderen Anbietern oft ein Buchstabencode.
       code: id.trim(),
       country: (country || '').trim(),
       iata: (iata || '').trim(),
       name,
       provider: providerId,
-      // Nur bei Flughafenstationen gesetzt — spart in der erzeugten Datei
+      // Nur bei Flughafenstationen gesetzt, spart in der erzeugten Datei
       // 1500 Mal `false`.
       ...(FLUGHAFEN_RE.test(name) ? { flughafen: true } : {}),
     });
@@ -80,7 +80,7 @@ console.log(
 );
 
 const stationsModule =
-  '// Automatisch erzeugt von build.mjs aus src/data/*.txt — nicht direkt bearbeiten.\n' +
+  '// Automatisch erzeugt von build.mjs aus src/data/*.txt, nicht direkt bearbeiten.\n' +
   'export const STATIONS = ' +
   JSON.stringify(stations) +
   ';\n';
@@ -110,7 +110,7 @@ function flatten(code) {
 
 // Reihenfolge = Abhängigkeitsreihenfolge: app.js benutzt alles Vorherige.
 // places.js liegt fuer den spaeteren Anbietervergleich bereit, wird aber
-// derzeit nicht gebraucht — vorerst nur Sixt.
+// derzeit nicht gebraucht, vorerst nur Sixt.
 const MODULES = ['providers.js', 'offer-classes.js', 'xlsx.js', 'app.js'];
 
 const bundle = [
@@ -129,7 +129,7 @@ const bundle = [
 // von hier aus verteilt. Sonst laufen Erweiterung und Worker auseinander,
 // ohne dass es jemand merkt.
 const parser = readFileSync(src('offer-parse.js'), 'utf8');
-const GENERATED = '// Erzeugt von build.mjs aus src/offer-parse.js — nicht direkt bearbeiten.\n\n';
+const GENERATED = '// Erzeugt von build.mjs aus src/offer-parse.js, nicht direkt bearbeiten.\n\n';
 
 writeFileSync(
   join(root, 'extension', 'content.js'),
@@ -174,4 +174,4 @@ writeFileSync(outFile, html);
 
 const kb = (Buffer.byteLength(html) / 1024).toFixed(1);
 console.log(`\nFertig: dist/mietwagen-preistool.html (${kb} kB)`);
-console.log('Einfach im Browser öffnen — kein Server nötig.');
+console.log('Einfach im Browser öffnen, kein Server nötig.');

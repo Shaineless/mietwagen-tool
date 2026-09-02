@@ -2,7 +2,7 @@
  * Eine echte Excel-Mappe schreiben, ohne Fremdbibliothek.
  *
  * Eine .xlsx ist ein ZIP aus XML-Dateien. Das laesst sich von Hand bauen, und
- * genau das passiert hier — aus zwei Gruenden:
+ * genau das passiert hier, aus zwei Gruenden:
  *
  *   1. Die freie Fassung von SheetJS kann keine Zellformate. Ohne die waere
  *      das Ergebnis nur eine CSV mit anderer Endung, und die gibt es schon.
@@ -13,7 +13,7 @@
  * Komprimiert wird nicht (ZIP-Methode 0). Deflate waere nochmal eine eigene
  * Implementierung; die Ersparnis lohnt bei diesen Datenmengen nicht.
  *
- * Alles laeuft im Browser — die Mappe entsteht also auch in der
+ * Alles laeuft im Browser, die Mappe entsteht also auch in der
  * eigenstaendigen HTML-Datei, ohne laufenden Dienst.
  */
 
@@ -38,7 +38,7 @@ function crc32(bytes) {
 /**
  * Datum und Zeit im DOS-Format, wie es der ZIP-Kopf verlangt.
  *
- * Vor 1980 gibt es dort nicht — und das ist keine theoretische Grenze: eine
+ * Vor 1980 gibt es dort nicht, und das ist keine theoretische Grenze: eine
  * falsch gestellte Uhr wuerde sonst eine Mappe erzeugen, die Excel nicht
  * oeffnet.
  */
@@ -131,7 +131,7 @@ function esc(s) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     // Steuerzeichen sind in XML 1.0 nicht erlaubt und lassen Excel die Datei
-    // rundheraus abweisen. Modellnamen kommen aus fremdem HTML — da ist alles
+    // rundheraus abweisen. Modellnamen kommen aus fremdem HTML, da ist alles
     // moeglich.
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
 }
@@ -151,7 +151,7 @@ function spalte(i) {
  *
  * Die Reihenfolge in styles.xml ist die Nummerierung: Zelle mit s="3" meint
  * den vierten Eintrag in cellXfs. Deshalb stehen die Nummern als Konstanten
- * daneben — ein verrutschter Index faellt sonst erst in Excel auf.
+ * daneben, ein verrutschter Index faellt sonst erst in Excel auf.
  */
 
 export const STIL = {
@@ -209,7 +209,7 @@ function stylesXml(waehrung) {
  * Ein Blatt aus Zeilen.
  *
  * Eine Zelle ist entweder ein Wert (Text/Zahl) oder `{w, s}` mit Wert und
- * Stilnummer. `null` laesst die Zelle leer — anders als eine leere
+ * Stilnummer. `null` laesst die Zelle leer, anders als eine leere
  * Zeichenkette, die Excel als Text zaehlt.
  */
 function sheetXml(blatt) {
@@ -279,8 +279,8 @@ export function mappe(blaetter, waehrung) {
         .replace(/[:\\/?*[\]]/g, '-')
         .slice(0, 31)
         // Ein angeschnittener Name endet leicht auf Leerzeichen oder
-        // Trennstrich — das sieht nach Versehen aus, weil es eines ist.
-        .replace(/[\s·\-—]+$/, '')
+        // Trennstrich, das sieht nach Versehen aus, weil es eines ist.
+        .replace(/[\s·\-, ]+$/, '')
         .trim() || `Blatt${i + 1}`;
     while (gesehen.has(n.toLowerCase())) n = n.slice(0, 28).trim() + '_' + (i + 1);
     gesehen.add(n.toLowerCase());

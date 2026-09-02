@@ -10,7 +10,7 @@
     "BMW SÉRIE 3 TOURING",
     "BMW SERIE 3 TOURING"
    ],
-   "beispielText": "Fullsize Elite Stationwagen Automatisch",
+   "beispielText": "Oberklasse Elite Kombi Automatik",
    "zuletzt": "2026-09-02"
   },
   "CDMR": {
@@ -18,7 +18,7 @@
    "modelle": [
     "VW GOLF"
    ],
-   "beispielText": "Compact Sedan Handmatig",
+   "beispielText": "Kompaktklasse Limousine Manuell",
    "zuletzt": "2026-09-02"
   },
   "CFMR": {
@@ -26,7 +26,7 @@
    "modelle": [
     "VW TAIGO"
    ],
-   "beispielText": "Compact SUV Handmatig",
+   "beispielText": "Kompaktklasse SUV Manuell",
    "zuletzt": "2026-09-02"
   },
   "CTMR": {
@@ -43,7 +43,7 @@
    "modelle": [
     "VW GOLF"
    ],
-   "beispielText": "Compact Sedan Automatisch",
+   "beispielText": "Kompaktklasse Limousine Automatik",
    "zuletzt": "2026-09-02"
   },
   "CFAR": {
@@ -51,7 +51,7 @@
    "modelle": [
     "VW TAIGO"
    ],
-   "beispielText": "Compact SUV Automatisch",
+   "beispielText": "Kompaktklasse SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "CTAR": {
@@ -76,7 +76,7 @@
    "modelle": [
     "VW T-ROC"
    ],
-   "beispielText": "Middenklasse SUV Handmatig",
+   "beispielText": "Mittelklasse SUV Manuell",
    "zuletzt": "2026-09-02"
   },
   "DDAR": {
@@ -88,7 +88,7 @@
     "BMW SÉRIE 1",
     "BMW SERIE 1"
    ],
-   "beispielText": "Compact Elite Sedan Automatisch",
+   "beispielText": "Kompaktklasse Elite Limousine Automatik",
    "zuletzt": "2026-09-02"
   },
   "SFMR": {
@@ -96,7 +96,7 @@
    "modelle": [
     "VW TIGUAN"
    ],
-   "beispielText": "Standaard SUV Handmatig",
+   "beispielText": "Standardklasse SUV Manuell",
    "zuletzt": "2026-09-02"
   },
   "IFAR": {
@@ -105,7 +105,7 @@
     "VW T-ROC",
     "INTERMEDIATE SUV"
    ],
-   "beispielText": "Middenklasse SUV Automatisch",
+   "beispielText": "Mittelklasse SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "IVAV": {
@@ -122,7 +122,7 @@
     "AUDI Q2",
     "COMPACT ELITE SUV"
    ],
-   "beispielText": "Compact Elite SUV Automatisch",
+   "beispielText": "Kompaktklasse Elite SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "PFAV": {
@@ -131,7 +131,7 @@
     "VW TAYRON",
     "PREMIUM SUV"
    ],
-   "beispielText": "Premium SUV Automatisch",
+   "beispielText": "Premiumklasse SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "JDAR": {
@@ -141,7 +141,7 @@
     "AUDI A3 SEDAN",
     "AUDI A3 BERLINA"
    ],
-   "beispielText": "Middenklasse Elite Sedan Automatisch",
+   "beispielText": "Mittelklasse Elite Limousine Automatik",
    "zuletzt": "2026-09-02"
   },
   "SFAR": {
@@ -150,7 +150,7 @@
     "VW TIGUAN",
     "STANDARD SUV"
    ],
-   "beispielText": "Standaard SUV Automatisch",
+   "beispielText": "Standardklasse SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "DVAR": {
@@ -162,7 +162,7 @@
     "BMW SERIE 2 ACTIVE TOURER",
     "BMW 2 SERIE ACTIVE TOURER"
    ],
-   "beispielText": "Compact Elite Van Automatisch",
+   "beispielText": "Kompaktklasse Elite Van Automatik",
    "zuletzt": "2026-09-02"
   },
   "GDAR": {
@@ -174,7 +174,7 @@
     "BMW SÉRIE 3",
     "BMW SERIE 3"
    ],
-   "beispielText": "Fullsize Elite Sedan Automatisch",
+   "beispielText": "Oberklasse Elite Limousine Automatik",
    "zuletzt": "2026-09-02"
   },
   "UDAR": {
@@ -185,7 +185,7 @@
     "MERCEDES-BENZ CLASSE E",
     "MERCEDES-BENZ CLASE E"
    ],
-   "beispielText": "Premium Elite Sedan Automatisch",
+   "beispielText": "Premiumklasse Elite Limousine Automatik",
    "zuletzt": "2026-09-02"
   },
   "GFAR": {
@@ -194,7 +194,7 @@
     "BMW X2",
     "FULLSIZE ELITE SUV"
    ],
-   "beispielText": "Fullsize Elite SUV Automatisch",
+   "beispielText": "Oberklasse Elite SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "UFAR": {
@@ -202,7 +202,7 @@
    "modelle": [
     "BMW X3"
    ],
-   "beispielText": "Premium Elite SUV Automatisch",
+   "beispielText": "Premiumklasse Elite SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "UWAR": {
@@ -210,7 +210,7 @@
    "modelle": [
     "AUDI A6 AVANT"
    ],
-   "beispielText": "Premium Elite Stationwagen Automatisch",
+   "beispielText": "Premiumklasse Elite Kombi Automatik",
    "zuletzt": "2026-09-02"
   },
   "GEAR": {
@@ -223,7 +223,7 @@
     "BMW 4 SERIE COUPÉ",
     "BMW 4 SERIES COUPE"
    ],
-   "beispielText": "Fullsize Elite Coupé Automatisch",
+   "beispielText": "Oberklasse Elite Coupé Automatik",
    "zuletzt": "2026-09-02"
   },
   "DDSR": {
@@ -231,7 +231,7 @@
    "modelle": [
     "BMW M135"
    ],
-   "beispielText": "Compact Elite Sedan Automatisch",
+   "beispielText": "Kompaktklasse Elite Limousine Automatik",
    "zuletzt": "2026-09-02"
   },
   "JDSR": {
@@ -240,7 +240,7 @@
     "BMW M235 GRAN COUPÉ",
     "BMW M235 GRAN COUPE"
    ],
-   "beispielText": "Middenklasse Elite Sedan Automatisch",
+   "beispielText": "Mittelklasse Elite Limousine Automatik",
    "zuletzt": "2026-09-02"
   },
   "GFSR": {
@@ -257,7 +257,7 @@
    "modelle": [
     "BMW M340 TOURING"
    ],
-   "beispielText": "Fullsize Elite Stationwagen Automatisch",
+   "beispielText": "Oberklasse Elite Kombi Automatik",
    "zuletzt": "2026-09-02"
   },
   "SVAR": {
@@ -265,7 +265,7 @@
    "modelle": [
     "VW CADDY MAXI"
    ],
-   "beispielText": "Standaard Van Automatisch",
+   "beispielText": "Standardklasse Van Automatik",
    "zuletzt": "2026-09-02"
   },
   "UFSR": {
@@ -273,7 +273,7 @@
    "modelle": [
     "BMW X3 M50"
    ],
-   "beispielText": "Premium Elite SUV Automatisch",
+   "beispielText": "Premiumklasse Elite SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "GLSR": {
@@ -292,7 +292,7 @@
     "BMW 7ER XDRIVE",
     "BMW 7 SERIE XDRIVE"
    ],
-   "beispielText": "Speciaal Sedan Automatisch",
+   "beispielText": "Spezialklasse Limousine Automatik",
    "zuletzt": "2026-09-02"
   },
   "WFSR": {
@@ -300,7 +300,7 @@
    "modelle": [
     "BMW X5 M60"
    ],
-   "beispielText": "Luxe Elite SUV Automatisch",
+   "beispielText": "Luxusklasse Elite SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "XFDR": {
@@ -308,7 +308,7 @@
    "modelle": [
     "BMW X7"
    ],
-   "beispielText": "Speciaal SUV Automatisch",
+   "beispielText": "Spezialklasse SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "XFDV": {
@@ -316,7 +316,7 @@
    "modelle": [
     "MERCEDES-BENZ GLS"
    ],
-   "beispielText": "Speciaal SUV Automatisch",
+   "beispielText": "Spezialklasse SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "XDSR": {
@@ -328,7 +328,7 @@
     "MERCEDES-BENZ CLASE S LARGA",
     "MERCEDES-BENZ CLASSE S LUNGO"
    ],
-   "beispielText": "Speciaal Sedan Automatisch",
+   "beispielText": "Spezialklasse Limousine Automatik",
    "zuletzt": "2026-09-02"
   },
   "WFLP": {
@@ -336,7 +336,7 @@
    "modelle": [
     "PORSCHE CAYENNE"
    ],
-   "beispielText": "Luxe Elite SUV Automatisch",
+   "beispielText": "Luxusklasse Elite SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "XDLP": {
@@ -360,7 +360,7 @@
    "modelle": [
     "BMW X7 M60"
    ],
-   "beispielText": "Speciaal SUV Automatisch",
+   "beispielText": "Spezialklasse SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "GELP": {
@@ -376,7 +376,7 @@
    "modelle": [
     "PORSCHE 911 CARRERA"
    ],
-   "beispielText": "Middenklasse Elite Coupé Automatisch",
+   "beispielText": "Mittelklasse Elite Coupé Automatik",
    "zuletzt": "2026-09-02"
   },
   "GTLP": {
@@ -401,7 +401,7 @@
    "modelle": [
     "SEAT IBIZA"
    ],
-   "beispielText": "Economy Sedan Handmatig",
+   "beispielText": "Kleinwagen Limousine Manuell",
    "zuletzt": "2026-09-02"
   },
   "EDAR": {
@@ -409,7 +409,7 @@
    "modelle": [
     "SEAT IBIZA"
    ],
-   "beispielText": "Economy Sedan Automatisch",
+   "beispielText": "Kleinwagen Limousine Automatik",
    "zuletzt": "2026-09-02"
   },
   "EFMR": {
@@ -417,7 +417,7 @@
    "modelle": [
     "VW T-CROSS"
    ],
-   "beispielText": "Economy SUV Handmatig",
+   "beispielText": "Kleinwagen SUV Manuell",
    "zuletzt": "2026-09-02"
   },
   "IFAE": {
@@ -433,7 +433,7 @@
    "modelle": [
     "VW T-CROSS"
    ],
-   "beispielText": "Economy SUV Automatisch",
+   "beispielText": "Kleinwagen SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "WFDR": {
@@ -441,7 +441,7 @@
    "modelle": [
     "BMW X5 XDRIVE"
    ],
-   "beispielText": "Luxe Elite SUV Automatisch",
+   "beispielText": "Luxusklasse Elite SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "UVAR": {
@@ -453,7 +453,7 @@
     "MERCEDES-BENZ CLASE V LUNGO",
     "MERCEDES-BENZ V-CLASS LONG"
    ],
-   "beispielText": "Premium Elite Van Automatisch",
+   "beispielText": "Premiumklasse Elite Van Automatik",
    "zuletzt": "2026-09-02"
   },
   "JTLP": {
@@ -479,7 +479,7 @@
     "VW GOLF VARIANT",
     "VW GOLF ESTATE"
    ],
-   "beispielText": "Compact Stationwagen Handmatig",
+   "beispielText": "Kompaktklasse Kombi Manuell",
    "zuletzt": "2026-09-02"
   },
   "CWAR": {
@@ -489,7 +489,7 @@
     "VW GOLF VARIANT",
     "VW GOLF ESTATE"
    ],
-   "beispielText": "Compact Stationwagen Automatisch",
+   "beispielText": "Kompaktklasse Kombi Automatik",
    "zuletzt": "2026-09-02"
   },
   "UTAR": {
@@ -519,7 +519,7 @@
    "modelle": [
     "MERCEDES-BENZ VITO TOURER"
    ],
-   "beispielText": "Luxe Elite Van Automatisch",
+   "beispielText": "Luxusklasse Elite Van Automatik",
    "zuletzt": "2026-09-02"
   },
   "JESR": {
@@ -917,7 +917,7 @@
     "SKODA OCTAVIA COMBI",
     "SKODA OCTAVIA ESTATE"
    ],
-   "beispielText": "Middenklasse Stationwagen Automatisch",
+   "beispielText": "Mittelklasse Kombi Automatik",
    "zuletzt": "2026-09-02"
   },
   "SWAR": {
@@ -927,7 +927,7 @@
     "VW PASSAT SW",
     "VW PASSAT ESTATE"
    ],
-   "beispielText": "Standaard Stationwagen Automatisch",
+   "beispielText": "Standardklasse Kombi Automatik",
    "zuletzt": "2026-09-02"
   },
   "UWLR": {
@@ -951,7 +951,7 @@
    "modelle": [
     "MERCEDES-BENZ GLC"
    ],
-   "beispielText": "Premium Elite SUV Automatisch",
+   "beispielText": "Premiumklasse Elite SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "GDLR": {
@@ -1007,7 +1007,7 @@
    "modelle": [
     "RANGE ROVER"
    ],
-   "beispielText": "Speciaal SUV Automatisch",
+   "beispielText": "Spezialklasse SUV Automatik",
    "zuletzt": "2026-09-02"
   },
   "GTLR": {

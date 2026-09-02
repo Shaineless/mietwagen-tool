@@ -585,7 +585,7 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 
 /* Ausgabedialog fuer Excel: klappt am Ort auf, kein eigenes Fenstersystem. */
 .xlsx-karte { margin: 0 0 20px; }
-/* Diese Haken werden nicht von JS umgeklassifiziert wie die uebrigen Pillen —
+/* Diese Haken werden nicht von JS umgeklassifiziert wie die uebrigen Pillen,
    sie zeigen ihren Zustand selbst an. */
 .xlsx-gitter { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 18px; }
 .xlsx-gitter .pill:has(input:checked) { background: var(--accent); color: var(--accent-ink); font-weight: 560; }
@@ -596,7 +596,7 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
  *
  * Einmal beim ersten Start, mittig und ohne Ablenkung: hier gibt es genau
  * eine sinnvolle Handlung. Die frueheren Vollbild-Animationen vor jedem Start
- * kommen nicht zurueck — diese Einblendung laeuft einmal, dauert 600 ms und
+ * kommen nicht zurueck, diese Einblendung laeuft einmal, dauert 600 ms und
  * fuehrt zum Testlauf.
  */
 .wk-mitte {
@@ -633,13 +633,13 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
   from { opacity: 0; transform: translateY(9px); }
   to { opacity: 1; transform: none; }
 }
-/* Wer keine Bewegung will, bekommt keine — die Inhalte stehen trotzdem da. */
+/* Wer keine Bewegung will, bekommt keine, die Inhalte stehen trotzdem da. */
 @media (prefers-reduced-motion: reduce) {
   .wk-an { animation: none; }
 }
 
 /* Stationen gegenuebergestellt. Steht ueber den Reitern und nimmt einem das
-   Hin- und Herklicken ab — deshalb ruhig, aber nicht zu uebersehen. */
+   Hin- und Herklicken ab, deshalb ruhig, aber nicht zu uebersehen. */
 .stationsvergleich {
   margin: 0 0 20px;
   padding: 19px 22px;
@@ -656,7 +656,7 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 .sv-fuss { margin: 11px 0 0; font-size: .6875rem; color: var(--muted); }
 .sv-fuss.warn { color: var(--warn, #b26a00); }
 
-/* Der Stationsname ist der Weg in seine Tabelle — als Schalter, nicht als
+/* Der Stationsname ist der Weg in seine Tabelle, als Schalter, nicht als
    Link: er wechselt die Ansicht, er fuehrt nirgendwohin. */
 .sv-name {
   font: inherit;
@@ -670,7 +670,7 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 }
 
 /* Ein Tag, dessen Preis aus dem gespeicherten Verlauf kommt statt aus einem
-   frischen Abruf. Nicht ausgegraut — der Wert stimmte einmal —, aber
+   frischen Abruf. Nicht ausgegraut, der Wert stimmte einmal, , aber
    erkennbar, damit man weiss, worauf man schaut. */
 .ktag.gespeichert { position: relative; }
 .ktag.gespeichert .kpreis { opacity: .62; }
@@ -691,7 +691,7 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 .sttext.guenstiger { color: var(--success); font-weight: 560; }
 #weckerArt button.on { background: var(--accent); color: var(--accent-ink); }
 
-/* Eine Einstellung, die den Abruf selbst betrifft — nicht die Reise. Sie
+/* Eine Einstellung, die den Abruf selbst betrifft, nicht die Reise. Sie
    steht deshalb unter der Auswahl, abgesetzt durch eine Linie, und traegt
    ihre Begruendung gleich mit. */
 .optionzeile {
@@ -743,7 +743,7 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 
 .fortschritt { background: var(--flaeche2); border-radius: var(--r-klein); padding: 16px 18px; margin-bottom: 18px; }
 .fbalken { height: 4px; background: var(--hairline); border-radius: 980px; overflow: hidden; }
-/* Fortschritt ist gleichfoermige Bewegung — linear, sonst luegt der Balken
+/* Fortschritt ist gleichfoermige Bewegung, linear, sonst luegt der Balken
    ueber das Tempo. */
 .ffuellung { height: 100%; width: 0; background: var(--accent); border-radius: 980px; transition: width .3s linear; }
 .frow { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
@@ -825,11 +825,11 @@ table.vergleich tbody tr:last-child th,
 table.vergleich tbody tr:last-child td { box-shadow: none; }
 
 /* Der mitlaufende Kopf soll als schwebende Schicht lesen, nicht als Balken mit
-   Trennstrich — deshalb ein weicher Auslauf nach unten statt einer 1px-Linie.
+   Trennstrich, deshalb ein weicher Auslauf nach unten statt einer 1px-Linie.
    Durchscheinendes Material waere hier das Naheliegende, funktioniert aber
    nicht: backdrop-filter wird in Chromium auf Tabellenzellen ignoriert
    (nachgemessen, computed style bleibt "none"). Also deckend plus weiche
-   Kante — dasselbe Ziel, verlaesslich. */
+   Kante, dasselbe Ziel, verlaesslich. */
 table.vergleich thead th {
   position: sticky;
   top: 0;
@@ -870,7 +870,7 @@ tr.zeile:hover td, tr.zeile:hover th.klasse { background: #f3f7fc; }
 .proTag { display: block; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 3px; font-weight: 400; }
 .proTag.sb { color: var(--ink2); }
 .proTag.rabatt { color: var(--accent); }
-/* Der von Sixt angezeigte Tagespreis, wenn er vom tatsaechlichen abweicht —
+/* Der von Sixt angezeigte Tagespreis, wenn er vom tatsaechlichen abweicht,
    bewusst zurueckhaltend, die abgelesene Zahl ist die gueltige. */
 .proTag.hinweis { color: var(--leise); font-style: italic; }
 .zellfehler { font-size: 12px; color: var(--warn); white-space: normal; display: inline-block; max-width: 150px; }
@@ -922,7 +922,7 @@ td.leer { color: var(--leise); }
   background: var(--accent-weich);
   color: var(--accent);
 }
-/* `display: block` fuellt die ganze Zelle — in der Spaltenueberschrift ist das
+/* `display: block` fuellt die ganze Zelle, in der Spaltenueberschrift ist das
    gewollt, in einer Zeile daneben wird daraus ein Balken quer durchs Feld. */
 .aktion { display: block; margin-top: 5px; }
 tbody .aktion { display: inline-block; margin: 0 0 0 8px; vertical-align: middle; }
@@ -935,7 +935,7 @@ tr.nurkatalog .fbild { opacity: .5; }
 /* ============================================================ Schutz */
 
 .fahrzeugkopf { margin-bottom: 20px; }
-/* Der Umschalter bringt seinen eigenen Abstand mit — leer soll er keinen
+/* Der Umschalter bringt seinen eigenen Abstand mit, leer soll er keinen
    Spalt hinterlassen. */
 #schutzGruppen:empty { display: none; }
 .fzgkopf { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; }
@@ -1028,7 +1028,7 @@ table.vergleich.schutz td, table.vergleich.schutz th.klasse { vertical-align: to
 }
 .station:active, .pill:active, .chipbtn:active, .gtab:active, .mchip:active, .lnk:active { transform: scale(.985); }
 
-/* Die Mietzeile ist Bezugsgroesse, nicht Angebot — sie tritt zurueck und
+/* Die Mietzeile ist Bezugsgroesse, nicht Angebot, sie tritt zurueck und
    setzt sich zugleich vom Rest ab. */
 tr.mietzeile th.klasse, tr.mietzeile td {
   background: var(--flaeche2);
@@ -1038,7 +1038,7 @@ tr.mietzeile th.klasse, tr.mietzeile td {
 tr.mietzeile .betrag { color: var(--ink2); font-weight: 500; }
 .mode:active { transform: scale(.98); }
 
-/* Der Wechsel zwischen den Ansichten laeuft in beide Richtungen gleich —
+/* Der Wechsel zwischen den Ansichten laeuft in beide Richtungen gleich,
    was so hereinkommt, geht so wieder hinaus. Nicht aus scale(0): nichts in
    der Wirklichkeit entsteht aus dem Nichts. */
 .screen:not([hidden]) { animation: auftauchen var(--t-ansicht) var(--raus); }
@@ -1047,7 +1047,7 @@ tr.mietzeile .betrag { color: var(--ink2); font-weight: 500; }
   to   { opacity: 1; transform: none; }
 }
 
-/* Die zwei Startkarten kommen versetzt — kurz genug, dass es nicht bremst. */
+/* Die zwei Startkarten kommen versetzt, kurz genug, dass es nicht bremst. */
 .modes .mode { animation: auftauchen var(--t-ansicht) var(--raus) backwards; }
 .modes .mode:nth-child(2) { animation-delay: 50ms; }
 
@@ -1074,7 +1074,7 @@ tr.mietzeile .betrag { color: var(--ink2); font-weight: 500; }
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  /* Weiche Kanten sind selbst schon eine Transparenzwirkung — hier lieber
+  /* Weiche Kanten sind selbst schon eine Transparenzwirkung, hier lieber
      die eindeutige Linie. */
   table.vergleich thead th { box-shadow: inset 0 -1px 0 var(--hairline); }
   .oben {
@@ -1129,7 +1129,7 @@ td.unstimmig .betrag {
 .weckerzeile:last-of-type { box-shadow: none; }
 .weckerzeile .wtext { flex: 1; min-width: 0; }
 .weckerzeile b { font-weight: 560; letter-spacing: -.01em; }
-/* Ein ausgelöster Wecker ist der ganze Zweck der Sache — der darf auffallen. */
+/* Ein ausgelöster Wecker ist der ganze Zweck der Sache, der darf auffallen. */
 .weckerzeile.ausgeloest {
   background: var(--accent-weich);
   border-radius: var(--r-klein);
@@ -1332,8 +1332,8 @@ button.ktag { display: flex; flex-direction: column; align-items: flex-start; ju
   white-space: nowrap;
 }
 
-/* Eine Einstellung, die gerade nichts bewirkt, wird nicht versteckt — sonst
-   springt das Layout — sondern zurückgenommen und erklärt. */
+/* Eine Einstellung, die gerade nichts bewirkt, wird nicht versteckt, sonst
+   springt das Layout, sondern zurückgenommen und erklärt. */
 .stillgelegt { opacity: .45; }
 .stillgelegt .pill { pointer-events: none; }
 

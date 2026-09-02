@@ -1,4 +1,4 @@
-# SIXT-Stationen — Format: id|land|iata|name
+# SIXT-Stationen. Format: id|land|iata|name
 # Quelle: oeffentliche Stationsseiten auf sixt.de (/mietwagen/<land>/<stadt>/<station>/)
 # Geerntet: 2026-09-01 · Anleitung: tools/harvest-sixt.md
 # Zeilen mit # werden ignoriert. Eigene Stationen einfach unten anhaengen.

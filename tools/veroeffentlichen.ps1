@@ -9,7 +9,7 @@
 #
 # Die Zugangsdaten kommen aus dem Windows-Anmeldeinformationsspeicher, in dem
 # Git sie beim ersten Push abgelegt hat. Sie werden nirgends angezeigt und
-# nirgends gespeichert — das Skript reicht sie nur an GitHub weiter. Wer das
+# nirgends gespeichert, das Skript reicht sie nur an GitHub weiter. Wer das
 # nicht will, laedt die Datei von Hand unter Releases hoch.
 
 $ErrorActionPreference = 'Stop'
@@ -45,12 +45,12 @@ Write-Host "  Ziel:       $besitzer/$repo"
 
 $exe = 'dist\Tracker.exe'
 
-# Ein laufendes TRACKER haelt die Datei fest — dann laesst sie sich weder neu
+# Ein laufendes TRACKER haelt die Datei fest, dann laesst sie sich weder neu
 # bauen noch hochladen. Beenden statt mit einer Sperrmeldung abbrechen: wer
 # veroeffentlicht, will nicht erst im Taskmanager suchen.
 $laeuft = Get-Process 'Tracker' -ErrorAction SilentlyContinue
 if ($laeuft) {
-  Schritt "Ein laufendes TRACKER haelt die Datei fest — es wird beendet."
+  Schritt "Ein laufendes TRACKER haelt die Datei fest, es wird beendet."
   $laeuft | Stop-Process -Force
   Start-Sleep -Seconds 2
 }
@@ -59,7 +59,7 @@ $neuste = Get-ChildItem 'src', 'tools', 'build.mjs', 'build-exe.mjs' -Recurse -F
   Sort-Object LastWriteTime -Descending | Select-Object -First 1
 
 if ((-not (Test-Path $exe)) -or ($neuste -and (Get-Item $exe).LastWriteTime -lt $neuste.LastWriteTime)) {
-  Schritt "Die EXE ist aelter als der Quellcode — wird neu gebaut. Das dauert ein bis zwei Minuten."
+  Schritt "Die EXE ist aelter als der Quellcode, wird neu gebaut. Das dauert ein bis zwei Minuten."
   node build.mjs | Out-Null
   node build-exe.mjs | Out-Null
   if (-not (Test-Path $exe)) { Schlecht "Der Bau ist fehlgeschlagen."; exit 1 }
@@ -142,7 +142,7 @@ $basis = "https://api.github.com/repos/$besitzer/$repo"
 $release = $null
 try {
   $release = Invoke-RestMethod -Uri "$basis/releases/tags/$tag" -Headers $kopf -TimeoutSec 60
-  Gut "Release $tag gibt es schon — die Datei wird ersetzt."
+  Gut "Release $tag gibt es schon, die Datei wird ersetzt."
 } catch {
   $rumpf = @{ tag_name = $tag; name = "TRACKER $version"; body = $text; draft = $false; prerelease = $false } | ConvertTo-Json
   # Als UTF-8-Bytes senden, nicht als Zeichenkette: PowerShell 5.1 kodiert
@@ -153,7 +153,7 @@ try {
     Gut "Release angelegt."
   } catch {
     Schlecht "Das Release liess sich nicht anlegen: $($_.Exception.Message)"
-    # Die Antwort von GitHub sagt meist genau, was fehlt — sie gehoert
+    # Die Antwort von GitHub sagt meist genau, was fehlt, sie gehoert
     # hierher, statt den Nutzer raten zu lassen.
     if ($_.Exception.Response) {
       $leser = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
@@ -173,14 +173,14 @@ foreach ($a in $release.assets) {
   }
 }
 
-Schritt "EXE hochladen ($([math]::Round($exeInfo.Length/1MB,1)) MB) — das dauert je nach Leitung ein paar Minuten ..."
+Schritt "EXE hochladen ($([math]::Round($exeInfo.Length/1MB,1)) MB), das dauert je nach Leitung ein paar Minuten ..."
 $ziel = ($release.upload_url -replace '\{\?name,label\}', '') + '?name=Tracker.exe'
 try {
   $hoch = Invoke-RestMethod -Uri $ziel -Method Post -Headers $kopf -ContentType 'application/octet-stream' -InFile $exeInfo.FullName -TimeoutSec 3600
   Gut "Hochgeladen: $($hoch.name), $([math]::Round($hoch.size/1MB,1)) MB"
 } catch {
   Schlecht "Das Hochladen ist fehlgeschlagen: $($_.Exception.Message)"
-  Write-Host "  Das Release steht bereits — die Datei laesst sich dort von Hand nachreichen:" -ForegroundColor Yellow
+  Write-Host "  Das Release steht bereits, die Datei laesst sich dort von Hand nachreichen:" -ForegroundColor Yellow
   Write-Host "  $($release.html_url)"
   exit 1
 }

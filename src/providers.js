@@ -7,7 +7,7 @@
  *   3. was davon nachweislich funktioniert   -> status / capabilities
  *
  * Punkt 3 ist bewusst Teil der Datenstruktur. Das Vorgaengertool bot
- * Bedienelemente an, die Sixt inzwischen ignoriert (Fahrzeugklasse, Prepaid) —
+ * Bedienelemente an, die Sixt inzwischen ignoriert (Fahrzeugklasse, Prepaid),
  * die Oberflaeche soll so etwas gar nicht erst als funktionierend darstellen.
  *
  * Transportarten:
@@ -39,7 +39,7 @@ const SIXT_MARKETS = [
   { code: 'fi', host: 'www.sixt.fi', label: 'Finnland', cur: 'EUR' },
   { code: 'pl', host: 'www.sixt.pl', label: 'Polen', cur: 'PLN' },
   // Gemessen am 02.09.2026: vier von vier Abrufen scheiterten mit "Station
-  // wurde nicht uebernommen" — die Seite nimmt eine deutsche Station gar
+  // wurde nicht uebernommen", die Seite nimmt eine deutsche Station gar
   // nicht erst an. Sie bleibt sichtbar, aber abgeschaltet: heimlich zu
   // loeschen wuerde nur die Frage aufwerfen, wo Tschechien geblieben ist.
   {
@@ -64,7 +64,7 @@ const SIXT_MARKETS = [
   // nehmen unsere Suchparameter an und liefern eine vollständige Trefferliste
   // für eine deutsche Station (geprüft mit Frankfurt Flughafen, je 66
   // Angebote). Die Währungen stammen aus dem Kacheltext, nicht aus dem
-  // Länderkürzel — "A$" und "R$" hätte ein Dollarzeichen sonst zu US-Dollar
+  // Länderkürzel, "A$" und "R$" hätte ein Dollarzeichen sonst zu US-Dollar
   // gemacht.
   { code: 'si', host: 'www.sixt.si', label: 'Slowenien', cur: 'EUR' },
   { code: 'ee', host: 'www.sixt.ee', label: 'Estland', cur: 'EUR' },
@@ -81,7 +81,7 @@ const SIXT_MARKETS = [
  * Geprueft und bewusst NICHT aufgenommen.
  *
  * Alle diese Domains gehoeren Sixt und antworten, liefern fuer eine deutsche
- * Station aber keine Trefferliste — die Seite laeuft durch, die Liste bleibt
+ * Station aber keine Trefferliste, die Seite laeuft durch, die Liste bleibt
  * leer. Vermutlich bedienen sie nur ihre eigene Region. Sie hier zu fuehren
  * hiesse, dem Nutzer eine Spalte anzubieten, die immer leer bleibt.
  *
@@ -95,7 +95,7 @@ const SIXT_MARKETS = [
  */
 
 /**
- * Farbthemen zur Orientierung — angelehnt an die Hausfarben der Vermieter,
+ * Farbthemen zur Orientierung, angelehnt an die Hausfarben der Vermieter,
  * damit beim Umschalten sofort klar ist, wessen Suche gerade gebaut wird.
  * Bewusst nur Akzentfarben: keine Logos, keine Nachbildung der Originalseiten.
  */
@@ -123,7 +123,7 @@ const sixt = {
     date: true,
     time: true,
     oneWay: true,
-    // Nachweislich NICHT mehr ausgewertet — die Parameter werden verworfen:
+    // Nachweislich NICHT mehr ausgewertet, die Parameter werden verworfen:
     vehicleClass: false,
     prepaid: false,
   },
@@ -131,10 +131,10 @@ const sixt = {
     'Datum muss als yyyymmdd übergeben werden. Das vom Original-Tool benutzte ' +
       'dd-mm-yyyy wird stillschweigend ignoriert.',
     'Die Parameter grp (Fahrzeugklasse) und prpd (Prepaid) werden von Sixt ' +
-      'heute verworfen — geprüft: die Trefferliste startet mit leerem Filter.',
+      'heute verworfen, geprüft: die Trefferliste startet mit leerem Filter.',
     'Ein Direktsprung in die Trefferliste ist nicht möglich; Sixt adressiert ' +
       'Stationen dort über eine UUID, die sich aus der Stations-ID nicht ' +
-      'ableiten lässt. Der Link belegt daher die Suchmaske vor — beim ' +
+      'ableiten lässt. Der Link belegt daher die Suchmaske vor, beim ' +
       'Preisabruf drückt das Werkzeug den Suchknopf selbst.',
   ],
 
@@ -156,7 +156,7 @@ const sixt = {
 /**
  * Anbieter, deren Link-Format noch nicht aus einer echten Suche abgeleitet
  * wurde. Sie erscheinen in der Oberflaeche, liefern aber bewusst keinen
- * konstruierten Link — ein geratener Link waere schlechter als gar keiner.
+ * konstruierten Link, ein geratener Link waere schlechter als gar keiner.
  *
  * `homepage` dient als ehrlicher Notausgang: Suche dort von Hand.
  */
@@ -212,7 +212,7 @@ const arndt = planned(
 /* ============================================================ Stand */
 
 /**
- * Was das Werkzeug heute kann — und was bewusst nicht.
+ * Was das Werkzeug heute kann, und was bewusst nicht.
  *
  * Diese Liste steht hier und nicht in der Oberflaeche, weil sie derselben
  * Regel folgt wie `capabilities` oben: nichts wird als koennend dargestellt,
@@ -228,11 +228,11 @@ export const WERKZEUG_STAND = [
       ['ja', 'Schutzpakete mit echtem Endpreis',
         'Jedes Paket wird in der Kasse angeklickt und die Gesamtsumme abgelesen. Der Tagespreis mal Tage zu rechnen ergab bis zu 26 % daneben.'],
       ['ja', 'Frühbucherrabatt erkennen',
-        'Wird je Länderseite angezeigt — er läuft nicht überall gleichzeitig, und das verzerrt den Vergleich.'],
+        'Wird je Länderseite angezeigt, er läuft nicht überall gleichzeitig, und das verzerrt den Vergleich.'],
       ['nein', 'Währungen umrechnen',
         'Absichtlich nicht: verglichen wird nur innerhalb derselben Währung. Ein Kurs von heute wäre eine erfundene Genauigkeit.'],
       ['nein', 'Statusrabatt (Gold, Platin, Diamond)',
-        'Wieder entfernt — gezeigt werden nur Preise, die tatsächlich von der Seite abgelesen wurden.'],
+        'Wieder entfernt, gezeigt werden nur Preise, die tatsächlich von der Seite abgelesen wurden.'],
     ],
   },
   {
@@ -254,7 +254,7 @@ export const WERKZEUG_STAND = [
       ['ja', 'Alles bleibt auf diesem Rechner',
         'Der Dienst hört nur auf 127.0.0.1. Ergebnisse liegen im Arbeitsspeicher und verfallen nach einer Stunde.'],
       ['teils', 'Proxy je Länderseite',
-        'Im Unterbau vorhanden, aber ohne Bedienelement — bislang war keiner nötig.'],
+        'Im Unterbau vorhanden, aber ohne Bedienelement, bislang war keiner nötig.'],
       ['nein', 'Andere Vermieter',
         'Nur Sixt ist angebunden. Der Rest steht unten mit dem Grund.'],
     ],

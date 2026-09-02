@@ -7,7 +7,7 @@
 **Gleicher Mietwagen. Besserer Preis.**
 
 Sixt verlangt für dieselbe Anfrage je nach Landesdomain unterschiedliche Preise.
-TRACKER fragt alle Länderseiten gleichzeitig ab und stellt sie nebeneinander —
+TRACKER fragt alle Länderseiten gleichzeitig ab und stellt sie nebeneinander,
 Fahrzeugklasse für Fahrzeugklasse, inklusive der Schutzpakete, die den Endpreis
 wirklich bestimmen.
 
@@ -35,7 +35,7 @@ keine Anmeldung, keine Daten nach draußen.
 
 ## Was TRACKER beantwortet
 
-Vier Fragen, die ein Vergleichsportal nicht beantwortet — jede mit einer
+Vier Fragen, die ein Vergleichsportal nicht beantwortet, jede mit einer
 gemessenen Antwort aus diesem Programm:
 
 | Frage | Gemessen |
@@ -47,7 +47,7 @@ gemessenen Antwort aus diesem Programm:
 
 Alle vier Zahlen stammen aus echten Abrufen, nicht aus einem Beispiel. Die
 letzten beiden waren die größte Überraschung: **eine Stunde später abholen kann
-mehr kosten als die Wahl der Länderseite** — und dieselbe Stadt hat Stationen,
+mehr kosten als die Wahl der Länderseite**, und dieselbe Stadt hat Stationen,
 die um die Hälfte auseinanderliegen.
 
 ---
@@ -58,7 +58,7 @@ die um die Hälfte auseinanderliegen.
 2. Doppelklick. Es öffnet sich ein eigenes Programmfenster.
 3. Station suchen, Zeitraum wählen, Länderseiten anhaken, **Preise vergleichen**.
 
-Beim ersten Start prüft TRACKER einmal, ob auf deinem Rechner alles durchgeht —
+Beim ersten Start prüft TRACKER einmal, ob auf deinem Rechner alles durchgeht:
 Schreibrechte, Browser, Verbindung, Cookie-Hinweis und die Trefferliste, mit
 echten Abrufen auf vier Länderseiten. Das dauert ein bis zwei Minuten und
 erspart später das Rätselraten. Wenn alles läuft, lässt es sich abstellen.
@@ -69,7 +69,7 @@ erspart später das Rätselraten. Wenn alles läuft, lässt es sich abstellen.
 eigenes, unsichtbares Browserfenster. Ohne einen der beiden bleibt der
 Link-Modus: die Suchen werden gebaut, geöffnet werden sie von Hand.
 
-**Windows wird warnen.** Die EXE ist nicht signiert — ein Zertifikat kostet
+**Windows wird warnen.** Die EXE ist nicht signiert, ein Zertifikat kostet
 mehrere hundert Euro im Jahr. SmartScreen meldet deshalb „Unbekannter
 Herausgeber". Wer das nicht anklicken mag, hat eine bessere Möglichkeit als
 Vertrauen: der komplette Quellcode liegt hier, und [selbst bauen](#selbst-bauen)
@@ -84,17 +84,17 @@ sind drei Befehle.
 <img src="docs/bilder/01-Preisvergleich.png" alt="Preisvergleich">
 
 Eine Suche geht gleichzeitig an bis zu 29 Sixt-Domains. Verglichen wird über den
-**ACRISS-Code** — den international einheitlichen Vier-Buchstaben-Schlüssel für
+**ACRISS-Code**, den international einheitlichen Vier-Buchstaben-Schlüssel für
 die Fahrzeugklasse. Das ist nötig, weil dieselbe Klasse auf jeder Länderseite
 anders heißt; der Code nicht. Sixt benutzt dabei drei eigene Buchstaben, die
-nicht im Standard stehen — TRACKER kennt sie.
+nicht im Standard stehen. TRACKER kennt sie.
 
 Verglichen wird nur **innerhalb derselben Währung**. Eine Umrechnung wäre eine
 Zahl, die niemand nachprüfen kann, weil der Kurs am Tag der Abrechnung gilt und
 nicht am Tag des Vergleichs.
 
 > **Beispiel** · Frankfurt Flughafen, 16.–20.09., vier Tage, fünf Länderseiten.
-> Günstigster Fund: VW Golf für **315,93 €** auf sixt.fr — 29,02 € weniger als
+> Günstigster Fund: VW Golf für **315,93 €** auf sixt.fr, 29,02 € weniger als
 > auf der teuersten geprüften Seite, bei gleicher Station, gleichem Zeitraum und
 > gleicher Klasse.
 
@@ -108,28 +108,28 @@ Dazu:
 
 ### 2 · Stationen gegenübergestellt
 
-Sind mehrere Stationen gewählt, entstehen Reiter — und man klickt hin und her.
+Sind mehrere Stationen gewählt, entstehen Reiter, und man klickt hin und her.
 Ein Kasten über den Reitern sagt stattdessen direkt, welche günstiger ist.
 
 Gerechnet wird **paarweise über die Klassen, die es an allen Stationen gibt**,
 nicht als Durchschnitt aller Angebote. Ein Durchschnitt führte in die Irre: eine
-Station, die drei Luxuswagen im Katalog hat, bekäme den höheren Schnitt — auch
+Station, die drei Luxuswagen im Katalog hat, bekäme den höheren Schnitt, auch
 dann, wenn sie bei jeder gemeinsamen Klasse billiger ist.
 
 > **Beispiel** · Köln Porz Gremberghoven gegen Bonn Bad Godesberg, gleiche
 > Reise, drei Länderseiten:
-> „Köln Porz Gremberghoven ist günstiger — bei **37 von 37** gemeinsamen
+> „Köln Porz Gremberghoven ist günstiger, bei **37 von 37** gemeinsamen
 > Klassen. Bonn Bad Godesberg liegt im Mittel **57,36 EUR (49,2 %)** darüber."
 
 Getrennt je Währung. Stationen ohne Ergebnis werden benannt, nicht
-stillschweigend weggelassen — sonst wüsste man nicht, dass eine fehlt.
+stillschweigend weggelassen, sonst wüsste man nicht, dass eine fehlt.
 
-### 3 · Uhrzeiten — der unterschätzte Hebel
+### 3 · Uhrzeiten, der unterschätzte Hebel
 
 Sixt rechnet nach Uhrzeit ab, nicht nach Kalendertag. Das schlägt härter durch
 als jede Länderseite, und kaum jemand prüft es.
 
-> **Beispiel** · Köln-Gremberghoven, Samstag, drei Tage, günstigste Klasse —
+> **Beispiel** · Köln-Gremberghoven, Samstag, drei Tage, günstigste Klasse,
 > zweimal unabhängig gemessen, identisches Ergebnis:
 >
 > | Abholung → Rückgabe | Preis |
@@ -140,7 +140,7 @@ als jede Länderseite, und kaum jemand prüft es.
 >
 > Eine Stunde später: **57 % mehr.** Früher zurückgeben holt fast alles zurück.
 
-Die Richtung wechselt je Datum — am 4. September war dieselbe Station um 13:30
+Die Richtung wechselt je Datum, am 4. September war dieselbe Station um 13:30
 **billiger** (149,99 € gegen 172,97 €). Genau deshalb lohnt das Nachsehen statt
 einer Faustregel.
 
@@ -149,7 +149,7 @@ Abfrage mit eigenem Reiter. Auch im Kalender: dort zeigt jeder Abholtag die
 günstigste seiner Uhrzeiten, und die Tagesansicht listet alle auf, günstigste
 zuerst, mit dem Aufschlag daneben.
 
-### 4 · Preiskalender — wann ist es billig?
+### 4 · Preiskalender, wann ist es billig?
 
 <img src="docs/bilder/02-Preiskalender.png" alt="Preiskalender">
 
@@ -160,12 +160,12 @@ frei eintragbar bis 90.
 
 > **Beispiel** · Frankfurt Flughafen, dreitägige Miete, September 2026:
 > **313,96 €** am günstigsten Tag, **1.130,98 €** am teuersten. 817,02 €
-> Unterschied allein durch den Abholtag — gleiche Station, gleiche Klasse,
+> Unterschied allein durch den Abholtag, gleiche Station, gleiche Klasse,
 > gleiche Dauer.
 
 - **Die Fahrzeugklasse steht direkt über dem Kalender** und lässt sich dort
   wechseln, ohne zum Formular zurückzuscrollen. Der Wechsel kostet keinen
-  neuen Abruf — die Angebote aller Klassen stecken schon im Ergebnis. Daneben
+  neuen Abruf, die Angebote aller Klassen stecken schon im Ergebnis. Daneben
   steht, an wie vielen Tagen es die Klasse überhaupt gibt („an 6 von 28 Tagen
   verfügbar"), damit ein fast leerer Kalender nicht wie ein Fehler aussieht.
 - Ein Klick auf einen Tag zeigt den genauen Preis, den Rückgabetag und ein
@@ -175,7 +175,7 @@ frei eintragbar bis 90.
   gespeicherten.
 - Liegen alle Tage vor, wird aus dem Knopf **„Alle Tage neu messen"** statt
   eines toten Knopfes.
-- Der Kalender zeigt **Grundpreise ohne Schutzpaket** — er beantwortet „wann",
+- Der Kalender zeigt **Grundpreise ohne Schutzpaket**, er beantwortet „wann",
   nicht „mit welchem Schutz". Ein Knopf am Tag übernimmt Station und Zeitraum in
   den Preisvergleich, wo der Schutz mit echtem Kassenpreis danebensteht.
 
@@ -183,10 +183,10 @@ frei eintragbar bis 90.
 
 Eigener Bereich im Kalender: denselben Zeitraum an mehreren Stationen
 durchrechnen. Gewertet wird über die Abholtage, die an **allen** Stationen einen
-Preis haben — sonst verglichen sich zwei verschiedene Zeiträume.
+Preis haben, sonst verglichen sich zwei verschiedene Zeiträume.
 
 > **Beispiel** · Bonn gegen Köln über sieben Abholtage:
-> „Köln Porz Gremberghoven ist im Schnitt am günstigsten — **161,68 €** je drei
+> „Köln Porz Gremberghoven ist im Schnitt am günstigsten, **161,68 €** je drei
 > Tage, und an **5 von 7** Tagen die billigste. Bonn Bad Godesberg liegt im
 > Schnitt 39,86 € (24,7 %) darüber, **ist aber an 2 Tagen die billigste.**"
 
@@ -203,22 +203,22 @@ Das ist die Stelle, an der die meisten Vergleiche falsch liegen. TRACKER klickt
 angezeigten Tagespreis mit den Miettagen zu multiplizieren. Gemessen lagen
 beide Wege bis zu **26 %** auseinander.
 
-Zugeordnet werden die Pakete über ihren **Inhalt** — Selbstbeteiligung ja/nein,
-günstiger/teurer —, nicht über den Namen: der heißt auf jeder Länderseite
+Zugeordnet werden die Pakete über ihren **Inhalt**. Selbstbeteiligung ja/nein,
+günstiger/teurer, , nicht über den Namen: der heißt auf jeder Länderseite
 anders. Der jeweilige Originalname steht klein über dem Preis, damit die
 Zuordnung nachprüfbar bleibt.
 
 > **Beispiel** · Frankfurt, vier Tage, Golf-Klasse:
 > „Ohne SB, Rundum" kostet **441,20 €** auf sixt.de und **507,90 €** auf
-> sixt.at. Die reine Miete lag bei 342,97 € gegen 369,94 € — der Schutz
+> sixt.at. Die reine Miete lag bei 342,97 € gegen 369,94 €, der Schutz
 > verschiebt den Abstand also deutlich.
 
-### 7 · Preisentwicklung — wird es billiger, wenn ich warte?
+### 7 · Preisentwicklung, wird es billiger, wenn ich warte?
 
 <img src="docs/bilder/03-Preisentwicklung.png" alt="Preisentwicklung">
 
 Jeder Abruf hinterlässt einen Messpunkt. Daraus entsteht eine Kurve je
-Länderseite — die Frage, die kein Vergleichsportal ehrlich beantwortet.
+Länderseite, die Frage, die kein Vergleichsportal ehrlich beantwortet.
 
 Getrennte Reihen für alles, was den Preis ändert, **ohne dass Sixt etwas geändert
 hätte**: je Länderseite, je Abrufmodus (mit/ohne Cookies) und je Uhrzeit. In eine
@@ -228,35 +228,35 @@ Linie gelegt sähe jeder Wechsel aus wie eine Preisänderung.
 > im Beobachtungszeitraum von 362,99 € auf 401,93 €. **Warten macht es nicht
 > automatisch billiger.**
 
-### 8 · Preiswecker — zwei Sorten
+### 8 · Preiswecker, zwei Sorten
 
 <img src="docs/bilder/04-Wunschpreis.png" alt="Wunschpreis">
 
-**Wunschpreis** — vor der Buchung. Du trägst ein, was du höchstens zahlen
+**Wunschpreis**, vor der Buchung. Du trägst ein, was du höchstens zahlen
 willst; TRACKER prüft alle sechs Stunden nach und meldet sich einmal, sobald der
 Preis darunter liegt.
 
 <img src="docs/bilder/05-Buchung-beobachten.png" alt="Buchung beobachten">
 
-**Ich habe gebucht** — nach der Buchung. Du trägst ein, was du bezahlt hast.
+**Ich habe gebucht**, nach der Buchung. Du trägst ein, was du bezahlt hast.
 TRACKER beobachtet bis zum Abholtag weiter und meldet **jeden neuen Tiefstand
-darunter**, mit der Ersparnis in der Meldung — und nicht immer wieder denselben
+darunter**, mit der Ersparnis in der Meldung, und nicht immer wieder denselben
 Preis. In der Liste steht die eine Zahl, die zählt: „Zurzeit 38,40 € billiger als
 gebucht."
 
-Beide prüfen zu **deiner** Uhrzeit, nicht zu einer festen — bei 57 % Spanne
+Beide prüfen zu **deiner** Uhrzeit, nicht zu einer festen, bei 57 % Spanne
 zwischen zwei Abholzeiten wäre alles andere ein falscher Alarm.
 
 > **Ehrliche Einschränkung:** geprüft wird nur, solange TRACKER geöffnet ist. Es
 > installiert nichts, das im Hintergrund weiterläuft. Für „täglich nachschauen"
 > heißt das: einmal am Tag starten. Ob sich Umbuchen lohnt, hängt an den
-> Stornobedingungen deiner Buchung — die kennt dieses Werkzeug nicht.
+> Stornobedingungen deiner Buchung, die kennt dieses Werkzeug nicht.
 
 ### 9 · Excel-Ausgabe
 
 Eine echte `.xlsx` mit Kopfblock (Station, Zeitraum, Abrufmodus, Zeitpunkt),
 fixierter Kopfzeile, Autofilter und festen Spaltenbreiten. Beträge sind **Zahlen
-mit Währungsformat**, kein Text — man kann direkt darüber rechnen. Der günstigste
+mit Währungsformat**, kein Text, man kann direkt darüber rechnen. Der günstigste
 Wert je Zeile ist hervorgehoben, eine Farbskala liegt über den Gesamtpreisen.
 Ein Blatt je Währung.
 
@@ -271,7 +271,7 @@ einem frisch geleerten Profil angesehen, als käme man zum ersten Mal.
 
 Was dabei herauskam, spricht **gegen** die verbreitete Annahme, Cookies machten
 den Preis teurer. Frankfurt: ohne Cookies rund 4 % billiger. Bonn und Köln über
-je 56 Abholtage: ohne Cookies 9 € bzw. 5 € **teurer** — und in beiden Fällen war
+je 56 Abholtage: ohne Cookies 9 € bzw. 5 € **teurer**, und in beiden Fällen war
 der günstigste Abholtag exakt derselbe. Die Richtung wechselt, die Größenordnung
 liegt im Rahmen dessen, was sich zwischen zwei Abrufen ohnehin bewegt.
 
@@ -280,7 +280,7 @@ behaupten.
 
 ### 11 · Kleinigkeiten, die den Alltag ausmachen
 
-- **2250 Stationen aus 108 Ländern** — Flughäfen, Bahnhöfe, Stadt-, Hotel-,
+- **2250 Stationen aus 108 Ländern**: Flughäfen, Bahnhöfe, Stadt-, Hotel-,
   Hafen- und Agenturstationen. Suchfeld mit Umlaut- und IATA-Erkennung:
   `munchen`, `FRA` und `heathrow` finden alle das Richtige.
 - **Einweg-Miete** direkt in der Stationsauswahl.
@@ -289,10 +289,10 @@ behaupten.
 - **Stationen anschreiben:** E-Mail-Adressen der gewählten Stationen sammeln und
   ins BCC-Feld übernehmen.
 - **Abbrechen** mitten im Abruf; das schon Geholte bleibt.
-- **Alles zurücksetzen** auf wirklich null — keine Station, keine Länderseite,
+- **Alles zurücksetzen** auf wirklich null, keine Station, keine Länderseite,
   keine Matrix, keine Ergebnisse.
 - **Automatische Wiederholung.** Scheitert eine Länderseite, wird sie bis zu
-  dreimal neu angestellt — hinten in der Warteschlange, damit die anderen nicht
+  dreimal neu angestellt, hinten in der Warteschlange, damit die anderen nicht
   warten. Was übrig bleibt, steht als Kennung in der Zelle (`ZUGRIFF`,
   `STATION`, `KEINE_LISTE`, `NETZ`, `ZEIT`) mit Klartext und Rat im Tooltip. Ist
   der Durchlauf durch und fehlt trotzdem etwas, fasst die Oberfläche einmal von
@@ -307,7 +307,7 @@ behaupten.
 Ehrlich aufgelistet, damit niemand danach sucht:
 
 **Kein Login.** Sixt-Zugangsdaten werden nirgends abgefragt, gespeichert oder
-verwendet. Damit fehlen Statuspreise für Gold, Platin und Diamond — gezeigt wird
+verwendet. Damit fehlen Statuspreise für Gold, Platin und Diamond, gezeigt wird
 der Preis, den ein nicht angemeldeter Besucher sieht.
 
 **Keine Währungsumrechnung.** Verglichen wird nur innerhalb derselben Währung.
@@ -316,7 +316,7 @@ der Preis, den ein nicht angemeldeter Besucher sieht.
 läuft. Es trägt sich nicht in den Autostart ein und lässt nichts zurück.
 
 **Zwei Länderseiten sind zurzeit aus.** `sixt.cz` und `sixt.com.tr` nehmen eine
-deutsche Station nicht an — gemessen, vier von vier Abrufen ohne Ergebnis. Sie
+deutsche Station nicht an. Gemessen: vier von vier Abrufen ohne Ergebnis. Sie
 stehen sichtbar als gestört in der Auswahl, mit Begründung, statt kommentarlos zu
 verschwinden.
 
@@ -349,13 +349,13 @@ npm install
 npm run serve
 ```
 
-**Die einzelne EXE bauen** — das Ergebnis liegt danach in `dist/Tracker.exe`:
+**Die einzelne EXE bauen**, das Ergebnis liegt danach in `dist/Tracker.exe`:
 
 ```bash
 npm run exe
 ```
 
-**Nur die Oberfläche bauen** — erzeugt `dist/mietwagen-preistool.html`, eine
+**Nur die Oberfläche bauen**, erzeugt `dist/mietwagen-preistool.html`, eine
 einzelne Datei, die sich ohne Dienst im Browser öffnen lässt (dann ohne
 automatischen Preisabruf):
 
@@ -368,27 +368,27 @@ npm run build
 ## Wie das Repository aufgebaut ist
 
 Der Quellcode ist in Module aufgeteilt, aber das Ergebnis ist **eine einzige
-HTML-Datei**: `build.mjs` löst die Importe auf und schreibt alles zusammen —
+HTML-Datei**: `build.mjs` löst die Importe auf und schreibt alles zusammen,
 Skript, Stile, Stationsliste und Bilder als eingebettete Daten. So läuft die
 Oberfläche auch ohne Server direkt von der Festplatte.
 
-### Oberfläche — `src/`
+### Oberfläche, `src/`
 
 | Datei | Wofür |
 | --- | --- |
 | `index.html` | Grundgerüst aller Bildschirme: Start, Preisvergleich, Kalender, Preisentwicklung, Schutz, Verlauf, Systemstatus, Begrüßung |
 | `styles.css` | Die gesamte Darstellung. Ein heller, ruhiger Entwurf mit Farbtokens |
 | `app.js` | Das Herzstück: Zustand, Auftragsbau, Tabellen, Kalender, Preiswecker, Stationsvergleich, alle Bildschirme |
-| `xlsx.js` | Schreibt Excel-Mappen — ZIP und XML von Hand, ohne Fremdbibliothek |
+| `xlsx.js` | Schreibt Excel-Mappen. ZIP und XML von Hand, ohne Fremdbibliothek |
 | `providers.js` | Anbieter-Adapter: URL-Bau je Länderseite, Währung, Status (auch „gestört") |
 | `offer-classes.js` | ACRISS-Decoder, inklusive der drei Buchstaben, die Sixt zusätzlich verwendet |
-| `offer-parse.js` | Wertet die Angebotskacheln aus. Einzige Quelle — der Build verteilt sie an Erweiterung und Dienst |
+| `offer-parse.js` | Wertet die Angebotskacheln aus. Einzige Quelle, der Build verteilt sie an Erweiterung und Dienst |
 | `places.js` | Ortsebene, vorbereitet für den Vergleich mehrerer Anbieter |
 | `data/stations.sixt.txt` | Die Stationsliste als schlichte Textdatei, von Hand erweiterbar |
-| `stations.js` | Vom Build erzeugt — nicht bearbeiten |
+| `stations.js` | Vom Build erzeugt, nicht bearbeiten |
 | `bilder/` | Wortmarke und das Fahrzeugmotiv der Startseite |
 
-### Dienst und Abruf — `tools/`
+### Dienst und Abruf, `tools/`
 
 | Datei | Wofür |
 | --- | --- |
@@ -396,22 +396,22 @@ Oberfläche auch ohne Server direkt von der Festplatte.
 | `browser.mjs` | Startet Chrome und verbindet sich damit. Cookie-Banner, störende Fenster, das getrennte Profil für den Abruf ohne Cookies |
 | `scrape/sixt.mjs` | Liest die Preisliste einer Länderseite aus |
 | `scrape/sixt-schutz.mjs` | Klickt die Schutzpakete in der Kasse durch und liest die Endsummen |
-| `scrape/offer-parse.mjs` | Vom Build erzeugte Kopie des Parsers — nicht bearbeiten |
+| `scrape/offer-parse.mjs` | Vom Build erzeugte Kopie des Parsers, nicht bearbeiten |
 | `katalog.mjs` | Merkt sich dauerhaft, welche ACRISS-Klassen es an welcher Station gab |
-| `beobachtung.mjs` | Legt je Abruf einen Messpunkt ab (`preisverlauf.jsonl`) — die Grundlage der Preiskurve |
+| `beobachtung.mjs` | Legt je Abruf einen Messpunkt ab (`preisverlauf.jsonl`), die Grundlage der Preiskurve |
 | `wecker.mjs` | Preiswecker: anlegen, fällige finden, Prüfung vermerken, auslösen |
 | `selbsttest.mjs` | Prüft die ganze Kette auf einem fremden Rechner, Schritt für Schritt mit Rat |
-| `pfade.mjs` | Wo gelesen und geschrieben wird — im Quellbaum anders als in der EXE |
+| `pfade.mjs` | Wo gelesen und geschrieben wird, im Quellbaum anders als in der EXE |
 | `fenster.mjs` | Das Programmfenster (Chrome oder Edge im `--app`-Modus) samt Lebenszeichen |
 | `meldung.mjs` | Protokolldatei und Meldungsfenster, damit die EXE ohne Konsole auskommt |
 | `try-*.mjs` | Handproben für die Entwicklung: eine Preisliste, die Schutzpakete, alle Länderseiten, ein Popup-Test |
 | `harvest-sixt.md` | Anleitung, wie man Stationen nachlädt |
 | `README-preise.md` | Warum der Preisabruf über ein selbst gestartetes Chrome läuft und welche Alternativen daran gescheitert sind |
 
-### Browser-Erweiterung — `extension/`
+### Browser-Erweiterung, `extension/`
 
 Optional und nicht nötig für den normalen Gebrauch. Sie kann Preise aus einem
-offenen Tab an den Dienst melden — nützlich, wenn der automatische Abruf einmal
+offenen Tab an den Dienst melden. Nützlich, wenn der automatische Abruf einmal
 nicht durchgeht.
 
 ### Bauen
@@ -420,7 +420,7 @@ nicht durchgeht.
 | --- | --- |
 | `build.mjs` | Bündelt Module, Stile und Stationen zu einer HTML-Datei und verteilt den Parser |
 | `build-exe.mjs` | Baut daraus die einzelne Windows-EXE (Node-Laufzeit eingebettet, ohne Konsolenfenster) |
-| `Preistool starten.cmd` | Bauen, Dienst starten, Fenster öffnen — in einem Doppelklick |
+| `Preistool starten.cmd` | Bauen, Dienst starten, Fenster öffnen, in einem Doppelklick |
 
 ### Was **nicht** im Repository liegt
 
@@ -430,7 +430,7 @@ die fertige EXE: eine 96-MB-Binärdatei gehört nicht in die Versionsverwaltung,
 weil Git jede Fassung für immer behält und jeder, der klont, alles davon
 herunterlädt. Sie liegt bei den **Releases**.
 
-Der `data/acriss-katalog.json` bleibt bewusst drin — er ist mühsam gesammeltes
+Der `data/acriss-katalog.json` bleibt bewusst drin, er ist mühsam gesammeltes
 Wissen darüber, welche Klassen es wo gibt.
 
 ---
@@ -465,7 +465,7 @@ Nachbildung der Originalseiten.
 **Preise sind Momentaufnahmen.** Sie ändern sich laufend. Verbindlich ist immer
 nur, was am Ende in der Kasse steht.
 
-**Lizenz.** MIT — siehe [LICENSE](LICENSE).
+**Lizenz.** MIT, siehe [LICENSE](LICENSE).
 
 **Fremde Bestandteile.** In der EXE stecken:
 
@@ -474,7 +474,7 @@ nur, was am Ende in der Kasse steht.
 | [Node.js](https://nodejs.org) | MIT |
 | [Playwright](https://playwright.dev) | Apache 2.0 |
 
-Beide verlangen, dass ihre Lizenz bei einer Weitergabe beiliegt — auch bei einer
+Beide verlangen, dass ihre Lizenz bei einer Weitergabe beiliegt, auch bei einer
 Binärdatei. Chrome beziehungsweise Edge wird nicht mitgeliefert, sondern das auf
 dem Rechner vorhandene benutzt.
 

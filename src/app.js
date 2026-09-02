@@ -24,7 +24,7 @@ const defaults = () => {
     /**
      * Weitere Uhrzeitpaare neben dem Grundpaar oben.
      *
-     * Sixt rechnet nach Uhrzeit ab, nicht nach Kalendertag — 12:30 → 12:30
+     * Sixt rechnet nach Uhrzeit ab, nicht nach Kalendertag, 12:30 → 12:30
      * kostet etwas anderes als 13:30 → 13:30. Jedes Paar ist eine eigene
      * Abfrage; Einträge der Form { ab: 'HH:MM', zurueck: 'HH:MM' }.
      */
@@ -35,14 +35,14 @@ const defaults = () => {
     /** Nur bekannte, aber gerade nicht buchbare Klassen mitzeigen? */
     zeigeNichtBuchbare: true,
     /**
-     * Ohne Cookies abrufen — als käme man zum ersten Mal auf die Seite.
+     * Ohne Cookies abrufen, als käme man zum ersten Mal auf die Seite.
      *
      * Standardmässig aus: der Abruf mit gespeicherter Cookie-Auswahl ist
      * mehrere Sekunden je Länderseite schneller, weil der Banner nicht jedes
      * Mal neu weggeklickt werden muss.
      */
     inkognito: false,
-    /** Einstellungen der Monatsübersicht — eigener Bereich, eigener Zustand. */
+    /** Einstellungen der Monatsübersicht, eigener Bereich, eigener Zustand. */
     kalender: {
       station: '110',
       host: 'www.sixt.de',
@@ -53,10 +53,10 @@ const defaults = () => {
       start: iso(new Date(Date.now() + 3 * 86400000)),
       spanne: 28,
       zeit: '10:00',
-      /** Weitere Uhrzeitpaare — jede multipliziert die ganze Spanne. */
+      /** Weitere Uhrzeitpaare, jede multipliziert die ganze Spanne. */
       zeiten: [],
       inkognito: false,
-      /** Stationen für den Mehrstationslauf — eigener Bereich, eigene Liste. */
+      /** Stationen für den Mehrstationslauf, eigener Bereich, eigene Liste. */
       stationen: [],
     },
   };
@@ -74,7 +74,7 @@ let schutzGruppe = null;
  * Welche Station/Termin-Kombination gerade angezeigt wird.
  *
  * Bei mehreren Stationen oder Datumsvarianten wurden vorher alle Tabellen
- * untereinander gestapelt — bei fuenf Stationen sind das fuenf mal fuenfzig
+ * untereinander gestapelt, bei fuenf Stationen sind das fuenf mal fuenfzig
  * Zeilen und man findet nichts wieder. Jetzt gibt es einen Umschalter und
  * immer nur eine Tabelle.
  */
@@ -90,7 +90,7 @@ function load() {
     const grund = defaults();
     const merged = { ...grund, ...saved, kalender: { ...grund.kalender, ...(saved.kalender || {}) } };
     // Eine Länderseite, die inzwischen als gestört gilt, kann noch im
-    // gespeicherten Zustand stehen — sonst liefe jeder Abruf sehenden Auges
+    // gespeicherten Zustand stehen, sonst liefe jeder Abruf sehenden Auges
     // in einen Fehlschlag.
     merged.markets = ohneGestoerte(merged.markets || []);
     if (merged.pickupDate < iso(new Date())) {
@@ -154,7 +154,7 @@ function jobKey(host, stationCode, v, acrissCode, inkognito = state.inkognito) {
     v.pickupTime ?? state.pickupTime,
     v.returnTime ?? state.returnTime,
     acrissCode || '',
-    // Ein Abruf ohne Cookies ist ein anderer Abruf — genau darum geht es.
+    // Ein Abruf ohne Cookies ist ein anderer Abruf, genau darum geht es.
     // Ohne diesen Teil im Schlüssel läge das alte Ergebnis noch im Speicher
     // und der Haken bliebe wirkungslos.
     inkognito ? 'inkognito' : '',
@@ -212,7 +212,7 @@ async function pollErgebnisse() {
       if (neu) {
         // Nur neu zeichnen, wenn sich die sichtbare Ansicht wirklich aendert.
         // Frueher wurde bei jedem Takt die ganze Tabelle verworfen und neu
-        // gebaut — 52 Zeilen, alle 2,5 Sekunden. Das sah man als Flackern,
+        // gebaut, 52 Zeilen, alle 2,5 Sekunden. Das sah man als Flackern,
         // Scrollposition und Hover gingen dabei jedes Mal verloren.
         if (schutzAcriss) renderSchutz();
         else renderResults();
@@ -228,7 +228,7 @@ async function pollErgebnisse() {
     service.queue = h.queue || null;
     renderFortschritt();
 
-    // Genau im Moment des Leerlaufens ablegen — nicht bei jedem Takt, sonst
+    // Genau im Moment des Leerlaufens ablegen, nicht bei jedem Takt, sonst
     // stünde alles fünfmal drin.
     const laeuftNoch = Boolean(h.queue && (h.queue.laufend || h.queue.offen));
     if (liefNoch && !laeuftNoch) {
@@ -247,7 +247,7 @@ async function pollErgebnisse() {
  *
  * Der Dienst wiederholt schon dreimal je Auftrag. Was danach noch fehlt, war
  * meist ein Fenster oder eine Zeitüberschreitung, die beim nächsten Anlauf
- * nicht wieder auftritt — deshalb einmal von selbst nachfassen, statt darauf
+ * nicht wieder auftritt, deshalb einmal von selbst nachfassen, statt darauf
  * zu warten, dass jemand den Knopf findet.
  *
  * Genau einmal je Durchlauf: liefe es endlos, drehte sich das Werkzeug bei
@@ -266,7 +266,7 @@ async function hakeNach() {
   }
   flash(
     `${offen.length} ${offen.length === 1 ? 'Länderseite hat' : 'Länderseiten haben'} nichts ` +
-      'geliefert — wird automatisch noch einmal versucht.'
+      'geliefert, wird automatisch noch einmal versucht.'
   );
   await sendeJobs(
     offen.map((j) => ({
@@ -319,7 +319,7 @@ function pretty(s) {
 }
 
 function money(v, cur) {
-  if (v == null) return '—';
+  if (v == null) return '–';
   return `${v.toLocaleString('de-DE', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -397,7 +397,7 @@ function marktListe() {
  *
  *   Mietdauer     Die Rueckgabe haengt an der Abholung. "Sieben Tage, egal wann
  *                 ich starte." Ist eine Dauer gewaehlt, gilt nur das.
- *   Rueckgabetag  Beide Enden sind unabhaengig. "Montag bis Montag — aber was
+ *   Rueckgabetag  Beide Enden sind unabhaengig. "Montag bis Montag, aber was
  *                 kostet Dienstag bis Montag, was Sonntag bis Montag?" Genau
  *                 dafuer laesst sich die Rueckgabe getrennt verschieben.
  *
@@ -413,7 +413,7 @@ function marktListe() {
  * vergleicht Laenderseiten und uebersieht die groessere Ersparnis daneben.
  *
  * Das erste Paar sind immer die beiden Felder oben. Weitere kommen als Liste
- * dazu — das haelt den einfachen Fall einfach.
+ * dazu, das haelt den einfachen Fall einfach.
  */
 function zeitVarianten() {
   const paare = [{ ab: state.pickupTime, zurueck: state.returnTime }];
@@ -526,7 +526,7 @@ function renderZeiten() {
   if (liste.length && !$('#zeitenBereich').open) $('#zeitenBereich').open = true;
 }
 
-/** "1 Minute" statt "1 Minuten" — an drei Stellen gebraucht, also einmal hier. */
+/** "1 Minute" statt "1 Minuten", an drei Stellen gebraucht, also einmal hier. */
 function minutenText(abrufe) {
   const m = Math.max(1, Math.ceil((abrufe * 6) / 2 / 60));
   return `${m} ${m === 1 ? 'Minute' : 'Minuten'}`;
@@ -575,7 +575,7 @@ function aktuelleJobs() {
 }
 
 /**
- * Alle Schutz-Auftraege der betrachteten Klasse — ueber jede Station und
+ * Alle Schutz-Auftraege der betrachteten Klasse, ueber jede Station und
  * jeden Termin, in denselben Gruppen wie die Preistabelle.
  */
 function alleSchutzJobs() {
@@ -603,8 +603,8 @@ function alleSchutzJobs() {
  * Nur die Auftraege der gerade gewaehlten Station/Termin-Gruppe.
  *
  * Ohne diese Einschraenkung stuenden bei zwei Stationen alle Laenderseiten
- * doppelt nebeneinander — mit gleicher Beschriftung, also nicht
- * unterscheidbar — und der Abruf liefe doppelt so lange.
+ * doppelt nebeneinander, mit gleicher Beschriftung, also nicht
+ * unterscheidbar, und der Abruf liefe doppelt so lange.
  */
 function schutzJobs() {
   const alle = alleSchutzJobs();
@@ -748,7 +748,7 @@ function ladeCsvHerunter() {
 /* ------------------------------------------------------------ Excel-Mappe
  *
  * Die CSV bleibt der kurze Weg. Diese hier ist der andere: eine Mappe, die
- * auch in drei Monaten noch sagt, was sie zeigt — mit Kopfblock, festen
+ * auch in drei Monaten noch sagt, was sie zeigt, mit Kopfblock, festen
  * Spaltenbreiten, echten Zahlen statt Text und einer Farbskala, damit teuer
  * und billig ins Auge fallen.
  *
@@ -824,7 +824,7 @@ function xlsxPreisblatt(jobs, waehrung, opt) {
     }
   }
 
-  // Bekannte, gerade nicht buchbare Klassen ergaenzen — dieselbe Wahl wie in
+  // Bekannte, gerade nicht buchbare Klassen ergaenzen, dieselbe Wahl wie in
   // der Tabelle, damit Ausgabe und Bildschirm dasselbe zeigen.
   if (opt.nichtBuchbare) {
     for (const acriss of Object.keys(katalog)) {
@@ -840,7 +840,7 @@ function xlsxPreisblatt(jobs, waehrung, opt) {
   const zeilen = xlsxKopf('Preisvergleich', f, waehrung);
   const kopfZeile = zeilen.length; // 0-basiert: hier kommt die Kopfzeile hin
 
-  // Erst alle Gesamtpreise, dann alle Tagespreise — nicht abwechselnd.
+  // Erst alle Gesamtpreise, dann alle Tagespreise, nicht abwechselnd.
   // Abwechselnd liessen sich die Gesamtpreise weder mit einem Blick
   // vergleichen noch mit einer Farbskala hinterlegen: die Tagespreise sind
   // um ein Vielfaches kleiner und zoegen die Skala an ihr Ende.
@@ -869,7 +869,7 @@ function xlsxPreisblatt(jobs, waehrung, opt) {
     const dek = decodeAcriss(acriss);
     const zeile = [acriss, dek ? dek.label : '', d.modell];
     // Hervorheben lohnt nur, wo es etwas zu vergleichen gibt. Bei einer
-    // einzigen Länderseite waere jede Zelle "die günstigste" — eine Farbe,
+    // einzigen Länderseite waere jede Zelle "die günstigste", eine Farbe,
     // die nichts unterscheidet, ist nur Lärm.
     const lohntHervorhebung = gesamte.length > 1;
     if (zeigeGesamt) {
@@ -904,7 +904,7 @@ function xlsxPreisblatt(jobs, waehrung, opt) {
   };
 }
 
-/** Spaltenbuchstabe — dieselbe Rechnung wie in xlsx.js, hier fuer die Bereiche. */
+/** Spaltenbuchstabe, dieselbe Rechnung wie in xlsx.js, hier fuer die Bereiche. */
 function spaltenBuchstabe(i) {
   let s = '';
   for (let n = i + 1; n > 0; ) {
@@ -950,7 +950,7 @@ function xlsxSchutzblatt(jobs, waehrung) {
   }
   if (!etwas) return null;
 
-  zeilen.push(...xlsxKopf('Schutzpakete — abgelesener Endpreis aus der Kasse', f, waehrung));
+  zeilen.push(...xlsxKopf('Schutzpakete, abgelesener Endpreis aus der Kasse', f, waehrung));
   const kopfZeile = zeilen.length;
   zeilen.push(kopf);
   daten.sort((a, b) => String(a[0]).localeCompare(String(b[0])) || String(a[1]).localeCompare(String(b[1])));
@@ -1000,7 +1000,7 @@ function xlsxKalenderblatt() {
     [],
   ];
   const kopfZeile = zeilen.length;
-  // Bei mehreren Uhrzeiten gehört eine Spalte dafür dazu — sonst stünden
+  // Bei mehreren Uhrzeiten gehört eine Spalte dafür dazu, sonst stünden
   // drei Zeilen mit demselben Datum und verschiedenen Preisen da, und man
   // wüsste nicht, welche welche ist.
   const mehrZeiten = kalZeitVarianten().length > 1;
@@ -1020,7 +1020,7 @@ function xlsxKalenderblatt() {
     { w: 'Gemessen', s: STIL.kopfzeile },
   ]);
 
-  // Je Abholtag den günstigsten Preis merken, um ihn hervorzuheben — bei
+  // Je Abholtag den günstigsten Preis merken, um ihn hervorzuheben, bei
   // mehreren Uhrzeiten ist genau das die Aussage der Tabelle.
   const bestProTag = new Map();
   for (const j of d.jobs) {
@@ -1071,7 +1071,7 @@ function xlsxKalenderblatt() {
  *
  * Je Waehrung eine eigene Datei waere unhandlich; je Waehrung ein eigenes
  * Blatt ist genau richtig. Der Zahlenformat-Code der Mappe kann aber nur eine
- * Waehrung tragen — deshalb entscheidet die haeufigste, und die uebrigen
+ * Waehrung tragen, deshalb entscheidet die haeufigste, und die uebrigen
  * Blaetter tragen sie im Kopfblock.
  */
 function ladeExcelHerunter() {
@@ -1091,7 +1091,7 @@ function ladeExcelHerunter() {
         const b = xlsxPreisblatt(jobs.filter((j) => j.gruppe === g), w, opt);
         // Die Währung nach vorn: Excel lässt nur 31 Zeichen zu, und beim
         // Abschneiden fiele sonst genau das weg, was die Blätter unterscheidet
-        // — aus zwei Währungen würden zwei gleich heissende Blätter.
+        // aus zwei Währungen würden zwei gleich heissende Blätter.
         if (b) blaetter.push(waehrungen.length > 1 ? { ...b, name: `${w} · ${b.name}` } : b);
       }
     }
@@ -1124,14 +1124,14 @@ function ladeExcelHerunter() {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
-  flash(`Als Excel gespeichert — ${blaetter.length} ${blaetter.length === 1 ? 'Blatt' : 'Blätter'}.`);
+  flash(`Als Excel gespeichert, ${blaetter.length} ${blaetter.length === 1 ? 'Blatt' : 'Blätter'}.`);
 }
 
 /* =========================================================== Preiskurve
  *
  * Die Frage, die kein Vergleichsportal ehrlich beantwortet: wird es billiger,
  * wenn ich warte? Sie laesst sich nur beantworten, indem man denselben Wagen
- * ueber Wochen beobachtet — der Dienst legt dafuer bei jedem Abruf einen
+ * ueber Wochen beobachtet, der Dienst legt dafuer bei jedem Abruf einen
  * Messpunkt ab.
  */
 
@@ -1156,7 +1156,7 @@ async function ladeKurve() {
  * Von Hand statt mit einer Bibliothek: es ist eine Linie je Laenderseite auf
  * einer Zeitachse, und dafuer 300 kB Diagrammcode mitzuschleppen waere
  * unverhaeltnismaessig. Ausserdem kaeme die Bibliothek von einem fremden
- * Server — das Werkzeug laedt sonst nichts nach.
+ * Server, das Werkzeug laedt sonst nichts nach.
  */
 function zeichneKurve(reihen, waehrung) {
   const B = 960;
@@ -1190,7 +1190,7 @@ function zeichneKurve(reihen, waehrung) {
 
   const farben = ['#0066cc', '#8172b2', '#418a87', '#c38b48', '#6b8dab', '#ba768c', '#566375', '#79935e'];
 
-  // Waagerechte Hilfslinien mit Beschriftung — ohne die ist eine Kurve nur
+  // Waagerechte Hilfslinien mit Beschriftung, ohne die ist eine Kurve nur
   // eine Form, keine Aussage.
   const linien = [];
   for (let i = 0; i <= 3; i++) {
@@ -1351,7 +1351,7 @@ async function renderKurveBild() {
           label:
             host.replace(/^www\./, '') +
             (modus === '1' ? ' · ohne Cookies' : '') +
-            // Die Uhrzeit nur anschreiben, wo es mehr als eine gibt — sonst
+            // Die Uhrzeit nur anschreiben, wo es mehr als eine gibt, sonst
             // stünde an jeder Linie eine Zahl, die nichts unterscheidet.
             (mehrereZeiten && ab ? ` · ${ab}${zurueck && zurueck !== ab ? `→${zurueck}` : ''}` : ''),
           punkte: pkt,
@@ -1381,7 +1381,7 @@ async function renderKurveBild() {
     'Jeder Punkt ist ein Abruf. Verbundene Punkte zeigen die Entwicklung derselben Länderseite.' +
     (nachWaehrung.size > 1 ? ' Verschiedene Währungen werden getrennt dargestellt.' : '') +
     (punkte.some((e) => e.i) && punkte.some((e) => !e.i)
-      ? ' Abrufe ohne Cookies stehen als eigene Reihe — sie sind mit den anderen nicht direkt vergleichbar.'
+      ? ' Abrufe ohne Cookies stehen als eigene Reihe, sie sind mit den anderen nicht direkt vergleichbar.'
       : '') +
     (new Set(punkte.map((e) => `${e.z || ''}|${e.zr || ''}`)).size > 1
       ? ' Verschiedene Abholzeiten stehen als eigene Reihen: Sixt rechnet nach Uhrzeit ab, ' +
@@ -1456,7 +1456,7 @@ function renderKurve() {
           value: k,
           selected: k === kurveKlasse,
         },
-        `${k} — ${decodeAcriss(k)?.label || 'Fahrzeugklasse'}`
+        `${k}, ${decodeAcriss(k)?.label || 'Fahrzeugklasse'}`
       )
     ))
   );
@@ -1470,20 +1470,20 @@ function renderKurve() {
   );
 
   renderKurveBild();
-  // Der Kalender ist ein eigener Bereich geworden — hier hat er nichts mehr
+  // Der Kalender ist ein eigener Bereich geworden, hier hat er nichts mehr
   // zu suchen.
   renderWecker();
 }
 
 /* =========================================================== Monatsübersicht
  *
- * Die Datums-Matrix im Vergleich kann dasselbe rechnen — was fehlte, war die
+ * Die Datums-Matrix im Vergleich kann dasselbe rechnen, was fehlte, war die
  * Darstellung. Dreissig Zahlen in einer Tabelle sagen einem nichts; dieselben
  * dreissig als eingefaerbter Kalender sagen sofort, dass der Dienstag billig
  * und das Wochenende teuer ist.
  *
  * Eine Laenderseite, eine Klasse, eine Dauer je Durchlauf: das sind dreissig
- * Abrufe. Alle Laenderseiten gleichzeitig waeren neunhundert — das waere
+ * Abrufe. Alle Laenderseiten gleichzeitig waeren neunhundert, das waere
  * weder gegenueber Sixt in Ordnung noch gegenueber dem Nutzer, der eine
  * halbe Stunde wartet.
  */
@@ -1524,8 +1524,8 @@ function kalJobs() {
     const bis = addDays(ab, state.kalender.dauer);
     for (const z of kalZeitVarianten()) {
       // Die Uhrzeit gehoert in die Variante, nicht bloss in den Auftrag: sonst
-      // fiele jobKey auf state.pickupTime zurueck — die Zeit des
-      // Preisvergleichs — und ein Wechsel der Kalenderzeit aenderte den
+      // fiele jobKey auf state.pickupTime zurueck, die Zeit des
+      // Preisvergleichs, und ein Wechsel der Kalenderzeit aenderte den
       // Schluessel nicht. Man saehe dann den alten Preis fuer eine andere Zeit.
       const v = {
         pickupDate: ab,
@@ -1638,7 +1638,7 @@ function renderKalZeiten() {
  * Der beste Preis eines Abholtags ueber alle Uhrzeiten.
  *
  * Der Kalender zeigt eine Zahl je Tag. Bei mehreren Uhrzeiten ist die richtige
- * Zahl die guenstigste — und dazu, welche Uhrzeit sie war. Ohne die zweite
+ * Zahl die guenstigste, und dazu, welche Uhrzeit sie war. Ohne die zweite
  * Angabe waere die erste unbrauchbar: man wuesste den Preis, aber nicht, wann
  * man ihn bekommt.
  */
@@ -1743,7 +1743,7 @@ function renderKalFormular() {
     el('option', { value: '' }, 'Billigste Klasse des Tages'),
     ...kalKlassen.map((c) => {
       const d = decodeAcriss(c);
-      return el('option', { value: c }, d ? `${c} — ${d.label}` : c);
+      return el('option', { value: c }, d ? `${c}, ${d.label}` : c);
     })
   );
   $('#kalKlasse').value = kalKlassen.includes(k.klasse) ? k.klasse : '';
@@ -1761,7 +1761,7 @@ function renderKalFormular() {
     el('option', { value: 'frei' }, 'Andere Dauer …')
   );
   $('#kalDauer').value = String(k.dauer);
-  // Das Eingabefeld bleibt stehen, solange eine eigene Dauer eingestellt ist —
+  // Das Eingabefeld bleibt stehen, solange eine eigene Dauer eingestellt ist,
   // sonst verschwände der Wert aus dem Blick, obwohl er gilt.
   const eigene = !KAL_DAUERN.includes(k.dauer);
   $('#kalDauerFrei').hidden = !eigene;
@@ -1794,7 +1794,7 @@ function renderKalFormular() {
   $('#kalHinweis').textContent = !station
     ? 'Bitte zuerst eine Station wählen.'
     : offen.length
-      // Bei mehreren Uhrzeiten sind Abrufe und Tage nicht mehr dasselbe —
+      // Bei mehreren Uhrzeiten sind Abrufe und Tage nicht mehr dasselbe,
       // "21 von 7 Tagen" wäre Unsinn.
       ? (kalZeitVarianten().length > 1
           ? `${offen.length} von ${k.spanne * kalZeitVarianten().length} Abrufen fehlen noch ` +
@@ -1804,7 +1804,7 @@ function renderKalFormular() {
       : bestaetigtLeer
         ? `Alle Tage geprüft. An ${bestaetigtLeer} davon gibt es ${k.klasse} nicht.`
         : ausAufzeichnung
-          ? `Alle Tage liegen vor — ${ausAufzeichnung} davon aus dem gespeicherten ` +
+          ? `Alle Tage liegen vor, ${ausAufzeichnung} davon aus dem gespeicherten ` +
             `Preisverlauf${altText ? `, ältester Wert ${altText}` : ''}.`
           : 'Alle Tage liegen vor, frisch abgerufen.';
 
@@ -1826,7 +1826,7 @@ function renderKalFormular() {
 
   // Zweiter Durchgang: erst nach dem ersten Lauf steht die Klassenliste zur
   // Verfügung, und eine dort gewählte Klasse hat oft Lücken. Der Knopf holt
-  // genau die Tage nach, die noch nie frisch abgerufen wurden — und macht
+  // genau die Tage nach, die noch nie frisch abgerufen wurden, und macht
   // damit den Unterschied sichtbar zwischen "dort wirklich nicht buchbar" und
   // "beim ersten Mal nicht mitgekommen". Sind alle geprüft, verschwindet er,
   // statt dieselben Tage endlos anzubieten.
@@ -1880,7 +1880,7 @@ function renderKalStationSuche() {
  * Die Ergebnisse im Dienst verfallen nach einer Stunde, und ein Neuladen der
  * Seite loescht ohnehin alles im Arbeitsspeicher. Ein Kalender, fuer den man
  * vier Minuten gewartet hat, war danach leer. Die Messpunkte liegen aber
- * dauerhaft in preisverlauf.jsonl — von dort wird er wieder aufgebaut.
+ * dauerhaft in preisverlauf.jsonl, von dort wird er wieder aufgebaut.
  *
  * Schluessel: "Abholdatum|ACRISS" -> Preis. Bei mehreren Messungen desselben
  * Tages gewinnt die juengste.
@@ -1897,11 +1897,11 @@ async function ladeKalAufzeichnung() {
     const d = await (await fetch(`/api/verlauf?${p}`)).json();
     const zeiten = new Map();
     for (const e of d.punkte || []) {
-      // Nur Messungen mit derselben Mietdauer — ein Preis fuer sieben Tage
+      // Nur Messungen mit derselben Mietdauer, ein Preis fuer sieben Tage
       // gehoert nicht in einen Kalender fuer drei.
       if (daysBetween(e.v, e.b) !== state.kalender.dauer) continue;
       // Und nur Messungen aus demselben Modus: ein Preis mit Cookies gehört
-      // nicht in einen Kalender ohne. Ältere Messungen tragen kein Merkmal —
+      // nicht in einen Kalender ohne. Ältere Messungen tragen kein Merkmal,
       // die zählen als "mit Cookies", denn so wurde damals gemessen.
       if (Boolean(e.i) !== Boolean(state.kalender.inkognito)) continue;
       const k = `${e.v}|${e.k}`;
@@ -1918,7 +1918,7 @@ async function ladeKalAufzeichnung() {
   }
 }
 
-/** Der Preis eines Tages — je nach Wahl die Klasse oder das billigste Angebot. */
+/** Der Preis eines Tages, je nach Wahl die Klasse oder das billigste Angebot. */
 function kalPreis(job) {
   const klasse = state.kalender.klasse;
   const r = prices.get(job.key);
@@ -1943,7 +1943,7 @@ function kalPreis(job) {
 
   // Die Aufzeichnung kennt keine Uhrzeit: sie haelt Datum, Dauer und Klasse
   // fest, mehr nicht. Solange nur eine Uhrzeit eingestellt ist, macht das
-  // nichts. Bei mehreren waere es falsch — jede Zeit bekaeme denselben
+  // nichts. Bei mehreren waere es falsch, jede Zeit bekaeme denselben
   // gespeicherten Wert, und "beste Uhrzeit" waere geraten. Dann zaehlt nur
   // der frische Abruf.
   if (kalZeitVarianten().length > 1) return { geladen: false, preis: null };
@@ -1994,7 +1994,7 @@ function alter(zeit) {
 }
 
 /**
- * Wo bei der aktuellen Wahl noch etwas fehlt — und wo nicht mehr.
+ * Wo bei der aktuellen Wahl noch etwas fehlt, und wo nicht mehr.
  *
  * Der Unterschied ist der Kern des zweiten Durchgangs: ein Tag ohne Preis
  * kann heissen "noch nicht nachgesehen" oder "nachgesehen, gibt es dort
@@ -2035,7 +2035,7 @@ function kalStand() {
  * Preisverlauf steht, gilt als erledigt, und der Knopf ist tot. Nach ein paar
  * Tagen sieht man dann alte Zahlen und hat kein Mittel dagegen.
  *
- * Geloescht wird nur die Anzeige dieses Kalenders — der Preisverlauf selbst
+ * Geloescht wird nur die Anzeige dieses Kalenders, der Preisverlauf selbst
  * bleibt vollstaendig. Er ist die Grundlage der Preisentwicklung; ihn
  * wegzuwerfen, um eine Ansicht aufzufrischen, waere ein schlechter Tausch.
  */
@@ -2076,12 +2076,12 @@ function kalDatum(datum, lang = false) {
  * Dieselbe Einstellung wie oben im Formular, nur dort, wo man hinsieht. Der
  * Wechsel kostet keinen Abruf: die Angebote aller Klassen liegen im Ergebnis,
  * die Klasse sucht nur aus, welches davon gezeigt wird. Deshalb reagiert es
- * ohne Warten — und deshalb ist das Hoch- und Runterscrollen überflüssig.
+ * ohne Warten, und deshalb ist das Hoch- und Runterscrollen überflüssig.
  */
 function renderKalKlassenleiste(tage, mitPreis) {
   const wahl = $('#kalKlasse2');
 
-  // Optionen nur neu bauen, wenn sie sich geändert haben — sonst springt die
+  // Optionen nur neu bauen, wenn sie sich geändert haben, sonst springt die
   // Auswahl bei jedem Neuzeichnen zu.
   const soll = ['', ...kalKlassen].join('|');
   if (wahl.dataset.stand !== soll) {
@@ -2091,7 +2091,7 @@ function renderKalKlassenleiste(tage, mitPreis) {
       el('option', { value: '' }, 'Günstigste Klasse des Tages'),
       ...kalKlassen.map((c) => {
         const d = decodeAcriss(c);
-        return el('option', { value: c }, d ? `${c} — ${d.label}` : c);
+        return el('option', { value: c }, d ? `${c}, ${d.label}` : c);
       })
     );
   }
@@ -2106,7 +2106,7 @@ function renderKalKlassenleiste(tage, mitPreis) {
       : `an ${mitPreis} von ${tage} Tagen verfügbar`;
 }
 
-/** Klasse gewechselt — neu zeichnen, nicht neu abrufen. */
+/** Klasse gewechselt, neu zeichnen, nicht neu abrufen. */
 function wechsleKalKlasse(wert) {
   state.kalender.klasse = wert;
   kalTagAuswahl = null;
@@ -2122,7 +2122,7 @@ function wechsleKalKlasse(wert) {
  *
  * Der Kalender beantwortet "wann", der Preisvergleich "wo und mit welchem
  * Schutz". Ohne diesen Weg müsste man Station und beide Daten von Hand
- * abtippen — und tippt sich dabei irgendwann vertan.
+ * abtippen, und tippt sich dabei irgendwann vertan.
  */
 function uebernehmeKalendertag(job) {
   state.stations = [state.kalender.station];
@@ -2134,7 +2134,7 @@ function uebernehmeKalendertag(job) {
   state.dayShifts = [0];
   state.returnShifts = [0];
   state.durations = [];
-  // Die Länderseite des Kalenders ist vorgewählt — sie ist die, auf die man
+  // Die Länderseite des Kalenders ist vorgewählt, sie ist die, auf die man
   // gerade geschaut hat. Weitere kommen gleich dazu: der Bereich geht offen
   // auf, statt die Auswahl hinter einem zugeklappten Reiter zu verstecken.
   const markt = providerById(PROVIDER).markets.find((m) => m.host === state.kalender.host);
@@ -2149,7 +2149,7 @@ function uebernehmeKalendertag(job) {
   $('#panelLand').scrollIntoView({ behavior: 'smooth', block: 'center' });
   flash(
     `${kalDatum(job.pickupDate, true)} übernommen. Weitere Länderseiten dazuwählen, ` +
-      'dann „Preise vergleichen“ — der Schutz lässt sich dort je Klasse öffnen.'
+      'dann „Preise vergleichen“, der Schutz lässt sich dort je Klasse öffnen.'
   );
 }
 
@@ -2174,7 +2174,7 @@ function renderKalTag() {
     return;
   }
   const p = kalPreis(job);
-  // Alle Uhrzeiten des Tages, günstigste zuerst — das ist bei mehreren Zeiten
+  // Alle Uhrzeiten des Tages, günstigste zuerst, das ist bei mehreren Zeiten
   // die eigentliche Aussage: nicht nur was, sondern wann.
   const zeiten = desTages
     .map((j) => ({ job: j, p: kalPreis(j) }))
@@ -2194,7 +2194,7 @@ function renderKalTag() {
         ? el('p', {}, p.grund || (p.geladen ? 'Kein Preis vorhanden.' : 'Dieser Tag wurde noch nicht abgerufen.'))
         : modell ? el('p', {}, `${modell}${klasse ? ` · ${klasse}` : ''}`) : null,
       // Der Kalender vergleicht Grundpreise. Das Schutzpaket verschiebt die
-      // Reihenfolge kräftig — deshalb führt der Weg von hier in den
+      // Reihenfolge kräftig, deshalb führt der Weg von hier in den
       // Preisvergleich, wo es mit echtem Kassenpreis danebensteht.
       p.preis != null
         ? el(
@@ -2257,7 +2257,7 @@ function renderKalBild() {
     return;
   }
   // Ein Feld je Abholtag, nicht je Auftrag: bei mehreren Uhrzeiten gehören
-  // sie zusammen, und gezeigt wird die günstigste — mit der Uhrzeit dazu.
+  // sie zusammen, und gezeigt wird die günstigste, mit der Uhrzeit dazu.
   const nachTag = new Map();
   for (const j of d.jobs) {
     if (!nachTag.has(j.pickupDate)) nachTag.set(j.pickupDate, []);
@@ -2283,9 +2283,9 @@ function renderKalBild() {
     el('span', { class: 'calendar-insight-note' }, note)
   );
   setChildren($('#kalKennzahlen'),
-    kennzahl('Bester Gesamtpreis', min == null ? '—' : kalBetrag(min, d.markt.cur),
+    kennzahl('Bester Gesamtpreis', min == null ? '–' : kalBetrag(min, d.markt.cur),
       beste.length ? `${kalDatum(beste[0].datum)}${beste.length > 1 ? ` und ${beste.length - 1} ${beste.length === 2 ? 'weiterer Tag' : 'weitere Tage'}` : ''}` : 'Sobald die ersten Preise vorliegen'),
-    kennzahl('Preisunterschied', min == null ? '—' : kalBetrag(max - min, d.markt.cur), 'Zwischen günstigstem und teuerstem Abholtag'),
+    kennzahl('Preisunterschied', min == null ? '–' : kalBetrag(max - min, d.markt.cur), 'Zwischen günstigstem und teuerstem Abholtag'),
     kennzahl('Tage mit Preis', `${werte.length} / ${tage.length}`, `${state.kalender.dauer} ${state.kalender.dauer === 1 ? 'Tag' : 'Tage'} Mietdauer · ${d.markt.cur}`)
   );
 
@@ -2315,7 +2315,7 @@ function renderKalBild() {
         el('tbody', {}, ...wochen.map((woche) => el('tr', {}, ...woche.map((t) => {
           if (!t) return el('td', { class: 'kal-blank', 'aria-hidden': 'true' });
           const istBest = min != null && t.preis === min;
-          const exakt = t.preis == null ? (t.geladen ? '—' : '…') : t.preis.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const exakt = t.preis == null ? (t.geladen ? '–' : '…') : t.preis.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           const kurz = t.preis == null ? exakt : Math.round(t.preis).toLocaleString('de-DE');
           const beschreibung =
             `${kalDatum(t.datum, true)} · ${t.preis != null ? kalBetrag(t.preis, d.markt.cur) : (t.grund || 'Noch nicht abgerufen')}` +
@@ -2324,7 +2324,7 @@ function renderKalBild() {
             (d.zeiten.length > 1 && t.uhr
               ? ` · beste Zeit ${t.uhr}${t.rueckUhr !== t.uhr ? ` → ${t.rueckUhr}` : ''}`
               : '') +
-            // Ein gespeicherter Wert sagt selbst, wie alt er ist — sonst waere
+            // Ein gespeicherter Wert sagt selbst, wie alt er ist, sonst waere
             // nicht zu sehen, ob er von heute oder von vorletzter Woche ist.
             (t.ausAufzeichnung ? ` · aus dem Preisverlauf${t.zeit ? `, ${alter(t.zeit)}` : ''}` : '');
           return el('td', {}, el('button', {
@@ -2351,7 +2351,7 @@ function renderKalBild() {
  * @param {boolean} nurFehlende  Nur die Tage, zu denen bei der gewaehlten
  *   Klasse kein Preis vorliegt. Das ist der zweite Durchgang: nach dem ersten
  *   Lauf steht die Klassenliste erst zur Verfuegung, und wer dann eine Klasse
- *   waehlt, sieht Luecken — teils weil die Klasse dort wirklich nicht im
+ *   waehlt, sieht Luecken, teils weil die Klasse dort wirklich nicht im
  *   Angebot war, teils weil ein Abruf dazwischengegangen ist. Welches von
  *   beidem, weiss man erst nach dem zweiten Versuch.
  */
@@ -2390,7 +2390,7 @@ async function starteKalender({ nurFehlende = false } = {}) {
   } finally {
     kalLaeuft = false;
     $('#kalFortschritt').hidden = true;
-    // Erst jetzt weiss der Katalog, welche Klassen es an dieser Station gibt —
+    // Erst jetzt weiss der Katalog, welche Klassen es an dieser Station gibt,
     // vor dem ersten Durchlauf stand in der Auswahl nur "billigste".
     await ladeKalKlassen();
     await ladeKalAufzeichnung();
@@ -2401,8 +2401,8 @@ async function starteKalender({ nurFehlende = false } = {}) {
 
 /* ---------------------------------------------------- Mehrere Stationen
  *
- * Derselbe Zeitraum an mehreren Stationen. Das ist ein langer Lauf — bei drei
- * Stationen und 28 Abholtagen 84 Abrufe — und deshalb ein eigener Bereich mit
+ * Derselbe Zeitraum an mehreren Stationen. Das ist ein langer Lauf, bei drei
+ * Stationen und 28 Abholtagen 84 Abrufe, und deshalb ein eigener Bereich mit
  * eigenem Fortschritt, statt eines Hakens irgendwo im Formular.
  *
  * Gerechnet wird ueber die Tage, die an *allen* Stationen einen Preis haben.
@@ -2424,7 +2424,7 @@ function kalJobsFuer(stationCode) {
   for (let i = 0; i < state.kalender.spanne; i++) {
     const ab = addDays(state.kalender.start, i);
     const bis = addDays(ab, state.kalender.dauer);
-    // Auch hier jede Uhrzeit — sonst verglichen sich Stationen zu einer Zeit,
+    // Auch hier jede Uhrzeit, sonst verglichen sich Stationen zu einer Zeit,
     // waehrend der Kalender daneben die guenstigste ueber alle zeigt.
     for (const z of kalZeitVarianten()) {
       const v = {
@@ -2451,7 +2451,7 @@ function kalJobsFuer(stationCode) {
   return { jobs, station, markt };
 }
 
-/** Der billigste Preis eines Tages an einer Station — aus frischem Abruf. */
+/** Der billigste Preis eines Tages an einer Station, aus frischem Abruf. */
 function kalMultiPreis(key) {
   const r = prices.get(key);
   if (!r?.offers?.length) return null;
@@ -2503,7 +2503,7 @@ function renderKalMulti() {
   $('#kalMultiHinweis').textContent = kalMultiLaeuft
     ? ''
     : liste.length < 2
-      ? 'Mindestens zwei Stationen wählen — sonst gibt es nichts zu vergleichen.'
+      ? 'Mindestens zwei Stationen wählen, sonst gibt es nichts zu vergleichen.'
       : `${abrufe} Abrufe, rund ${minutenText(abrufe)}.`;
 
   if (kalMultiStand) renderKalMultiErgebnis();
@@ -2586,14 +2586,14 @@ async function starteKalMulti() {
       }
     }
 
-    // Was nichts geliefert hat, einmal von selbst nachfassen — bei einem Lauf
+    // Was nichts geliefert hat, einmal von selbst nachfassen, bei einem Lauf
     // dieser Länge klemmt fast immer irgendwo eine Seite.
     const fehlt = alle.filter((j) => {
       const r = prices.get(j.key);
       return !r || r.error != null || !r.offers?.length;
     });
     if (fehlt.length && kalMultiLaeuft) {
-      $('#kalMultiText').textContent = `${fehlt.length} Abrufe ohne Ergebnis — zweiter Versuch …`;
+      $('#kalMultiText').textContent = `${fehlt.length} Abrufe ohne Ergebnis, zweiter Versuch …`;
       for (const j of fehlt) prices.delete(j.key);
       await sendeJobs(fehlt, $('#kalMultiStart'));
       for (let i = 0; i < 900 && kalMultiLaeuft; i++) {
@@ -2627,13 +2627,13 @@ function renderKalMultiErgebnis() {
       }
     }
     // Ein Tag zaehlt als fehlend, wenn *keine* seiner Uhrzeiten einen Preis
-    // hat — nicht schon dann, wenn eine von dreien ausfiel.
+    // hat, nicht schon dann, wenn eine von dreien ausfiel.
     const alleTage = new Set(p.jobs.map((j) => j.pickupDate));
     const fehlend = [...alleTage].filter((t) => !tage.has(t)).length;
     return { station: p.station, tage, fehlend };
   });
 
-  // Nur Tage, die es überall gibt — sonst verglichen sich zwei Zeiträume.
+  // Nur Tage, die es überall gibt, sonst verglichen sich zwei Zeiträume.
   let gemeinsam = [...(proStation[0]?.tage.keys() || [])];
   for (const s of proStation.slice(1)) gemeinsam = gemeinsam.filter((t) => s.tage.has(t));
 
@@ -2645,7 +2645,7 @@ function renderKalMultiErgebnis() {
         'p',
         { class: 'note warn' },
         !gemeinsam.length && mitWerten.length >= 2
-          ? 'Die Stationen haben keinen gemeinsamen Abholtag mit Preis — ohne den lässt ' +
+          ? 'Die Stationen haben keinen gemeinsamen Abholtag mit Preis, ohne den lässt ' +
             'sich nichts sauber gegenüberstellen. Lauf wiederholen.'
           : 'Zu wenige Stationen haben Preise geliefert. Lauf wiederholen.'
       )
@@ -2666,7 +2666,7 @@ function renderKalMultiErgebnis() {
     };
   });
 
-  // Wer gewinnt an wie vielen Tagen — die Zahl, die zählt.
+  // Wer gewinnt an wie vielen Tagen, die Zahl, die zählt.
   for (const t of gemeinsam) {
     let best = null;
     for (const z of zeilen) {
@@ -2692,7 +2692,7 @@ function renderKalMultiErgebnis() {
           'p',
           { class: 'sv-satz' },
           el('b', {}, sieger.station.name),
-          ' ist im Schnitt am günstigsten — ',
+          ' ist im Schnitt am günstigsten, ',
           el('b', {}, kalBetrag(sieger.schnitt, waehrung)),
           ` je ${state.kalender.dauer} ${state.kalender.dauer === 1 ? 'Tag' : 'Tage'}, ` +
             `und an ${sieger.gewinntBei} von ${gemeinsam.length} Tagen die billigste.`
@@ -2755,7 +2755,7 @@ function renderKalMultiErgebnis() {
               el(
                 'td',
                 {},
-                z.bester ? `${kalDatum(z.bester.datum)} · ${kalBetrag(z.bester.preis, waehrung)}` : '—'
+                z.bester ? `${kalDatum(z.bester.datum)} · ${kalBetrag(z.bester.preis, waehrung)}` : '–'
               )
             )
           )
@@ -2819,13 +2819,13 @@ async function oeffneKalender() {
   showScreen('kalender');
   // Die Schlüssel des Kalenders in den Abfragetakt geben. Ohne das holt die
   // Seite nach einem Neuladen nur die Aufträge des Preisvergleichs ab, und
-  // der Kalender stünde leer da, obwohl der Dienst seine Preise noch hat —
+  // der Kalender stünde leer da, obwohl der Dienst seine Preise noch hat,
   // was besonders auffällt, seit die Aufzeichnung bei mehreren Uhrzeiten
   // nicht mehr aushilft.
   for (const j of kalJobs()?.jobs || []) extraSchluessel.add(j.key);
   await pollErgebnisse();
   if (!(await ladeKalKlassen())) return;
-  // Was frueher schon gemessen wurde, steht sofort da — auch nach einem
+  // Was frueher schon gemessen wurde, steht sofort da, auch nach einem
   // Neustart des Programms.
   await ladeKalAufzeichnung();
   renderKalFormular();
@@ -2845,7 +2845,7 @@ let weckerArt = 'wunsch';
  *
  * Die Prüfungen laufen im Dienst, nicht in der Seite. Ohne das stünde nach
  * einer Runde im Hintergrund immer noch "noch nicht geprüft" da, während das
- * Ergebnis längst vorliegt — und wer eine gebuchte Reise beobachtet, sieht
+ * Ergebnis längst vorliegt, und wer eine gebuchte Reise beobachtet, sieht
  * genau auf diese Zeile.
  */
 let weckerTakt = null;
@@ -2877,7 +2877,7 @@ function renderWecker() {
   const getippt = $('#weckerGrenze')?.value || '';
   const hatteFokus = document.activeElement?.id === 'weckerGrenze';
 
-  // Anlegen ist nur sinnvoll, wenn eine beobachtete Suche gewählt ist —
+  // Anlegen ist nur sinnvoll, wenn eine beobachtete Suche gewählt ist,
   // Station, Zeitraum und Klasse kommen von dort.
   setChildren(
     $('#weckerNeu'),
@@ -2904,7 +2904,7 @@ function renderWecker() {
             }))
           ),
           // Uhrzeit nur zur Wahl stellen, wo es mehr als eine gibt. Sixt
-          // rechnet nach Uhrzeit ab — ein Wecker zur falschen Zeit meldet
+          // rechnet nach Uhrzeit ab, ein Wecker zur falschen Zeit meldet
           // einen Preis, den es für diese Buchung nie gab.
           (g.zeiten || []).length > 1
             ? el(
@@ -2926,7 +2926,7 @@ function renderWecker() {
               )
             : null,
           // Zwei Sorten: ein Wunschpreis vor der Buchung, oder der schon
-          // gezahlte Preis danach. Die zweite ist die interessantere — sie
+          // gezahlte Preis danach. Die zweite ist die interessantere, sie
           // beantwortet "hätte ich warten sollen?", solange man noch
           // umbuchen kann.
           el(
@@ -2938,7 +2938,7 @@ function renderWecker() {
               { class: 'segmented-actions', id: 'weckerArt', role: 'group' },
               ...[
                 ['wunsch', 'Wunschpreis', 'Melden, sobald der Preis unter deine Grenze fällt.'],
-                ['buchung', 'Ich habe gebucht', 'Melden, sobald es billiger wird als das, was du bezahlt hast — und bei jedem weiteren Rückgang.'],
+                ['buchung', 'Ich habe gebucht', 'Melden, sobald es billiger wird als das, was du bezahlt hast, und bei jedem weiteren Rückgang.'],
               ].map(([wert, text, titel]) =>
                 el(
                   'button',
@@ -2980,7 +2980,7 @@ function renderWecker() {
             { class: 'note' },
             weckerArt === 'buchung'
               ? 'Wird alle sechs Stunden nachgeprüft, bis zum Abholtag. Gemeldet wird jeder ' +
-                'neue Tiefstand unter deinem Preis — nicht immer wieder derselbe. Ob sich das ' +
+                'neue Tiefstand unter deinem Preis, nicht immer wieder derselbe. Ob sich das ' +
                 'Umbuchen lohnt, hängt an den Stornobedingungen deiner Buchung; die kennt ' +
                 'dieses Werkzeug nicht.'
               : 'Wird alle sechs Stunden nachgeprüft und meldet sich einmal, sobald der Preis ' +
@@ -3011,7 +3011,7 @@ function renderWecker() {
       const station = stationByCode(w.station);
       const buchung = w.art === 'buchung';
       // Bei einer beobachteten Buchung ist die eine Zahl, die zählt, die
-      // Differenz zum gezahlten Preis — nicht der Preis selbst.
+      // Differenz zum gezahlten Preis, nicht der Preis selbst.
       const ersparnis =
         buchung && w.letzterPreis != null ? w.gebucht - w.letzterPreis : null;
       return el(
@@ -3110,7 +3110,7 @@ function renderWecker() {
           class: 'ghost mini',
           onclick: async () => {
             await fetch('/api/wecker/pruefen', { method: 'POST' });
-            flash('Prüfung läuft — das dauert einen Moment.');
+            flash('Prüfung läuft, das dauert einen Moment.');
             setTimeout(ladeWecker, 15000);
           },
         },
@@ -3151,7 +3151,7 @@ async function legeWeckerAn() {
       acriss: kurveKlasse,
       art: weckerArt,
       // Die Uhrzeit, zu der geprüft werden soll. Steht keine zur Wahl, ist es
-      // die einzige beobachtete — die erste aus der Gruppe.
+      // die einzige beobachtete, die erste aus der Gruppe.
       ...(() => {
         const wahl = $('#weckerZeit')?.value || (g.zeiten || [])[0] || '10:00|10:00';
         const [zeit, zeitRueck] = wahl.split('|');
@@ -3177,7 +3177,7 @@ async function legeWeckerAn() {
 
 /* =========================================================== Verlauf
  *
- * Die Preisergebnisse selbst verfallen nach einer Stunde — bewusst, es ist
+ * Die Preisergebnisse selbst verfallen nach einer Stunde, bewusst, es ist
  * kein Beobachtungsdienst. Der Verlauf ist etwas anderes: eine Handvoll
  * Momentaufnahmen zum Nachschlagen, "was war letzte Woche derselbe Wagen".
  * Deshalb liegt er im Browser und nicht im Ergebnisspeicher.
@@ -3191,7 +3191,7 @@ const VERLAUF_MAX = 5;
  * Der Verlauf hielt bisher nur Suchen fest: Station, Zeitraum, alle Klassen.
  * Die Frage, die man hinterher aber wirklich hat, lautet nicht "was habe ich
  * am Dienstag gesucht", sondern "welchen Wagen habe ich mir angesehen und was
- * kam dabei heraus" — besonders bei den Schutzpaketen, deren Abruf Minuten
+ * kam dabei heraus", besonders bei den Schutzpaketen, deren Abruf Minuten
  * dauert und die man nicht zweimal holen will.
  *
  * Deshalb eine zweite, eigene Liste: ein Eintrag je Fahrzeugklasse und
@@ -3224,7 +3224,7 @@ function speichereFahrzeuge(liste) {
  *
  * Dieselbe Regel wie in der Schutzansicht: "ohne Schutz" ist das billigste
  * Paket, danach das mit Selbstbeteiligung, dann die beiden SB-freien nach
- * Preis. Ueber die Namen zu gehen traegt nicht — die heissen in jeder Sprache
+ * Preis. Ueber die Namen zu gehen traegt nicht, die heissen in jeder Sprache
  * anders.
  */
 function schutzFaecher(pakete) {
@@ -3245,7 +3245,7 @@ function schutzFaecher(pakete) {
  *
  * Wird zweimal gerufen: beim Oeffnen einer Klasse (dann stehen die Preise
  * drin) und nach einem Schutzabruf (dann kommen die Pakete dazu). Der zweite
- * Aufruf ergaenzt den vorhandenen Eintrag, statt einen neuen anzulegen —
+ * Aufruf ergaenzt den vorhandenen Eintrag, statt einen neuen anzulegen,
  * sonst stuende dasselbe Auto zweimal in der Liste.
  */
 function merkeFahrzeug(acriss) {
@@ -3322,7 +3322,7 @@ function speichereVerlauf(liste) {
   try {
     localStorage.setItem(LS_VERLAUF, JSON.stringify(liste.slice(0, VERLAUF_MAX)));
   } catch {
-    /* privater Modus oder voll — dann eben kein Verlauf */
+    /* privater Modus oder voll, dann eben kein Verlauf */
   }
 }
 
@@ -3330,7 +3330,7 @@ function speichereVerlauf(liste) {
  * Die gerade gezeigte Gruppe als Momentaufnahme sichern.
  *
  * Gleiche Station, gleicher Zeitraum, gleiche Länderseiten überschreiben den
- * vorhandenen Eintrag statt einen zweiten anzulegen — sonst ist die Liste
+ * vorhandenen Eintrag statt einen zweiten anzulegen, sonst ist die Liste
  * nach dreimal Nachfassen voll mit derselben Suche.
  */
 function merkeSuche() {
@@ -3398,7 +3398,7 @@ function merkeSuche() {
   };
 
   const liste = ladeVerlauf();
-  // Eine Notiz überlebt das Neuabrufen derselben Suche — sie gehört dem
+  // Eine Notiz überlebt das Neuabrufen derselben Suche, sie gehört dem
   // Nutzer, nicht dem Messwert.
   const alt = liste.find((e) => e.kennung === kennung);
   if (alt?.notiz) eintrag.notiz = alt.notiz;
@@ -3414,11 +3414,11 @@ let verlaufKlasse = null;
  * Untereinander liegende Karten beantworten die eigentliche Frage nicht:
  * "war derselbe Wagen letzte Woche billiger?" heisst, zwei Zahlen direkt
  * nebeneinander zu sehen. Deshalb bilden die Suchen die Spalten, die
- * Länderseiten die Zeilen — und oben wird die Fahrzeugklasse gewählt, denn
+ * Länderseiten die Zeilen, und oben wird die Fahrzeugklasse gewählt, denn
  * ohne die vergleicht man Golf mit S-Klasse.
  */
 function renderVergleich(liste) {
-  // Klassen, die in mindestens zwei Suchen vorkommen, führen die Liste an —
+  // Klassen, die in mindestens zwei Suchen vorkommen, führen die Liste an,
   // nur die taugen zum Vergleich.
   const zaehler = new Map();
   for (const e of liste) {
@@ -3477,7 +3477,7 @@ function renderVergleich(liste) {
       'p',
       { class: 'note' },
       modell
-        ? `${verlaufKlasse} — zum Beispiel ${modell}. Verglichen wird nur innerhalb derselben Währung.`
+        ? `${verlaufKlasse}, zum Beispiel ${modell}. Verglichen wird nur innerhalb derselben Währung.`
         : 'Verglichen wird nur innerhalb derselben Währung.'
     ),
     el(
@@ -3520,7 +3520,7 @@ function renderVergleich(liste) {
                 el(
                   'td',
                   { class: w != null && w === min ? 'best' : '' },
-                  w != null ? el('span', { class: 'betrag' }, money(w, l.cur)) : '—'
+                  w != null ? el('span', { class: 'betrag' }, money(w, l.cur)) : '–'
                 )
               )
             );
@@ -3532,7 +3532,7 @@ function renderVergleich(liste) {
       'p',
       { class: 'tabnote' },
       'Jede Spalte ist eine gespeicherte Suche. Markiert ist der günstigste ' +
-        'Termin je Länderseite — dieselbe Klasse, dieselbe Währung.'
+        'Termin je Länderseite, dieselbe Klasse, dieselbe Währung.'
     )
   );
 }
@@ -3541,7 +3541,7 @@ function renderVergleich(liste) {
  * Ein angesehenes Fahrzeug als Karte.
  *
  * Zeigt, was man beim Vergleichen wirklich wissen will: welcher Wagen, wo,
- * wann — und was er auf welcher Länderseite kostet. Sind Schutzpakete
+ * wann, und was er auf welcher Länderseite kostet. Sind Schutzpakete
  * abgerufen, stehen sie darunter, denn die sind der teure Teil des Abrufs und
  * niemand will sie zweimal holen.
  */
@@ -3627,9 +3627,9 @@ function renderFahrzeugkarte(e) {
                   el(
                     'td',
                     { class: billigster && p.host === billigster.host ? 'best' : '' },
-                    p.betrag != null ? el('span', { class: 'betrag' }, money(p.betrag, p.cur)) : '—'
+                    p.betrag != null ? el('span', { class: 'betrag' }, money(p.betrag, p.cur)) : '–'
                   ),
-                  el('td', {}, p.proTag != null ? `${money(p.proTag, '')}/Tag` : '—')
+                  el('td', {}, p.proTag != null ? `${money(p.proTag, '')}/Tag` : '–')
                 )
               )
             )
@@ -3680,7 +3680,7 @@ function renderFahrzeugkarte(e) {
                               { class: 'betrag', title: s[f].name },
                               money(s[f].gesamt, s.cur)
                             )
-                          : '—'
+                          : '–'
                       )
                     )
                   )
@@ -3692,7 +3692,7 @@ function renderFahrzeugkarte(e) {
       : el(
           'p',
           { class: 'note' },
-          'Schutzpakete noch nicht abgerufen — in der Preistabelle auf die Zeile klicken.'
+          'Schutzpakete noch nicht abgerufen, in der Preistabelle auf die Zeile klicken.'
         ),
 
     el('input', {
@@ -3722,7 +3722,7 @@ function renderVerlauf() {
       el(
         'p',
         { class: 'empty' },
-        'Noch nichts angesehen. Klick in der Preistabelle auf eine Fahrzeugzeile — ' +
+        'Noch nichts angesehen. Klick in der Preistabelle auf eine Fahrzeugzeile, ' +
           'das Auto erscheint dann hier, mitsamt seinen Schutzpreisen.'
       )
     );
@@ -3733,7 +3733,7 @@ function renderVerlauf() {
     $('#verlaufBody'),
 
     // Die Fahrzeuge zuerst: "welchen Wagen habe ich verglichen" ist die Frage,
-    // die man hinterher hat — nicht "was habe ich am Dienstag gesucht".
+    // die man hinterher hat, nicht "was habe ich am Dienstag gesucht".
     fahrzeuge.length ? el('h2', { class: 'statusteil' }, 'Verglichene Fahrzeuge') : null,
     ...fahrzeuge.map(renderFahrzeugkarte),
     fahrzeuge.length
@@ -3756,7 +3756,7 @@ function renderVerlauf() {
       : null,
 
     liste.length ? el('h2', { class: 'statusteil' }, 'Gespeicherte Suchen') : null,
-    // Der Vergleich zuerst — er ist der Grund, warum es diese Seite gibt.
+    // Der Vergleich zuerst, er ist der Grund, warum es diese Seite gibt.
     liste.length > 1 ? renderVergleich(liste) : null,
     liste.length > 1 ? el('h2', { class: 'statusteil' }, 'Die einzelnen Suchen') : null,
     ...liste.map((e) => {
@@ -3810,12 +3810,12 @@ function renderVerlauf() {
           )
         ),
         // Notiz: warum diese Suche aufgehoben wurde. Nach drei Wochen weiss
-        // das sonst niemand mehr — auch der nicht, der sie gemacht hat.
+        // das sonst niemand mehr, auch der nicht, der sie gemacht hat.
         el('input', {
           type: 'text',
           class: 'notiz',
           value: e.notiz || '',
-          placeholder: 'Notiz — z. B. „für Mallorca im Mai, Angebot lief noch"',
+          placeholder: 'Notiz, z. B. „für Mallorca im Mai, Angebot lief noch"',
           oninput: (ev) => {
             const liste = ladeVerlauf();
             const treffer = liste.find((x) => x.kennung === e.kennung);
@@ -3856,12 +3856,12 @@ function renderVerlauf() {
                     { class: billigster && t.host === billigster.host ? 'best' : '' },
                     t.betrag != null
                       ? el('span', { class: 'betrag' }, money(t.betrag, t.waehrung))
-                      : '—'
+                      : '–'
                   ),
                   el(
                     'td',
                     {},
-                    t.acriss ? el('span', { class: 'acriss' }, t.acriss) : '—',
+                    t.acriss ? el('span', { class: 'acriss' }, t.acriss) : '–',
                     t.modell ? el('span', { class: 'proTag' }, t.modell) : null
                   ),
                   el('td', {}, String(t.klassen))
@@ -3915,7 +3915,7 @@ function renderVerlauf() {
  *
  * Sixt bildet sie aus der Stationsnummer: Flughafenstationen `ap<Nummer>`,
  * alle uebrigen `dt<Nummer>`. Ob eine Station als Flughafen zaehlt, steht als
- * `flughafen` am Datensatz und entscheidet sich am Namen (siehe build.mjs) —
+ * `flughafen` am Datensatz und entscheidet sich am Namen (siehe build.mjs),
  * das IATA-Feld taugt dafuer nicht, das haben nur 43 von 2250 Stationen.
  */
 function stationsAdresse(station, alsFlughafen = station.flughafen === true) {
@@ -3932,7 +3932,7 @@ function renderMailTreffer() {
 
   $('#mailAnzahl').textContent =
     `${hits.length} von ${ALLE_STATIONEN.length} Stationen` +
-    (needle.trim() ? '' : ' — tippen zum Filtern');
+    (needle.trim() ? '' : ', tippen zum Filtern');
   $('#mailAlleTreffer').hidden = !needle.trim() || !hits.length;
   $('#mailAlleTreffer').textContent = `Alle ${hits.length} übernehmen`;
 
@@ -3992,7 +3992,7 @@ function renderMailListe() {
           el('span', { class: 'gid' }, s.code)
         ),
         el('code', { class: 'mailadr' }, adresse),
-        // Die Einordnung ist geraten, nicht gewusst — also umstellbar.
+        // Die Einordnung ist geraten, nicht gewusst, also umstellbar.
         el(
           'button',
           {
@@ -4055,7 +4055,7 @@ function renderStationPicker() {
 
   $('#stationCount').textContent =
     `${hits.length} von ${ALLE_STATIONEN.length} Stationen` +
-    (needle.trim() ? '' : ' — tippen zum Filtern');
+    (needle.trim() ? '' : ', tippen zum Filtern');
   $('#addAll').hidden = !needle.trim() || !hits.length;
   $('#addAll').textContent = `Alle ${hits.length} hinzufügen`;
 
@@ -4111,7 +4111,7 @@ function renderStationPicker() {
   const sel = $('#returnStation');
   setChildren(
     sel,
-    el('option', { value: '' }, '— gleiche wie Abholung —'),
+    el('option', { value: '' }, ', gleiche wie Abholung, '),
     ...gewählt.map((s) =>
       el('option', { value: s.code, selected: state.returnStation === s.code }, s.name)
     )
@@ -4123,7 +4123,7 @@ function renderStationPicker() {
  * Laenderseiten als Chips statt als Liste von Ankreuzfeldern.
  *
  * 23 Kaestchen untereinander sind ein Formular; als Chipfeld ist dieselbe
- * Auswahl halb so hoch und auf einen Blick erfassbar — man sieht sofort, was
+ * Auswahl halb so hoch und auf einen Blick erfassbar, man sieht sofort, was
  * gewaehlt ist, ohne 23 Zeilen abzusuchen.
  */
 function renderMarkets() {
@@ -4142,7 +4142,7 @@ function renderMarkets() {
           class: 'mchip' + (on ? ' on' : '') + (m.gestoert ? ' gestoert' : ''),
           disabled: m.gestoert ? '' : null,
           'aria-pressed': String(on),
-          'aria-label': `${m.label}, ${m.cur}${m.gestoert ? ' — derzeit gestört' : ''}`,
+          'aria-label': `${m.label}, ${m.cur}${m.gestoert ? ', derzeit gestört' : ''}`,
           title: m.gestoert || `${m.label} · ${m.host}`,
           'data-market': m.code,
           onclick: () => {
@@ -4235,7 +4235,7 @@ function renderTable(list) {
 
       // Beschriftung: Sixts eigener Kategorietext schlägt meine ACRISS-
       // Dekodierung. Sixt führt Buchstaben, die nicht im Standard stehen
-      // (S und L für Automatik, P als Antrieb) — deren Text ist damit immer
+      // (S und L für Automatik, P als Antrieb), deren Text ist damit immer
       // richtiger als jede Tabelle, die ich pflege. Der Code bleibt die
       // Verknüpfung über die Sprachen hinweg, der Text nur die Anzeige.
       if (o.category && !z.eigenerText) z.eigenerText = o.category;
@@ -4308,7 +4308,7 @@ function renderTable(list) {
         {},
         el('a', { href: j.url, target: '_blank', rel: 'noopener' }, j.market.label),
         el('span', { class: 'thcur' }, j.market.cur),
-        // Der Abruf hat selbst gemerkt, dass Zahlen nicht zusammenpassen —
+        // Der Abruf hat selbst gemerkt, dass Zahlen nicht zusammenpassen,
         // das gehört an die Spalte, nicht nur ins Protokoll.
         prices.get(j.key)?.warnung
           ? el('span', { class: 'aktion warnmark', title: prices.get(j.key).warnung }, 'Prüfen')
@@ -4345,7 +4345,7 @@ function renderTable(list) {
                 alt: '',
                 loading: 'lazy',
                 class: 'fbild',
-                // Aus dem Zwischenspeicher ist das Bild sofort da — dann gar
+                // Aus dem Zwischenspeicher ist das Bild sofort da, dann gar
                 // nicht erst ueberblenden.
                 onload: (e) => e.target.classList.add('geladen'),
                 onerror: (e) => e.target.classList.add('geladen'),
@@ -4358,7 +4358,7 @@ function renderTable(list) {
             el(
               'span',
               { class: 'fklasse' },
-              el('span', { class: 'acriss' }, z.cls.acriss || '—'),
+              el('span', { class: 'acriss' }, z.cls.acriss || '–'),
               z.eigenerText || z.cls.label
             )
           )
@@ -4374,7 +4374,7 @@ function renderTable(list) {
           return el(
             'td',
             { class: 'leer' },
-            bekannt ? el('span', { class: 'nichtbuchbar' }, 'nicht buchbar') : '—'
+            bekannt ? el('span', { class: 'nichtbuchbar' }, 'nicht buchbar') : '–'
           );
         }
         const roh = o.total ?? o.perDay;
@@ -4389,7 +4389,7 @@ function renderTable(list) {
           {
             class: (billigste ? 'best' : '') + (o.unstimmig ? ' unstimmig' : ''),
             title:
-              (o.unstimmig ? 'Betrag passt nicht zum Tagespreis — bitte auf der Seite prüfen. ' : '') +
+              (o.unstimmig ? 'Betrag passt nicht zum Tagespreis, bitte auf der Seite prüfen. ' : '') +
               `${o.model}${o.unlimitedKm ? ' · unbegrenzte km' : ''}${
                 o.aktionen?.length ? ' · ' + o.aktionen.join(' · ') : ''
               }`,
@@ -4419,10 +4419,10 @@ function renderTable(list) {
       { class: 'tabnote' },
       'Zeile anklicken zeigt die Schutzpakete dieser Klasse im Ländervergleich.',
       gemischt
-        ? ` Mehrere Währungen (${[...spaltenJeWährung.keys()].join(', ')}) — markiert wird nur innerhalb derselben Währung, es wird nicht umgerechnet.`
+        ? ` Mehrere Währungen (${[...spaltenJeWährung.keys()].join(', ')}), markiert wird nur innerhalb derselben Währung, es wird nicht umgerechnet.`
         : '',
       fruehbucherSpalten.size && fruehbucherSpalten.size < spalten.length
-        ? ' Achtung: der Frühbucherrabatt läuft nicht auf allen Länderseiten — Spalten mit „Frühbucher" sind dadurch im Vorteil.'
+        ? ' Achtung: der Frühbucherrabatt läuft nicht auf allen Länderseiten. Spalten mit „Frühbucher" sind dadurch im Vorteil.'
         : ''
     )
   );
@@ -4431,11 +4431,11 @@ function renderTable(list) {
 /* =========================================================== Bühne */
 
 /**
- * Der Fund als Satz — die Bühne oben auf der Seite.
+ * Der Fund als Satz, die Bühne oben auf der Seite.
  *
  * Zeigt das guenstigste Angebot ueber alle abgerufenen Laenderseiten und
  * wieviel es gegenueber der teuersten Seite derselben Klasse spart. Solange
- * nichts abgerufen ist, steht hier die Aufforderung statt einer Zahl — eine
+ * nichts abgerufen ist, steht hier die Aufforderung statt einer Zahl, eine
  * leere Buehne waere schlimmer als gar keine.
  */
 function renderHeld() {
@@ -4472,7 +4472,7 @@ function renderHeld() {
         el(
           'h2',
           {},
-          // Die Buehne zeigt immer genau die gewaehlte Gruppe — auch wenn
+          // Die Buehne zeigt immer genau die gewaehlte Gruppe, auch wenn
           // dort noch nichts abgerufen ist.
           jobs[0]
             ? `${jobs[0].station.name} · ${jobs.length} Länderseite${jobs.length === 1 ? '' : 'n'}`
@@ -4486,7 +4486,7 @@ function renderHeld() {
     return;
   }
 
-  // Teuerste Seite derselben Klasse und Waehrung — daraus die Ersparnis.
+  // Teuerste Seite derselben Klasse und Waehrung, daraus die Ersparnis.
   let teuerste = null;
   for (const j of jobs) {
     const t = (prices.get(j.key)?.offers || []).find(
@@ -4514,7 +4514,7 @@ function renderHeld() {
       el(
         'p',
         { class: 'lab' },
-        // Bei mehreren Stationen muss dranstehen, welche gemeint ist — der
+        // Bei mehreren Stationen muss dranstehen, welche gemeint ist, der
         // Satz darunter gilt nur fuer diese eine.
         new Set(alle.map((j) => j.gruppe)).size > 1
           ? `Günstigster Fund · ${bester.job.station.name}`
@@ -4523,7 +4523,7 @@ function renderHeld() {
       el(
         'h2',
         {},
-        // Kein zusammengebautes Adjektiv aus dem Landesnamen — daraus wird
+        // Kein zusammengebautes Adjektiv aus dem Landesnamen, daraus wird
         // schnell "spanienen". Der Host sagt ohnehin mehr aus.
         `${bester.o.model} für `,
         el('em', {}, money(bester.wert, bester.o.currency)),
@@ -4533,7 +4533,7 @@ function renderHeld() {
         ? el(
             'p',
             { class: 'unter' },
-            `${money(spart, bester.o.currency)} weniger als auf der teuersten geprüften Seite — ` +
+            `${money(spart, bester.o.currency)} weniger als auf der teuersten geprüften Seite, ` +
               'gleiche Station, gleicher Zeitraum, gleiche Klasse.'
           )
         : el('p', { class: 'unter' }, 'Auf allen geprüften Länderseiten gleich teuer.'),
@@ -4555,7 +4555,7 @@ function renderHeld() {
         el(
           'div',
           {},
-          el('span', { class: 'z' }, bester.o.acriss || '—'),
+          el('span', { class: 'z' }, bester.o.acriss || '–'),
           el('span', { class: 'w' }, 'günstigste Klasse')
         )
       )
@@ -4569,7 +4569,7 @@ function renderHeld() {
  * sehen, welche günstiger ist. Diese Rechnung sagt es.
  *
  * Nicht als Durchschnitt aller Angebote: eine Station, die drei Luxuswagen im
- * Katalog hat, bekäme den höheren Schnitt — auch dann, wenn sie bei jeder
+ * Katalog hat, bekäme den höheren Schnitt, auch dann, wenn sie bei jeder
  * Klasse billiger ist, die es an beiden gibt. Verglichen wird deshalb
  * paarweise über die Klassen, die überall vorkommen.
  */
@@ -4594,7 +4594,7 @@ function stationsvergleich() {
   );
 
   // Je Station: die günstigste Klasse über alle Länderseiten, getrennt nach
-  // Währung. Zwei Währungen sind zwei verschiedene Fragen — umgerechnet wird
+  // Währung. Zwei Währungen sind zwei verschiedene Fragen, umgerechnet wird
   // hier grundsätzlich nicht.
   const stationen = new Map();
   for (const j of passend) {
@@ -4622,14 +4622,14 @@ function stationsvergleich() {
   if (stationen.size < 2) return null;
 
   const alle = [...stationen.values()];
-  // Eine Station, die nichts geliefert hat, gehört nicht in den Vergleich —
+  // Eine Station, die nichts geliefert hat, gehört nicht in den Vergleich,
   // aber sie verschwindet auch nicht stillschweigend, sondern wird benannt.
   const ohneErgebnis = alle.filter((s) => !s.mitErgebnis);
   const dabei = alle.filter((s) => s.mitErgebnis);
   // Bleibt nur eine Station übrig, gibt es nichts zu vergleichen. Das ist
   // aber kein Grund zu schweigen: sonst fehlt der Kasten und man rätselt,
   // warum. Liegt für gar keine Station etwas vor, ist der Vergleich schlicht
-  // noch nicht dran — dann still bleiben.
+  // noch nicht dran, dann still bleiben.
   if (dabei.length < 2) {
     return dabei.length && ohneErgebnis.length
       ? [{ waehrung: null, nurHinweis: true, ohneErgebnis, dabei }]
@@ -4668,7 +4668,7 @@ function stationsvergleich() {
       punkte.set(bester.code, punkte.get(bester.code) + 1);
       for (const s of mit) {
         const p = s.preise.get(waehrung).get(acriss);
-        // Abstand zum Besten dieser Klasse — für den Sieger ist er null.
+        // Abstand zum Besten dieser Klasse, für den Sieger ist er null.
         if (s.station.code !== bester.code) {
           abstaende.get(s.station.code).push({ acriss, diff: p - bester.p, anteil: (p - bester.p) / bester.p });
         }
@@ -4680,7 +4680,7 @@ function stationsvergleich() {
     );
     const siegerPreise = sieger.preise.get(waehrung);
 
-    // Wie weit die anderen im Mittel danebenliegen — gerechnet gegen den
+    // Wie weit die anderen im Mittel danebenliegen, gerechnet gegen den
     // Sieger, nicht gegen den jeweils Besten. Sonst stünde eine Zahl da, die
     // keiner Gegenüberstellung entspricht.
     const gegner = mit
@@ -4759,7 +4759,7 @@ function renderStationsvergleich() {
           ? el(
               'p',
               { class: 'sv-satz' },
-              'Diese Stationen haben keine Fahrzeugklasse gemeinsam — es gibt nichts, ' +
+              'Diese Stationen haben keine Fahrzeugklasse gemeinsam, es gibt nichts, ' +
                 'was sich sauber gegenüberstellen ließe.'
             )
           : el(
@@ -4778,7 +4778,7 @@ function renderStationsvergleich() {
                 },
                 e.sieger.station.name
               ),
-              ' ist günstiger — bei ',
+              ' ist günstiger, bei ',
               el('b', {}, `${e.sieger.gewinntBei} von ${e.sieger.von}`),
               ' gemeinsamen Klassen.'
             ),
@@ -4813,7 +4813,7 @@ function renderStationsvergleich() {
                     {},
                     ' liegt im Mittel ',
                     el('b', {}, money(-g.mittel, e.waehrung)),
-                    ` (${Math.abs(g.prozent).toFixed(1).replace('.', ',')} %) darunter — ` +
+                    ` (${Math.abs(g.prozent).toFixed(1).replace('.', ',')} %) darunter, ` +
                       'gewinnt aber seltener.'
                   )
                 : el('span', {}, ' liegt im Mittel gleichauf.'),
@@ -4829,7 +4829,7 @@ function renderStationsvergleich() {
           )
         ),
         mehrereWaehrungen
-          ? el('p', { class: 'sv-fuss' }, 'Getrennt je Währung — es wird nicht umgerechnet.')
+          ? el('p', { class: 'sv-fuss' }, 'Getrennt je Währung, es wird nicht umgerechnet.')
           : null,
         e.ohneErgebnis.length
           ? el(
@@ -4855,7 +4855,7 @@ function renderKopf() {
   $('#kurzZeit').textContent =
     `${pretty(state.pickupDate)} ${state.pickupTime} → ${pretty(state.returnDate)} ${state.returnTime}`;
   $('#knopfLand').textContent = `${state.markets.length} Länderseiten`;
-  // Der Haken steht jetzt am Abruf, nicht mehr in der Länderauswahl — also
+  // Der Haken steht jetzt am Abruf, nicht mehr in der Länderauswahl, also
   // auch dann gleichziehen, wenn die Länderkacheln gar nicht neu gezeichnet
   // werden.
   $('#inkognito').checked = Boolean(state.inkognito);
@@ -4883,7 +4883,7 @@ function zeigeBereich(name) {
 /**
  * Reiter fuer Station/Termin-Gruppen.
  *
- * Gibt es nur eine Gruppe, gibt es auch nichts zu waehlen — dann null, damit
+ * Gibt es nur eine Gruppe, gibt es auch nichts zu waehlen, dann null, damit
  * kein leerer Streifen stehen bleibt.
  */
 function gruppenwahl(jobs, aktiv, waehle) {
@@ -4903,7 +4903,7 @@ function gruppenwahl(jobs, aktiv, waehle) {
           onclick: () => waehle(k),
         },
         el('span', {}, f.station.name),
-        // Die Uhrzeit gehört auf den Reiter, sobald es mehr als eine gibt —
+        // Die Uhrzeit gehört auf den Reiter, sobald es mehr als eine gibt,
         // sonst stünden zwei gleich beschriftete Reiter mit zwei Preisen da.
         el(
           'span',
@@ -4925,7 +4925,7 @@ let letzteSignatur = null;
  * Fingerabdruck der Ergebnisansicht.
  *
  * Der Abfragetakt laeuft alle 2,5 Sekunden und rief bisher jedes Mal einen
- * vollstaendigen Neubau der Tabelle aus — auch wenn sich nichts geaendert
+ * vollstaendigen Neubau der Tabelle aus, auch wenn sich nichts geaendert
  * hatte. Bei ueber fuenfzig Zeilen sieht man das als Flackern, und Hover und
  * Scrollstand gehen dabei verloren.
  */
@@ -4943,12 +4943,12 @@ function ergebnisSignatur(jobs) {
 function renderResults({ erzwingen = false } = {}) {
   const jobs = aktuelleJobs();
 
-  // Die gezeigte Gruppe festlegen, bevor irgendjemand sie liest — Buehne und
+  // Die gezeigte Gruppe festlegen, bevor irgendjemand sie liest. Buehne und
   // Signatur haengen beide daran.
   const schluessel = [...new Set(jobs.map((j) => j.gruppe))];
   if (!schluessel.includes(aktiveGruppe)) aktiveGruppe = schluessel[0] ?? null;
 
-  // Die billigen Anzeigen laufen immer — sie kosten nichts und flackern nicht.
+  // Die billigen Anzeigen laufen immer, sie kosten nichts und flackern nicht.
   $('#jobCount').textContent = jobs.length
     ? `${jobs.length} Abfrage${jobs.length === 1 ? '' : 'n'}`
     : '';
@@ -4959,11 +4959,11 @@ function renderResults({ erzwingen = false } = {}) {
   const ohne = jobsOhneErgebnis(jobs);
   const nochmal = $('#nochmal');
   nochmal.hidden = !ohne.length;
-  nochmal.textContent = `${ohne.length} ohne Ergebnis — nochmal versuchen`;
+  nochmal.textContent = `${ohne.length} ohne Ergebnis, nochmal versuchen`;
   $('#warn').hidden = jobs.length <= 12;
   $('#warn').textContent =
     jobs.length > 12
-      ? `${jobs.length} Abfragen — das dauert rund ${minutenText(jobs.length)}.`
+      ? `${jobs.length} Abfragen, das dauert rund ${minutenText(jobs.length)}.`
       : '';
 
   // Die Tabelle nur anfassen, wenn sich an ihrem Inhalt etwas geaendert hat.
@@ -5044,10 +5044,10 @@ function renderResults({ erzwingen = false } = {}) {
                       class: 'price err',
                       title:
                         (rec.fehlerRat ? rec.fehlerRat + '\n\n' : '') +
-                        `Kennung: ${rec.fehlerCode || '—'} · ${rec.versuche || 1} Versuch(e)\n` +
+                        `Kennung: ${rec.fehlerCode || '–'} · ${rec.versuche || 1} Versuch(e)\n` +
                         rec.error,
                     },
-                    `${rec.fehlerCode || 'FEHLER'} — ${rec.fehlerKlartext || rec.error}`
+                    `${rec.fehlerCode || 'FEHLER'}, ${rec.fehlerKlartext || rec.error}`
                   )
                 : null
             );
@@ -5065,7 +5065,7 @@ function öffneSchutz(acriss) {
   schutzAcriss = acriss;
   // Auf der Station landen, aus deren Tabelle geklickt wurde.
   schutzGruppe = aktiveGruppe;
-  // Ab hier gilt dieses Fahrzeug als angesehen — mit den Preisen, die schon
+  // Ab hier gilt dieses Fahrzeug als angesehen, mit den Preisen, die schon
   // vorliegen. Die Schutzpakete kommen nach ihrem Abruf dazu.
   merkeFahrzeug(acriss);
   showScreen('schutz');
@@ -5116,7 +5116,7 @@ function renderSchutz() {
           d.label
         ),
         // Station und Termin der gewaehlten Gruppe, nicht die Grundeinstellung
-        // — bei zwei Stationen stand hier sonst immer dasselbe.
+        // bei zwei Stationen stand hier sonst immer dasselbe.
         gruppe
           ? el(
               'p',
@@ -5135,7 +5135,7 @@ function renderSchutz() {
     ? `${fertig.length} von ${jobs.length} Länderseiten abgerufen`
     : `${jobs.length} Länderseiten · rund ${Math.ceil((jobs.length * 12) / 2)} Sekunden`;
 
-  // Die Paketnamen heißen in jeder Sprache anders — "Smart-Schutz",
+  // Die Paketnamen heißen in jeder Sprache anders, "Smart-Schutz",
   // "Smart Protection", "Protección Smart". Zugeordnet wird deshalb NICHT über
   // den Namen, sondern über den Inhalt: Gibt es eine Selbstbeteiligung, und
   // wenn nein, ist es das günstigere oder das teurere der SB-freien Pakete?
@@ -5152,7 +5152,7 @@ function renderSchutz() {
     const zu = {};
     const rest = [...(pakete || [])];
 
-    // "Ohne Schutz" ist das Paket mit dem niedrigsten Gesamtpreis — das kostet
+    // "Ohne Schutz" ist das Paket mit dem niedrigsten Gesamtpreis, das kostet
     // per Definition nichts extra. Ueber den Text zu gehen war zu wackelig:
     // die franzoesische Seite schreibt "Inclus", was in keiner meiner
     // Wortlisten stand, und das Paket landete dadurch bei den SB-freien.
@@ -5199,14 +5199,14 @@ function renderSchutz() {
         'p',
         { class: 'empty' },
         fertig.length
-          ? 'Keine Schutzpakete gefunden — die Klasse ist dort vermutlich nicht buchbar.'
+          ? 'Keine Schutzpakete gefunden, die Klasse ist dort vermutlich nicht buchbar.'
           : 'Noch nichts abgerufen.'
       )
     );
     return;
   }
 
-  // Die Mietdauer der gezeigten Gruppe, nicht die der Grundeinstellung — mit
+  // Die Mietdauer der gezeigten Gruppe, nicht die der Grundeinstellung, mit
   // Datums-Matrix koennen sich die beiden unterscheiden.
   const tage = gruppe?.variant.duration ?? Math.max(1, daysBetween(state.pickupDate, state.returnDate));
 
@@ -5214,7 +5214,7 @@ function renderSchutz() {
    * Mietpreis ohne Zusatzschutz.
    *
    * Bevorzugt der Gesamtpreis, den die Kasse beim Paket "kein Extra-Schutz"
-   * anzeigt — gemessen unter denselben Bedingungen wie alle anderen Pakete.
+   * anzeigt, gemessen unter denselben Bedingungen wie alle anderen Pakete.
    * Der Wert aus der Trefferliste weicht um Kleinbetraege ab (gemessen 97
    * Cent), und dann stimmen die Aufschlaege nicht mehr zusammen.
    */
@@ -5258,7 +5258,7 @@ function renderSchutz() {
       return el(
         'td',
         {},
-        el('span', { class: 'betrag' }, m == null ? '—' : money(m, j.market.cur))
+        el('span', { class: 'betrag' }, m == null ? '–' : money(m, j.market.cur))
       );
     })
   );
@@ -5278,18 +5278,18 @@ function renderSchutz() {
         const p = proMarkt.get(j.key)?.[k];
         if (!p) {
           // Unterscheiden: gescheiterter Abruf, dort nicht buchbar, oder
-          // dieses eine Paket fehlt. Ein blosses "—" verschweigt den Grund.
+          // dieses eine Paket fehlt. Ein blosses "–" verschweigt den Grund.
           if (!r) return el('td', { class: 'leer' }, '');
           if (r.error) return el('td', { class: 'leer' }, el('span', { class: 'zellfehler' }, r.error));
           if (r.verfuegbar === false)
             return el('td', { class: 'leer' }, el('span', { class: 'zellfehler' }, 'nicht buchbar'));
-          return el('td', { class: 'leer' }, '—');
+          return el('td', { class: 'leer' }, '–');
         }
 
         // Der Gesamtpreis ist abgelesen, nicht gerechnet. Der je Paket
         // angezeigte Tagespreis multipliziert sich nicht sauber hoch:
         // gemessen zeigte Sixt 10,77 EUR/Tag an, waehrend der Gesamtpreis bei
-        // vier Tagen um 54,22 EUR stieg — 13,55 statt 10,77 je Tag.
+        // vier Tagen um 54,22 EUR stieg, 13,55 statt 10,77 je Tag.
         const gesamt = p.gesamt ?? null;
         // Aufschlag hier ausrechnen statt aus dem Abruf uebernehmen: so
         // stammen Bezugswert und Paketpreis aus derselben Messreihe.
@@ -5301,13 +5301,13 @@ function renderSchutz() {
         return el(
           'td',
           {},
-          // Der Name, wie ihn diese Länderseite nennt — bewusst mitgezeigt,
+          // Der Name, wie ihn diese Länderseite nennt, bewusst mitgezeigt,
           // damit man die Zuordnung nachprüfen kann.
           el('span', { class: 'lokalname' }, p.name),
           el(
             'span',
             { class: 'betrag' },
-            gesamt != null ? money(gesamt, p.waehrung) : '—'
+            gesamt != null ? money(gesamt, p.waehrung) : '–'
           ),
           aufschlag
             ? el(
@@ -5349,11 +5349,11 @@ function renderSchutz() {
       'p',
       { class: 'tabnote' },
       'Die große Zahl ist der Gesamtpreis für den ganzen Zeitraum, abgelesen von Sixts ' +
-        'eigener Kasse — jedes Paket wird dafür einzeln ausgewählt. Nicht hochgerechnet: ' +
+        'eigener Kasse, jedes Paket wird dafür einzeln ausgewählt. Nicht hochgerechnet: ' +
         'der angezeigte Tagespreis multipliziert sich nicht sauber auf, gemessen lagen ' +
         'zwischen beiden rund 26 %. Weicht er ab, steht der Wert der Seite klein darunter. ' +
         'Zugeordnet wird über den Inhalt (Selbstbeteiligung ja/nein, günstiger/teurer), ' +
-        'nicht über den Namen — der heißt auf jeder Länderseite anders. Der jeweilige ' +
+        'nicht über den Namen, der heißt auf jeder Länderseite anders. Der jeweilige ' +
         'Originalname steht klein über dem Preis, damit die Zuordnung nachprüfbar bleibt.'
     )
   );
@@ -5414,7 +5414,7 @@ async function sendeJobs(jobs, btn) {
 /**
  * Warteschlange abbrechen.
  *
- * Was schon laeuft, laeuft zu Ende — ein Abruf mittendrin abzuwuergen liesse
+ * Was schon laeuft, laeuft zu Ende, ein Abruf mittendrin abzuwuergen liesse
  * eine halb geladene Seite stehen. Alles Wartende wird verworfen.
  */
 async function abbrechen() {
@@ -5428,14 +5428,14 @@ async function abbrechen() {
     );
     pollErgebnisse();
   } catch {
-    flash('Abbruch nicht möglich — Dienst antwortet nicht.');
+    flash('Abbruch nicht möglich. Dienst antwortet nicht.');
   }
 }
 
 /**
  * Abrufe ohne brauchbares Ergebnis.
  *
- * Der Dienst merkt sehr wohl, wenn eine Länderseite nicht durchkommt — der
+ * Der Dienst merkt sehr wohl, wenn eine Länderseite nicht durchkommt, der
  * Grund steht in der Zelle. Nur nachgefasst hat bisher niemand: der Abruf
  * überging jeden Schlüssel, zu dem schon irgendein Ergebnis vorlag, und ein
  * Fehler ist eben auch eines. Damit blieb eine Seite, die einmal
@@ -5574,7 +5574,7 @@ const CAP_LABEL = {
  *
  * Einmal beim ersten Start. Wer TRACKER zum ersten Mal öffnet, soll nicht an
  * einer leeren Tabelle merken, dass Chrome fehlt oder eine Firewall
- * dazwischensteht — sondern es vorher wissen, samt Grund und Rat.
+ * dazwischensteht, sondern es vorher wissen, samt Grund und Rat.
  *
  * Die frühere Fassung hatte eine Animation vor *jedem* Start. Die kommt
  * bewusst nicht zurück: sie erschien immer und führte nirgendwohin. Diese
@@ -5588,7 +5588,7 @@ function erststartErledigt() {
   try {
     return localStorage.getItem(LS_ERSTSTART) === 'fertig';
   } catch {
-    // Ohne Speicher liesse sich die Begrüßung nie abstellen — dann lieber
+    // Ohne Speicher liesse sich die Begrüßung nie abstellen, dann lieber
     // gar nicht zeigen, als sie bei jedem Start aufzudrängen.
     return true;
   }
@@ -5653,7 +5653,7 @@ async function willkommenTest() {
     schritte.push(...d.schritte);
     zeichne(null);
 
-    // Weiter nur, wenn die Grundkette hält — ohne Browser ist jede weitere
+    // Weiter nur, wenn die Grundkette hält, ohne Browser ist jede weitere
     // Seite dieselbe Fehlermeldung noch einmal.
     const gebrochen = schritte.some((s) => s.stand === 'schlecht');
     if (!gebrochen) {
@@ -5681,7 +5681,7 @@ async function willkommenTest() {
         schlecht
           ? 'Hier hakt es. Der Rat steht am betroffenen Schritt.'
           : mittel
-            ? `Läuft. ${mittel} von ${schritte.length} Punkten mit Einschränkung — ` +
+            ? `Läuft. ${mittel} von ${schritte.length} Punkten mit Einschränkung, ` +
               'einzelne Länderseiten können also klemmen, der Rest geht.'
             : 'Alles in Ordnung. Jede geprüfte Länderseite hat geliefert.'
       )
@@ -5704,7 +5704,7 @@ async function willkommenTest() {
   }
 }
 
-/** Die Schritte eines Testlaufs als Liste — geteilt von Status und Begrüßung. */
+/** Die Schritte eines Testlaufs als Liste, geteilt von Status und Begrüßung. */
 function schrittliste(schritte) {
   return el(
     'ul',
@@ -5823,7 +5823,7 @@ function renderStatus() {
           ? service.chrome
             ? 'Der Abruf öffnet die Länderseiten in einem eigenen Chrome-Fenster außerhalb des sichtbaren Bereichs. Es wird nichts an Dritte gesendet; Ergebnisse verfallen nach einer Stunde.'
             : 'Ohne Chrome oder Edge bleibt der Link-Modus: das Werkzeug baut die Suchen, abgerufen wird von Hand.'
-          : 'Der Dienst läuft nicht. Ohne ihn gibt es nur die Linkliste — zum Abrufen „Preistool starten.cmd" verwenden.'
+          : 'Der Dienst läuft nicht. Ohne ihn gibt es nur die Linkliste, zum Abrufen „Preistool starten.cmd" verwenden.'
       )
     ),
 
@@ -5883,7 +5883,7 @@ function renderStatus() {
               )
             )
           : null,
-        // Die Stationszahl steht schon oben als Kennzahl — hier waere sie
+        // Die Stationszahl steht schon oben als Kennzahl, hier waere sie
         // nur Wiederholung.
         ...p.notes.map((n) => el('p', { class: 'note' }, n))
       )
@@ -5941,7 +5941,7 @@ function update(teile = {}) {
       () => {}
     );
 
-    // Eine feste Mietdauer setzt den Rückgabetag ausser Kraft — das muss man
+    // Eine feste Mietdauer setzt den Rückgabetag ausser Kraft, das muss man
     // sehen, sonst stellt man dort etwas ein, das nichts bewirkt.
     const dauerGesetzt = state.durations.length > 0;
     $('#feldRueck').classList.toggle('stillgelegt', dauerGesetzt);
@@ -5949,7 +5949,7 @@ function update(teile = {}) {
       ? 'Ohne Wirkung, solange unten eine Mietdauer gewählt ist.'
       : 'Beide Enden getrennt: Mo→Mo bleibt, dazu Di→Mo und So→Mo.';
   }
-  // Aus update() heraus hat sich der Zustand geaendert — hier muss die
+  // Aus update() heraus hat sich der Zustand geaendert, hier muss die
   // Tabelle tatsaechlich neu gebaut werden.
   renderResults({ erzwingen: true });
 }
@@ -5958,7 +5958,7 @@ function update(teile = {}) {
  * Dem Dienst sagen, dass dieses Fenster noch offen ist.
  *
  * Läuft das Werkzeug als eigenständiges Programm, hat es kein Konsolenfenster
- * mehr, das man schliessen könnte — dieses Fenster hier ist der Ausschalter.
+ * mehr, das man schliessen könnte, dieses Fenster hier ist der Ausschalter.
  * Der Dienst kann das aber nicht am Chrome-Prozess ablesen, weil Chrome
  * Fenster zwischen seinen Prozessen weiterreicht. Also sagt es die Seite.
  *
@@ -5993,7 +5993,7 @@ function haltAmLeben() {
  */
 function init() {
   // Als Allererstes: dem Dienst sagen, dass es dieses Fenster gibt. Vorher
-  // geschah das erst, nachdem die Dienstpruefung zurueck war — bei einer
+  // geschah das erst, nachdem die Dienstpruefung zurueck war, bei einer
   // grossen Seite mit eingebettetem Vorspann dauert das lange genug, dass
   // sich das Programm zwischendurch fuer verwaist hielt und beendete.
   haltAmLeben();
@@ -6022,7 +6022,7 @@ function init() {
       } else {
         showScreen('work');
         update();
-        // Ohne Station gibt es nichts zu zeigen — dann führt die Wahl.
+        // Ohne Station gibt es nichts zu zeigen, dann führt die Wahl.
         if (!state.stations.length) zeigeBereich('station');
       }
     })
@@ -6087,7 +6087,7 @@ function init() {
   $('#wkFertig').addEventListener('click', () => beendeWillkommen($('#wkNichtMehr').checked));
 
   $('#wkWiederZeigen').addEventListener('change', (e) => {
-    // Angehakt heisst "zeigen" — im Speicher steht aber das Gegenteil.
+    // Angehakt heisst "zeigen", im Speicher steht aber das Gegenteil.
     try {
       if (e.target.checked) localStorage.removeItem(LS_ERSTSTART);
       else localStorage.setItem(LS_ERSTSTART, 'fertig');
@@ -6105,7 +6105,7 @@ function init() {
   /* --- Monatsübersicht --- */
   $('#kalStation').addEventListener('input', renderKalStationSuche);
 
-  // Die Klassenwahl am Kalender. Dieselbe Einstellung wie im Formular oben —
+  // Die Klassenwahl am Kalender. Dieselbe Einstellung wie im Formular oben,
   // renderKalFormular() zieht das dortige Feld hinterher, sodass beide nie
   // auseinanderlaufen.
   $('#kalKlasse2').addEventListener('change', (e) => wechsleKalKlasse(e.target.value));
@@ -6128,7 +6128,7 @@ function init() {
   $('#kalMultiSuche').addEventListener('input', renderKalMultiTreffer);
   $('#kalMultiStart').addEventListener('click', starteKalMulti);
   $('#kalMultiAbbrechen').addEventListener('click', async () => {
-    // Erst das eigene Weiterlaufen stoppen, dann die Warteschlange leeren —
+    // Erst das eigene Weiterlaufen stoppen, dann die Warteschlange leeren,
     // andersherum stellte die Schleife gleich wieder Aufträge nach.
     kalMultiLaeuft = false;
     await abbrechen();
@@ -6145,7 +6145,7 @@ function init() {
     kalTagAuswahl = null;
     persist();
     // Die Aufzeichnung muss mit: sie ist nach Modus gefiltert, und ohne das
-    // Nachladen blieben die Messungen des anderen Modus stehen — der Kalender
+    // Nachladen blieben die Messungen des anderen Modus stehen, der Kalender
     // sähe voll aus, obwohl im neuen Modus noch nichts gemessen wurde.
     await ladeKalAufzeichnung();
     renderKalFormular();
@@ -6196,7 +6196,7 @@ function init() {
         if (!(await ladeKalKlassen())) return;
       }
       // Länderseite und Mietdauer entscheiden mit, welche Messpunkte
-      // überhaupt zum Kalender passen — sonst zeigt er Preise für drei Tage,
+      // überhaupt zum Kalender passen, sonst zeigt er Preise für drei Tage,
       // während sieben eingestellt sind.
       if (feld === 'host' || feld === 'dauer') await ladeKalAufzeichnung();
       renderKalFormular();
@@ -6223,11 +6223,11 @@ function init() {
   $('#mailSchreiben').addEventListener('click', () => {
     const adressen = mailAdressen();
     // Ins BCC-Feld: die Stationen sollen die Adressen der anderen nicht sehen.
-    // Sehr lange Listen sprengen die Laengengrenze mancher Mailprogramme —
+    // Sehr lange Listen sprengen die Laengengrenze mancher Mailprogramme,
     // dann ist "kopieren" der bessere Weg, und das steht dann auch da.
     const link = `mailto:?bcc=${encodeURIComponent(adressen.join(','))}`;
     if (link.length > 1800) {
-      flash(`${adressen.length} Adressen sind zu viele für einen Mail-Link — bitte kopieren.`);
+      flash(`${adressen.length} Adressen sind zu viele für einen Mail-Link, bitte kopieren.`);
       return;
     }
     location.href = link;
@@ -6257,7 +6257,7 @@ function init() {
   ];
   $('#excel').addEventListener('click', () => {
     const karte = $('#xlsxKarte');
-    // Zweiter Klick schliesst wieder — derselbe Umgang wie bei den
+    // Zweiter Klick schliesst wieder, derselbe Umgang wie bei den
     // aufklappenden Bereichen oben.
     if (!karte.hidden) {
       karte.hidden = true;
@@ -6312,7 +6312,7 @@ function init() {
   $('#inkognito').addEventListener('change', (e) => {
     state.inkognito = e.target.checked;
     // Der Modus steckt im Schlüssel jedes Auftrags. Was mit Cookies geholt
-    // wurde, gehört nicht in dieselbe Tabelle wie ein Abruf ohne — deshalb
+    // wurde, gehört nicht in dieselbe Tabelle wie ein Abruf ohne, deshalb
     // beginnt der Vergleich sichtbar von vorn statt halb gefüllt.
     prices.clear();
     schutz.clear();
@@ -6322,11 +6322,11 @@ function init() {
     flash(
       e.target.checked
         ? 'Abruf ohne Cookies. Der nächste Vergleich beginnt von vorn und dauert etwas länger.'
-        : 'Abruf mit gespeicherter Cookie-Auswahl — schneller, aber Sixt erkennt dich wieder.'
+        : 'Abruf mit gespeicherter Cookie-Auswahl, schneller, aber Sixt erkennt dich wieder.'
     );
   });
   // Wirklich auf null: keine Station, keine Länderseite, keine Matrix, keine
-  // Ergebnisse. Vorher setzte der Knopf auf die Voreinstellung zurück — also
+  // Ergebnisse. Vorher setzte der Knopf auf die Voreinstellung zurück, also
   // wieder Frankfurt und fünf Länder, und wer zwanzig Stationen loswerden
   // wollte, hatte danach immer noch eine.
   $('#reset').addEventListener('click', async () => {
@@ -6346,13 +6346,13 @@ function init() {
     await fetch('/api/results/clear', { method: 'POST' }).catch(() => {});
     update();
     // Ohne das Zurücksetzen würde zeigeBereich() umschalten und den schon
-    // offenen Bereich zuklappen — nach einem Reset soll er offen sein.
+    // offenen Bereich zuklappen, nach einem Reset soll er offen sein.
     offenerBereich = null;
     zeigeBereich('station');
     flash('Auswahl zurückgesetzt.');
   });
 
-  // Die Laenderzahl aus den Daten holen, nicht hinschreiben — sonst stimmt
+  // Die Laenderzahl aus den Daten holen, nicht hinschreiben, sonst stimmt
   // sie nach der naechsten Ernte nicht mehr.
   const laender = new Set(ALLE_STATIONEN.map((s) => s.country).filter(Boolean)).size;
   $('#stationTotal').textContent = ALLE_STATIONEN.length.toLocaleString('de-DE');
@@ -6363,7 +6363,7 @@ function init() {
   // Ein Programmstart fängt auf der Übersicht an, ein Neuladen nicht.
   //
   // sessionStorage ist genau die richtige Grenze: er überlebt F5, aber nicht
-  // ein neues Fenster. Die EXE öffnet bei jedem Start ein neues — dort ist er
+  // ein neues Fenster. Die EXE öffnet bei jedem Start ein neues, dort ist er
   // also leer, und man landet vorn. Wer mitten in der Arbeit versehentlich
   // neu lädt, bleibt dagegen, wo er war.
   let fortsetzen = false;
@@ -6371,7 +6371,7 @@ function init() {
     fortsetzen = sessionStorage.getItem(SS_LAEUFT) === '1';
     sessionStorage.setItem(SS_LAEUFT, '1');
   } catch {
-    /* privater Modus o. ä. — dann eben immer vorn anfangen */
+    /* privater Modus o. ä. dann eben immer vorn anfangen */
   }
 
   if (!erststartErledigt()) {
@@ -6405,10 +6405,10 @@ function init() {
     badge.hidden = false;
     badge.className = 'svc ' + (ok && service.chrome ? 'on' : 'off');
     badge.textContent = !ok
-      ? 'Kein Preisdienst — nur Links. Zum Abrufen "Preistool starten.cmd" verwenden.'
+      ? 'Kein Preisdienst, nur Links. Zum Abrufen "Preistool starten.cmd" verwenden.'
       : service.chrome
-        ? 'Preisabruf bereit — holt die Preise unsichtbar im Hintergrund'
-        : 'Preisdienst läuft, aber kein Chrome gefunden — nur Links';
+        ? 'Preisabruf bereit, holt die Preise unsichtbar im Hintergrund'
+        : 'Preisdienst läuft, aber kein Chrome gefunden, nur Links';
 
     $('#getPrices').hidden = !(ok && service.chrome);
     $('#getSchutz').hidden = !(ok && service.chrome);

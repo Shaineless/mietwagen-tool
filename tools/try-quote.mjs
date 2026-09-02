@@ -29,8 +29,8 @@ console.log('ok:', res.ok, '| Station:', res.station, '| Angebote:', res.offers?
 if (res.error || res.note) console.log('Hinweis:', res.error || res.note);
 
 for (const o of (res.offers || []).slice(0, 8)) {
-  const day = o.perDay != null ? `${o.perDay.toFixed(2)} ${o.currency}/Tag` : '—';
-  const tot = o.total != null ? `${o.total.toFixed(2)} ${o.currency} gesamt` : '—';
+  const day = o.perDay != null ? `${o.perDay.toFixed(2)} ${o.currency}/Tag` : '–';
+  const tot = o.total != null ? `${o.total.toFixed(2)} ${o.currency} gesamt` : '–';
   console.log(`  ${o.model.padEnd(24)} ${o.category.padEnd(34)} ${day.padStart(18)}  ${tot}`);
 }
 

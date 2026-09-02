@@ -5,7 +5,7 @@
  * schwarze Konsole aufgeht. Damit hat sie aber auch kein `stdout` mehr, das
  * jemand liest: alles, was das Programm sagt, ginge ersatzlos verloren.
  *
- * Deshalb zwei Wege — jede Zeile wandert zusätzlich in eine Protokolldatei
+ * Deshalb zwei Wege, jede Zeile wandert zusätzlich in eine Protokolldatei
  * neben dem Programm, und was den Start verhindert, kommt als Fenster auf den
  * Bildschirm. Eine Fehlermeldung, die niemand sehen kann, ist keine.
  */

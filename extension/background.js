@@ -4,7 +4,7 @@
  * Einziger Zweck: die vom Content-Script gelesenen Preise an das lokal
  * laufende Preistool weiterreichen. Der Umweg ueber den Service Worker ist
  * noetig, weil ein fetch() aus dem Content-Script an localhost je nach
- * Seiten-CSP scheitert — hier gelten die Rechte der Erweiterung.
+ * Seiten-CSP scheitert, hier gelten die Rechte der Erweiterung.
  *
  * Es verlaesst nichts den Rechner: Ziel ist ausschliesslich localhost.
  */

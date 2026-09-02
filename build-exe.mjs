@@ -9,7 +9,7 @@
  * in eine Kopie von node.exe einspritzen.
  *
  * Was dabei NICHT mitkommt: ein Browser. Der Preisabruf benutzt weiterhin das
- * Chrome oder Edge, das ohnehin auf dem Rechner ist — ein mitgeliefertes
+ * Chrome oder Edge, das ohnehin auf dem Rechner ist, ein mitgeliefertes
  * Chromium wäre nicht nur 150 MB grösser, es würde von Sixt auch abgewiesen.
  * Genau darum geht der Abruf über den installierten Browser.
  */
@@ -39,7 +39,7 @@ function lauf(datei, args, was) {
   }
 }
 
-console.log('\nMietwagen-Preistool — EXE bauen\n');
+console.log('\nMietwagen-Preistool. EXE bauen\n');
 
 if (process.platform !== 'win32') {
   console.log('Hinweis: gebaut wird für die Plattform, auf der dieses Skript läuft.\n');
@@ -47,7 +47,7 @@ if (process.platform !== 'win32') {
 
 // Der Bauordner wird nicht geleert, sondern ueberschrieben: liegt dort noch
 // eine Datei, die ein anderer Prozess offen haelt, scheiterte der ganze Build
-// am Aufraeumen — an einer Datei, die er gar nicht braucht.
+// am Aufraeumen, an einer Datei, die er gar nicht braucht.
 mkdirSync(bau, { recursive: true });
 mkdirSync(join(root, 'dist'), { recursive: true });
 
@@ -64,7 +64,7 @@ const leer = join(bau, 'leer.cjs');
 writeFileSync(leer, '// Platzhalter für ungenutzte Playwright-Treiber.\nmodule.exports = {};\n');
 
 // In einer gepackten EXE löst `require()` ausschliesslich eingebaute Module
-// auf — Dateipfade kann es nicht. Playwright liest damit zur Laufzeit seine
+// auf. Dateipfade kann es nicht. Playwright liest damit zur Laufzeit seine
 // eigene package.json ein, nur um an die Versionsnummer zu kommen. Der
 // Vorspann beantwortet genau diese Frage selbst und lässt alles andere
 // durch; taucht später ein anderer Dateipfad auf, sagt die Meldung, welcher.
@@ -72,7 +72,7 @@ const pwCore = join(root, 'node_modules', 'playwright-core');
 const pwVersion = JSON.parse(readFileSync(join(pwCore, 'package.json'), 'utf8')).version;
 
 // Die JSON-Dateien, nach denen Playwright zur Laufzeit greift, kommen als
-// fertige Werte mit — nachgeschlagen über den Dateinamen.
+// fertige Werte mit, nachgeschlagen über den Dateinamen.
 const mitgeliefert = {
   'package.json': { name: 'playwright-core', version: pwVersion },
   'browsers.json': JSON.parse(readFileSync(join(pwCore, 'browsers.json'), 'utf8')),
@@ -86,7 +86,7 @@ if (typeof require === 'function') {
     if (typeof id === 'string' && /[\\\\/]/.test(id) && !id.startsWith('node:')) {
       const name = String(id).replace(/\\\\/g, '/').split('/').pop();
       if (name in dabei) return dabei[name];
-      throw new Error('In der EXE nicht ladbar: ' + id + ' — build-exe.mjs anpassen.');
+      throw new Error('In der EXE nicht ladbar: ' + id + ', build-exe.mjs anpassen.');
     }
     return eingebaut(id);
   };
@@ -166,12 +166,12 @@ lauf(
  *
  * node.exe ist als Konsolenprogramm gebaut: beim Doppelklick geht immer eine
  * schwarze Konsole auf. Welche Art Programm es ist, steht als eine einzige
- * Zahl im PE-Kopf — 3 heisst Konsole, 2 heisst Fenster. Das Feld sitzt
+ * Zahl im PE-Kopf, 3 heisst Konsole, 2 heisst Fenster. Das Feld sitzt
  * 68 Bytes hinter dem Anfang des Optional Headers, und der beginnt hinter der
  * PE-Signatur (4 Bytes) und dem COFF-Kopf (20 Bytes). Der Offset dorthin
  * steht bei 0x3C.
  *
- * Ohne Konsole gibt es kein stdout mehr, das jemand liest — deshalb schreibt
+ * Ohne Konsole gibt es kein stdout mehr, das jemand liest, deshalb schreibt
  * das Programm sein Protokoll in eine Datei und zeigt Startfehler als Fenster
  * (tools/meldung.mjs).
  */
@@ -205,4 +205,4 @@ if (process.platform === 'win32') {
 
 console.log(`\nFertig: dist/${dateiname} (${mb(ziel)})`);
 console.log('Doppelklick öffnet ein eigenes Programmfenster, ohne Konsole.');
-console.log('Chrome oder Edge muss installiert sein — sonst bleibt der Link-Modus.\n');
+console.log('Chrome oder Edge muss installiert sein, sonst bleibt der Link-Modus.\n');

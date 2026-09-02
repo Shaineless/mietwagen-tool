@@ -1,7 +1,7 @@
 /**
  * Langzeitgedächtnis für Preise.
  *
- * Die Ergebnisse im Dienst verfallen nach einer Stunde — richtig so, sie sind
+ * Die Ergebnisse im Dienst verfallen nach einer Stunde, richtig so, sie sind
  * Momentaufnahmen. Für die beiden Fragen, die man bei Mietwagen wirklich hat,
  * reicht das aber nicht:
  *
@@ -10,7 +10,7 @@
  *
  * Deshalb wandert von jedem Abruf eine knappe Zeile in eine Datei: wann, wo,
  * welcher Zeitraum, welche Klasse, welcher Preis. Eine Zeile je Klasse und
- * Länderseite, im JSON-Lines-Format — anhängend geschrieben, mit jedem Editor
+ * Länderseite, im JSON-Lines-Format, anhängend geschrieben, mit jedem Editor
  * lesbar, und nichts kann dabei kaputtgehen.
  *
  * Bewusst nicht in einer Datenbank: es sind ein paar tausend Zeilen im Jahr,
@@ -50,7 +50,7 @@ export async function merkeAbruf(job, res) {
         k: o.acriss,
         p: o.total,
         w: o.currency || null,
-        // Der Frühbucherrabatt erklärt Spruenge in der Kurve — ohne ihn sieht
+        // Der Frühbucherrabatt erklärt Spruenge in der Kurve, ohne ihn sieht
         // ein Preissprung nach Zufall aus.
         f: o.fruehbucher ? 1 : 0,
         // Ob ohne Cookies gemessen wurde. Gemessen liegen die beiden Modi
@@ -59,7 +59,7 @@ export async function merkeAbruf(job, res) {
         // ein Wechsel des Haekchens.
         i: job.inkognito ? 1 : 0,
         // Die Uhrzeit gehoert dazu: Sixt rechnet nach Uhrzeit ab, nicht nach
-        // Kalendertag — gemessen lagen 12:30 und 13:30 am selben Tag 57 %
+        // Kalendertag, gemessen lagen 12:30 und 13:30 am selben Tag 57 %
         // auseinander. Ohne dieses Feld ist ein gespeicherter Preis nicht
         // zuzuordnen, sobald jemand mehr als eine Uhrzeit vergleicht.
         z: job.pickupTime || null,
@@ -74,7 +74,7 @@ export async function merkeAbruf(job, res) {
     await umbenennenWennGross();
     await appendFile(DATEI, zeilen.join('\n') + '\n', 'utf8');
   } catch {
-    /* Der Preisverlauf ist Beiwerk — sein Scheitern darf keinen Abruf stoppen. */
+    /* Der Preisverlauf ist Beiwerk, sein Scheitern darf keinen Abruf stoppen. */
   }
 }
 
@@ -142,7 +142,7 @@ export async function verlaufUebersicht() {
       bis: e.b,
       klassen: new Set(),
       hosts: new Set(),
-      // Uhrzeitpaare als "HH:MM|HH:MM". Altdaten tragen keine Uhrzeit — die
+      // Uhrzeitpaare als "HH:MM|HH:MM". Altdaten tragen keine Uhrzeit, die
       // wurden damals alle um 10:00 gemessen, und genau das steht dann da,
       // statt eine Luecke zu lassen, die spaeter niemand mehr deuten kann.
       zeiten: new Set(),

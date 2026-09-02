@@ -1,5 +1,5 @@
 /**
- * Fahrzeugklassen ueber Laendergrenzen hinweg zuordnen — ueber den ACRISS-Code.
+ * Fahrzeugklassen ueber Laendergrenzen hinweg zuordnen, ueber den ACRISS-Code.
  *
  * Sixt liefert ihn frei Haus: jede Angebotskachel traegt
  * data-offer-id="CDAR-110-110", die ersten vier Zeichen sind der ACRISS-Code.
@@ -11,14 +11,14 @@
  *          -> "Fullsize Elite Wagon Automatic"   (EN)
  *          -> "Fullsize Elite Familiar Automático" (ES)
  *
- * Die Dekodierung unten ergibt exakt Sixts eigene Beschriftung — geprueft
+ * Die Dekodierung unten ergibt exakt Sixts eigene Beschriftung, geprueft
  * gegen sixt.de, .co.uk, .es und .it.
  *
  * Nur falls ein Angebot einmal keinen Code traegt, greift ganz unten ein
  * Notnagel ueber den Kategorietext.
  */
 
-/* Zeichen 1 — Klasse. Reihenfolge = Anzeigereihenfolge, klein nach gross. */
+/* Zeichen 1. Klasse. Reihenfolge = Anzeigereihenfolge, klein nach gross. */
 const KLASSE = {
   M: ['Mini', 0],
   N: ['Mini Elite', 1],
@@ -40,7 +40,7 @@ const KLASSE = {
   X: ['Special', 17],
 };
 
-/* Zeichen 2 — Karosserie. */
+/* Zeichen 2. Karosserie. */
 const KAROSSERIE = {
   B: ['2–3-türig', 0],
   C: ['2/4-türig', 1],
@@ -69,11 +69,11 @@ const KAROSSERIE = {
 };
 
 /*
- * Zeichen 3 — Getriebe und Antrieb.
+ * Zeichen 3. Getriebe und Antrieb.
  *
  * S und L stehen nicht im ACRISS-Standard, Sixt benutzt sie trotzdem: bei den
  * AMG-, M- und Porsche-Modellen (DDSR, WFLP, GELP). Beide bedeuten dort
- * Automatik — abgeglichen mit Sixts eigener Beschriftung.
+ * Automatik, abgeglichen mit Sixts eigener Beschriftung.
  */
 const GETRIEBE = {
   M: ['Schaltung', 'Schaltung'],
@@ -86,7 +86,7 @@ const GETRIEBE = {
   L: ['Automatik', 'Automatik'],
 };
 
-/* Zeichen 4 — Kraftstoff und Klimaanlage. */
+/* Zeichen 4. Kraftstoff und Klimaanlage. */
 const ANTRIEB = {
   R: ['', true],
   N: ['', false],
@@ -125,7 +125,7 @@ export function decodeAcriss(code) {
   const a = ANTRIEB[c[3]];
 
   // Bewusst nachsichtig: Klasse und Karosserie genuegen. Unbekannte Zeichen an
-  // Stelle 3 oder 4 lassen den Code trotzdem durch — Sixt fuehrt eigene
+  // Stelle 3 oder 4 lassen den Code trotzdem durch. Sixt fuehrt eigene
   // Buchstaben ein, und ein halb erkannter Code ist deutlich brauchbarer als
   // ein Rueckfall auf den uebersetzten Rohtext, der die Zeile spaltet.
   if (!k || !b) return null;
@@ -149,7 +149,7 @@ export function decodeAcriss(code) {
 /**
  * Ohne ACRISS-Code bleibt nur der Kategorietext. Der ist sprachabhaengig,
  * deshalb bekommt so ein Angebot einen eigenen Schluessel und steht als
- * separate Zeile — sichtbar unvollstaendig statt still falsch zusammen-
+ * separate Zeile, sichtbar unvollstaendig statt still falsch zusammen-
  * geworfen.
  */
 function rohSchluessel(offer) {

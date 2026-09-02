@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f5f7">
-<title>TRACKER — Mietwagen vergleichen</title>
+<title>TRACKER: Mietwagen vergleichen</title>
 <link rel="icon" href="/*LOGO*/">
 <style>/*STYLES*/</style>
 
@@ -39,7 +39,7 @@
 
 <!-- ===================================================== Begrüßung
      Einmalig beim ersten Start. Wer TRACKER zum ersten Mal öffnet, soll nicht
-     an einer leeren Tabelle merken, dass etwas nicht geht — sondern es vorher
+     an einer leeren Tabelle merken, dass etwas nicht geht, sondern es vorher
      wissen, samt Grund. -->
 <section id="willkommen" class="screen" hidden>
   <div class="wk-mitte">
@@ -47,14 +47,14 @@
     <h1 class="wk-an" style="--wk:2">tracker<span class="brand-period">.</span></h1>
     <p class="wk-sub wk-an" style="--wk:3">
       Dieselbe Mietwagensuche auf allen Sixt-Länderseiten, nebeneinander.
-      Alles läuft auf deinem Gerät — es geht nichts nach draußen.
+      Alles läuft auf deinem Gerät, es geht nichts nach draußen.
     </p>
 
     <div class="wk-an" style="--wk:4">
       <p class="note wk-note" id="wkText">
         Bevor es losgeht, prüft TRACKER einmal, ob auf diesem Rechner alles
         durchgeht: Schreibrechte, Browser, Verbindung, Cookie-Hinweis und die
-        Trefferliste — mit echten Abrufen auf vier Länderseiten. Das dauert
+        Trefferliste, mit echten Abrufen auf vier Länderseiten. Das dauert
         ein bis zwei Minuten und erspart später das Rätselraten.
       </p>
       <div class="btnrow wk-knoepfe">
@@ -99,8 +99,8 @@
       <h2 id="showcaseTitle">Dein Wunschwagen.<br>Aus jeder Perspektive.</h2>
       <p>Gleiche Station. Gleicher Zeitraum.<br>Die Preise verschiedener Länderseiten im direkten Vergleich.</p>
       <div class="showcase-facts">
-        <span><strong id="marketTotal">—</strong> Länderseiten</span>
-        <span><strong id="stationTotal">—</strong> Stationen</span>
+        <span><strong id="marketTotal">29</strong> Länderseiten</span>
+        <span><strong id="stationTotal">2250</strong> Stationen</span>
       </div>
     </div>
     <div class="showcase-visual">
@@ -236,11 +236,11 @@
     </div>
 
     <details id="kalZeitenBereich" class="kal-zeiten-bereich">
-      <summary>Weitere Uhrzeiten — der Preis hängt daran</summary>
+      <summary>Weitere Uhrzeiten, der Preis hängt daran</summary>
       <p class="note">
         Sixt rechnet nach Uhrzeit ab, nicht nach Kalendertag. Gemessen an einer
         Station, drei Tage: 12:30 → 12:30 kostete 67,97 €, 13:30 → 13:30 dann
-        106,99 € — eine Stunde später, 57 % mehr. Der Kalender zeigt je Tag die
+        106,99 €, eine Stunde später, 57 % mehr. Der Kalender zeigt je Tag die
         günstigste Uhrzeit; welche es war, steht am Tag.
         <b>Achtung:</b> jede zusätzliche Uhrzeit verdoppelt bzw. verdreifacht
         die Wartezeit über die ganze Spanne.
@@ -284,7 +284,7 @@
         <p class="eyebrow">MEHRERE STATIONEN</p>
         <h2>Wo lohnt sich das Abholen?</h2>
         <p>Denselben Zeitraum an mehreren Stationen durchrechnen und
-           gegenüberstellen — welche Station im Schnitt günstiger ist.</p>
+           gegenüberstellen, welche Station im Schnitt günstiger ist.</p>
       </div>
       <span class="quiet-badge" id="kalMultiZahl" role="status">0 Stationen</span>
     </div>
@@ -292,7 +292,7 @@
     <p class="note warn">
       <b>Das dauert.</b> Jede Station kostet einen eigenen Durchlauf über den
       ganzen Zeitraum. Bei drei Stationen und 28 Abholtagen sind das 84 Abrufe,
-      also gut zehn Minuten — und je länger es läuft, desto wahrscheinlicher
+      also gut zehn Minuten, und je länger es läuft, desto wahrscheinlicher
       klemmt eine Seite zwischendurch. Was ausfällt, wird automatisch noch
       einmal versucht und danach benannt; abbrechen geht jederzeit, das schon
       Geholte bleibt.
@@ -327,7 +327,7 @@
 
     <!-- Die Klasse gehoert dorthin, wo man den Kalender ansieht. Sie oben im
          Formular zu lassen hiess: umstellen, hochscrollen, runterscrollen,
-         wieder umstellen. Die Preise liegen laengst vor — der Wechsel ist ein
+         wieder umstellen. Die Preise liegen laengst vor, der Wechsel ist ein
          Umschalten, kein neuer Abruf. -->
     <div class="kal-klassenleiste">
       <label class="flabel" for="kalKlasse2">Fahrzeugklasse</label>
@@ -339,8 +339,8 @@
     <div class="calendar-legend"><span><i class="calendar-best-dot" aria-hidden="true"></i> Günstigster Tag</span><span id="kalLegendeAlt" hidden><i class="calendar-old-dot" aria-hidden="true"></i> Aus dem gespeicherten Preisverlauf</span><span>Gesamtpreis für die gewählte Mietdauer</span></div>
     <div id="kalBild"></div>
     <div id="kalAuswahl" class="calendar-selection" role="status" aria-live="polite"></div>
-    <p class="calendar-note">Tagesfeld auswählen, um den genauen Preis und den Rückgabetag zu sehen. <span class="kal-mobile-note">Die Kalenderfelder zeigen auf kleinen Bildschirmen gerundete Beträge.</span> „—“ bedeutet: kein Preis vorhanden. „…“ bedeutet: noch nicht abgerufen.</p>
-    <p class="calendar-note"><b>Ohne Schutzpaket.</b> Hier steht der Grundpreis mit der gesetzlichen Haftpflicht und voller Selbstbeteiligung — so, wie Sixt ihn in der Trefferliste ausweist. Smart-Schutz und die übrigen Pakete kommen obendrauf und können die Reihenfolge der Tage verschieben. Sie hier für jeden Tag mitzumessen hieße, 56-mal durch die Kasse zu gehen; und weil die günstigste Klasse von Tag zu Tag wechselt, verglichest du am Ende den Schutz für einen Golf mit dem für einen Polo. Deshalb: erst hier den Tag finden, dann über <i>Diesen Tag im Preisvergleich öffnen</i> den Schutz mit echtem Kassenpreis danebenstellen.</p>
+    <p class="calendar-note">Tagesfeld auswählen, um den genauen Preis und den Rückgabetag zu sehen. <span class="kal-mobile-note">Die Kalenderfelder zeigen auf kleinen Bildschirmen gerundete Beträge.</span> „, “ bedeutet: kein Preis vorhanden. „…“ bedeutet: noch nicht abgerufen.</p>
+    <p class="calendar-note"><b>Ohne Schutzpaket.</b> Hier steht der Grundpreis mit der gesetzlichen Haftpflicht und voller Selbstbeteiligung, so wie Sixt ihn in der Trefferliste ausweist. Smart-Schutz und die übrigen Pakete kommen obendrauf und können die Reihenfolge der Tage verschieben. Sie hier für jeden Tag mitzumessen hieße, 56-mal durch die Kasse zu gehen; und weil die günstigste Klasse von Tag zu Tag wechselt, verglichest du am Ende den Schutz für einen Golf mit dem für einen Polo. Deshalb: erst hier den Tag finden, dann über <i>Diesen Tag im Preisvergleich öffnen</i> den Schutz mit echtem Kassenpreis danebenstellen.</p>
   </section>
 </section>
 
@@ -375,7 +375,7 @@
   <section class="card" id="weckerKarte">
     <div class="panel-heading"><div><p class="eyebrow">DEIN PREISWECKER</p><h2>Ein guter Preis. Zur richtigen Zeit.</h2></div><span class="feature-symbol" aria-hidden="true"><svg class="icon"><use href="#i-bell"/></svg></span></div>
     <p class="note" id="weckerHinweis">
-      Zwei Möglichkeiten: einen <b>Wunschpreis</b> setzen, bevor du buchst — oder
+      Zwei Möglichkeiten: einen <b>Wunschpreis</b> setzen, bevor du buchst, oder
       nach der Buchung <b>weiter beobachten lassen</b> und Bescheid bekommen, wenn
       derselbe Wagen billiger wird. Geprüft wird alle sechs Stunden, solange
       Tracker geöffnet ist.
@@ -422,7 +422,7 @@
       Die Adressen sind aus der Stationsnummer gebildet: Flughafenstationen
       <code>ap&lt;Nummer&gt;</code>, alle übrigen <code>dt&lt;Nummer&gt;</code>,
       jeweils <code>@sixt.com</code>. Ob eine Station als Flughafen zählt,
-      erkennt das Werkzeug am Namen — stimmt das einmal nicht, lässt es sich
+      erkennt das Werkzeug am Namen, stimmt das einmal nicht, lässt es sich
       je Zeile umstellen.
     </p>
   </section>
@@ -464,12 +464,12 @@
       <p class="dauer" id="dauer"></p>
 
       <details id="zeitenBereich">
-        <summary>Weitere Uhrzeiten — mehrere Zeiten auf einmal</summary>
+        <summary>Weitere Uhrzeiten, mehrere Zeiten auf einmal</summary>
         <p class="note">
           Sixt rechnet nach Uhrzeit ab, nicht nach Kalendertag: 12:30 → 12:30
           kostet etwas anderes als 13:30 → 13:30, und wer um 13:30 holt und um
           08:00 zurückgibt, zahlt wieder anders. Jede Zeile hier ist eine
-          eigene Abfrage je Länderseite — zwei zusätzliche Zeiten
+          eigene Abfrage je Länderseite, zwei zusätzliche Zeiten
           verdreifachen also die Wartezeit.
         </p>
         <div id="zeitenListe" class="zeitenliste"></div>
@@ -480,7 +480,7 @@
       </details>
 
       <details>
-        <summary>Datums-Matrix — mehrere Termine auf einmal</summary>
+        <summary>Datums-Matrix, mehrere Termine auf einmal</summary>
         <p class="note">
           Preise hängen stark am Wochentag und an der Mietdauer.
         </p>
@@ -500,7 +500,7 @@
           <div id="durations" class="pills"></div>
           <p class="note">
             Feste Dauer ab dem Abholtag. Sobald hier etwas gewählt ist, richtet
-            sich die Rückgabe danach — der Rückgabetag oben zählt dann nicht.
+            sich die Rückgabe danach, der Rückgabetag oben zählt dann nicht.
           </p>
         </div>
       </details>
@@ -549,7 +549,7 @@
         <select id="returnStation" aria-label="Rückgabestation"></select>
         <p class="note">
           Leer lassen heißt: zurück an dieselbe Station. Eine andere Rückgabe
-          kostet meist einen Aufschlag — der steckt schon im angezeigten Preis.
+          kostet meist einen Aufschlag, der steckt schon im angezeigten Preis.
         </p>
       </div>
     </section>
@@ -566,7 +566,7 @@
       <input type="checkbox" id="inkognito">
       <span>
         <b>Ohne Cookies abrufen</b>
-        <small>Jede Länderseite wird angesehen, als wärst du zum ersten Mal da — kein gespeicherter
+        <small>Jede Länderseite wird angesehen, als wärst du zum ersten Mal da, kein gespeicherter
         Besuch, keine Wiedererkennung. Dauert ein paar Sekunden länger je Seite und beginnt den
         Vergleich von vorn.</small>
       </span>
@@ -584,7 +584,7 @@
     <p id="warn" class="note warn" hidden></p>
     <p id="popupHint" class="note warn" hidden>
       Der Browser hat Tabs blockiert. Pop-ups für diese Seite erlauben und
-      erneut klicken — oder die Links einzeln anklicken.
+      erneut klicken, oder die Links einzeln anklicken.
     </p>
     <p id="flash" class="flash" hidden></p>
 
@@ -594,7 +594,7 @@
           <p class="eyebrow">AUSGABE FÜR EXCEL</p>
           <h2>Was soll in die Mappe?</h2>
           <p>Eine echte .xlsx mit Kopfblock, festen Spalten und Zahlen zum Weiterrechnen.
-             Getrennt je Währung — umgerechnet wird nicht.</p>
+             Getrennt je Währung, umgerechnet wird nicht.</p>
         </div>
       </div>
       <div class="xlsx-gitter">

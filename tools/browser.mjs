@@ -16,7 +16,7 @@
  * Deshalb: Chrome selbst starten, dann verbinden. Nicht "vereinfachen".
  *
  * Unsichtbar laeuft es ueber --window-position weit ausserhalb des Bildschirms.
- * Echtes Headless wird ebenfalls abgewiesen — auch das ist gemessen.
+ * Echtes Headless wird ebenfalls abgewiesen, auch das ist gemessen.
  */
 
 import { chromium } from 'playwright';
@@ -30,7 +30,7 @@ const PORT = Number(process.env.MWT_CDP_PORT) || 9222;
 /** Eigenes Profil: das echte Profil des Nutzers bleibt unberuehrt. */
 const PROFILE = join(tmpdir(), 'mwt-preistool-chrome');
 
-/** Wartezeit zwischen Aufrufen je Host — bewusst hoeflich. */
+/** Wartezeit zwischen Aufrufen je Host, bewusst hoeflich. */
 const MIN_GAP_MS = 1500;
 const lastHit = new Map();
 
@@ -41,7 +41,7 @@ const lastHit = new Map();
  * spart bei jedem Abruf mehrere Sekunden.
  *
  * `inkognito` wird vor jedem Durchlauf geloescht und neu angelegt. Das ist der
- * Sinn der Sache — Sixt erkennt einen wiederkehrenden Besucher an seinen
+ * Sinn der Sache. Sixt erkennt einen wiederkehrenden Besucher an seinen
  * Cookies und zeigt ihm nicht zwingend denselben Preis wie einem, der zum
  * ersten Mal kommt. Wer wissen will, was ein Fremder sieht, muss als Fremder
  * kommen.
@@ -95,7 +95,7 @@ export async function getBrowser({ sichtbar = false, inkognito = false } = {}) {
     inst.browser = await chromium.connectOverCDP(`http://127.0.0.1:${inst.port}`, { timeout: 2000 });
     return inst.browser;
   } catch {
-    /* keine da — selbst starten */
+    /* keine da, selbst starten */
   }
 
   const exe = findBrowser();
@@ -167,7 +167,7 @@ export async function frischesProfil() {
  * Einmalig je Sitzung: ein Skript, das vor jedem Seitenskript laeuft.
  *
  * Es loescht nur Sixts Erinnerung an die zuletzt gewaehlte Station. Frueher
- * wurde dafuer erst die Startseite geladen und der ganze Speicher geleert —
+ * wurde dafuer erst die Startseite geladen und der ganze Speicher geleert,
  * das kostete eine zusaetzliche Navigation pro Abruf und warf nebenbei die
  * Cookie-Auswahl weg, sodass der Banner jedes Mal neu erschien.
  *
@@ -215,7 +215,7 @@ export async function closeBrowser() {
   try {
     rmSync(instanzen.inkognito.profil, { recursive: true, force: true });
   } catch {
-    /* Chrome haelt die Dateien noch — beim naechsten Start faellt es weg */
+    /* Chrome haelt die Dateien noch, beim naechsten Start faellt es weg */
   }
 }
 
@@ -232,7 +232,7 @@ async function throttle(host) {
  * Fuehrt `fn` in einem frischen Tab aus und raeumt ihn danach weg.
  *
  * Frischer Tab, aber gemeinsames Profil: Sixt merkt sich die zuletzt gewaehlte
- * Station. Deshalb wird vor jeder Anfrage der Speicher der Seite geleert —
+ * Station. Deshalb wird vor jeder Anfrage der Speicher der Seite geleert,
  * sonst bekommt man das Ergebnis der vorigen Anfrage zurueck und merkt es
  * nicht. Genau dieser Effekt hat mich bei der Analyse zuerst in die Irre
  * gefuehrt.
@@ -252,7 +252,7 @@ export async function withPage({ host, sichtbar = false, inkognito = false }, fn
 }
 
 /**
- * Cookie-Banner ablehnen — bewusst "Ablehnen", nicht "Einverstanden".
+ * Cookie-Banner ablehnen, bewusst "Ablehnen", nicht "Einverstanden".
  *
  * Der Banner liegt im Shadow DOM von #usercentrics-cmp-ui. Angesprochen wird er
  * ueber Klassennamen, nicht ueber die Beschriftung: die heisst je Laenderseite
@@ -260,7 +260,7 @@ export async function withPage({ host, sichtbar = false, inkognito = false }, fn
  */
 export async function dismissConsent(page, { timeout = 3000 } = {}) {
   // Erst kurz schauen, ob ueberhaupt ein Banner kommt. Vorher wurde stur eine
-  // feste Zahl von Versuchen durchlaufen — auf einem Profil, das die Auswahl
+  // feste Zahl von Versuchen durchlaufen, auf einem Profil, das die Auswahl
   // schon gespeichert hat, waren das 13 Sekunden Warten auf etwas, das nie
   // erscheint. Das war der groesste Zeitfresser im ganzen Abruf.
   // Achtung auf die Signatur: waitForFunction(fn, arg, options). Werden die
@@ -313,13 +313,13 @@ export async function dismissConsent(page, { timeout = 3000 } = {}) {
  * Mitgliedschafts-Fenster ein ("SIXT ONE"). Es traegt role=dialog, liegt mit
  * z-index ueber allem und faengt den Klick auf "Suchen" ab. Gemessen auf
  * sixt.es: fuenf von fuenf Versuchen blockiert, auf sixt.fr im selben Lauf
- * keiner — es kommt nicht immer.
+ * keiner, es kommt nicht immer.
  *
  * Bisher rettete das der Notklick direkt im DOM, aber erst nachdem der
  * regulaere Klick zwoelf Sekunden lang in einen Timeout gelaufen war. Unter
  * Last reicht das Zeitbudget dann nicht mehr, und der Abruf faellt aus.
  *
- * Erkannt wird das Fenster nicht am Text — der heisst in jeder Sprache anders —
+ * Erkannt wird das Fenster nicht am Text, der heisst in jeder Sprache anders,
  * sondern an der Rolle. Geschlossen wird ueber den Schliessen-Knopf, den man
  * an seiner zugaenglichen Beschriftung erkennt; als Rueckfall die Escape-Taste.
  */
@@ -329,7 +329,7 @@ const SCHLIESSEN_RE =
 export async function dismissPopups(page, { timeout = 3000 } = {}) {
   // Sichtbar heisst: gross genug UND nicht ausgeblendet. Nach dem Schliessen
   // bleibt das Fenster oft mit voller Groesse im DOM stehen und ist nur
-  // durchsichtig — wer nur die Groesse prueft, haelt es faelschlich fuer offen.
+  // durchsichtig, wer nur die Groesse prueft, haelt es faelschlich fuer offen.
   const sichtbaresFenster = () => {
     for (const d of document.querySelectorAll('[role=dialog], [role=alertdialog], dialog')) {
       if (d.closest('#usercentrics-cmp-ui')) continue;
@@ -366,7 +366,7 @@ export async function dismissPopups(page, { timeout = 3000 } = {}) {
 
   if (!geklickt) await page.keyboard.press('Escape').catch(() => {});
 
-  // Nachsehen, ob es wirklich weg ist — ein Klick, der nichts bewirkt hat,
+  // Nachsehen, ob es wirklich weg ist, ein Klick, der nichts bewirkt hat,
   // ist schlimmer als keiner, weil man sich dann in Sicherheit wiegt.
   const weg = await page
     .waitForFunction(

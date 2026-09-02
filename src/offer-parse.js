@@ -17,12 +17,12 @@
  * Bewusst weitherzig und ohne Wortgrenzen: die Laenderseiten schreiben die
  * Waehrung mal mit Abstand ("CHF 1'110.32"), mal direkt an die Ziffern
  * ("DKK2.556,01"). Mit \b um die Buchstabencodes fielen genau die Zeilen
- * durch, bei denen kein Abstand steht — die Schweiz, Daenemark, Norwegen,
+ * durch, bei denen kein Abstand steht, die Schweiz, Daenemark, Norwegen,
  * Schweden und Ungarn lieferten daraufhin gar keine Angebote mehr.
  *
  * Ein Fehlgriff ist hier harmlos: findet mwtParseAmount in der Zeile keinen
  * Betrag, faellt sie ohnehin weg. Fuer die Frage, WELCHE Waehrung es ist,
- * taugt dieser Ausdruck dagegen nicht — dafuer gibt es mwtWaehrung.
+ * taugt dieser Ausdruck dagegen nicht, dafuer gibt es mwtWaehrung.
  */
 const MWT_CUR_RE = /(€|£|\$|zł|Kč|лв|₺|CHF|SEK|NOK|DKK|PLN|CZK|HUF|TRY|RON|BGN|Ft|kr)/i;
 
@@ -34,13 +34,13 @@ const MWT_CUR_RE = /(€|£|\$|zł|Kč|лв|₺|CHF|SEK|NOK|DKK|PLN|CZK|HUF|TRY|
  *   "kr"  tragen Daenemark, Norwegen und Schweden gleichermassen. Wer daraus
  *         "KR" macht, vergleicht spaeter daenische mit schwedischen Preisen,
  *         als waere es dieselbe Waehrung.
- *   "TRY" stand ohne Wortgrenze und mit /i in der Liste — und traf damit
+ *   "TRY" stand ohne Wortgrenze und mit /i in der Liste, und traf damit
  *         mitten in polnischen Woertern wie "elektryczny". Die polnische
  *         Seite wurde dadurch als tuerkische Lira ausgewiesen.
  *
  * Deshalb entscheidet die Laenderseite, nicht der Seitentext: welche Waehrung
  * dort gilt, steht in providers.js und wird als `fallbackCurrency`
- * hereingereicht. Aus dem Text wird nur gelesen, wenn nichts angegeben ist —
+ * hereingereicht. Aus dem Text wird nur gelesen, wenn nichts angegeben ist,
  * etwa wenn die Browser-Erweiterung eine Seite meldet, die wir nicht kennen.
  */
 const MWT_SYMBOLE = [
@@ -70,7 +70,7 @@ function mwtWaehrung(text, fallbackCurrency) {
     const m = text.match(re);
     if (m) return code || m[1].toUpperCase();
   }
-  // "kr" allein bleibt unbestimmt — lieber nichts sagen als das Falsche.
+  // "kr" allein bleibt unbestimmt, lieber nichts sagen als das Falsche.
   return '';
 }
 
@@ -82,14 +82,14 @@ function mwtWaehrung(text, fallbackCurrency) {
  * letzte Punkt oder Komma ist das Dezimaltrennzeichen.
  *
  * Der Apostroph hat gefehlt, und der Fehler war unsichtbar: aus "1'110.32"
- * wurde nicht etwa nichts, sondern "110.32" — der Ausdruck setzte einfach
+ * wurde nicht etwa nichts, sondern "110.32", der Ausdruck setzte einfach
  * hinter dem Apostroph neu an. Ein 7er BMW stand dadurch mit 110 Franken in
  * der Tabelle. Genau deshalb steht darunter die Stimmigkeitspruefung: ein
  * Betrag, der still um eine Stelle daneben liegt, ist schlimmer als gar
  * keiner.
  *
- * Zeilen wie "134€49" — Sixts optisch aufgehuebschte Dopplung, bei der das
- * Waehrungszeichen zwischen den Ziffern steht — werden bewusst NICHT erkannt:
+ * Zeilen wie "134€49". Sixts optisch aufgehuebschte Dopplung, bei der das
+ * Waehrungszeichen zwischen den Ziffern steht, werden bewusst NICHT erkannt:
  * es gibt sie immer zusaetzlich in sauberer Form, und ein Fehlgriff hier
  * verfaelscht still den Preis.
  */
@@ -111,7 +111,7 @@ function mwtParseAmount(line) {
  * Eine Kachel in einen Datensatz uebersetzen.
  *
  * @param {{lines:string[], offerId?:string, image?:string}|string[]} roh
- *        Zeilen der Kachel, dazu — falls vorhanden — die offer-id
+ *        Zeilen der Kachel, dazu, falls vorhanden, die offer-id
  *        ("CDAR-110-110", die ersten vier Zeichen sind der ACRISS-Code)
  *        und die Bildadresse.
  */

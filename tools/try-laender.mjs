@@ -5,7 +5,7 @@
  *
  * Ohne Argumente werden die Kandidaten geprüft, die eine Domainabfrage als
  * "existiert und wird von Sixt ausgeliefert" gemeldet hat. Ein 403 aus Node
- * heisst nur, dass Cloudflare Node abweist — ob dort wirklich eine buchbare
+ * heisst nur, dass Cloudflare Node abweist, ob dort wirklich eine buchbare
  * Länderseite läuft, die unsere Suchparameter versteht, sagt erst ein echter
  * Abruf. Genau den macht dieses Skript.
  *

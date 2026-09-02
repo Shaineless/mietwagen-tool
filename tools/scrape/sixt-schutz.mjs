@@ -10,7 +10,7 @@
  * anklicken, "Weiter", dann die Schutzpakete auslesen.
  *
  * Die Checkout-Seite haengt an einer Sitzung (zen_session_id) und laesst sich
- * nicht direkt aufrufen — der Weg ueber die Klicks ist also nicht Bequemlichkeit,
+ * nicht direkt aufrufen, der Weg ueber die Klicks ist also nicht Bequemlichkeit,
  * sondern noetig.
  */
 
@@ -36,7 +36,7 @@ const WEITER = '[data-testid="rent-offer-list-offer-snapshot-cta"]';
 const SCHUTZ = '[data-testid="rent-checkout-protection-packages-form"]';
 
 /**
- * Zeilen, die eine Selbstbeteiligung beschreiben — in jeder Sprache anders.
+ * Zeilen, die eine Selbstbeteiligung beschreiben, in jeder Sprache anders.
  * Fehlt eine Sprache, landet das Paket im falschen Fach: auf der franzoesischen
  * Seite wurde "Protection Basique" als SB-frei einsortiert, weil "franchise"
  * hier fehlte.
@@ -99,7 +99,7 @@ export function parseSchutzBlock(zeilen, waehrung) {
 
 /**
  * Die Pakete stehen als ein Textblock im Formular. Getrennt wird an den
- * Paketnamen — daran, dass eine Zeile "…-Schutz", "…protection" o.ae. heisst
+ * Paketnamen, daran, dass eine Zeile "…-Schutz", "…protection" o.ae. heisst
  * und die naechste "rating" ist. Letzteres ist Sixts Bewertungs-Widget und
  * steht zuverlaessig unter jedem Paketnamen.
  */
@@ -140,7 +140,7 @@ export async function quoteSchutz(q) {
   return withPage({ host: q.host, sichtbar: q.sichtbar, inkognito: q.inkognito }, async (page) => {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
 
-    // waitForFunction(fn, arg, options) — Optionen an dritter Stelle.
+    // waitForFunction(fn, arg, options). Optionen an dritter Stelle.
     const stationDa = () =>
       page
         .waitForFunction(
@@ -156,7 +156,7 @@ export async function quoteSchutz(q) {
 
     // Dieselbe Behandlung wie beim Preisabruf: Banner-Pruefung parallel zum
     // Warten auf die Station, und ein Neuladeversuch. Laufen mehrere Abrufe
-    // gleichzeitig, braucht die Seite deutlich laenger — genau daran sind
+    // gleichzeitig, braucht die Seite deutlich laenger, genau daran sind
     // hier sixt.fr und sixt.es gescheitert.
     let [bereit] = await Promise.all([stationDa(), dismissConsent(page, { timeout: 2500 })]);
     if (!bereit) {
@@ -175,7 +175,7 @@ export async function quoteSchutz(q) {
     }
 
     await page.waitForTimeout(250);
-    // Dasselbe Werbefenster wie beim Preisabruf — hier faengt es den Klick auf
+    // Dasselbe Werbefenster wie beim Preisabruf, hier faengt es den Klick auf
     // "Suchen" genauso ab.
     await dismissPopups(page);
 
@@ -238,7 +238,7 @@ export async function quoteSchutz(q) {
      * Das ist die einzige belastbare Zahl. Der je Paket angezeigte Tagespreis
      * laesst sich NICHT hochrechnen: gemessen zeigte Sixt fuer Smart-Schutz
      * 10,77 EUR/Tag an, waehrend der Gesamtpreis bei vier Tagen um 54,22 EUR
-     * stieg — also 13,56 EUR je Tag. Wer multipliziert, liegt daneben.
+     * stieg, also 13,56 EUR je Tag. Wer multipliziert, liegt daneben.
      */
     const liesGesamt = () =>
       page.evaluate(() => {
@@ -256,7 +256,7 @@ export async function quoteSchutz(q) {
           if (!/[€£$]|CHF|SEK|NOK|DKK|PLN|CZK|HUF|TRY/i.test(zeile)) continue;
           // Zwei Formen noetig. Mit Tausendertrenner ("1.084,66") greift die
           // erste, ohne ihn ("1025,85") nur die zweite. Fehlte die zweite,
-          // rutschte die Erkennung eine Stelle weiter und las "025,85" — aus
+          // rutschte die Erkennung eine Stelle weiter und las "025,85", aus
           // 1025,85 wurde 25,85. Genau so entstanden die 33,24 EUR auf der
           // spanischen Seite, wo Tausender ohne Punkt geschrieben werden.
           const m = zeile.match(/\d{1,3}(?:[.,]\d{3})+[.,]\d{2}|\d+[.,]\d{2}/);
@@ -307,7 +307,7 @@ export async function quoteSchutz(q) {
           .click({ timeout: 8000, force: true });
         gesamt = await gesamtNachKlick(basis);
       } catch {
-        /* Paket liess sich nicht waehlen — dann bleibt gesamt leer */
+        /* Paket liess sich nicht waehlen, dann bleibt gesamt leer */
       }
 
       pakete.push({

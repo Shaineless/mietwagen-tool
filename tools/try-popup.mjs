@@ -3,14 +3,14 @@
  *
  *   node tools/try-popup.mjs [host …] [--mal 5]
  *
- * Manche Länderseiten — gemeldet für Frankreich und Spanien — zeigen beim
+ * Manche Länderseiten, gemeldet für Frankreich und Spanien, zeigen beim
  * Öffnen gelegentlich ein Fenster, das über der Suchmaske liegt und den Klick
  * auf „Suchen" abfängt. Weil es nicht jedes Mal kommt, hilft nur Wiederholen:
  * derselbe Aufruf mehrfach, und bei jedem Versuch wird festgehalten, was
  * ausser dem Cookie-Banner sonst noch auf der Seite liegt.
  *
  * Ausgegeben werden Rolle, Beschriftung und die Haken, an denen man so ein
- * Fenster ansprechen könnte. Daraus wird dann die Behandlung im Abruf gebaut —
+ * Fenster ansprechen könnte. Daraus wird dann die Behandlung im Abruf gebaut,
  * geraten wird hier nichts.
  */
 
@@ -28,7 +28,7 @@ const MAL = malIdx >= 0 ? Number(args[malIdx + 1]) : 5;
  * Ohne das testet nur der erste Versuch je Länderseite etwas: Sixt merkt sich
  * im Profil, dass das Werbefenster weggeklickt wurde, und zeigt es danach
  * nicht mehr. Zwanzig Wiederholungen auf demselben Profil sind deshalb neunzehn
- * Mal Leerlauf — und genau der Fall, den ein neuer Nutzer erlebt, käme nie dran.
+ * Mal Leerlauf, und genau der Fall, den ein neuer Nutzer erlebt, käme nie dran.
  */
 const FRISCH = args.includes('--frisch');
 const hosts = args.filter((a, i) => !a.startsWith('--') && i !== malIdx + 1);
@@ -138,7 +138,7 @@ for (const host of ZIELE) {
 
         // Genau hier scheitert es laut Meldung: der Klick auf "Suchen".
         const aufgesetzt = await findeAufgesetztes(page);
-        // Erst wegklicken, dann noch einmal nachsehen — so steht in der
+        // Erst wegklicken, dann noch einmal nachsehen, so steht in der
         // Ausgabe, ob die Behandlung wirklich gegriffen hat.
         const weggeklickt = aufgesetzt.length ? await dismissPopups(page) : null;
         const danach = aufgesetzt.length ? await findeAufgesetztes(page) : [];
