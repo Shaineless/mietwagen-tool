@@ -111,7 +111,7 @@ function flatten(code) {
 // Reihenfolge = Abhängigkeitsreihenfolge: app.js benutzt alles Vorherige.
 // places.js liegt fuer den spaeteren Anbietervergleich bereit, wird aber
 // derzeit nicht gebraucht — vorerst nur Sixt.
-const MODULES = ['providers.js', 'offer-classes.js', 'hintergrund.js', 'app.js'];
+const MODULES = ['providers.js', 'offer-classes.js', 'xlsx.js', 'app.js'];
 
 const bundle = [
   '(() => {',
@@ -146,7 +146,7 @@ console.log('  Parser verteilt: extension/content.js, tools/scrape/offer-parse.m
 
 /* --------------------------------- In HTML einsetzen */
 
-/* --------------------------------- Logo und Startanimation einbetten */
+/* --------------------------------- Logo und Fahrzeugmotiv einbetten */
 
 // Beides wandert als data:-Adresse in die HTML-Datei. Der Sinn des Werkzeugs
 // ist eine einzige Datei, die auch per Doppelklick aus dem Dateisystem laeuft;
@@ -157,20 +157,21 @@ function alsDatenAdresse(datei, typ) {
 }
 
 const logo = alsDatenAdresse('tracker-logo.png', 'image/png');
-const intro = alsDatenAdresse('tracker-intro.mp4', 'video/mp4');
+const heroCar = alsDatenAdresse('premium-car.png', 'image/png');
 console.log(
-  `  Logo ${(logo.length / 1024).toFixed(0)} kB, Startanimation ${(intro.length / 1024).toFixed(0)} kB eingebettet`
+  `  Logo ${(logo.length / 1024).toFixed(0)} kB, Fahrzeugmotiv ${(heroCar.length / 1024).toFixed(0)} kB eingebettet`
 );
 
 const html = readFileSync(src('index.html'), 'utf8')
   .replace('/*STYLES*/', () => readFileSync(src('styles.css'), 'utf8'))
   .replaceAll('/*LOGO*/', () => logo)
-  .replace('/*SCRIPT*/', () => bundle.replace('/*INTRO*/', () => intro));
+  .replace('/*HERO_CAR*/', () => heroCar)
+  .replace('/*SCRIPT*/', () => bundle);
 
 mkdirSync(join(root, 'dist'), { recursive: true });
-const outFile = join(root, 'dist', 'tracker.html');
+const outFile = join(root, 'dist', 'mietwagen-preistool.html');
 writeFileSync(outFile, html);
 
 const kb = (Buffer.byteLength(html) / 1024).toFixed(1);
-console.log(`\nFertig: dist/tracker.html (${kb} kB)`);
+console.log(`\nFertig: dist/mietwagen-preistool.html (${kb} kB)`);
 console.log('Einfach im Browser öffnen — kein Server nötig.');

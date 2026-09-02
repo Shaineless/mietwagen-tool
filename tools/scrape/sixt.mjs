@@ -12,7 +12,7 @@
  * Geprueft gegen sixt.de und sixt.co.uk — beide Sprachen, beide Zahlenformate.
  */
 
-import { withPage, dismissConsent } from '../browser.mjs';
+import { withPage, dismissConsent, dismissPopups } from '../browser.mjs';
 import { mwtParseTile } from './offer-parse.mjs';
 
 const TILE = '[data-testid="rent-offer-list-tile"]';
@@ -30,6 +30,7 @@ const CTA =
  * @param {string} q.returnTime  hh:mm
  * @param {string} [q.currency]  Rueckfallwert, falls die Seite keins zeigt
  * @param {boolean} [q.sichtbar] Browserfenster anzeigen statt verstecken
+ * @param {boolean} [q.inkognito] Ohne Cookies abrufen, wie ein Erstbesucher
  */
 export async function quoteSixt(q) {
   const p = new URLSearchParams({
@@ -44,7 +45,7 @@ export async function quoteSixt(q) {
   const url = `https://${q.host}/?${p.toString()}`;
   const started = Date.now();
 
-  return withPage({ host: q.host, sichtbar: q.sichtbar }, async (page) => {
+  return withPage({ host: q.host, sichtbar: q.sichtbar, inkognito: q.inkognito }, async (page) => {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
 
     // Die Maske wird clientseitig aus den URL-Parametern befuellt. Erst danach
@@ -93,6 +94,10 @@ export async function quoteSixt(q) {
     // Ablehnen im DOM stehen und faengt weiter Klicks ab — dafuer gibt es
     // unten den Rueckfall auf einen direkten DOM-Klick.
     await page.waitForTimeout(250);
+    // Werbefenster wegklicken, bevor der Klick auf "Suchen" darin haengen
+    // bleibt. Ohne das lief der regulaere Klick erst zwoelf Sekunden in einen
+    // Timeout, bevor der Notklick uebernahm.
+    await dismissPopups(page);
 
     let geklickt = false;
     try {

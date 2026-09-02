@@ -29,6 +29,70 @@ function testTermin() {
 }
 
 /**
+ * Länderseiten für den erweiterten Test.
+ *
+ * Genau diese drei, weil dort die SIXT-ONE-Fenster aufgehen, die
+ * dismissPopups() wegräumen muss. Das ist die Stelle, an der ein fremder
+ * Rechner am ehesten anders reagiert als der, auf dem entwickelt wurde —
+ * andere Sprache, anderer Banner, andere Zufallsauswahl.
+ */
+export const WEITERE_SEITEN = [
+  { host: 'www.sixt.fr', label: 'Frankreich', cur: 'EUR' },
+  { host: 'www.sixt.es', label: 'Spanien', cur: 'EUR' },
+  { host: 'www.sixt.it', label: 'Italien', cur: 'EUR' },
+];
+
+/**
+ * Eine einzelne Länderseite prüfen.
+ *
+ * Getrennt von selbsttest(), damit die Oberfläche die Seiten einzeln abrufen
+ * und die Schritte zeigen kann, wie sie eintreffen. Ein Endpunkt, der zwei
+ * Minuten schweigt und dann alles auf einmal liefert, sieht aus wie ein
+ * Absturz.
+ */
+export async function pruefeSeite({ host, label }) {
+  const termin = testTermin();
+  try {
+    const res = await quoteSixt({
+      host,
+      stationCode: '110',
+      ...termin,
+      pickupTime: '10:00',
+      returnTime: '10:00',
+    });
+    if (res.error) {
+      return {
+        name: label,
+        // Eine einzelne Seite, die klemmt, ist kein Bruch der Kette — die
+        // anderen liefern ja. Deshalb "mittel", nicht "schlecht".
+        stand: 'mittel',
+        text: res.error,
+        rat:
+          'Diese Länderseite kam nicht bis zur Trefferliste. Meist ein Fenster, ' +
+          'das anders aussieht als erwartet, oder eine langsame Verbindung. ' +
+          'Die übrigen Seiten sind davon nicht betroffen.',
+      };
+    }
+    const n = res.offers?.length ?? 0;
+    return n
+      ? { name: label, stand: 'gut', text: `${n} Angebote gelesen`, rat: null }
+      : {
+          name: label,
+          stand: 'mittel',
+          text: 'Seite geladen, aber kein Angebot gelesen',
+          rat: 'Kann am Termin liegen. Bleibt es dabei, hat Sixt dort umgebaut.',
+        };
+  } catch (e) {
+    return {
+      name: label,
+      stand: 'mittel',
+      text: String(e.message).slice(0, 200),
+      rat: 'Der Abruf dieser Länderseite ist abgebrochen. Die übrigen sind davon nicht betroffen.',
+    };
+  }
+}
+
+/**
  * @param {(schritt: object) => void} [melde]  wird nach jedem Schritt gerufen
  */
 export async function selbsttest(melde = () => {}) {

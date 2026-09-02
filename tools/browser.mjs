@@ -21,7 +21,7 @@
 
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -34,8 +34,28 @@ const PROFILE = join(tmpdir(), 'mwt-preistool-chrome');
 const MIN_GAP_MS = 1500;
 const lastHit = new Map();
 
-let proc = null;
-let browser = null;
+/**
+ * Zwei getrennte Chrome-Instanzen, jede mit eigenem Profil und eigenem Port.
+ *
+ * `normal` behaelt seine Cookies: die Cookie-Auswahl steht dann schon, das
+ * spart bei jedem Abruf mehrere Sekunden.
+ *
+ * `inkognito` wird vor jedem Durchlauf geloescht und neu angelegt. Das ist der
+ * Sinn der Sache — Sixt erkennt einen wiederkehrenden Besucher an seinen
+ * Cookies und zeigt ihm nicht zwingend denselben Preis wie einem, der zum
+ * ersten Mal kommt. Wer wissen will, was ein Fremder sieht, muss als Fremder
+ * kommen.
+ *
+ * Getrennte Ports statt einer Instanz, die das Profil wechselt: ein Profil
+ * laesst sich nur loeschen, solange kein Chrome darauf liegt. Mit zwei Ports
+ * stoert das Aufraeumen der einen Seite die andere nicht.
+ */
+const instanzen = {
+  normal: { port: PORT, profil: PROFILE, proc: null, browser: null },
+  inkognito: { port: PORT + 1, profil: PROFILE + '-inkognito', proc: null, browser: null },
+};
+
+const artVon = (inkognito) => (inkognito ? 'inkognito' : 'normal');
 
 /* ------------------------------------------------------ Chrome finden */
 
@@ -63,15 +83,17 @@ export function findBrowser() {
 
 /**
  * Startet Chrome (falls noetig) und verbindet sich.
- * @param {boolean} sichtbar  true = Fenster auf dem Bildschirm, zum Zuschauen
+ * @param {boolean} sichtbar   true = Fenster auf dem Bildschirm, zum Zuschauen
+ * @param {boolean} inkognito  true = frisches Profil ohne Cookies
  */
-export async function getBrowser({ sichtbar = false } = {}) {
-  if (browser && browser.isConnected()) return browser;
+export async function getBrowser({ sichtbar = false, inkognito = false } = {}) {
+  const inst = instanzen[artVon(inkognito)];
+  if (inst.browser && inst.browser.isConnected()) return inst.browser;
 
   // Laeuft schon eine passende Instanz? Dann einfach anhaengen.
   try {
-    browser = await chromium.connectOverCDP(`http://127.0.0.1:${PORT}`, { timeout: 2000 });
-    return browser;
+    inst.browser = await chromium.connectOverCDP(`http://127.0.0.1:${inst.port}`, { timeout: 2000 });
+    return inst.browser;
   } catch {
     /* keine da — selbst starten */
   }
@@ -85,10 +107,10 @@ export async function getBrowser({ sichtbar = false } = {}) {
   }
 
   const args = [
-    `--remote-debugging-port=${PORT}`,
+    `--remote-debugging-port=${inst.port}`,
     // Eigenes Profil ist Pflicht: Chrome verweigert Debugging auf dem
     // Standardprofil, und das echte Profil des Nutzers soll unberuehrt bleiben.
-    `--user-data-dir=${PROFILE}`,
+    `--user-data-dir=${inst.profil}`,
     '--no-first-run',
     '--no-default-browser-check',
   ];
@@ -97,22 +119,48 @@ export async function getBrowser({ sichtbar = false } = {}) {
   }
   args.push('about:blank');
 
-  proc = spawn(exe, args, { detached: true, stdio: 'ignore' });
-  proc.unref();
+  inst.proc = spawn(exe, args, { detached: true, stdio: 'ignore' });
+  inst.proc.unref();
 
   // Chrome braucht einen Moment, bis der Debug-Port lauscht.
   let lastErr;
   for (let i = 0; i < 25; i++) {
     await new Promise((r) => setTimeout(r, 400));
     try {
-      browser = await chromium.connectOverCDP(`http://127.0.0.1:${PORT}`, { timeout: 2000 });
-      await bereiteKontextVor(browser);
-      return browser;
+      inst.browser = await chromium.connectOverCDP(`http://127.0.0.1:${inst.port}`, { timeout: 2000 });
+      await bereiteKontextVor(inst.browser);
+      return inst.browser;
     } catch (e) {
       lastErr = e;
     }
   }
   throw new Error('Verbindung zu Chrome fehlgeschlagen: ' + String(lastErr?.message).slice(0, 120));
+}
+
+/**
+ * Das Inkognito-Profil wegwerfen, damit der naechste Durchlauf ohne jede
+ * Erinnerung beginnt.
+ *
+ * Erst muss das Chrome darauf beendet sein, sonst haelt es die Dateien fest.
+ * Bleibt trotzdem etwas liegen (Windows gibt Dateihandles gern verzoegert
+ * frei), ist das kein Grund abzubrechen: dann startet der Abruf eben auf dem
+ * alten Verzeichnis, und wir sagen es dem Aufrufer.
+ *
+ * @returns {Promise<boolean>} true, wenn das Profil wirklich leer ist
+ */
+export async function frischesProfil() {
+  const inst = instanzen.inkognito;
+  await schliesse(inst);
+  // Chrome braucht einen Moment, bis es seine Dateien loslaesst.
+  for (let i = 0; i < 6; i++) {
+    try {
+      rmSync(inst.profil, { recursive: true, force: true });
+      return true;
+    } catch {
+      await new Promise((r) => setTimeout(r, 350));
+    }
+  }
+  return !existsSync(inst.profil);
 }
 
 /**
@@ -144,19 +192,31 @@ async function bereiteKontextVor(b) {
     .catch(() => {});
 }
 
-export async function closeBrowser() {
+async function schliesse(inst) {
   try {
-    await browser?.close();
+    await inst.browser?.close();
   } catch {
     /* egal */
   }
-  browser = null;
+  inst.browser = null;
   try {
-    if (proc?.pid) process.kill(proc.pid);
+    if (inst.proc?.pid) process.kill(inst.proc.pid);
   } catch {
     /* schon beendet */
   }
-  proc = null;
+  inst.proc = null;
+}
+
+export async function closeBrowser() {
+  for (const inst of Object.values(instanzen)) await schliesse(inst);
+  // Was ohne Cookies geholt wurde, soll auch keine hinterlassen: das
+  // Inkognito-Profil geht beim Beenden mit. Misslingt es, wird es beim
+  // naechsten Lauf ohnehin geleert.
+  try {
+    rmSync(instanzen.inkognito.profil, { recursive: true, force: true });
+  } catch {
+    /* Chrome haelt die Dateien noch — beim naechsten Start faellt es weg */
+  }
 }
 
 /* ------------------------------------------------------ Seiten */
@@ -177,9 +237,9 @@ async function throttle(host) {
  * nicht. Genau dieser Effekt hat mich bei der Analyse zuerst in die Irre
  * gefuehrt.
  */
-export async function withPage({ host, sichtbar = false }, fn) {
+export async function withPage({ host, sichtbar = false, inkognito = false }, fn) {
   await throttle(host);
-  const b = await getBrowser({ sichtbar });
+  const b = await getBrowser({ sichtbar, inkognito });
   const ctx = b.contexts()[0];
   const page = await ctx.newPage();
   page.setDefaultTimeout(30000);
@@ -244,4 +304,82 @@ export async function dismissConsent(page, { timeout = 3000 } = {}) {
     })
     .catch(() => {});
   return true;
+}
+
+/**
+ * Werbefenster wegklicken, die ueber der Suchmaske liegen.
+ *
+ * Neben dem Cookie-Banner blenden einige Laenderseiten gelegentlich ein
+ * Mitgliedschafts-Fenster ein ("SIXT ONE"). Es traegt role=dialog, liegt mit
+ * z-index ueber allem und faengt den Klick auf "Suchen" ab. Gemessen auf
+ * sixt.es: fuenf von fuenf Versuchen blockiert, auf sixt.fr im selben Lauf
+ * keiner — es kommt nicht immer.
+ *
+ * Bisher rettete das der Notklick direkt im DOM, aber erst nachdem der
+ * regulaere Klick zwoelf Sekunden lang in einen Timeout gelaufen war. Unter
+ * Last reicht das Zeitbudget dann nicht mehr, und der Abruf faellt aus.
+ *
+ * Erkannt wird das Fenster nicht am Text — der heisst in jeder Sprache anders —
+ * sondern an der Rolle. Geschlossen wird ueber den Schliessen-Knopf, den man
+ * an seiner zugaenglichen Beschriftung erkennt; als Rueckfall die Escape-Taste.
+ */
+const SCHLIESSEN_RE =
+  /^(cerrar|close|schlie(ss|ß)en|fermer|chiudi|sluiten|fechar|luk|st[aä]ng|lukk|sulje|zamknij|zav(ř|r)[ií]t|bez[áa]r|zatvori|zapri|aizv(ē|e)rt|u(ž|z)daryti|sulge|loka|kapat|κλείσιμο|×|✕|✖|x)$/i;
+
+export async function dismissPopups(page, { timeout = 3000 } = {}) {
+  // Sichtbar heisst: gross genug UND nicht ausgeblendet. Nach dem Schliessen
+  // bleibt das Fenster oft mit voller Groesse im DOM stehen und ist nur
+  // durchsichtig — wer nur die Groesse prueft, haelt es faelschlich fuer offen.
+  const sichtbaresFenster = () => {
+    for (const d of document.querySelectorAll('[role=dialog], [role=alertdialog], dialog')) {
+      if (d.closest('#usercentrics-cmp-ui')) continue;
+      const r = d.getBoundingClientRect();
+      if (r.width <= 200 || r.height <= 100) continue;
+      const s = getComputedStyle(d);
+      if (s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) === 0) continue;
+      return true;
+    }
+    return false;
+  };
+
+  const offen = () =>
+    page.evaluate(sichtbaresFenster).catch(() => false);
+
+  if (!(await offen())) return false;
+
+  const geklickt = await page
+    .evaluate((muster) => {
+      const re = new RegExp(muster.quelle, muster.flaggen);
+      for (const d of document.querySelectorAll('[role=dialog], [role=alertdialog], dialog')) {
+        if (d.closest('#usercentrics-cmp-ui')) continue;
+        for (const b of d.querySelectorAll('button, [role=button], a')) {
+          const name = (b.getAttribute('aria-label') || b.innerText || '').trim();
+          if (re.test(name)) {
+            b.click();
+            return name;
+          }
+        }
+      }
+      return null;
+    }, { quelle: SCHLIESSEN_RE.source, flaggen: SCHLIESSEN_RE.flags })
+    .catch(() => null);
+
+  if (!geklickt) await page.keyboard.press('Escape').catch(() => {});
+
+  // Nachsehen, ob es wirklich weg ist — ein Klick, der nichts bewirkt hat,
+  // ist schlimmer als keiner, weil man sich dann in Sicherheit wiegt.
+  const weg = await page
+    .waitForFunction(
+      (quelle) => {
+        // Dieselbe Pruefung wie oben, hier als Text uebergeben, weil die
+        // Funktion im Seitenkontext laeuft und nichts von aussen sieht.
+        return !new Function('return (' + quelle + ')()')();
+      },
+      sichtbaresFenster.toString(),
+      { timeout, polling: 100 }
+    )
+    .then(() => true)
+    .catch(() => false);
+
+  return weg;
 }

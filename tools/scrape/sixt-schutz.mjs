@@ -14,7 +14,7 @@
  * sondern noetig.
  */
 
-import { withPage, dismissConsent } from '../browser.mjs';
+import { withPage, dismissConsent, dismissPopups } from '../browser.mjs';
 import { mwtParseAmount } from './offer-parse.mjs';
 
 /** Waehrung aus dem Text lesen; der uebergebene Wert ist nur Rueckfall. */
@@ -137,7 +137,7 @@ export async function quoteSchutz(q) {
   const url = `https://${q.host}/?${p.toString()}`;
   const started = Date.now();
 
-  return withPage({ host: q.host, sichtbar: q.sichtbar }, async (page) => {
+  return withPage({ host: q.host, sichtbar: q.sichtbar, inkognito: q.inkognito }, async (page) => {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
 
     // waitForFunction(fn, arg, options) — Optionen an dritter Stelle.
@@ -175,6 +175,9 @@ export async function quoteSchutz(q) {
     }
 
     await page.waitForTimeout(250);
+    // Dasselbe Werbefenster wie beim Preisabruf — hier faengt es den Klick auf
+    // "Suchen" genauso ab.
+    await dismissPopups(page);
 
     try {
       await page.locator(CTA).first().click({ timeout: 12000 });

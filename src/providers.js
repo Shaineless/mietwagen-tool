@@ -38,11 +38,27 @@ const SIXT_MARKETS = [
   { code: 'no', host: 'www.sixt.no', label: 'Norwegen', cur: 'NOK' },
   { code: 'fi', host: 'www.sixt.fi', label: 'Finnland', cur: 'EUR' },
   { code: 'pl', host: 'www.sixt.pl', label: 'Polen', cur: 'PLN' },
-  { code: 'cz', host: 'www.sixt.cz', label: 'Tschechien', cur: 'CZK' },
+  // Gemessen am 02.09.2026: vier von vier Abrufen scheiterten mit "Station
+  // wurde nicht uebernommen" — die Seite nimmt eine deutsche Station gar
+  // nicht erst an. Sie bleibt sichtbar, aber abgeschaltet: heimlich zu
+  // loeschen wuerde nur die Frage aufwerfen, wo Tschechien geblieben ist.
+  {
+    code: 'cz',
+    host: 'www.sixt.cz',
+    label: 'Tschechien',
+    cur: 'CZK',
+    gestoert: 'Nimmt derzeit keine deutschen Stationen an (4 von 4 Abrufen ohne Ergebnis).',
+  },
   { code: 'hu', host: 'www.sixt.hu', label: 'Ungarn', cur: 'HUF' },
   { code: 'hr', host: 'www.sixt.hr', label: 'Kroatien', cur: 'EUR' },
   { code: 'gr', host: 'www.sixt.gr', label: 'Griechenland', cur: 'EUR' },
-  { code: 'tr', host: 'www.sixt.com.tr', label: 'Türkei', cur: 'TRY' },
+  {
+    code: 'tr',
+    host: 'www.sixt.com.tr',
+    label: 'Türkei',
+    cur: 'TRY',
+    gestoert: 'Nimmt derzeit keine deutschen Stationen an (4 von 4 Abrufen ohne Ergebnis).',
+  },
 
   // Nachgetragen, nachdem ein echter Abruf sie bestätigt hat: alle sieben
   // nehmen unsere Suchparameter an und liefern eine vollständige Trefferliste

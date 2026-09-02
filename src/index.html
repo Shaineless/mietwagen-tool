@@ -1,112 +1,148 @@
+<!doctype html>
+<html lang="de">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f7">
 <title>TRACKER — Mietwagen vergleichen</title>
 <link rel="icon" href="/*LOGO*/">
 <style>/*STYLES*/</style>
 
-<!-- Startanimation. Liegt über allem, spielt einmal beim Öffnen und geht
-     danach von selbst weg; ein Klick überspringt sie. Wer weniger Bewegung
-     eingestellt hat, sieht sie gar nicht erst. -->
-<div class="intro" id="intro" hidden>
-  <video id="introFilm" muted playsinline preload="auto"></video>
+<svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <symbol id="i-route" viewBox="0 0 24 24"><path d="M7 5h9a4 4 0 0 1 0 8H8a4 4 0 0 0 0 8h9"/><circle cx="6" cy="5" r="3"/><path d="m14 18 3 3-3 3" transform="translate(0 -2)"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-14 4h2m4 0h2m-8 3h2"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 4v16h16M7 14l4-4 4 2 5-7"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m3 7 9 6 9-6"/></symbol>
+  <symbol id="i-status" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v5c0 5 8 10 8 10s8-5 8-10V6Z"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="m5 9 2-5h10l2 5M3 10l2-1h14l2 1v8H3ZM6 18v2m12-2v2M6 13h2m8 0h2M3 9H1m20 0h2"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M9 21h6"/></symbol>
+</svg>
 
-  <!-- Rückfallebene: Browser verweigern das selbsttätige Abspielen, wenn
-       vorher niemand geklickt hat. Dann übernimmt dieselbe Bildsprache in
-       reinem HTML — sonst bliebe der Start einfach schwarz. -->
-  <div class="introstill" id="introStill" hidden>
-    <p class="wortmarke">TRACKER</p>
-    <p class="claim">Mietwagen. Vergleichen. Losfahren.</p>
+<header class="app-header">
+  <div class="nav-inner">
+    <button type="button" class="brand back" aria-label="Tracker – zur Übersicht">
+      <span class="brand-symbol"><svg class="icon" aria-hidden="true"><use href="#i-route"/></svg></span>
+      <span>tracker<span class="brand-period">.</span></span>
+    </button>
+    <nav class="app-nav" aria-label="Hauptnavigation">
+      <button type="button" class="nav-link back" data-nav="start" aria-current="page">Übersicht</button>
+      <button type="button" class="nav-link" data-mode="markets" data-nav="work">Preisvergleich</button>
+      <button type="button" class="nav-link" data-mode="kalender" data-nav="kalender">Kalender</button>
+      <button type="button" class="nav-link" data-mode="kurve" data-nav="kurve">Preisentwicklung</button>
+    </nav>
+    <span class="local-badge"><span></span> Lokal auf deinem Gerät</span>
   </div>
+</header>
 
-  <button type="button" class="introweg" id="introWeg">Überspringen</button>
-</div>
+<!-- ===================================================== Begrüßung
+     Einmalig beim ersten Start. Wer TRACKER zum ersten Mal öffnet, soll nicht
+     an einer leeren Tabelle merken, dass etwas nicht geht — sondern es vorher
+     wissen, samt Grund. -->
+<section id="willkommen" class="screen" hidden>
+  <div class="wk-mitte">
+    <p class="eyebrow wk-an" style="--wk:1">WILLKOMMEN</p>
+    <h1 class="wk-an" style="--wk:2">tracker<span class="brand-period">.</span></h1>
+    <p class="wk-sub wk-an" style="--wk:3">
+      Dieselbe Mietwagensuche auf allen Sixt-Länderseiten, nebeneinander.
+      Alles läuft auf deinem Gerät — es geht nichts nach draußen.
+    </p>
 
-<!-- Hintergrund. Liegt hinter allem und wird nach unten ausgeblendet — unter
-     Zahlen, die man liest, darf nichts wandern. Die Wolken sind der ruhende
-     Farbgrund, die Leinwand darüber trägt die Bewegung. -->
-<div class="schleier" aria-hidden="true" data-thema="space">
-  <span class="wolke w1"></span>
-  <span class="wolke w2"></span>
-  <span class="wolke w3"></span>
-  <canvas id="schleierLeinwand"></canvas>
-</div>
+    <div class="wk-an" style="--wk:4">
+      <p class="note wk-note" id="wkText">
+        Bevor es losgeht, prüft TRACKER einmal, ob auf diesem Rechner alles
+        durchgeht: Schreibrechte, Browser, Verbindung, Cookie-Hinweis und die
+        Trefferliste — mit echten Abrufen auf vier Länderseiten. Das dauert
+        ein bis zwei Minuten und erspart später das Rätselraten.
+      </p>
+      <div class="btnrow wk-knoepfe">
+        <button type="button" id="wkStart" class="primary">Prüfen, ob alles läuft</button>
+        <button type="button" id="wkUeberspringen" class="text-button">Später prüfen <span aria-hidden="true">›</span></button>
+      </div>
+    </div>
+
+    <div id="wkErgebnis" class="wk-ergebnis"></div>
+
+    <div id="wkAbschluss" class="wk-abschluss" hidden>
+      <label class="optionzeile am-abruf" for="wkNichtMehr">
+        <input type="checkbox" id="wkNichtMehr" checked>
+        <span>
+          <b>Beim Öffnen nicht mehr zeigen</b>
+          <small>Lässt sich im Systemstatus jederzeit wieder einschalten.</small>
+        </span>
+      </label>
+      <div class="btnrow">
+        <button type="button" id="wkFertig" class="primary">Los geht's</button>
+        <button type="button" id="wkNochmal" class="ghost">Noch einmal prüfen</button>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- ===================================================== Startbildschirm -->
 <section id="start" class="screen">
-  <!-- Kein Logo hier: die Startanimation zeigt es unmittelbar davor. Zweimal
-       hintereinander dasselbe Bild wirkt wie ein Versehen. -->
   <header class="hero">
-    <h1 class="wortmarke">TRACKER</h1>
-    <p class="claim">Mietwagen. Vergleichen. Losfahren.</p>
-    <p class="sub">
-      Dieselbe Anfrage auf allen Sixt-Länderseiten, Klasse für Klasse
-      gegenübergestellt — inklusive der Schutzpakete, die den Preis am Ende
-      wirklich bestimmen.
-    </p>
+    <p class="eyebrow">DEIN NÄCHSTER ROADTRIP BEGINNT HIER</p>
+    <h1>Gleicher Mietwagen.<br><span>Besserer Preis.</span></h1>
+    <p class="sub">Vergleiche Sixt-Länderseiten mit einer einzigen Suche.<br class="desktop-break"> Finde den Preis, der zu deiner Reise passt.</p>
+    <div class="hero-actions">
+      <button type="button" class="primary hero-cta" data-mode="markets">Preise vergleichen <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+      <button type="button" class="text-button" data-mode="kalender">Günstige Reisetage finden <span aria-hidden="true">›</span></button>
+    </div>
   </header>
 
+  <section class="showcase" aria-labelledby="showcaseTitle">
+    <div class="showcase-copy">
+      <p class="eyebrow">EINE SUCHE. MEHR MÖGLICHKEITEN.</p>
+      <h2 id="showcaseTitle">Dein Wunschwagen.<br>Aus jeder Perspektive.</h2>
+      <p>Gleiche Station. Gleicher Zeitraum.<br>Die Preise verschiedener Länderseiten im direkten Vergleich.</p>
+      <div class="showcase-facts">
+        <span><strong id="marketTotal">—</strong> Länderseiten</span>
+        <span><strong id="stationTotal">—</strong> Stationen</span>
+      </div>
+    </div>
+    <div class="showcase-visual">
+      <span class="visual-orbit" aria-hidden="true"></span>
+      <span class="country-tag country-de"><span class="country-flag flag-de" aria-hidden="true"></span>sixt.de</span>
+      <span class="country-tag country-fr"><span class="country-flag flag-fr" aria-hidden="true"></span>sixt.fr</span>
+      <span class="country-tag country-at"><span class="country-flag flag-at" aria-hidden="true"></span>sixt.at</span>
+      <img class="showcase-car" src="/*HERO_CAR*/" width="752" height="500" alt="Silberner Porsche 911 als Fahrzeugbeispiel" fetchpriority="high">
+      <span class="visual-caption">Deine Reise. Deine Wahl.</span>
+    </div>
+  </section>
+
+  <div class="section-heading">
+    <h2>Alles für eine gute Entscheidung.</h2>
+    <span>Von der ersten Suche bis zur Abfahrt.</span>
+  </div>
   <div class="modes">
-    <button type="button" class="mode" data-mode="markets">
-      <span class="mtitle">Preise vergleichen</span>
-      <span class="mdesc">
-        Station und Zeitraum wählen, Länderseiten ankreuzen. Die Preise werden
-        automatisch im Hintergrund geholt und nach ACRISS-Klasse aufgestellt.
-      </span>
-      <span class="mgo">Los →</span>
-    </button>
-
     <button type="button" class="mode" data-mode="kalender">
-      <span class="mtitle">Monatsübersicht</span>
-      <span class="mdesc">
-        Jeden Abholtag durchrechnen und als eingefärbten Kalender zeigen.
-        Station, Länderseite, Klasse, Mietdauer und Zeitraum frei wählbar —
-        so sieht man auf einen Blick, welcher Tag der günstige ist.
-      </span>
-      <span class="mgo">Kalender →</span>
+      <span class="mode-icon"><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg></span>
+      <span class="mtitle">Der richtige Reisetag.</span>
+      <span class="mdesc">Entdecke im Monatskalender, wann dein Mietwagen am günstigsten ist.</span>
+      <span class="mgo">Monatsübersicht <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
     </button>
-
     <button type="button" class="mode" data-mode="kurve">
-      <span class="mtitle">Preisentwicklung</span>
-      <span class="mdesc">
-        Derselbe Wagen über Wochen: lohnt sich Frühbuchen, oder wird es kurz
-        vorher billiger? Dazu Preiswecker, die sich melden, wenn eine Grenze
-        unterschritten wird.
-      </span>
-      <span class="mgo">Kurve →</span>
+      <span class="mode-icon"><svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg></span>
+      <span class="mtitle">Ein Gefühl für den Preis.</span>
+      <span class="mdesc">Verfolge die Entwicklung und lass dich von deinem Preiswecker informieren.</span>
+      <span class="mgo">Preisentwicklung <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
     </button>
-
     <button type="button" class="mode" data-mode="verlauf">
-      <span class="mtitle">Zuletzt gesucht</span>
-      <span class="mdesc">
-        Die letzten fünf Abfragen mit ihren Preisen — zum Nachschlagen, was
-        dieselbe Station vor einer Woche gekostet hat. Mit Schutzpaketen,
-        sofern abgerufen.
-      </span>
-      <span class="mgo">Ansehen →</span>
-    </button>
-
-    <button type="button" class="mode" data-mode="mail">
-      <span class="mtitle">Station anschreiben</span>
-      <span class="mdesc">
-        Sixt-Stationen haben eine eigene E-Mail-Adresse nach festem Muster.
-        Station suchen, Adresse kopieren — auch für mehrere auf einmal.
-      </span>
-      <span class="mgo">Adressen →</span>
-    </button>
-
-    <button type="button" class="mode ghostmode" data-mode="status">
-      <span class="mtitle">Was geht gerade?</span>
-      <span class="mdesc">
-        Ehrlicher Stand: welche Suchparameter Sixt heute noch auswertet und
-        welche stillschweigend verworfen werden.
-      </span>
-      <span class="mgo">Ansehen →</span>
+      <span class="mode-icon"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg></span>
+      <span class="mtitle">Alles wiederfinden.</span>
+      <span class="mdesc">Deine letzten fünf Suchen. Mit Preisen und den abgerufenen Schutzpaketen.</span>
+      <span class="mgo">Zuletzt gesucht <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
     </button>
   </div>
 
-  <div class="hgzeile">
-    <span class="hglabel">Hintergrund</span>
-    <span class="hgwahl" data-hintergrundwahl></span>
+  <div class="home-utility">
+    <div class="utility-links">
+      <button type="button" class="utility-link" data-mode="mail"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg> Station anschreiben <span aria-hidden="true">›</span></button>
+      <button type="button" class="utility-link" data-mode="status"><svg class="icon" aria-hidden="true"><use href="#i-status"/></svg> Systemstatus <span aria-hidden="true">›</span></button>
+    </div>
   </div>
 
   <p class="fuss" id="startFuss"></p>
@@ -130,6 +166,18 @@
       <span class="hint" id="testHinweis"></span>
     </div>
     <div id="testErgebnis"></div>
+
+    <label class="optionzeile" for="wkWiederZeigen">
+      <input type="checkbox" id="wkWiederZeigen">
+      <span>
+        <b>Begrüßung beim Start zeigen</b>
+        <small>Der ausführliche Testlauf über vier Länderseiten, wie beim ersten Öffnen.
+        Sinnvoll nach einem Umzug auf einen anderen Rechner.</small>
+      </span>
+    </label>
+    <div class="btnrow">
+      <button type="button" id="wkJetztAnsehen" class="ghost mini">Einführung jetzt ansehen</button>
+    </div>
   </section>
 
   <div id="statusBody"></div>
@@ -137,62 +185,89 @@
 
 <!-- ===================================================== Monatsübersicht -->
 <section id="kalenderScreen" class="screen" hidden>
-  <div class="bar">
-    <button type="button" class="back">← Zurück</button>
-    <h1>Monatsübersicht</h1>
+  <div class="bar calendar-page-heading">
+    <div><p class="eyebrow">DEIN PREISKALENDER</p><h1>Gutes Timing. Besserer Preis.</h1><p>Entdecke den passenden Abholtag für deinen Mietwagen.</p></div>
+    <button type="button" class="back">← Übersicht</button>
   </div>
 
-  <section class="card">
-    <h2>Was soll durchgerechnet werden?</h2>
+  <section class="card calendar-planner" aria-labelledby="kalPlanTitel">
+    <h2 id="kalPlanTitel">Deine Reise</h2>
 
+    <div class="calendar-plan-layout">
     <div class="kgrid">
-      <div class="field">
-        <span class="flabel">Station</span>
-        <input type="search" id="kalStation" placeholder="Frankfurt Flughafen · Bonn · MUC …" autocomplete="off">
+      <div class="field kal-station-field">
+        <label class="flabel" for="kalStation">Station</label>
+        <input type="search" id="kalStation" placeholder="Ort oder Flughafen suchen" autocomplete="off" aria-describedby="kalStationGewaehlt">
         <div id="kalStationTreffer" class="stations klein" hidden></div>
         <p class="hint" id="kalStationGewaehlt"></p>
       </div>
 
       <div class="field">
-        <span class="flabel">Länderseite</span>
+        <label class="flabel" for="kalHost">Länderseite</label>
         <select id="kalHost"></select>
       </div>
 
       <div class="field">
-        <span class="flabel">Fahrzeugklasse</span>
-        <select id="kalKlasse"></select>
-        <p class="hint">
-          „Billigste“ nimmt je Tag das günstigste Angebot — gut, um überhaupt
-          erst die billigen Tage zu finden.
-        </p>
+        <label class="flabel" for="kalKlasse">Fahrzeugklasse</label>
+        <select id="kalKlasse" aria-describedby="kalFahrzeug"></select>
       </div>
 
       <div class="field">
-        <span class="flabel">Mietdauer</span>
+        <label class="flabel" for="kalDauer">Mietdauer</label>
         <select id="kalDauer"></select>
+        <input type="number" id="kalDauerFrei" min="1" max="90" step="1"
+          aria-label="Mietdauer in Tagen" placeholder="Tage, z. B. 45" hidden>
       </div>
 
       <div class="field">
-        <span class="flabel">Erster Abholtag</span>
+        <label class="flabel" for="kalStart">Erster Abholtag</label>
         <input type="date" id="kalStart">
       </div>
 
       <div class="field">
-        <span class="flabel">Wie viele Abholtage</span>
+        <label class="flabel" for="kalSpanne">Vergleichszeitraum</label>
         <select id="kalSpanne"></select>
       </div>
 
       <div class="field">
-        <span class="flabel">Abholzeit</span>
+        <label class="flabel" for="kalZeit">Abholzeit</label>
         <input type="time" id="kalZeit" step="900" value="10:00">
       </div>
     </div>
 
-    <div class="btnrow">
-      <button type="button" id="kalStart2" class="primary">Durchrechnen</button>
+    <details id="kalZeitenBereich" class="kal-zeiten-bereich">
+      <summary>Weitere Uhrzeiten — der Preis hängt daran</summary>
+      <p class="note">
+        Sixt rechnet nach Uhrzeit ab, nicht nach Kalendertag. Gemessen an einer
+        Station, drei Tage: 12:30 → 12:30 kostete 67,97 €, 13:30 → 13:30 dann
+        106,99 € — eine Stunde später, 57 % mehr. Der Kalender zeigt je Tag die
+        günstigste Uhrzeit; welche es war, steht am Tag.
+        <b>Achtung:</b> jede zusätzliche Uhrzeit verdoppelt bzw. verdreifacht
+        die Wartezeit über die ganze Spanne.
+      </p>
+      <div id="kalZeitenListe" class="zeitenliste"></div>
+      <div class="btnrow">
+        <button type="button" id="kalZeitHinzu" class="ghost mini">Uhrzeit hinzufügen</button>
+        <span class="hint" id="kalZeitenHinweis"></span>
+      </div>
+    </details>
+    <aside class="kal-vehicle" id="kalFahrzeug" aria-label="Fahrzeugbeispiel"></aside>
+    </div>
+
+    <label class="optionzeile" for="kalInkognito">
+      <input type="checkbox" id="kalInkognito">
+      <span>
+        <b>Ohne Cookies abrufen</b>
+        <small>Jeder Tag wird angesehen, als wärst du zum ersten Mal da. Über einen ganzen Monat
+        kostet das spürbar mehr Zeit, dafür verfälscht kein gespeicherter Besuch die Kurve.</small>
+      </span>
+    </label>
+
+    <div class="btnrow calendar-plan-actions">
+      <button type="button" id="kalStart2" class="primary">Preise im Kalender finden</button>
       <button type="button" id="kalNachfassen" class="ghost" hidden></button>
       <button type="button" id="kalAbbrechen" class="ghost" hidden>Abbrechen</button>
-      <span class="hint" id="kalHinweis"></span>
+      <span class="hint" id="kalHinweis" role="status"></span>
     </div>
 
     <div id="kalFortschritt" class="fortschritt" hidden>
@@ -201,47 +276,98 @@
     </div>
   </section>
 
-  <section class="card" id="kalErgebnis" hidden>
-    <h2 id="kalTitel">Kalender</h2>
-    <div id="kalBild"></div>
-    <div class="btnrow">
-      <button type="button" id="kalCsv" class="ghost mini">Als CSV speichern</button>
+  <!-- Mehrere Stationen über denselben Zeitraum. Bewusst ein eigener
+       Bereich: das ist ein Lauf von zehn Minuten und mehr, kein Nebenbei. -->
+  <section class="card" id="kalMulti">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">MEHRERE STATIONEN</p>
+        <h2>Wo lohnt sich das Abholen?</h2>
+        <p>Denselben Zeitraum an mehreren Stationen durchrechnen und
+           gegenüberstellen — welche Station im Schnitt günstiger ist.</p>
+      </div>
+      <span class="quiet-badge" id="kalMultiZahl" role="status">0 Stationen</span>
     </div>
+
+    <p class="note warn">
+      <b>Das dauert.</b> Jede Station kostet einen eigenen Durchlauf über den
+      ganzen Zeitraum. Bei drei Stationen und 28 Abholtagen sind das 84 Abrufe,
+      also gut zehn Minuten — und je länger es läuft, desto wahrscheinlicher
+      klemmt eine Seite zwischendurch. Was ausfällt, wird automatisch noch
+      einmal versucht und danach benannt; abbrechen geht jederzeit, das schon
+      Geholte bleibt.
+    </p>
+
+    <div class="field">
+      <label class="flabel" for="kalMultiSuche">Station hinzufügen</label>
+      <input type="search" id="kalMultiSuche" placeholder="Ort oder Flughafen suchen" autocomplete="off">
+      <div id="kalMultiTreffer" class="stations klein" hidden></div>
+    </div>
+    <div id="kalMultiListe" class="stations klein"></div>
+
+    <div class="btnrow">
+      <button type="button" id="kalMultiStart" class="primary">Alle Stationen durchrechnen</button>
+      <button type="button" id="kalMultiAbbrechen" class="ghost" hidden>Abbrechen</button>
+      <span class="hint" id="kalMultiHinweis" role="status"></span>
+    </div>
+
+    <div id="kalMultiFortschritt" class="fortschritt" hidden>
+      <div class="fbalken"><div class="ffuellung" id="kalMultiBalken"></div></div>
+      <div class="frow"><p class="ftext" id="kalMultiText"></p></div>
+    </div>
+
+    <div id="kalMultiErgebnis"></div>
+  </section>
+
+  <section class="card" id="kalErgebnis" hidden>
+    <div class="calendar-result-heading">
+      <div><p class="eyebrow">DEIN ÜBERBLICK</p><h2 id="kalTitel">Dein Preiskalender</h2><p id="kalUntertitel"></p></div>
+      <button type="button" id="kalCsv" class="ghost mini">CSV exportieren <span aria-hidden="true">↗</span></button>
+    </div>
+    <div id="kalKennzahlen" class="calendar-insights"></div>
+    <div class="calendar-legend"><span><i class="calendar-best-dot" aria-hidden="true"></i> Günstigster Tag</span><span id="kalLegendeAlt" hidden><i class="calendar-old-dot" aria-hidden="true"></i> Aus dem gespeicherten Preisverlauf</span><span>Gesamtpreis für die gewählte Mietdauer</span></div>
+    <div id="kalBild"></div>
+    <div id="kalAuswahl" class="calendar-selection" role="status" aria-live="polite"></div>
+    <p class="calendar-note">Tagesfeld auswählen, um den genauen Preis und den Rückgabetag zu sehen. <span class="kal-mobile-note">Die Kalenderfelder zeigen auf kleinen Bildschirmen gerundete Beträge.</span> „—“ bedeutet: kein Preis vorhanden. „…“ bedeutet: noch nicht abgerufen.</p>
+    <p class="calendar-note"><b>Ohne Schutzpaket.</b> Hier steht der Grundpreis mit der gesetzlichen Haftpflicht und voller Selbstbeteiligung — so, wie Sixt ihn in der Trefferliste ausweist. Smart-Schutz und die übrigen Pakete kommen obendrauf und können die Reihenfolge der Tage verschieben. Sie hier für jeden Tag mitzumessen hieße, 56-mal durch die Kasse zu gehen; und weil die günstigste Klasse von Tag zu Tag wechselt, verglichest du am Ende den Schutz für einen Golf mit dem für einen Polo. Deshalb: erst hier den Tag finden, dann über <i>Diesen Tag im Preisvergleich öffnen</i> den Schutz mit echtem Kassenpreis danebenstellen.</p>
   </section>
 </section>
 
 <!-- ===================================================== Preisentwicklung -->
 <section id="kurveScreen" class="screen" hidden>
-  <div class="bar">
-    <button type="button" class="back">← Zurück</button>
-    <h1>Preisentwicklung</h1>
+  <div class="bar calendar-page-heading">
+    <div><p class="eyebrow">DEINE PREISENTWICKLUNG</p><h1>Preise verstehen. Besser entscheiden.</h1><p>Verfolge deine Wunschklasse und entdecke, wie sich ihr Preis verändert.</p></div>
+    <button type="button" class="back">← Übersicht</button>
   </div>
 
-  <section class="card">
-    <h2>Beobachtete Suchen</h2>
-    <p class="note">
-      Jeder Preisabruf hinterlässt einen Messpunkt. Je öfter dieselbe Suche
-      abgerufen wird, desto aussagekräftiger die Kurve.
-    </p>
-    <div id="kurveWahl" class="pills"></div>
-    <div id="kurveKlassen" class="field" hidden>
-      <span class="flabel">Fahrzeugklasse</span>
-      <div id="kurveKlassenPillen" class="pills"></div>
+  <section class="card trend-planner" aria-labelledby="kurvePlanTitel">
+    <div class="panel-heading"><div><p class="eyebrow">DEINE BEOBACHTUNG</p><h2 id="kurvePlanTitel">Welche Reise hast du im Blick?</h2></div><span class="quiet-badge" id="kurveAnzahl"></span></div>
+    <div class="trend-plan-layout">
+      <div class="trend-fields">
+        <div class="field"><label class="flabel" for="kurveSuche">Gespeicherte Reise</label><div id="kurveWahl"></div></div>
+        <div id="kurveKlassen" class="field" hidden>
+          <label class="flabel" for="kurveKlasseWahl">Fahrzeugklasse</label>
+          <div id="kurveKlassenPillen"></div>
+        </div>
+      </div>
+      <aside class="trend-context" id="kurveKontext" aria-label="Ausgewählte Reise"></aside>
     </div>
+    <p class="planner-note">Jeder neue Preisabruf ergänzt deinen Verlauf. So wird aus einzelnen Preisen ein Überblick.</p>
   </section>
 
-  <section class="card" id="kurveKarte" hidden>
-    <h2 id="kurveTitel">Verlauf</h2>
-    <div id="kurveBild"></div>
+  <section class="card trend-chart-card" id="kurveKarte" hidden aria-labelledby="kurveTitel">
+    <div class="calendar-result-heading"><div><p class="eyebrow">DEIN PREISVERLAUF</p><h2 id="kurveTitel">Preise im Zeitverlauf</h2><p id="kurveUntertitel"></p></div><span class="quiet-badge">Gesamtpreise</span></div>
+    <div id="kurveBild" aria-live="polite"></div>
     <p class="tabnote" id="kurveNote"></p>
   </section>
 
   <section class="card" id="weckerKarte">
-    <h2>Preiswecker</h2>
+    <div class="panel-heading"><div><p class="eyebrow">DEIN PREISWECKER</p><h2>Ein guter Preis. Zur richtigen Zeit.</h2></div><span class="feature-symbol" aria-hidden="true"><svg class="icon"><use href="#i-bell"/></svg></span></div>
     <p class="note" id="weckerHinweis">
-      Prüft eine Suche in Abständen selbst nach und meldet sich, wenn der Preis
-      unter deine Grenze fällt. Geprüft wird nur, solange dieses Programm
-      läuft — im Hintergrund bleibt nichts zurück.
+      Zwei Möglichkeiten: einen <b>Wunschpreis</b> setzen, bevor du buchst — oder
+      nach der Buchung <b>weiter beobachten lassen</b> und Bescheid bekommen, wenn
+      derselbe Wagen billiger wird. Geprüft wird alle sechs Stunden, solange
+      Tracker geöffnet ist.
     </p>
     <div id="weckerNeu"></div>
     <div id="weckerListe"></div>
@@ -265,7 +391,7 @@
   </div>
 
   <section class="card">
-    <input type="search" id="mailSuche" placeholder="Bonn · FRA · Hauptbahnhof · Mallorca …" autocomplete="off">
+    <input type="search" id="mailSuche" aria-label="Station für Kontakt suchen" placeholder="Bonn · FRA · Hauptbahnhof · Mallorca …" autocomplete="off">
     <div class="suchzeile">
       <p class="hint" id="mailAnzahl"></p>
       <button type="button" id="mailAlleTreffer" class="ghost mini">Alle Treffer übernehmen</button>
@@ -293,27 +419,24 @@
 
 <!-- ===================================================== Arbeitsansicht -->
 <section id="work" class="screen" hidden>
+  <div class="workspace-heading bar calendar-page-heading"><div><p class="eyebrow">DEIN PREISVERGLEICH</p><h1>Eine Reise. Alle Möglichkeiten.</h1><p>Gleicher Mietwagen, verschiedene Länderseiten. Finde deinen besten Preis.</p></div><button type="button" class="back">← Übersicht</button></div>
   <!-- Mitlaufende Kopfzeile: die Einstellung schrumpft auf eine Zeile,
        der Bildschirm gehört dem Ergebnis. -->
   <div class="oben">
     <div class="obenzeile">
-      <button type="button" class="back" aria-label="Zurück">←</button>
       <div class="kurz">
-        <b id="kurzStation">—</b>
-        <span id="kurzZeit">—</span>
-        <button type="button" data-panel="station">Station</button>
-        <button type="button" data-panel="zeit">Zeitraum</button>
-        <button type="button" data-panel="land" id="knopfLand">Länderseiten</button>
-        <span class="hgwahl" data-hintergrundwahl></span>
+        <button type="button" class="trip-control" data-panel="station" aria-controls="panelStation" aria-expanded="false"><span class="trip-label">Station <span aria-hidden="true">⌄</span></span><b id="kurzStation">Station wählen</b></button>
+        <button type="button" class="trip-control" data-panel="zeit" aria-controls="panelZeit" aria-expanded="false"><span class="trip-label">Zeitraum <span aria-hidden="true">⌄</span></span><b id="kurzZeit">Reisedaten wählen</b></button>
+        <button type="button" class="trip-control" data-panel="land" aria-controls="panelLand" aria-expanded="false"><span class="trip-label">Länderseiten <span aria-hidden="true">⌄</span></span><b id="knopfLand">Länderseiten wählen</b></button>
       </div>
-      <button type="button" id="getPrices" class="los" hidden>Preise holen</button>
+      <button type="button" id="getPrices" class="los primary" hidden>Preise vergleichen</button>
     </div>
   </div>
 
   <main>
    <div class="panel" id="panelZeit" hidden>
     <section class="card">
-      <h2>Zeitraum</h2>
+      <div class="panel-heading"><div><p class="eyebrow">DEINE REISEDATEN</p><h2>Wann geht es los?</h2><p>Wähle Abholung und Rückgabe für deinen Vergleich.</p></div><span class="feature-symbol" aria-hidden="true"><svg class="icon"><use href="#i-calendar"/></svg></span></div>
       <div class="zgrid">
         <span></span>
         <span class="zkopf">Datum</span>
@@ -321,13 +444,29 @@
 
         <label class="zlabel" for="pickupDate">Abholung</label>
         <input type="date" id="pickupDate">
-        <input type="time" id="pickupTime" step="900">
+        <input type="time" id="pickupTime" aria-label="Abholzeit" step="900">
 
         <label class="zlabel" for="returnDate">Rückgabe</label>
         <input type="date" id="returnDate">
-        <input type="time" id="returnTime" step="900">
+        <input type="time" id="returnTime" aria-label="Rückgabezeit" step="900">
       </div>
       <p class="dauer" id="dauer"></p>
+
+      <details id="zeitenBereich">
+        <summary>Weitere Uhrzeiten — mehrere Zeiten auf einmal</summary>
+        <p class="note">
+          Sixt rechnet nach Uhrzeit ab, nicht nach Kalendertag: 12:30 → 12:30
+          kostet etwas anderes als 13:30 → 13:30, und wer um 13:30 holt und um
+          08:00 zurückgibt, zahlt wieder anders. Jede Zeile hier ist eine
+          eigene Abfrage je Länderseite — zwei zusätzliche Zeiten
+          verdreifachen also die Wartezeit.
+        </p>
+        <div id="zeitenListe" class="zeitenliste"></div>
+        <div class="btnrow">
+          <button type="button" id="zeitHinzu" class="ghost mini">Uhrzeit hinzufügen</button>
+          <span class="hint" id="zeitenHinweis"></span>
+        </div>
+      </details>
 
       <details>
         <summary>Datums-Matrix — mehrere Termine auf einmal</summary>
@@ -359,20 +498,17 @@
 
    <div class="panel" id="panelLand" hidden>
     <section class="card">
-      <h2>Länderseiten</h2>
-      <div class="btnrow">
-        <button type="button" id="marketsDACH" class="ghost">DACH</button>
-        <button type="button" id="marketsAll" class="ghost">Alle</button>
-        <button type="button" id="marketsNone" class="ghost">Keine</button>
-      </div>
-      <div id="markets" class="markets"></div>
+      <div class="panel-heading"><div><p class="eyebrow">MEHR SEITEN. MEHR MÖGLICHKEITEN.</p><h2>Wo möchtest du vergleichen?</h2><p>Deine Reise bleibt gleich. Du wählst die Länderseiten.</p></div><span id="marketSelectionCount" class="quiet-badge" role="status"></span></div>
+      <div class="market-toolbar"><div class="segmented-actions" role="group" aria-label="Länderseiten schnell auswählen"><button type="button" id="marketsDACH" title="Deutschland, Österreich und Schweiz auswählen">DACH</button><button type="button" id="marketsAll">Alle auswählen</button><button type="button" id="marketsNone">Auswahl leeren</button></div><span>Mehrfachauswahl möglich</span></div>
+      <div id="markets" class="markets" role="group" aria-label="Länderseiten"></div>
+      <p class="planner-note">Die Währung steht an jeder Länderseite. Bestpreise werden innerhalb derselben Währung markiert.</p>
     </section>
    </div>
 
    <div class="panel" id="panelStation" hidden>
     <section class="card">
-      <h2>Stationen</h2>
-      <input type="search" id="stationSearch" placeholder="FRA · Hauptbahnhof · München · Mallorca …" autocomplete="off">
+      <div class="panel-heading"><div><p class="eyebrow">DEIN STARTPUNKT</p><h2>Wo beginnt deine Reise?</h2><p>Vergleiche eine Station oder nimm mehrere in deine Suche auf.</p></div><span class="feature-symbol" aria-hidden="true"><svg class="icon"><use href="#i-pin"/></svg></span></div>
+      <input type="search" id="stationSearch" aria-label="Station suchen" placeholder="FRA · Hauptbahnhof · München · Mallorca …" autocomplete="off">
       <div class="suchzeile">
         <p class="hint" id="stationCount"></p>
         <button type="button" id="addAll" class="ghost mini">Alle Treffer hinzufügen</button>
@@ -392,14 +528,14 @@
           (Strg+U, dann nach <code>stationId</code> suchen).
         </p>
         <div class="btnrow">
-          <input type="text" id="manualStation" placeholder="z. B. 110" inputmode="numeric">
+          <input type="text" id="manualStation" aria-label="Stationsnummer" placeholder="z. B. 110" inputmode="numeric">
           <button type="button" id="addManual" class="ghost">Hinzufügen</button>
         </div>
       </details>
 
       <div class="field einweg">
         <span class="flabel">Rückgabe an anderer Station <em>(Einweg-Miete)</em></span>
-        <select id="returnStation"></select>
+        <select id="returnStation" aria-label="Rückgabestation"></select>
         <p class="note">
           Leer lassen heißt: zurück an dieselbe Station. Eine andere Rückgabe
           kostet meist einen Aufschlag — der steckt schon im angezeigten Preis.
@@ -413,7 +549,17 @@
   <div class="held" id="held"></div>
 
   <section class="out">
-    <p id="serviceBadge" class="svc" hidden></p>
+    <p id="serviceBadge" class="svc" role="status" hidden></p>
+
+    <label class="optionzeile am-abruf" for="inkognito">
+      <input type="checkbox" id="inkognito">
+      <span>
+        <b>Ohne Cookies abrufen</b>
+        <small>Jede Länderseite wird angesehen, als wärst du zum ersten Mal da — kein gespeicherter
+        Besuch, keine Wiedererkennung. Dauert ein paar Sekunden länger je Seite und beginnt den
+        Vergleich von vorn.</small>
+      </span>
+    </label>
 
     <div id="fortschritt" class="fortschritt" hidden>
       <div class="fbalken"><div class="ffuellung" id="ffuellung"></div></div>
@@ -421,10 +567,7 @@
         <p class="ftext" id="ftext"></p>
         <button type="button" id="abbrechen" class="ghost mini">Abbrechen</button>
       </div>
-      <p class="fhinweis">
-        Läuft in einem unsichtbaren Chrome-Fenster. Das Fenster hier kann offen
-        bleiben.
-      </p>
+      <p class="fhinweis">Deine Angebote erscheinen nach und nach. Du kannst dich währenddessen weiter umsehen.</p>
     </div>
 
     <p id="warn" class="note warn" hidden></p>
@@ -433,11 +576,44 @@
       erneut klicken — oder die Links einzeln anklicken.
     </p>
     <p id="flash" class="flash" hidden></p>
+
+    <div class="card xlsx-karte" id="xlsxKarte" hidden>
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">AUSGABE FÜR EXCEL</p>
+          <h2>Was soll in die Mappe?</h2>
+          <p>Eine echte .xlsx mit Kopfblock, festen Spalten und Zahlen zum Weiterrechnen.
+             Getrennt je Währung — umgerechnet wird nicht.</p>
+        </div>
+      </div>
+      <div class="xlsx-gitter">
+        <label class="pill"><input type="checkbox" id="xPreise" checked> <span>Preistabelle</span></label>
+        <label class="pill"><input type="checkbox" id="xSchutz" checked> <span>Schutzpakete</span></label>
+        <label class="pill"><input type="checkbox" id="xKalender"> <span>Monatsübersicht</span></label>
+        <label class="pill"><input type="checkbox" id="xAlleStationen"> <span>Alle Stationen, nicht nur die gezeigte</span></label>
+        <label class="pill"><input type="checkbox" id="xNichtBuchbare"> <span>Nicht buchbare Klassen mitnehmen</span></label>
+        <label class="pill"><input type="checkbox" id="xFarbskala" checked> <span>Farbskala über die Preise</span></label>
+      </div>
+      <div class="field xlsx-betraege">
+        <label class="flabel" for="xBetraege">Welche Beträge</label>
+        <select id="xBetraege" class="premium-select">
+          <option value="beide">Gesamtpreis und Tagespreis</option>
+          <option value="gesamt">Nur Gesamtpreis</option>
+          <option value="tag">Nur Tagespreis</option>
+        </select>
+      </div>
+      <div class="btnrow">
+        <button type="button" id="xSpeichern" class="primary">Mappe speichern</button>
+        <button type="button" id="xAbbrechen" class="ghost">Abbrechen</button>
+      </div>
+    </div>
+
     <div id="results"></div>
 
     <div class="btnrow nachlauf">
       <span class="count" id="jobCount"></span>
       <button type="button" id="nochmal" class="ghost mini" hidden></button>
+      <button type="button" id="excel" class="ghost mini">Als Excel speichern</button>
       <button type="button" id="csv" class="ghost mini">Als CSV speichern</button>
       <button type="button" id="openAll" class="ghost mini">Im Browser öffnen</button>
       <button type="button" id="copyAll" class="ghost mini">Links kopieren</button>
@@ -479,15 +655,12 @@
 
 
 <footer>
+  <div class="footer-heading"><span class="footer-brand">tracker.</span><span><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg> Deine Suchen bleiben auf deinem Gerät.</span></div>
   <p>
-    Läuft vollständig lokal. Der Preisabruf öffnet die Anbieterseiten in einem
-    eigenen Chrome-Fenster auf diesem Rechner; die Ergebnisse bleiben hier.
-    Fahrzeugbilder und Preise stammen von Sixt. Dies ist kein Angebot der
-    Sixt SE.
-  </p>
-  <p class="credit">
-    Idee nach dem MWT-Preistool von Sloth &amp; Crazer (mietwagen-talk.de, 2020).
+    Unabhängig vergleichen. Entspannt losfahren. Fahrzeugbilder und Preise stammen von Sixt.
+    Tracker ist ein unabhängiges Werkzeug und kein Angebot der Sixt SE.
   </p>
 </footer>
 
 <script>/*SCRIPT*/</script>
+</html>

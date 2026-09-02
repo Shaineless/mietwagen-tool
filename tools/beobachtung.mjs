@@ -53,6 +53,17 @@ export async function merkeAbruf(job, res) {
         // Der Frühbucherrabatt erklärt Spruenge in der Kurve — ohne ihn sieht
         // ein Preissprung nach Zufall aus.
         f: o.fruehbucher ? 1 : 0,
+        // Ob ohne Cookies gemessen wurde. Gemessen liegen die beiden Modi
+        // auseinander; stuenden sie unmarkiert in derselben Kurve, saehe der
+        // Unterschied nach einer Preisaenderung bei Sixt aus, waere aber nur
+        // ein Wechsel des Haekchens.
+        i: job.inkognito ? 1 : 0,
+        // Die Uhrzeit gehoert dazu: Sixt rechnet nach Uhrzeit ab, nicht nach
+        // Kalendertag — gemessen lagen 12:30 und 13:30 am selben Tag 57 %
+        // auseinander. Ohne dieses Feld ist ein gespeicherter Preis nicht
+        // zuzuordnen, sobald jemand mehr als eine Uhrzeit vergleicht.
+        z: job.pickupTime || null,
+        zr: job.returnTime || null,
       })
     );
 
@@ -131,18 +142,28 @@ export async function verlaufUebersicht() {
       bis: e.b,
       klassen: new Set(),
       hosts: new Set(),
+      // Uhrzeitpaare als "HH:MM|HH:MM". Altdaten tragen keine Uhrzeit — die
+      // wurden damals alle um 10:00 gemessen, und genau das steht dann da,
+      // statt eine Luecke zu lassen, die spaeter niemand mehr deuten kann.
+      zeiten: new Set(),
       punkte: 0,
       zuerst: e.t,
       zuletzt: e.t,
     };
     g.klassen.add(e.k);
     g.hosts.add(e.h);
+    g.zeiten.add(`${e.z || '10:00'}|${e.zr || e.z || '10:00'}`);
     g.punkte++;
     if (e.t < g.zuerst) g.zuerst = e.t;
     if (e.t > g.zuletzt) g.zuletzt = e.t;
     nach.set(schluessel, g);
   }
   return [...nach.values()]
-    .map((g) => ({ ...g, klassen: [...g.klassen].sort(), hosts: [...g.hosts].sort() }))
+    .map((g) => ({
+      ...g,
+      klassen: [...g.klassen].sort(),
+      hosts: [...g.hosts].sort(),
+      zeiten: [...g.zeiten].sort(),
+    }))
     .sort((a, b) => b.zuletzt - a.zuletzt);
 }

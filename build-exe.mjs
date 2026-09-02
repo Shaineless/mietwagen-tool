@@ -2,6 +2,7 @@
  * Baut aus dem Quellbaum eine einzelne Windows-EXE.
  *
  *   node build-exe.mjs
+ *   node build-exe.mjs Tracker-Premium.exe
  *
  * Vier Schritte: Oberfläche bauen, den Dienst mitsamt Playwright in eine
  * einzige CommonJS-Datei bündeln, daraus einen SEA-Vorrat erzeugen und diesen
@@ -20,7 +21,9 @@ import { fileURLToPath } from 'node:url';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const bau = join(root, 'build');
-const ziel = join(root, 'dist', 'Tracker.exe');
+const dateiname = process.argv[2] || 'Tracker.exe';
+if (!/^[a-z0-9_-]+\.exe$/i.test(dateiname)) throw new Error('Bitte einen EXE-Dateinamen ohne Pfad angeben.');
+const ziel = join(root, 'dist', dateiname);
 
 const mb = (p) => (statSync(p).size / 1024 / 1024).toFixed(1) + ' MB';
 
@@ -129,7 +132,7 @@ writeFileSync(
       output: join(bau, 'preistool.blob'),
       disableExperimentalSEAWarning: true,
       assets: {
-        'dist/tracker.html': join(root, 'dist', 'tracker.html'),
+        'dist/mietwagen-preistool.html': join(root, 'dist', 'mietwagen-preistool.html'),
       },
     },
     null,
@@ -200,6 +203,6 @@ if (process.platform === 'win32') {
   }
 }
 
-console.log(`\nFertig: dist/Tracker.exe (${mb(ziel)})`);
+console.log(`\nFertig: dist/${dateiname} (${mb(ziel)})`);
 console.log('Doppelklick öffnet ein eigenes Programmfenster, ohne Konsole.');
 console.log('Chrome oder Edge muss installiert sein — sonst bleibt der Link-Modus.\n');

@@ -1,10 +1,9 @@
 {
   "name": "tracker",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "private": true,
   "type": "module",
   "description": "TRACKER — dieselbe Mietwagensuche auf allen Sixt-Länderseiten gegenübergestellt",
-  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/Shaineless/mietwagen-tool.git"
@@ -20,5 +19,6 @@
   "devDependencies": {
     "esbuild": "^0.28.2",
     "postject": "^1.0.0-alpha.6"
-  }
+  },
+  "license": "MIT"
 }

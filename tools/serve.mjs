@@ -17,7 +17,7 @@ import { join, extname, normalize } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { quoteSixt } from './scrape/sixt.mjs';
 import { quoteSchutz } from './scrape/sixt-schutz.mjs';
-import { findBrowser, closeBrowser } from './browser.mjs';
+import { findBrowser, closeBrowser, frischesProfil } from './browser.mjs';
 import { merkeAngebote, bekannteKlassen, katalogStand } from './katalog.mjs';
 import { istExe, quellWurzel, datenOrdner, leseVorrat } from './pfade.mjs';
 import { oeffneFenster } from './fenster.mjs';
@@ -123,7 +123,7 @@ async function hostErlaubt(host) {
     // Aus der EXE heraus gibt es keine Quelldatei; dann kommt die Liste aus
     // dem gebauten Bundle, in dem dieselben Zeilen stehen.
     if (!erlaubteHosts.size) {
-      const roh = (await leseVorrat('dist/tracker.html'))?.toString('utf8') || '';
+      const roh = (await leseVorrat('dist/mietwagen-preistool.html'))?.toString('utf8') || '';
       for (const t of roh.matchAll(/host:\s*"([^"]+\.sixt\.[^"]+|[^"]*sixt\.com[^"]*)"/g)) {
         erlaubteHosts.add(t[1]);
       }
@@ -134,6 +134,18 @@ async function hostErlaubt(host) {
 }
 
 async function enqueue(jobs) {
+  // Ein Abruf ohne Cookies faengt mit einem leeren Profil an — sonst waere
+  // nur der allererste wirklich einer. Aber nur, wenn gerade nichts laeuft:
+  // mitten im Durchlauf das Chrome zu beenden, risse die offenen Abrufe ab.
+  if (queue.length === 0 && laufend === 0 && jobs.some((j) => j?.inkognito)) {
+    const leer = await frischesProfil();
+    console.log(
+      leer
+        ? '  ⌾ Ohne Cookies: Profil geleert'
+        : '  ! Ohne Cookies: Profil ließ sich nicht ganz leeren — Chrome hält noch Dateien'
+    );
+  }
+
   let abgelehnt = 0;
   for (const j of jobs) {
     if (!j?.key || results.has(j.key)) continue;
@@ -163,6 +175,66 @@ async function enqueue(jobs) {
 const START_ABSTAND_MS = 750;
 let letzterStart = 0;
 
+/**
+ * Grund einer Fehlmeldung in eine verständliche Ursache übersetzen.
+ *
+ * Die Rohmeldungen sind für den Nutzer wertlos ("locator.click: Timeout
+ * 12000ms exceeded"). Wichtig ist die Frage dahinter: liegt es an dieser
+ * Länderseite, an der Verbindung, oder war es Zufall und ein zweiter Versuch
+ * hilft? Genau das entscheidet auch, ob nachgefasst wird.
+ *
+ * `nochmal: false` heisst: wiederholen bringt nichts. Tschechien und die
+ * Türkei nehmen eine deutsche Station gar nicht erst an — gemessen, vier von
+ * vier Versuchen. Da noch dreimal anzuklopfen kostet nur Zeit.
+ */
+function deuteFehler(text) {
+  const t = String(text || '');
+  if (/access denied|blocked|blockiert/i.test(t)) {
+    return {
+      code: 'ZUGRIFF',
+      klartext: 'Die Länderseite hat den Zugriff abgewiesen.',
+      rat: 'Ein paar Minuten warten und weniger Länderseiten auf einmal abfragen.',
+      nochmal: true,
+    };
+  }
+  if (/station wurde nicht übernommen/i.test(t)) {
+    return {
+      code: 'STATION',
+      klartext: 'Die Länderseite hat die Station nicht übernommen.',
+      rat: 'Meist bedient diese Seite nur ihre eigene Region. Kommt es nur gelegentlich, war die Seite zu langsam.',
+      nochmal: true,
+    };
+  }
+  if (/trefferliste kam nicht/i.test(t)) {
+    return {
+      code: 'KEINE_LISTE',
+      klartext: 'Die Suche lief, aber es kam keine Trefferliste.',
+      rat: 'Entweder ist für den Zeitraum dort nichts frei, oder Sixt hat den Seitenaufbau geändert.',
+      nochmal: true,
+    };
+  }
+  if (/ERR_CERT|ERR_NAME|ERR_CONNECTION|ENOTFOUND|EAI_AGAIN/i.test(t)) {
+    return {
+      code: 'NETZ',
+      klartext: 'Die Adresse war nicht erreichbar.',
+      rat: 'Entweder gibt es dort keine Länderseite mehr, oder die Internetverbindung streikt.',
+      nochmal: false,
+    };
+  }
+  if (/timeout|timed out|zeit/i.test(t)) {
+    return {
+      code: 'ZEIT',
+      klartext: 'Die Seite hat zu lange gebraucht.',
+      rat: 'Bei vielen Länderseiten gleichzeitig kommt das vor — nachfassen hilft meist.',
+      nochmal: true,
+    };
+  }
+  return { code: 'UNBEKANNT', klartext: t.slice(0, 160), rat: null, nochmal: true };
+}
+
+/** So oft wird ein gescheiterter Abruf von selbst wiederholt. */
+const VERSUCHE_MAX = 3;
+
 async function tick() {
   if (laufend >= PARALLEL) return;
   const job = queue.shift();
@@ -190,7 +262,8 @@ async function tick() {
 
     console.log(
       `  → ${job.host}  Station ${job.stationCode}` +
-        (schutz ? `  Schutz ${job.acriss}` : `  ${job.pickupDate}`)
+        (schutz ? `  Schutz ${job.acriss}` : `  ${job.pickupDate}`) +
+        (job.inkognito ? '  ohne Cookies' : '')
     );
     const res = await abruf(job);
 
@@ -215,12 +288,37 @@ async function tick() {
       return;
     }
 
+    // Gescheitert? Dann nicht gleich aufgeben — aber auch nicht stur
+    // wiederholen, wo es nachweislich nichts bringt.
+    if (res.error && (job.versuch || 1) < VERSUCHE_MAX) {
+      const d = deuteFehler(res.error);
+      if (d.nochmal) {
+        job.versuch = (job.versuch || 1) + 1;
+        // Ans Ende der Schlange: erst kommen die anderen Länderseiten dran,
+        // dann der zweite Anlauf. Das gibt der Seite Zeit und hält den
+        // Fortschritt in Bewegung.
+        queue.push(job);
+        gesamt++;
+        console.log(
+          `  ↻ ${job.host}  ${d.code} — Versuch ${job.versuch} von ${VERSUCHE_MAX}`
+        );
+        return;
+      }
+    }
+
+    const gedeutet = res.error ? deuteFehler(res.error) : null;
     remember(job.key, {
       host: job.host,
       url: res.url || null,
       station: res.station || null,
       offers: res.offers || [],
       error: res.error || null,
+      // Damit die Oberflaeche sagen kann, woran es lag, statt nur dass es
+      // schieflief.
+      fehlerCode: gedeutet?.code || null,
+      fehlerKlartext: gedeutet?.klartext || null,
+      fehlerRat: gedeutet?.rat || null,
+      versuche: job.versuch || 1,
       warnung: res.warnung || null,
     });
     if (res.warnung) console.log(`  ! ${job.host}  ${res.warnung}`);
@@ -237,8 +335,25 @@ async function tick() {
         (res.ms ? `  (${(res.ms / 1000).toFixed(1)}s)` : '')
     );
   } catch (e) {
-    remember(job.key, { host: job.host, offers: [], error: String(e.message).slice(0, 160) });
-    console.log(`  ← ${job.host}  Fehler: ${String(e.message).slice(0, 120)}`);
+    const roh = String(e.message).slice(0, 160);
+    const d = deuteFehler(roh);
+    if ((job.versuch || 1) < VERSUCHE_MAX && d.nochmal) {
+      job.versuch = (job.versuch || 1) + 1;
+      queue.push(job);
+      gesamt++;
+      console.log(`  ↻ ${job.host}  ${d.code} — Versuch ${job.versuch} von ${VERSUCHE_MAX}`);
+      return;
+    }
+    remember(job.key, {
+      host: job.host,
+      offers: [],
+      error: roh,
+      fehlerCode: d.code,
+      fehlerKlartext: d.klartext,
+      fehlerRat: d.rat,
+      versuche: job.versuch || 1,
+    });
+    console.log(`  ← ${job.host}  ${d.code}: ${roh.slice(0, 110)}`);
   } finally {
     laufend--;
     erledigt++;
@@ -337,17 +452,30 @@ async function weckerRunde({ sofort = false } = {}) {
         continue;
       }
       try {
+        // Zur Uhrzeit des Weckers pruefen, nicht zu einer festen. Sonst
+        // meldete er einen Preis, der zu einer anderen Abholzeit gehoert.
+        const zeit = w.zeit || '10:00';
+        const zeitRueck = w.zeitRueck || zeit;
         const r = await quoteSixt({
           host: w.host,
           stationCode: w.station,
           pickupDate: w.von,
           returnDate: w.bis,
-          pickupTime: '10:00',
-          returnTime: '10:00',
+          pickupTime: zeit,
+          returnTime: zeitRueck,
           currency: w.waehrung || undefined,
         });
+        // Die Uhrzeit gehoert auch in den Messpunkt — sonst faellt er in der
+        // Kurve wieder mit den anderen Uhrzeiten zusammen.
         await merkeAbruf(
-          { host: w.host, stationCode: w.station, pickupDate: w.von, returnDate: w.bis },
+          {
+            host: w.host,
+            stationCode: w.station,
+            pickupDate: w.von,
+            returnDate: w.bis,
+            pickupTime: zeit,
+            returnTime: zeitRueck,
+          },
           r
         ).catch(() => {});
 
@@ -358,13 +486,21 @@ async function weckerRunde({ sofort = false } = {}) {
         });
 
         if (loest) {
+          const buchung = w.art === 'buchung';
+          const gespart = buchung ? (w.gebucht - treffer.total).toFixed(2) : null;
           const text =
             `${w.stationName || 'Station ' + w.station}\n` +
             `${w.acriss} auf ${w.host.replace(/^www\./, '')}\n\n` +
-            `${treffer.total} ${w.waehrung} — unter deiner Grenze von ${w.grenze}.\n` +
+            (buchung
+              ? `${treffer.total} ${w.waehrung} statt gebuchter ${w.gebucht} ${w.waehrung}.\n` +
+                `Das sind ${gespart} ${w.waehrung} weniger — Umbuchen prüfen.\n`
+              : `${treffer.total} ${w.waehrung} — unter deiner Grenze von ${w.grenze}.\n`) +
             `${w.von} bis ${w.bis}`;
-          console.log(`  ⏰ AUSGELÖST: ${w.acriss} ${treffer.total} ${w.waehrung}`);
-          if (istExe) zeigeMeldung(text, 'Preiswecker');
+          console.log(
+            `  ⏰ AUSGELÖST: ${w.acriss} ${treffer.total} ${w.waehrung}` +
+              (buchung ? `  (${gespart} ${w.waehrung} unter der Buchung)` : '')
+          );
+          if (istExe) zeigeMeldung(text, buchung ? 'Buchung wurde billiger' : 'Preiswecker');
         }
       } catch (e) {
         await vermerkePruefung(w.id, { fehler: String(e.message).slice(0, 140) }).catch(() => {});
@@ -656,11 +792,18 @@ const server = createServer(async (req, res) => {
       if (!body.station || !body.von || !body.bis || !body.host || !body.acriss) {
         return json(res, 400, { ok: false, error: 'Station, Zeitraum, Länderseite und Klasse nötig' });
       }
-      if (!(Number(body.grenze) > 0)) {
-        return json(res, 400, { ok: false, error: 'Preisgrenze fehlt' });
+      const schwelle = body.art === 'buchung' ? Number(body.gebucht) : Number(body.grenze);
+      if (!(schwelle > 0)) {
+        return json(res, 400, {
+          ok: false,
+          error: body.art === 'buchung' ? 'Gebuchter Preis fehlt' : 'Preisgrenze fehlt',
+        });
       }
       const w = await legeWecker(body);
-      console.log(`  ⏰ Wecker: ${w.stationName} ${w.acriss} unter ${w.grenze} ${w.waehrung}`);
+      console.log(
+        `  ⏰ ${w.art === 'buchung' ? 'Buchung beobachten' : 'Wecker'}: ` +
+          `${w.stationName} ${w.acriss} unter ${w.grenze} ${w.waehrung}`
+      );
       // Gleich einmal nachsehen, statt bis zur nächsten Runde zu warten.
       weckerRunde().catch(() => {});
       return json(res, 200, { ok: true, wecker: w });
@@ -694,9 +837,22 @@ const server = createServer(async (req, res) => {
       });
     }
     try {
-      const { selbsttest } = await import('./selbsttest.mjs');
+      const roh = await readBody(req, 4000);
+      const body = roh ? JSON.parse(roh) : {};
+      const { selbsttest, pruefeSeite, WEITERE_SEITEN } = await import('./selbsttest.mjs');
+
+      // Eine einzelne Länderseite: die Oberfläche ruft sie nacheinander ab
+      // und zeigt jeden Schritt, sobald er da ist. Ein Endpunkt, der zwei
+      // Minuten schweigt und dann alles auf einmal liefert, sieht aus wie
+      // ein Absturz.
+      if (body.seite) {
+        const seite = WEITERE_SEITEN.find((s) => s.host === body.seite);
+        if (!seite) return json(res, 400, { ok: false, error: 'Unbekannte Länderseite' });
+        return json(res, 200, { ok: true, schritte: [await pruefeSeite(seite)] });
+      }
+
       const schritte = await selbsttest();
-      return json(res, 200, { ok: true, schritte });
+      return json(res, 200, { ok: true, schritte, weitere: WEITERE_SEITEN });
     } catch (e) {
       return json(res, 200, { ok: false, error: String(e.message).slice(0, 300) });
     }
@@ -715,13 +871,27 @@ const server = createServer(async (req, res) => {
   }
 
   if (path === '/api/results/clear' && req.method === 'POST') {
+    // Ohne Angabe alles — das ist der grosse Reset. Mit einer Schluesselliste
+    // nur diese: der Kalender misst seinen Zeitraum neu, ohne nebenbei die
+    // Preistabelle zu leeren, die jemand daneben offen hat.
+    try {
+      const roh = await readBody(req, 200_000);
+      const body = roh ? JSON.parse(roh) : {};
+      if (Array.isArray(body.keys) && body.keys.length) {
+        let weg = 0;
+        for (const k of body.keys) if (results.delete(String(k))) weg++;
+        return json(res, 200, { ok: true, geloescht: weg });
+      }
+    } catch {
+      /* kein oder kaputter Rumpf: dann eben alles */
+    }
     results.clear();
     return json(res, 200, { ok: true });
   }
 
   /* ---------------------------------------------------- Statische Dateien */
 
-  const file = path === '/' ? '/dist/tracker.html' : path;
+  const file = path === '/' ? '/dist/mietwagen-preistool.html' : path;
   // Erst normalisieren, dann fuehrende Schraegstriche und Aufstiege abtragen —
   // und zwar so lange, bis nichts mehr uebrig ist. Nur einmal zu ersetzen
   // laesst "/../x" stehen. Die eigentliche Sperre sitzt zusaetzlich in

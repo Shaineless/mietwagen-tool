@@ -21,11 +21,27 @@ const defaults = () => {
     dayShifts: [0],
     returnShifts: [0],
     durations: [],
+    /**
+     * Weitere Uhrzeitpaare neben dem Grundpaar oben.
+     *
+     * Sixt rechnet nach Uhrzeit ab, nicht nach Kalendertag — 12:30 → 12:30
+     * kostet etwas anderes als 13:30 → 13:30. Jedes Paar ist eine eigene
+     * Abfrage; Einträge der Form { ab: 'HH:MM', zurueck: 'HH:MM' }.
+     */
+    zeiten: [],
     stations: ['110'],
     returnStation: null,
     markets: ['de', 'at', 'ch', 'nl', 'es'],
     /** Nur bekannte, aber gerade nicht buchbare Klassen mitzeigen? */
     zeigeNichtBuchbare: true,
+    /**
+     * Ohne Cookies abrufen — als käme man zum ersten Mal auf die Seite.
+     *
+     * Standardmässig aus: der Abruf mit gespeicherter Cookie-Auswahl ist
+     * mehrere Sekunden je Länderseite schneller, weil der Banner nicht jedes
+     * Mal neu weggeklickt werden muss.
+     */
+    inkognito: false,
     /** Einstellungen der Monatsübersicht — eigener Bereich, eigener Zustand. */
     kalender: {
       station: '110',
@@ -37,6 +53,11 @@ const defaults = () => {
       start: iso(new Date(Date.now() + 3 * 86400000)),
       spanne: 28,
       zeit: '10:00',
+      /** Weitere Uhrzeitpaare — jede multipliziert die ganze Spanne. */
+      zeiten: [],
+      inkognito: false,
+      /** Stationen für den Mehrstationslauf — eigener Bereich, eigene Liste. */
+      stationen: [],
     },
   };
 };
@@ -68,6 +89,10 @@ function load() {
     // damit undefined-Werte einschleppen.
     const grund = defaults();
     const merged = { ...grund, ...saved, kalender: { ...grund.kalender, ...(saved.kalender || {}) } };
+    // Eine Länderseite, die inzwischen als gestört gilt, kann noch im
+    // gespeicherten Zustand stehen — sonst liefe jeder Abruf sehenden Auges
+    // in einen Fehlschlag.
+    merged.markets = ohneGestoerte(merged.markets || []);
     if (merged.pickupDate < iso(new Date())) {
       const d = defaults();
       merged.pickupDate = d.pickupDate;
@@ -114,7 +139,7 @@ async function checkService() {
   return service.available;
 }
 
-function jobKey(host, stationCode, v, acrissCode) {
+function jobKey(host, stationCode, v, acrissCode, inkognito = state.inkognito) {
   return [
     acrissCode ? 'schutz' : 'preis',
     PROVIDER,
@@ -122,9 +147,17 @@ function jobKey(host, stationCode, v, acrissCode) {
     stationCode,
     v.pickupDate,
     v.returnDate,
-    state.pickupTime,
-    state.returnTime,
+    // Die Uhrzeit gehört zur Variante, nicht zum Grundzustand: sonst
+    // überschrieben sich zwei Abholzeiten desselben Tages gegenseitig, und
+    // man sähe nur die zuletzt geholte. Ältere Aufrufe ohne Zeit in der
+    // Variante fallen auf den Grundzustand zurück.
+    v.pickupTime ?? state.pickupTime,
+    v.returnTime ?? state.returnTime,
     acrissCode || '',
+    // Ein Abruf ohne Cookies ist ein anderer Abruf — genau darum geht es.
+    // Ohne diesen Teil im Schlüssel läge das alte Ergebnis noch im Speicher
+    // und der Haken bliebe wirkungslos.
+    inkognito ? 'inkognito' : '',
   ].join('~');
 }
 
@@ -195,13 +228,63 @@ async function pollErgebnisse() {
     service.queue = h.queue || null;
     renderFortschritt();
 
-    // Genau im Moment des Leerlaufens die Suche in den Verlauf legen — nicht
-    // bei jedem Takt, sonst stünde sie fünfmal drin.
+    // Genau im Moment des Leerlaufens ablegen — nicht bei jedem Takt, sonst
+    // stünde alles fünfmal drin.
     const laeuftNoch = Boolean(h.queue && (h.queue.laufend || h.queue.offen));
-    if (liefNoch && !laeuftNoch) merkeSuche();
+    if (liefNoch && !laeuftNoch) {
+      merkeSuche();
+      // War es ein Schutzabruf, gehören die Pakete ans angesehene Fahrzeug.
+      if (schutzAcriss) merkeFahrzeug(schutzAcriss);
+      await hakeNach();
+    }
   } catch {
     /* egal */
   }
+}
+
+/**
+ * Nach einem Durchlauf selbst nachfassen, was nichts geliefert hat.
+ *
+ * Der Dienst wiederholt schon dreimal je Auftrag. Was danach noch fehlt, war
+ * meist ein Fenster oder eine Zeitüberschreitung, die beim nächsten Anlauf
+ * nicht wieder auftritt — deshalb einmal von selbst nachfassen, statt darauf
+ * zu warten, dass jemand den Knopf findet.
+ *
+ * Genau einmal je Durchlauf: liefe es endlos, drehte sich das Werkzeug bei
+ * einer dauerhaft gestörten Seite im Kreis und belastete Sixt ohne Nutzen.
+ */
+let nachgefasst = new Set();
+
+async function hakeNach() {
+  if (!service.chrome) return;
+  const offen = jobsOhneErgebnis(aktuelleJobs()).filter((j) => !nachgefasst.has(j.key));
+  if (!offen.length) return;
+
+  for (const j of offen) {
+    nachgefasst.add(j.key);
+    prices.delete(j.key);
+  }
+  flash(
+    `${offen.length} ${offen.length === 1 ? 'Länderseite hat' : 'Länderseiten haben'} nichts ` +
+      'geliefert — wird automatisch noch einmal versucht.'
+  );
+  await sendeJobs(
+    offen.map((j) => ({
+      key: j.key,
+      provider: PROVIDER,
+      host: j.market.host,
+      stationCode: j.station.code,
+      returnCode: state.returnStation || undefined,
+      pickupDate: j.variant.pickupDate,
+      returnDate: j.variant.returnDate,
+      pickupTime: j.variant.pickupTime ?? state.pickupTime,
+      returnTime: j.variant.returnTime ?? state.returnTime,
+      currency: j.market.cur,
+      inkognito: state.inkognito || undefined,
+    })),
+    $('#getPrices')
+  );
+  renderResults({ erzwingen: true });
 }
 
 function startPolling() {
@@ -321,40 +404,139 @@ function marktListe() {
  * Kombinationen, bei denen die Rueckgabe nicht nach der Abholung liegt, fallen
  * weg: dafuer gibt es keinen Preis, nur eine Fehlermeldung von Sixt.
  */
+/**
+ * Die Uhrzeitpaare, die abgefragt werden.
+ *
+ * Sixt rechnet nach Uhrzeit ab, nicht nach Kalendertag: 12:30 → 12:30 ist ein
+ * anderer Preis als 13:30 → 13:30, und 13:30 → 08:00 ist wieder ein anderer,
+ * weil die Rueckgabe dann in den Vortag faellt. Wer das nicht mitvergleicht,
+ * vergleicht Laenderseiten und uebersieht die groessere Ersparnis daneben.
+ *
+ * Das erste Paar sind immer die beiden Felder oben. Weitere kommen als Liste
+ * dazu — das haelt den einfachen Fall einfach.
+ */
+function zeitVarianten() {
+  const paare = [{ ab: state.pickupTime, zurueck: state.returnTime }];
+  for (const z of state.zeiten || []) {
+    if (!/^\d{2}:\d{2}$/.test(z.ab) || !/^\d{2}:\d{2}$/.test(z.zurueck)) continue;
+    if (paare.some((p) => p.ab === z.ab && p.zurueck === z.zurueck)) continue;
+    paare.push({ ab: z.ab, zurueck: z.zurueck });
+  }
+  return paare;
+}
+
 function dateVariants() {
   const grunddauer = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
   const shifts = state.dayShifts.length ? state.dayShifts : [0];
-  const out = [];
+  const zeiten = zeitVarianten();
+  const roh = [];
 
   if (state.durations.length) {
     for (const shift of shifts) {
       for (const dur of state.durations) {
         const pickupDate = addDays(state.pickupDate, shift);
-        out.push({ pickupDate, returnDate: addDays(pickupDate, dur), duration: dur });
+        roh.push({ pickupDate, returnDate: addDays(pickupDate, dur), duration: dur });
       }
     }
-    return out;
-  }
-
-  const rueck = state.returnShifts?.length ? state.returnShifts : [0];
-  for (const shift of shifts) {
-    for (const rshift of rueck) {
-      const pickupDate = addDays(state.pickupDate, shift);
-      const returnDate = addDays(state.returnDate, rshift);
-      const duration = daysBetween(pickupDate, returnDate);
-      if (duration < 1) continue;
-      out.push({ pickupDate, returnDate, duration });
+  } else {
+    const rueck = state.returnShifts?.length ? state.returnShifts : [0];
+    for (const shift of shifts) {
+      for (const rshift of rueck) {
+        const pickupDate = addDays(state.pickupDate, shift);
+        const returnDate = addDays(state.returnDate, rshift);
+        const duration = daysBetween(pickupDate, returnDate);
+        if (duration < 1) continue;
+        roh.push({ pickupDate, returnDate, duration });
+      }
+    }
+    // Alles weggefallen? Dann wenigstens der eingestellte Zeitraum selbst.
+    if (!roh.length) {
+      roh.push({
+        pickupDate: state.pickupDate,
+        returnDate: state.returnDate,
+        duration: grunddauer,
+      });
     }
   }
-  // Alles weggefallen? Dann wenigstens der eingestellte Zeitraum selbst.
-  if (!out.length) {
-    out.push({
-      pickupDate: state.pickupDate,
-      returnDate: state.returnDate,
-      duration: grunddauer,
-    });
+
+  // Jeder Termin mal jedes Uhrzeitpaar.
+  const out = [];
+  for (const v of roh) {
+    for (const z of zeiten) {
+      out.push({ ...v, pickupTime: z.ab, returnTime: z.zurueck });
+    }
   }
   return out;
+}
+
+function renderZeiten() {
+  const liste = state.zeiten || [];
+  setChildren(
+    $('#zeitenListe'),
+    ...liste.map((z, i) =>
+      el(
+        'div',
+        { class: 'zeitzeile' },
+        el('span', { class: 'zlabel' }, `Zeit ${i + 2}`),
+        el('input', {
+          type: 'time',
+          step: '900',
+          value: z.ab,
+          'aria-label': `Abholzeit ${i + 2}`,
+          onchange: (e) => {
+            state.zeiten[i].ab = e.target.value;
+            update();
+          },
+        }),
+        el('span', { class: 'zpfeil', 'aria-hidden': 'true' }, '→'),
+        el('input', {
+          type: 'time',
+          step: '900',
+          value: z.zurueck,
+          'aria-label': `Rückgabezeit ${i + 2}`,
+          onchange: (e) => {
+            state.zeiten[i].zurueck = e.target.value;
+            update();
+          },
+        }),
+        el(
+          'button',
+          {
+            type: 'button',
+            class: 'ghost mini',
+            title: 'Diese Uhrzeit entfernen',
+            onclick: () => {
+              state.zeiten.splice(i, 1);
+              update();
+            },
+          },
+          '×'
+        )
+      )
+    )
+  );
+
+  const n = zeitVarianten().length;
+  const jobs = aktuelleJobs().length;
+  $('#zeitenHinweis').textContent =
+    n === 1
+      ? 'Nur die Uhrzeit oben.'
+      : `${n} Uhrzeiten · ${jobs} Abfragen insgesamt, rund ${minutenText(jobs)}.`;
+  // Ist etwas eingestellt, soll der Bereich nicht zugeklappt danebenstehen.
+  if (liste.length && !$('#zeitenBereich').open) $('#zeitenBereich').open = true;
+}
+
+/** "1 Minute" statt "1 Minuten" — an drei Stellen gebraucht, also einmal hier. */
+function minutenText(abrufe) {
+  const m = Math.max(1, Math.ceil((abrufe * 6) / 2 / 60));
+  return `${m} ${m === 1 ? 'Minute' : 'Minuten'}`;
+}
+
+/** Ein Uhrzeitpaar kurz, für Reiter und Überschriften. */
+function zeitKurz(v) {
+  return v.pickupTime === v.returnTime
+    ? v.pickupTime
+    : `${v.pickupTime}→${v.returnTime}`;
 }
 
 function aktuelleJobs() {
@@ -367,7 +549,13 @@ function aktuelleJobs() {
   for (const station of stationen) {
     for (const v of dateVariants()) {
       for (const market of märkte) {
-        const q = { ...state, pickupDate: v.pickupDate, returnDate: v.returnDate };
+        const q = {
+          ...state,
+          pickupDate: v.pickupDate,
+          returnDate: v.returnDate,
+          pickupTime: v.pickupTime ?? state.pickupTime,
+          returnTime: v.returnTime ?? state.returnTime,
+        };
         const built = provider.build(q, market, station, ret);
         const key = jobKey(market.host, station.code, v);
         jobs.push({
@@ -375,7 +563,9 @@ function aktuelleJobs() {
           station,
           variant: v,
           key,
-          gruppe: `${station.code}|${v.pickupDate}|${v.returnDate}`,
+          // Die Uhrzeit gehört in die Gruppe: 12:30→12:30 und 13:30→13:30 sind
+          // zwei Abfragen mit zwei Preisen, und sie brauchen zwei Reiter.
+          gruppe: `${station.code}|${v.pickupDate}|${v.returnDate}|${v.pickupTime}|${v.returnTime}`,
           url: built.url,
         });
       }
@@ -400,7 +590,7 @@ function alleSchutzJobs() {
           station,
           variant: v,
           acriss: schutzAcriss,
-          gruppe: `${station.code}|${v.pickupDate}|${v.returnDate}`,
+          gruppe: `${station.code}|${v.pickupDate}|${v.returnDate}|${v.pickupTime}|${v.returnTime}`,
           key: jobKey(market.host, station.code, v, schutzAcriss),
         });
       }
@@ -448,6 +638,7 @@ function el(tag, attrs = {}, ...kids) {
 }
 
 function showScreen(name) {
+  const previous = document.body.dataset.screen;
   $('#start').hidden = name !== 'start';
   $('#statusScreen').hidden = name !== 'status';
   $('#work').hidden = name !== 'work';
@@ -456,6 +647,23 @@ function showScreen(name) {
   $('#verlaufScreen').hidden = name !== 'verlauf';
   $('#kurveScreen').hidden = name !== 'kurve';
   $('#kalenderScreen').hidden = name !== 'kalender';
+  $('#willkommen').hidden = name !== 'willkommen';
+  document.body.dataset.screen = name;
+  // Der Takt läuft nur, wo die Liste auch zu sehen ist.
+  haltWeckerFrisch(name === 'kurve');
+  document.querySelectorAll('[data-nav]').forEach((button) => {
+    if (button.dataset.nav === name || (name === 'schutz' && button.dataset.nav === 'work')) {
+      button.setAttribute('aria-current', 'page');
+    } else {
+      button.removeAttribute('aria-current');
+    }
+  });
+  if (previous && previous !== name) {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    const heading = document.querySelector('.screen:not([hidden]) h1');
+    heading?.setAttribute('tabindex', '-1');
+    heading?.focus({ preventScroll: true });
+  }
 }
 
 /**
@@ -537,6 +745,388 @@ function ladeCsvHerunter() {
   flash('Als CSV gespeichert.');
 }
 
+/* ------------------------------------------------------------ Excel-Mappe
+ *
+ * Die CSV bleibt der kurze Weg. Diese hier ist der andere: eine Mappe, die
+ * auch in drei Monaten noch sagt, was sie zeigt — mit Kopfblock, festen
+ * Spaltenbreiten, echten Zahlen statt Text und einer Farbskala, damit teuer
+ * und billig ins Auge fallen.
+ *
+ * Getrennt je Waehrung, wie ueberall im Werkzeug: Preise in EUR und CHF
+ * gehoeren nicht in dieselbe Spalte, und umgerechnet wird nicht.
+ */
+
+/** Die Einstellungen des Ausgabedialogs. */
+const xlsxVorgabe = () => ({
+  preise: true,
+  schutz: true,
+  kalender: false,
+  alleStationen: false,
+  nichtBuchbare: false,
+  /** 'gesamt' | 'tag' | 'beide' */
+  betraege: 'beide',
+  farbskala: true,
+});
+
+function xlsxOptionen() {
+  return { ...xlsxVorgabe(), ...(state.xlsx || {}) };
+}
+
+/** Kopfblock eines Blattes: was hier steht, muss die Datei selbst erklaeren. */
+function xlsxKopf(titel, f, waehrung) {
+  return [
+    [{ w: titel, s: STIL.titel }],
+    [{ w: 'Station', s: STIL.klein }, f.station.name, null, { w: 'Nr.', s: STIL.klein }, f.station.code],
+    [
+      { w: 'Zeitraum', s: STIL.klein },
+      `${f.variant.pickupDate} ${f.variant.pickupTime} → ${f.variant.returnDate} ${f.variant.returnTime}`,
+      null,
+      { w: 'Tage', s: STIL.klein },
+      f.variant.duration,
+    ],
+    [
+      { w: 'Abruf', s: STIL.klein },
+      state.inkognito ? 'ohne Cookies (wie ein Erstbesuch)' : 'mit gespeicherter Cookie-Auswahl',
+      null,
+      { w: 'Währung', s: STIL.klein },
+      waehrung,
+    ],
+    [
+      { w: 'Erstellt', s: STIL.klein },
+      new Date().toLocaleString('de-DE'),
+      null,
+      { w: 'Quelle', s: STIL.klein },
+      'TRACKER · Preise von Sixt, abgelesen',
+    ],
+    [],
+  ];
+}
+
+/**
+ * Das Preisblatt einer Station in einer Waehrung.
+ *
+ * @returns {object|null} Blatt fuer mappe(), oder null wenn nichts vorliegt
+ */
+function xlsxPreisblatt(jobs, waehrung, opt) {
+  const relevant = jobs.filter((j) => (j.market.cur || '') === waehrung);
+  if (!relevant.length) return null;
+
+  // Klasse → Länderseite → Angebot
+  const klassen = new Map();
+  for (const j of relevant) {
+    for (const o of prices.get(j.key)?.offers || []) {
+      if (!o.acriss || (o.currency || '') !== waehrung) continue;
+      if (!klassen.has(o.acriss)) klassen.set(o.acriss, { modell: o.model || '', nach: new Map() });
+      const e = klassen.get(o.acriss);
+      const alt = e.nach.get(j.market.host);
+      if (!alt || (o.total ?? Infinity) < (alt.total ?? Infinity)) e.nach.set(j.market.host, o);
+      if (!e.modell && o.model) e.modell = o.model;
+    }
+  }
+
+  // Bekannte, gerade nicht buchbare Klassen ergaenzen — dieselbe Wahl wie in
+  // der Tabelle, damit Ausgabe und Bildschirm dasselbe zeigen.
+  if (opt.nichtBuchbare) {
+    for (const acriss of Object.keys(katalog)) {
+      if (!klassen.has(acriss)) klassen.set(acriss, { modell: '', nach: new Map() });
+    }
+  }
+  if (!klassen.size) return null;
+
+  const zeigeGesamt = opt.betraege !== 'tag';
+  const zeigeTag = opt.betraege !== 'gesamt';
+
+  const f = relevant[0];
+  const zeilen = xlsxKopf('Preisvergleich', f, waehrung);
+  const kopfZeile = zeilen.length; // 0-basiert: hier kommt die Kopfzeile hin
+
+  // Erst alle Gesamtpreise, dann alle Tagespreise — nicht abwechselnd.
+  // Abwechselnd liessen sich die Gesamtpreise weder mit einem Blick
+  // vergleichen noch mit einer Farbskala hinterlegen: die Tagespreise sind
+  // um ein Vielfaches kleiner und zoegen die Skala an ihr Ende.
+  const kopf = [
+    { w: 'ACRISS', s: STIL.kopfzeile },
+    { w: 'Fahrzeugklasse', s: STIL.kopfzeile },
+    { w: 'Beispielmodell', s: STIL.kopfzeile },
+  ];
+  const abGesamt = kopf.length;
+  if (zeigeGesamt) for (const j of relevant) kopf.push({ w: `${j.market.label} gesamt`, s: STIL.kopfzeile });
+  const bisGesamt = kopf.length - 1;
+  if (zeigeTag) for (const j of relevant) kopf.push({ w: `${j.market.label} pro Tag`, s: STIL.kopfzeile });
+  kopf.push({ w: 'Günstigste Seite', s: STIL.kopfzeile });
+  zeilen.push(kopf);
+
+  const sortiert = [...klassen].sort((a, b) => a[0].localeCompare(b[0]));
+  for (const [acriss, d] of sortiert) {
+    const werte = relevant.map((j) => d.nach.get(j.market.host));
+    const gesamte = werte.map((o) => o?.total).filter((n) => n != null);
+    const bester = gesamte.length ? Math.min(...gesamte) : null;
+    const besteSeite =
+      bester == null
+        ? ''
+        : relevant.find((j) => d.nach.get(j.market.host)?.total === bester)?.market.label || '';
+
+    const dek = decodeAcriss(acriss);
+    const zeile = [acriss, dek ? dek.label : '', d.modell];
+    // Hervorheben lohnt nur, wo es etwas zu vergleichen gibt. Bei einer
+    // einzigen Länderseite waere jede Zelle "die günstigste" — eine Farbe,
+    // die nichts unterscheidet, ist nur Lärm.
+    const lohntHervorhebung = gesamte.length > 1;
+    if (zeigeGesamt) {
+      for (const o of werte) {
+        const best = lohntHervorhebung && o?.total != null && o.total === bester;
+        zeile.push(o?.total == null ? null : { w: o.total, s: best ? STIL.betragBest : STIL.betrag });
+      }
+    }
+    if (zeigeTag) {
+      for (const o of werte) zeile.push(o?.perDay == null ? null : { w: o.perDay, s: STIL.betragGrau });
+    }
+    zeile.push(relevant.length > 1 ? besteSeite : '');
+    zeilen.push(zeile);
+  }
+
+  const spalten = kopf.length;
+  const letzte = zeilen.length;
+  return {
+    // Nicht hier kuerzen: der Aufrufer stellt ggf. noch die Währung voran,
+    // und mappe() beschneidet am Ende einmal sauber.
+    name: `Preise ${f.station.name}`,
+    zeilen,
+    breiten: [10, 30, 26, ...Array(spalten - 4).fill(16), 20],
+    frieren: kopfZeile + 1,
+    filter: `A${kopfZeile + 1}:${spaltenBuchstabe(spalten - 1)}${letzte}`,
+    // Nur ueber die Gesamtpreise. Tagespreise mit hineinzunehmen verschoebe
+    // die Skala: sie sind um ein Vielfaches kleiner und faerbten alles gleich.
+    farbskala:
+      opt.farbskala && zeigeGesamt && letzte > kopfZeile + 1
+        ? `${spaltenBuchstabe(abGesamt)}${kopfZeile + 2}:${spaltenBuchstabe(bisGesamt)}${letzte}`
+        : null,
+  };
+}
+
+/** Spaltenbuchstabe — dieselbe Rechnung wie in xlsx.js, hier fuer die Bereiche. */
+function spaltenBuchstabe(i) {
+  let s = '';
+  for (let n = i + 1; n > 0; ) {
+    const r = (n - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+/** Das Schutzblatt: die vier Faecher je Länderseite. */
+function xlsxSchutzblatt(jobs, waehrung) {
+  const relevant = jobs.filter((j) => (j.market.cur || '') === waehrung);
+  const zeilen = [];
+  const f = relevant[0];
+  if (!f) return null;
+
+  let etwas = false;
+  const kopf = [
+    { w: 'ACRISS', s: STIL.kopfzeile },
+    { w: 'Länderseite', s: STIL.kopfzeile },
+    { w: 'Ohne Schutz', s: STIL.kopfzeile },
+    { w: 'Mit Selbstbeteiligung', s: STIL.kopfzeile },
+    { w: 'Freistellung', s: STIL.kopfzeile },
+    { w: 'Freistellung plus', s: STIL.kopfzeile },
+  ];
+
+  const daten = [];
+  for (const [key, r] of schutz) {
+    const j = relevant.find((x) => jobKey(x.market.host, x.station.code, x.variant, r.acriss) === key);
+    if (!j || !r.pakete?.length) continue;
+    const fa = schutzFaecher(r.pakete);
+    if (!fa) continue;
+    etwas = true;
+    daten.push([
+      r.acriss,
+      j.market.label,
+      fa.ohne ? { w: fa.ohne.gesamt, s: STIL.betrag } : null,
+      fa.sb ? { w: fa.sb.gesamt, s: STIL.betrag } : null,
+      fa.frei1 ? { w: fa.frei1.gesamt, s: STIL.betrag } : null,
+      fa.frei2 ? { w: fa.frei2.gesamt, s: STIL.betrag } : null,
+    ]);
+  }
+  if (!etwas) return null;
+
+  zeilen.push(...xlsxKopf('Schutzpakete — abgelesener Endpreis aus der Kasse', f, waehrung));
+  const kopfZeile = zeilen.length;
+  zeilen.push(kopf);
+  daten.sort((a, b) => String(a[0]).localeCompare(String(b[0])) || String(a[1]).localeCompare(String(b[1])));
+  zeilen.push(...daten);
+  zeilen.push([]);
+  zeilen.push([
+    {
+      w:
+        'Jedes Paket wurde in der Kasse einzeln ausgewählt und die Gesamtsumme abgelesen. ' +
+        'Der Tagespreis mal Miettage lag gemessen bis zu 26 % daneben.',
+      s: STIL.klein,
+    },
+  ]);
+
+  return {
+    name: 'Schutzpakete',
+    zeilen,
+    breiten: [10, 22, 18, 22, 18, 20],
+    frieren: kopfZeile + 1,
+    filter: `A${kopfZeile + 1}:F${kopfZeile + daten.length + 1}`,
+  };
+}
+
+/** Das Kalenderblatt: ein Abholtag je Zeile. */
+function xlsxKalenderblatt() {
+  const d = kalJobs();
+  if (!d) return null;
+
+  const zeilen = [
+    [{ w: 'Monatsübersicht', s: STIL.titel }],
+    [{ w: 'Station', s: STIL.klein }, d.station.name, null, { w: 'Nr.', s: STIL.klein }, d.station.code],
+    [
+      { w: 'Länderseite', s: STIL.klein },
+      `${d.markt.label} (${d.markt.cur})`,
+      null,
+      { w: 'Mietdauer', s: STIL.klein },
+      state.kalender.dauer,
+    ],
+    [
+      { w: 'Klasse', s: STIL.klein },
+      state.kalender.klasse || 'Günstigste Klasse je Tag',
+      null,
+      { w: 'Abruf', s: STIL.klein },
+      state.kalender.inkognito ? 'ohne Cookies' : 'mit Cookies',
+    ],
+    [{ w: 'Erstellt', s: STIL.klein }, new Date().toLocaleString('de-DE')],
+    [],
+  ];
+  const kopfZeile = zeilen.length;
+  // Bei mehreren Uhrzeiten gehört eine Spalte dafür dazu — sonst stünden
+  // drei Zeilen mit demselben Datum und verschiedenen Preisen da, und man
+  // wüsste nicht, welche welche ist.
+  const mehrZeiten = kalZeitVarianten().length > 1;
+  zeilen.push([
+    { w: 'Abholtag', s: STIL.kopfzeile },
+    { w: 'Wochentag', s: STIL.kopfzeile },
+    { w: 'Rückgabe', s: STIL.kopfzeile },
+    ...(mehrZeiten
+      ? [
+          { w: 'Abholzeit', s: STIL.kopfzeile },
+          { w: 'Rückgabezeit', s: STIL.kopfzeile },
+        ]
+      : []),
+    { w: 'Gesamtpreis', s: STIL.kopfzeile },
+    { w: 'Pro Tag', s: STIL.kopfzeile },
+    { w: 'Herkunft', s: STIL.kopfzeile },
+    { w: 'Gemessen', s: STIL.kopfzeile },
+  ]);
+
+  // Je Abholtag den günstigsten Preis merken, um ihn hervorzuheben — bei
+  // mehreren Uhrzeiten ist genau das die Aussage der Tabelle.
+  const bestProTag = new Map();
+  for (const j of d.jobs) {
+    const p = kalPreis(j);
+    if (p.preis == null) continue;
+    if (!bestProTag.has(j.pickupDate) || p.preis < bestProTag.get(j.pickupDate)) {
+      bestProTag.set(j.pickupDate, p.preis);
+    }
+  }
+
+  let n = 0;
+  for (const j of d.jobs) {
+    const p = kalPreis(j);
+    if (p.preis == null) continue;
+    n++;
+    const best = mehrZeiten && p.preis === bestProTag.get(j.pickupDate);
+    zeilen.push([
+      j.pickupDate,
+      new Date(j.pickupDate + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'long' }),
+      j.returnDate,
+      ...(mehrZeiten ? [j.pickupTime, j.returnTime] : []),
+      { w: p.preis, s: best ? STIL.betragBest : STIL.betrag },
+      { w: p.preis / state.kalender.dauer, s: STIL.betragGrau },
+      // Woher der Wert stammt, gehoert dazu: ein Preis aus dem Verlauf ist
+      // etwas anderes als einer von eben.
+      p.ausAufzeichnung ? 'gespeicherter Preisverlauf' : 'frischer Abruf',
+      p.zeit ? new Date(p.zeit).toLocaleString('de-DE') : '',
+    ]);
+  }
+  if (!n) return null;
+
+  const preisSp = mehrZeiten ? 'F' : 'D';
+  const letzteSp = mehrZeiten ? 'I' : 'G';
+  return {
+    name: 'Monatsübersicht',
+    zeilen,
+    breiten: mehrZeiten
+      ? [14, 14, 14, 12, 13, 16, 14, 26, 20]
+      : [14, 14, 14, 16, 14, 26, 20],
+    frieren: kopfZeile + 1,
+    filter: `A${kopfZeile + 1}:${letzteSp}${kopfZeile + n + 1}`,
+    farbskala: `${preisSp}${kopfZeile + 2}:${preisSp}${kopfZeile + n + 1}`,
+  };
+}
+
+/**
+ * Die Mappe zusammenstellen und speichern.
+ *
+ * Je Waehrung eine eigene Datei waere unhandlich; je Waehrung ein eigenes
+ * Blatt ist genau richtig. Der Zahlenformat-Code der Mappe kann aber nur eine
+ * Waehrung tragen — deshalb entscheidet die haeufigste, und die uebrigen
+ * Blaetter tragen sie im Kopfblock.
+ */
+function ladeExcelHerunter() {
+  const opt = xlsxOptionen();
+  const alle = aktuelleJobs();
+  const jobs = opt.alleStationen ? alle : alle.filter((j) => j.gruppe === aktiveGruppe);
+
+  const blaetter = [];
+  const waehrungen = [...new Set(jobs.map((j) => j.market.cur || ''))].filter(Boolean);
+
+  if (opt.preise) {
+    for (const w of waehrungen) {
+      // Bei "alle Stationen" je Station ein Blatt: eine Tabelle, die zwei
+      // Stationen uebereinanderlegt, verglichen zwei verschiedene Reisen.
+      const gruppen = opt.alleStationen ? [...new Set(jobs.map((j) => j.gruppe))] : [aktiveGruppe];
+      for (const g of gruppen) {
+        const b = xlsxPreisblatt(jobs.filter((j) => j.gruppe === g), w, opt);
+        // Die Währung nach vorn: Excel lässt nur 31 Zeichen zu, und beim
+        // Abschneiden fiele sonst genau das weg, was die Blätter unterscheidet
+        // — aus zwei Währungen würden zwei gleich heissende Blätter.
+        if (b) blaetter.push(waehrungen.length > 1 ? { ...b, name: `${w} · ${b.name}` } : b);
+      }
+    }
+  }
+  if (opt.schutz) {
+    for (const w of waehrungen) {
+      const b = xlsxSchutzblatt(jobs.filter((j) => j.gruppe === aktiveGruppe), w);
+      if (b) blaetter.push(waehrungen.length > 1 ? { ...b, name: `${w} · ${b.name}` } : b);
+    }
+  }
+  if (opt.kalender) {
+    const b = xlsxKalenderblatt();
+    if (b) blaetter.push(b);
+  }
+
+  if (!blaetter.length) {
+    flash('Für diese Auswahl liegt nichts vor, was sich ausgeben ließe.');
+    return;
+  }
+
+  const f = jobs.find((j) => j.gruppe === aktiveGruppe) || jobs[0];
+  const name =
+    `tracker-${(f?.station.name || 'vergleich').replace(/[^\wäöüÄÖÜß]+/g, '-').toLowerCase()}` +
+    `-${f?.variant.pickupDate || ''}.xlsx`;
+
+  const blob = mappe(blaetter, waehrungen[0] || 'EUR');
+  const url = URL.createObjectURL(blob);
+  const a = el('a', { href: url, download: name });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  flash(`Als Excel gespeichert — ${blaetter.length} ${blaetter.length === 1 ? 'Blatt' : 'Blätter'}.`);
+}
+
 /* =========================================================== Preiskurve
  *
  * Die Frage, die kein Vergleichsportal ehrlich beantwortet: wird es billiger,
@@ -548,6 +1138,7 @@ function ladeCsvHerunter() {
 let kurveGruppe = null;
 let kurveKlasse = null;
 let kurveGruppen = [];
+let kurveBildAnfrage = 0;
 
 async function ladeKurve() {
   try {
@@ -568,15 +1159,15 @@ async function ladeKurve() {
  * Server — das Werkzeug laedt sonst nichts nach.
  */
 function zeichneKurve(reihen, waehrung) {
-  const B = 720;
-  const H = 260;
-  const links = 58;
-  const unten = 26;
-  const oben = 12;
-  const rechts = 12;
+  const B = 960;
+  const H = 290;
+  const links = 66;
+  const unten = 36;
+  const oben = 22;
+  const rechts = 18;
 
   const alle = reihen.flatMap((r) => r.punkte);
-  if (alle.length < 2) return null;
+  if (!alle.length) return null;
 
   const tMin = Math.min(...alle.map((p) => p.t));
   const tMax = Math.max(...alle.map((p) => p.t));
@@ -584,10 +1175,10 @@ function zeichneKurve(reihen, waehrung) {
   const pMax = Math.max(...alle.map((p) => p.p));
   // Etwas Luft nach oben und unten, sonst klebt die Linie am Rand.
   const spanne = Math.max(pMax - pMin, pMax * 0.05, 1);
-  const yMin = pMin - spanne * 0.15;
+  const yMin = Math.max(0, pMin - spanne * 0.15);
   const yMax = pMax + spanne * 0.15;
 
-  const x = (t) => links + ((t - tMin) / Math.max(tMax - tMin, 1)) * (B - links - rechts);
+  const x = (t) => tMin === tMax ? (links + B - rechts) / 2 : links + ((t - tMin) / (tMax - tMin)) * (B - links - rechts);
   const y = (p) => oben + (1 - (p - yMin) / (yMax - yMin)) * (H - oben - unten);
 
   const svg = (tag, attrs, ...kinder) => {
@@ -597,7 +1188,7 @@ function zeichneKurve(reihen, waehrung) {
     return n;
   };
 
-  const farben = ['var(--accent)', '#5856d6', '#00a37a', '#c8280f', '#0a84ff', '#a35bd6'];
+  const farben = ['#0066cc', '#8172b2', '#418a87', '#c38b48', '#6b8dab', '#ba768c', '#566375', '#79935e'];
 
   // Waagerechte Hilfslinien mit Beschriftung — ohne die ist eine Kurve nur
   // eine Form, keine Aussage.
@@ -606,11 +1197,11 @@ function zeichneKurve(reihen, waehrung) {
     const wert = yMin + ((yMax - yMin) * i) / 3;
     const yy = y(wert);
     linien.push(
-      svg('line', { x1: links, y1: yy, x2: B - rechts, y2: yy, stroke: 'var(--hairline)', 'stroke-width': 1 }),
+      svg('line', { x1: links, y1: yy, x2: B - rechts, y2: yy, stroke: '#e8ebf0', 'stroke-width': 1, 'stroke-dasharray': '3 5' }),
       svg(
         'text',
-        { x: links - 8, y: yy + 4, 'text-anchor': 'end', fill: 'var(--muted)', 'font-size': 11 },
-        document.createTextNode(Math.round(wert).toLocaleString('de-DE'))
+        { x: links - 12, y: yy + 4, 'text-anchor': 'end', fill: 'var(--muted)', 'font-size': 12 },
+        document.createTextNode(wert.toLocaleString('de-DE', { maximumFractionDigits: yMax - yMin < 1 ? 2 : yMax - yMin < 10 ? 1 : 0 }))
       )
     );
   }
@@ -621,18 +1212,23 @@ function zeichneKurve(reihen, waehrung) {
     return svg(
       'g',
       {},
+      reihen.length === 1 && sortiert.length > 1 ? svg('path', {
+        d: `${d} L${x(sortiert.at(-1).t)},${H - unten} L${x(sortiert[0].t)},${H - unten} Z`,
+        fill: '#0066cc', opacity: '.045',
+      }) : null,
       svg('path', {
         d,
         fill: 'none',
         stroke: farben[i % farben.length],
-        'stroke-width': 2,
+        'stroke-width': 2.5,
+        'stroke-dasharray': i >= farben.length ? '7 5' : 'none',
         'stroke-linejoin': 'round',
         'stroke-linecap': 'round',
       }),
       ...sortiert.map((p) =>
         svg(
           'circle',
-          { cx: x(p.t).toFixed(1), cy: y(p.p).toFixed(1), r: 3, fill: farben[i % farben.length] },
+          { cx: x(p.t).toFixed(1), cy: y(p.p).toFixed(1), r: 4, fill: farben[i % farben.length], stroke: '#fff', 'stroke-width': 1.5 },
           svg(
             'title',
             {},
@@ -645,23 +1241,23 @@ function zeichneKurve(reihen, waehrung) {
     );
   });
 
-  const zeitachse = [tMin, tMax].map((t, i) =>
+  const zeitachse = (tMin === tMax ? [tMin] : [tMin, tMax]).map((t, i) =>
     svg(
       'text',
       {
-        x: i ? B - rechts : links,
+        x: tMin === tMax ? x(t) : i ? B - rechts : links,
         y: H - 6,
-        'text-anchor': i ? 'end' : 'start',
+        'text-anchor': tMin === tMax ? 'middle' : i ? 'end' : 'start',
         fill: 'var(--muted)',
-        'font-size': 11,
+        'font-size': 12,
       },
-      document.createTextNode(new Date(t).toLocaleDateString('de-DE'))
+      document.createTextNode(new Date(t).toLocaleString('de-DE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }))
     )
   );
 
   const bild = svg(
     'svg',
-    { viewBox: `0 0 ${B} ${H}`, class: 'kurve', role: 'img' },
+    { viewBox: `0 0 ${B} ${H}`, class: 'kurve', role: 'img', 'aria-label': `Preisverlauf in ${waehrung || 'unbekannter Währung'} mit ${alle.length} ${alle.length === 1 ? 'Messpunkt' : 'Messpunkten'}. Letzte Preise stehen in der Legende.` },
     ...linien,
     ...pfade,
     ...zeitachse
@@ -673,70 +1269,132 @@ function zeichneKurve(reihen, waehrung) {
     ...reihen.map((r, i) =>
       el(
         'span',
-        {},
-        el('i', { style: `background:${farben[i % farben.length]}` }),
-        `${r.label} — ${money(r.punkte[r.punkte.length - 1].p, waehrung)}`
+        { class: 'trend-series' },
+        el('span', { class: 'trend-series-name' }, el('i', { style: `background:${farben[i % farben.length]}`, 'aria-hidden': 'true' }), r.label),
+        el('strong', {}, waehrung ? kalBetrag(r.punkte.at(-1).p, waehrung) : money(r.punkte.at(-1).p, '')),
+        el('span', { class: 'trend-series-date' }, `Letzter Abruf: ${new Date(r.punkte.at(-1).t).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`)
       )
     )
   );
 
-  return el('div', {}, bild, legende);
+  return el('div', {}, el('div', { class: 'trend-chart-scroll', tabindex: '0', role: 'region', 'aria-label': `Preisdiagramm ${waehrung || ''}, horizontal scrollbar` }, bild), legende);
 }
 
 async function renderKurveBild() {
+  const anfrage = ++kurveBildAnfrage;
   const g = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
   if (!g || !kurveKlasse) {
     $('#kurveKarte').hidden = true;
     return;
   }
 
-  const p = new URLSearchParams({ station: g.station, von: g.von, bis: g.bis, acriss: kurveKlasse });
-  const d = await (await fetch(`/api/verlauf?${p}`)).json();
-  const punkte = d.punkte || [];
-
-  const nachHost = new Map();
-  for (const e of punkte) {
-    if (!nachHost.has(e.h)) nachHost.set(e.h, []);
-    nachHost.get(e.h).push(e);
-  }
-  const reihen = [...nachHost.entries()]
-    .map(([host, pkt]) => ({ label: host.replace(/^www\./, ''), punkte: pkt }))
-    .filter((r) => r.punkte.length)
-    .sort((a, b) => a.label.localeCompare(b.label));
-
-  const waehrung = punkte[0]?.w || '';
-  const station = stationByCode(g.station);
-  $('#kurveTitel').textContent =
-    `${station?.name || 'Station ' + g.station} · ${kurveKlasse} · ${pretty(g.von)} → ${pretty(g.bis)}`;
-
-  const bild = reihen.length ? zeichneKurve(reihen, waehrung) : null;
+  const klasse = kurveKlasse;
+  $('#kurveTitel').textContent = `${klasse} · ${decodeAcriss(klasse)?.label || 'Deine Fahrzeugklasse'}`;
+  $('#kurveUntertitel').textContent = `${stationByCode(g.station)?.name || 'Station ' + g.station} · ${pretty(g.von)} – ${pretty(g.bis)}`;
   $('#kurveKarte').hidden = false;
+  $('#kurveBild').setAttribute('aria-busy', 'true');
+  setChildren($('#kurveBild'), el('p', { class: 'empty trend-empty' }, 'Dein Preisverlauf wird geladen …'));
+  $('#kurveNote').textContent = '';
+  const p = new URLSearchParams({ station: g.station, von: g.von, bis: g.bis, acriss: klasse });
+  let punkte;
+  try {
+    const r = await fetch(`/api/verlauf?${p}`);
+    if (!r.ok) throw new Error('Verlauf nicht verfügbar');
+    const d = await r.json();
+    punkte = (d.punkte || []).filter((e) => Number.isFinite(e.p) && Number.isFinite(e.t)).sort((a, b) => a.t - b.t);
+  } catch {
+    if (anfrage !== kurveBildAnfrage) return;
+    $('#kurveBild').setAttribute('aria-busy', 'false');
+    setChildren($('#kurveBild'), el('p', { class: 'empty trend-empty' }, 'Der Preisverlauf ist gerade nicht erreichbar. Öffne diese Ansicht erneut, um es noch einmal zu versuchen.'));
+    return;
+  }
+  if (anfrage !== kurveBildAnfrage) return;
+  $('#kurveBild').setAttribute('aria-busy', 'false');
 
-  if (!bild) {
+  // Unterschiedliche Währungen erhalten jeweils eine eigene Skala und Kennzahlen.
+  const nachWaehrung = new Map();
+  for (const e of punkte) {
+    const w = e.w || '';
+    if (!nachWaehrung.has(w)) nachWaehrung.set(w, []);
+    nachWaehrung.get(w).push(e);
+  }
+  if (!punkte.length) {
     setChildren(
       $('#kurveBild'),
       el(
         'p',
-        { class: 'empty' },
-        punkte.length
-          ? 'Erst ein Messpunkt — eine Linie braucht mindestens zwei. Dieselbe Suche später noch einmal abrufen.'
-          : 'Für diese Klasse ist noch nichts aufgezeichnet.'
+        { class: 'empty trend-empty' },
+        'Für diese Klasse ist noch kein Preis aufgezeichnet. Der nächste Preisabruf ergänzt deinen Verlauf.'
       )
     );
     $('#kurveNote').textContent = '';
     return;
   }
 
-  setChildren($('#kurveBild'), bild);
+  setChildren($('#kurveBild'), ...[...nachWaehrung].map(([waehrung, werte]) => {
+    // Nach Länderseite, Abrufmodus *und* Uhrzeit getrennt. Alle drei ändern
+    // den Preis, ohne dass Sixt etwas geändert hätte: mit und ohne Cookies
+    // sind zwei Messreihen, und 12:30 gegen 13:30 lagen gemessen bis zu 57 %
+    // auseinander. In eine Linie gelegt sähe jeder Wechsel aus wie eine
+    // Preisänderung.
+    const mehrereZeiten = new Set(werte.map((e) => `${e.z || ''}|${e.zr || ''}`)).size > 1;
+    const nachHost = new Map();
+    for (const e of werte) {
+      const k = `${e.h}|${e.i ? 1 : 0}|${e.z || ''}|${e.zr || ''}`;
+      if (!nachHost.has(k)) nachHost.set(k, []);
+      nachHost.get(k).push(e);
+    }
+    const reihen = [...nachHost]
+      .map(([k, pkt]) => {
+        const [host, modus, ab, zurueck] = k.split('|');
+        return {
+          label:
+            host.replace(/^www\./, '') +
+            (modus === '1' ? ' · ohne Cookies' : '') +
+            // Die Uhrzeit nur anschreiben, wo es mehr als eine gibt — sonst
+            // stünde an jeder Linie eine Zahl, die nichts unterscheidet.
+            (mehrereZeiten && ab ? ` · ${ab}${zurueck && zurueck !== ab ? `→${zurueck}` : ''}` : ''),
+          punkte: pkt,
+        };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label));
+    const tiefst = werte.reduce((a, b) => a.p <= b.p ? a : b);
+    const letzte = reihen.map((r) => r.punkte.at(-1)).reduce((a, b) => a.p <= b.p ? a : b);
+    const kennzahl = (label, wert, note) => el('div', { class: 'calendar-insight' },
+      el('span', { class: 'calendar-insight-label' }, label),
+      el('strong', { class: 'calendar-insight-value' }, wert),
+      el('span', { class: 'calendar-insight-note' }, note));
+    return el('section', { class: 'trend-currency', 'aria-label': `Preise in ${waehrung || 'unbekannter Währung'}` },
+      el('div', { class: 'trend-currency-heading' }, el('h3', {}, `Preise in ${waehrung || 'unbekannter Währung'}`), el('span', {}, 'Aufgezeichnete Gesamtpreise')),
+      el('div', { class: 'calendar-insights' },
+        kennzahl('Bisheriger Tiefstpreis', waehrung ? kalBetrag(tiefst.p, waehrung) : money(tiefst.p, ''), `${tiefst.h.replace(/^www\./, '')} · ${new Date(tiefst.t).toLocaleDateString('de-DE')}`),
+        kennzahl('Günstigster letzter Stand', waehrung ? kalBetrag(letzte.p, waehrung) : money(letzte.p, ''), `${letzte.h.replace(/^www\./, '')} · letzter Abruf je Seite`),
+        kennzahl('Messpunkte', String(werte.length), `${reihen.length} Länderseite${reihen.length === 1 ? '' : 'n'}`)
+      ),
+      zeichneKurve(reihen, waehrung)
+    );
+  }));
   const spanne = Math.max(...punkte.map((e) => e.t)) - Math.min(...punkte.map((e) => e.t));
   const tage = Math.round(spanne / 86400000);
   $('#kurveNote').textContent =
-    `${punkte.length} Messpunkte über ${tage < 1 ? 'weniger als einen Tag' : tage + ' Tage'}. ` +
-    'Jeder Punkt ist ein Abruf — die Kurve wird mit jedem weiteren aussagekräftiger.';
+    `${punkte.length} ${punkte.length === 1 ? 'Messpunkt' : 'Messpunkte'} über ${tage < 1 ? 'weniger als einen Tag' : tage === 1 ? 'einen Tag' : tage + ' Tage'}. ` +
+    'Jeder Punkt ist ein Abruf. Verbundene Punkte zeigen die Entwicklung derselben Länderseite.' +
+    (nachWaehrung.size > 1 ? ' Verschiedene Währungen werden getrennt dargestellt.' : '') +
+    (punkte.some((e) => e.i) && punkte.some((e) => !e.i)
+      ? ' Abrufe ohne Cookies stehen als eigene Reihe — sie sind mit den anderen nicht direkt vergleichbar.'
+      : '') +
+    (new Set(punkte.map((e) => `${e.z || ''}|${e.zr || ''}`)).size > 1
+      ? ' Verschiedene Abholzeiten stehen als eigene Reihen: Sixt rechnet nach Uhrzeit ab, ' +
+        'ein Zeitwechsel ist keine Preisänderung.'
+      : '');
 }
 
 function renderKurve() {
+  $('#kurveAnzahl').textContent = `${kurveGruppen.length} gespeicherte Reisen`;
   if (!kurveGruppen.length) {
+    kurveGruppe = null;
+    kurveKlasse = null;
+    kurveBildAnfrage++;
     setChildren(
       $('#kurveWahl'),
       el(
@@ -747,6 +1405,8 @@ function renderKurve() {
     );
     $('#kurveKlassen').hidden = true;
     $('#kurveKarte').hidden = true;
+    setChildren($('#kurveKontext'), el('p', { class: 'eyebrow' }, 'HIER BEGINNT DEIN VERLAUF'), el('h3', {}, 'Ein erster Preis. Der Anfang von mehr.'), el('p', {}, 'Starte einen Preisvergleich. Deine Reise erscheint anschließend hier.'));
+    renderWecker();
     return;
   }
 
@@ -758,24 +1418,23 @@ function renderKurve() {
 
   setChildren(
     $('#kurveWahl'),
-    ...kurveGruppen.map((g) => {
+    el('select', { id: 'kurveSuche', name: 'reise', class: 'premium-select', onchange: (e) => {
+      kurveGruppe = e.target.value;
+      kurveKlasse = null;
+      renderKurve();
+      $('#kurveSuche').focus({ preventScroll: true });
+    } }, ...kurveGruppen.map((g) => {
       const schluessel = `${g.station}|${g.von}|${g.bis}`;
       const station = stationByCode(g.station);
       return el(
-        'button',
+        'option',
         {
-          type: 'button',
-          class: 'pill' + (schluessel === kurveGruppe ? ' on' : ''),
-          title: `${g.punkte} Messpunkte · ${g.klassen.length} Klassen · ${g.hosts.length} Länderseiten`,
-          onclick: () => {
-            kurveGruppe = schluessel;
-            kurveKlasse = null;
-            renderKurve();
-          },
+          value: schluessel,
+          selected: schluessel === kurveGruppe,
         },
-        `${station?.name || g.station} · ${pretty(g.von)}`
+        `${station?.name || g.station} · ${pretty(g.von)} – ${pretty(g.bis)}`
       );
-    })
+    }))
   );
 
   const g = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
@@ -786,20 +1445,28 @@ function renderKurve() {
   $('#kurveKlassen').hidden = false;
   setChildren(
     $('#kurveKlassenPillen'),
-    ...g.klassen.slice(0, 30).map((k) =>
+    el('select', { id: 'kurveKlasseWahl', name: 'fahrzeugklasse', class: 'premium-select', onchange: (e) => {
+      kurveKlasse = e.target.value;
+      renderKurve();
+      $('#kurveKlasseWahl').focus({ preventScroll: true });
+    } }, ...g.klassen.map((k) =>
       el(
-        'button',
+        'option',
         {
-          type: 'button',
-          class: 'pill' + (k === kurveKlasse ? ' on' : ''),
-          onclick: () => {
-            kurveKlasse = k;
-            renderKurve();
-          },
+          value: k,
+          selected: k === kurveKlasse,
         },
-        k
+        `${k} — ${decodeAcriss(k)?.label || 'Fahrzeugklasse'}`
       )
-    )
+    ))
+  );
+
+  setChildren($('#kurveKontext'),
+    el('span', { class: 'feature-symbol', 'aria-hidden': 'true', html: '<svg class="icon"><use href="#i-chart"/></svg>' }),
+    el('p', { class: 'eyebrow' }, 'DEINE REISE IM FOKUS'),
+    el('h3', {}, stationByCode(g.station)?.name || `Station ${g.station}`),
+    el('p', {}, `${pretty(g.von)} – ${pretty(g.bis)} · ${daysBetween(g.von, g.bis)} Tage`),
+    el('div', { class: 'trend-context-meta' }, el('span', {}, `${g.hosts.length} Länderseite${g.hosts.length === 1 ? '' : 'n'}`), el('span', {}, `${g.klassen.length} Fahrzeugklasse${g.klassen.length === 1 ? '' : 'n'}`))
   );
 
   renderKurveBild();
@@ -821,14 +1488,29 @@ function renderKurve() {
  * halbe Stunde wartet.
  */
 
-const KAL_DAUERN = [1, 2, 3, 4, 5, 6, 7, 10, 14, 21];
+/**
+ * Vorgeschlagene Mietdauern.
+ *
+ * Bis 7 Tage jeder einzelne Tag, danach in Sprüngen, wie Mietwagen tatsächlich
+ * gebucht werden: Wochen, drei Wochen, ein Monat. Was hier fehlt, trägt man
+ * unter "Andere Dauer" von Hand ein.
+ */
+const KAL_DAUERN = [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 27, 28, 30];
+
+/** Grenzen für die frei eingetragene Dauer. */
+const KAL_DAUER_MIN = 1;
+const KAL_DAUER_MAX = 90;
 const KAL_SPANNEN = [7, 14, 21, 28, 35, 42, 56];
 
 let kalLaeuft = false;
 let kalKlassen = [];
+let kalKatalog = {};
+let kalKatalogOrt = '';
+let kalTagAuswahl = null;
 
 /** Die aktuelle Einstellung als Auftragsliste. */
 function kalJobs() {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(state.kalender.start)) return null;
   const station = stationByCode(state.kalender.station);
   if (!station) return null;
 
@@ -840,20 +1522,140 @@ function kalJobs() {
   for (let i = 0; i < state.kalender.spanne; i++) {
     const ab = addDays(state.kalender.start, i);
     const bis = addDays(ab, state.kalender.dauer);
-    const v = { pickupDate: ab, returnDate: bis, duration: state.kalender.dauer };
-    jobs.push({
-      key: jobKey(host, station.code, v),
-      provider: PROVIDER,
-      host,
-      stationCode: station.code,
-      pickupDate: ab,
-      returnDate: bis,
-      pickupTime: state.kalender.zeit,
-      returnTime: state.kalender.zeit,
-      currency: markt.cur,
-    });
+    for (const z of kalZeitVarianten()) {
+      // Die Uhrzeit gehoert in die Variante, nicht bloss in den Auftrag: sonst
+      // fiele jobKey auf state.pickupTime zurueck — die Zeit des
+      // Preisvergleichs — und ein Wechsel der Kalenderzeit aenderte den
+      // Schluessel nicht. Man saehe dann den alten Preis fuer eine andere Zeit.
+      const v = {
+        pickupDate: ab,
+        returnDate: bis,
+        duration: state.kalender.dauer,
+        pickupTime: z.ab,
+        returnTime: z.zurueck,
+      };
+      jobs.push({
+        key: jobKey(host, station.code, v, null, state.kalender.inkognito),
+        provider: PROVIDER,
+        host,
+        stationCode: station.code,
+        pickupDate: ab,
+        returnDate: bis,
+        pickupTime: z.ab,
+        returnTime: z.zurueck,
+        currency: markt.cur,
+        inkognito: state.kalender.inkognito || undefined,
+      });
+    }
   }
-  return { jobs, station, markt };
+  return { jobs, station, markt, zeiten: kalZeitVarianten() };
+}
+
+/**
+ * Die Uhrzeitpaare des Kalenders.
+ *
+ * Dieselbe Ueberlegung wie beim Preisvergleich, mit einem Unterschied im
+ * Gewicht: hier multipliziert jede Zeit die ganze Spanne. 56 Abholtage mal
+ * drei Uhrzeiten sind 168 Abrufe. Deshalb sagt die Oberflaeche die Zahl vorher
+ * an, statt sie herauszufinden zu lassen.
+ */
+function kalZeitVarianten() {
+  const paare = [{ ab: state.kalender.zeit, zurueck: state.kalender.zeit }];
+  for (const z of state.kalender.zeiten || []) {
+    if (!/^\d{2}:\d{2}$/.test(z.ab) || !/^\d{2}:\d{2}$/.test(z.zurueck)) continue;
+    if (paare.some((p) => p.ab === z.ab && p.zurueck === z.zurueck)) continue;
+    paare.push({ ab: z.ab, zurueck: z.zurueck });
+  }
+  return paare;
+}
+
+function renderKalZeiten() {
+  const liste = state.kalender.zeiten || [];
+  setChildren(
+    $('#kalZeitenListe'),
+    ...liste.map((z, i) =>
+      el(
+        'div',
+        { class: 'zeitzeile' },
+        el('span', { class: 'zlabel' }, `Zeit ${i + 2}`),
+        el('input', {
+          type: 'time',
+          step: '900',
+          value: z.ab,
+          'aria-label': `Abholzeit ${i + 2}`,
+          onchange: (e) => {
+            state.kalender.zeiten[i].ab = e.target.value;
+            kalTagAuswahl = null;
+            persist();
+            renderKalFormular();
+            renderKalBild();
+          },
+        }),
+        el('span', { class: 'zpfeil', 'aria-hidden': 'true' }, '→'),
+        el('input', {
+          type: 'time',
+          step: '900',
+          value: z.zurueck,
+          'aria-label': `Rückgabezeit ${i + 2}`,
+          onchange: (e) => {
+            state.kalender.zeiten[i].zurueck = e.target.value;
+            kalTagAuswahl = null;
+            persist();
+            renderKalFormular();
+            renderKalBild();
+          },
+        }),
+        el(
+          'button',
+          {
+            type: 'button',
+            class: 'ghost mini',
+            title: 'Diese Uhrzeit entfernen',
+            onclick: () => {
+              state.kalender.zeiten.splice(i, 1);
+              kalTagAuswahl = null;
+              persist();
+              renderKalFormular();
+              renderKalBild();
+            },
+          },
+          '×'
+        )
+      )
+    )
+  );
+
+  const n = kalZeitVarianten().length;
+  const abrufe = n * state.kalender.spanne;
+  $('#kalZeitenHinweis').textContent =
+    n === 1
+      ? 'Nur die Abholzeit oben.'
+      : `${n} Uhrzeiten × ${state.kalender.spanne} Abholtage = ${abrufe} Abrufe, rund ${minutenText(abrufe)}.`;
+  if (liste.length && !$('#kalZeitenBereich').open) $('#kalZeitenBereich').open = true;
+}
+
+/**
+ * Der beste Preis eines Abholtags ueber alle Uhrzeiten.
+ *
+ * Der Kalender zeigt eine Zahl je Tag. Bei mehreren Uhrzeiten ist die richtige
+ * Zahl die guenstigste — und dazu, welche Uhrzeit sie war. Ohne die zweite
+ * Angabe waere die erste unbrauchbar: man wuesste den Preis, aber nicht, wann
+ * man ihn bekommt.
+ */
+function kalTagBester(jobsDesTages) {
+  let bester = null;
+  let offen = 0;
+  for (const j of jobsDesTages) {
+    const p = kalPreis(j);
+    if (p.preis == null) {
+      if (!p.geladen) offen++;
+      continue;
+    }
+    // `uhr`, nicht `zeit`: `zeit` ist im Preisergebnis schon der Zeitpunkt der
+    // Messung. Zwei Bedeutungen unter einem Namen sind ein Fehler auf Vorrat.
+    if (!bester || p.preis < bester.preis) bester = { ...p, uhr: j.pickupTime, rueckUhr: j.returnTime, job: j };
+  }
+  return bester || { geladen: offen === 0, preis: null, uhr: null };
 }
 
 /** Welche Klassen sind an dieser Station schon einmal gesehen worden? */
@@ -861,18 +1663,61 @@ async function ladeKalKlassen() {
   const station = stationByCode(state.kalender.station);
   if (!station) {
     kalKlassen = [];
-    return;
+    kalKatalog = {};
+    kalKatalogOrt = '';
+    return true;
   }
+  const host = state.kalender.host;
+  const ort = `${station.code}|${host}`;
+  let klassen = {};
   try {
     const r = await fetch(
       `/api/katalog?provider=${PROVIDER}&station=${encodeURIComponent(station.code)}` +
-        `&hosts=${encodeURIComponent(state.kalender.host)}`
+        `&hosts=${encodeURIComponent(host)}`
     );
     const d = await r.json();
-    kalKlassen = Object.keys(d.klassen || {}).sort();
+    klassen = d.klassen || {};
   } catch {
-    kalKlassen = [];
+    /* Ohne Katalog bleibt die Auswahl der günstigsten Klasse möglich. */
   }
+  // Eine langsame Antwort darf nach einem Stationswechsel kein altes Bild zeigen.
+  if (`${state.kalender.station}|${state.kalender.host}` !== ort) return false;
+  kalKatalog = klassen;
+  kalKatalogOrt = ort;
+  kalKlassen = Object.keys(klassen).sort();
+  return true;
+}
+
+/** Das Beispiel gehört zur Klasse der Kalenderstation, nicht zur Hauptsuche. */
+function renderKalFahrzeug() {
+  const k = state.kalender;
+  const box = $('#kalFahrzeug');
+  const info = kalKatalogOrt === `${k.station}|${k.host}` ? kalKatalog[k.klasse] : null;
+  const modell = info?.modelle?.[0] || (k.klasse ? 'Deine Fahrzeugklasse' : 'Offen für das beste Angebot.');
+  const bild = info?.bild || '';
+  const beschreibung = info?.beispielText || decodeAcriss(k.klasse)?.label || '';
+  const signatur = JSON.stringify([k.station, k.host, k.klasse, modell, bild, beschreibung]);
+  if (box.dataset.signatur === signatur) return;
+  box.dataset.signatur = signatur;
+
+  const platzhalter = el('div', { class: 'kal-vehicle-placeholder', hidden: Boolean(bild) },
+    el('span', { html: '<svg class="icon" aria-hidden="true"><use href="#i-car"/></svg>' }),
+    k.klasse ? 'Kein Fahrzeugbild verfügbar' : 'Jeden Tag die günstigste Klasse'
+  );
+  const foto = bild ? el('img', {
+    class: 'kal-vehicle-image', src: bild, width: 400, height: 266,
+    alt: `${modell} – Beispielfahrzeug für ${k.klasse}`,
+    onerror: (e) => { e.target.hidden = true; platzhalter.hidden = false; },
+  }) : null;
+  setChildren(box,
+    el('p', { class: 'eyebrow' }, k.klasse ? 'DEIN BEISPIELFAHRZEUG' : 'DEINE AUSWAHL'),
+    el('h3', { class: 'kal-vehicle-model' }, modell),
+    el('div', { class: 'kal-vehicle-media' }, foto, platzhalter),
+    k.klasse ? el('div', { class: 'kal-vehicle-class' }, el('span', { class: 'acriss' }, k.klasse), beschreibung) : null,
+    el('p', { class: 'kal-vehicle-note' }, k.klasse
+      ? 'Beispiel aus dieser Klasse. Das tatsächliche Modell kann abweichen.'
+      : 'Wir vergleichen je Abholtag das günstigste Angebot. Modell und Fahrzeugklasse können wechseln.')
+  );
 }
 
 function renderKalFormular() {
@@ -883,9 +1728,11 @@ function renderKalFormular() {
   if (!host.options.length) {
     setChildren(
       host,
-      ...providerById(PROVIDER).markets.map((m) =>
-        el('option', { value: m.host }, `${m.label} (${m.cur})`)
-      )
+      // Gestörte Länderseiten stehen im Monatskalender nicht zur Wahl: ein
+      // ganzer Monat Fehlschläge wäre nur Wartezeit.
+      ...providerById(PROVIDER)
+        .markets.filter((m) => !m.gestoert)
+        .map((m) => el('option', { value: m.host }, `${m.label} (${m.cur})`))
     );
   }
   host.value = k.host;
@@ -901,12 +1748,24 @@ function renderKalFormular() {
   );
   $('#kalKlasse').value = kalKlassen.includes(k.klasse) ? k.klasse : '';
   if (!kalKlassen.includes(k.klasse)) k.klasse = '';
+  renderKalFahrzeug();
 
+  // Eine selbst eingetragene Dauer steht mit in der Liste, sonst spränge die
+  // Auswahl beim nächsten Zeichnen auf einen der Vorschläge zurück.
+  const dauern = KAL_DAUERN.includes(k.dauer)
+    ? KAL_DAUERN
+    : [...KAL_DAUERN, k.dauer].sort((a, b) => a - b);
   setChildren(
     $('#kalDauer'),
-    ...KAL_DAUERN.map((n) => el('option', { value: n }, `${n} ${n === 1 ? 'Tag' : 'Tage'}`))
+    ...dauern.map((n) => el('option', { value: n }, `${n} ${n === 1 ? 'Tag' : 'Tage'}`)),
+    el('option', { value: 'frei' }, 'Andere Dauer …')
   );
   $('#kalDauer').value = String(k.dauer);
+  // Das Eingabefeld bleibt stehen, solange eine eigene Dauer eingestellt ist —
+  // sonst verschwände der Wert aus dem Blick, obwohl er gilt.
+  const eigene = !KAL_DAUERN.includes(k.dauer);
+  $('#kalDauerFrei').hidden = !eigene;
+  if (eigene) $('#kalDauerFrei').value = String(k.dauer);
 
   setChildren(
     $('#kalSpanne'),
@@ -916,25 +1775,53 @@ function renderKalFormular() {
 
   $('#kalStart').value = k.start;
   $('#kalZeit').value = k.zeit;
+  $('#kalInkognito').checked = Boolean(k.inkognito);
+  renderKalZeiten();
 
   const station = stationByCode(k.station);
   $('#kalStationGewaehlt').textContent = station
     ? `Gewählt: ${station.name} (Nr. ${station.code})`
     : 'Noch keine Station gewählt.';
 
-  const { offen, bestaetigtLeer } = station ? kalStand() : { offen: [], bestaetigtLeer: 0 };
+  const { offen, bestaetigtLeer, ausAufzeichnung, aeltester } = station
+    ? kalStand()
+    : { offen: [], bestaetigtLeer: 0, ausAufzeichnung: 0, aeltester: null };
   const minuten = Math.ceil((Math.max(offen.length, 1) * 7) / 60);
+  // Wie alt der älteste angezeigte Wert ist. Ohne diese Angabe sieht ein Preis
+  // von letzter Woche genauso aus wie einer von eben.
+  const altText = alter(aeltester);
 
   $('#kalHinweis').textContent = !station
     ? 'Bitte zuerst eine Station wählen.'
     : offen.length
-      ? `${offen.length} von ${k.spanne} Tagen fehlen noch, rund ${minuten} ${minuten === 1 ? 'Minute' : 'Minuten'}.`
+      // Bei mehreren Uhrzeiten sind Abrufe und Tage nicht mehr dasselbe —
+      // "21 von 7 Tagen" wäre Unsinn.
+      ? (kalZeitVarianten().length > 1
+          ? `${offen.length} von ${k.spanne * kalZeitVarianten().length} Abrufen fehlen noch ` +
+            `(${k.spanne} Abholtage × ${kalZeitVarianten().length} Uhrzeiten), rund `
+          : `${offen.length} von ${k.spanne} Tagen fehlen noch, rund `) +
+        `${minuten} ${minuten === 1 ? 'Minute' : 'Minuten'}.`
       : bestaetigtLeer
         ? `Alle Tage geprüft. An ${bestaetigtLeer} davon gibt es ${k.klasse} nicht.`
-        : 'Alle Tage liegen vor.';
+        : ausAufzeichnung
+          ? `Alle Tage liegen vor — ${ausAufzeichnung} davon aus dem gespeicherten ` +
+            `Preisverlauf${altText ? `, ältester Wert ${altText}` : ''}.`
+          : 'Alle Tage liegen vor, frisch abgerufen.';
 
-  $('#kalStart2').disabled = !station || kalLaeuft || !offen.length;
-  $('#kalStart2').textContent = kalLaeuft ? 'Rechnet …' : 'Durchrechnen';
+  // Ist nichts mehr offen, wird aus dem Knopf kein toter Knopf, sondern das
+  // Mittel gegen alte Zahlen: alles noch einmal messen.
+  const nurNeu = station && !kalLaeuft && !offen.length;
+  $('#kalStart2').disabled = !station || kalLaeuft;
+  $('#kalStart2').textContent = kalLaeuft
+    ? 'Preise werden geladen …'
+    : nurNeu
+      ? `Alle ${k.spanne} Tage neu messen`
+      : 'Preise im Kalender finden';
+  $('#kalStart2').title = nurNeu
+    ? 'Verwirft die angezeigten Werte für diesen Zeitraum und ruft jeden Tag frisch ab. ' +
+      'Der gespeicherte Preisverlauf bleibt vollständig erhalten.'
+    : '';
+  $('#kalStart2').dataset.neu = nurNeu ? '1' : '';
   $('#kalAbbrechen').hidden = !kalLaeuft;
 
   // Zweiter Durchgang: erst nach dem ersten Lauf steht die Klassenliste zur
@@ -967,10 +1854,12 @@ function renderKalStationSuche() {
           class: 'station' + (s.code === state.kalender.station ? ' on' : ''),
           onclick: async () => {
             state.kalender.station = s.code;
+            kalTagAuswahl = null;
             $('#kalStation').value = '';
             feld.hidden = true;
             persist();
-            await ladeKalKlassen();
+            renderKalFahrzeug();
+            if (!(await ladeKalKlassen())) return;
             await ladeKalAufzeichnung();
             renderKalFormular();
             renderKalBild();
@@ -1011,10 +1900,17 @@ async function ladeKalAufzeichnung() {
       // Nur Messungen mit derselben Mietdauer — ein Preis fuer sieben Tage
       // gehoert nicht in einen Kalender fuer drei.
       if (daysBetween(e.v, e.b) !== state.kalender.dauer) continue;
+      // Und nur Messungen aus demselben Modus: ein Preis mit Cookies gehört
+      // nicht in einen Kalender ohne. Ältere Messungen tragen kein Merkmal —
+      // die zählen als "mit Cookies", denn so wurde damals gemessen.
+      if (Boolean(e.i) !== Boolean(state.kalender.inkognito)) continue;
       const k = `${e.v}|${e.k}`;
       if (!zeiten.has(k) || e.t > zeiten.get(k)) {
         zeiten.set(k, e.t);
-        kalAufzeichnung.set(k, { preis: e.p, waehrung: e.w });
+        // Der Zeitpunkt gehört dazu: ein Preis von vorletzter Woche sieht im
+        // Kalender genauso aus wie einer von eben, und das ist der Unterschied,
+        // auf den es ankommt.
+        kalAufzeichnung.set(k, { preis: e.p, waehrung: e.w, zeit: e.t });
       }
     }
   } catch {
@@ -1045,11 +1941,18 @@ function kalPreis(job) {
       : { geladen: true, preis: billigstes.total, modell: billigstes.model, acriss: billigstes.acriss };
   }
 
+  // Die Aufzeichnung kennt keine Uhrzeit: sie haelt Datum, Dauer und Klasse
+  // fest, mehr nicht. Solange nur eine Uhrzeit eingestellt ist, macht das
+  // nichts. Bei mehreren waere es falsch — jede Zeit bekaeme denselben
+  // gespeicherten Wert, und "beste Uhrzeit" waere geraten. Dann zaehlt nur
+  // der frische Abruf.
+  if (kalZeitVarianten().length > 1) return { geladen: false, preis: null };
+
   // Sonst aus der Aufzeichnung. Ohne Klassenwahl ist das der billigste
   // aufgezeichnete Wert dieses Tages.
   if (klasse) {
     const a = kalAufzeichnung.get(`${job.pickupDate}|${klasse}`);
-    if (a) return { geladen: true, preis: a.preis, ausAufzeichnung: true };
+    if (a) return { geladen: true, preis: a.preis, ausAufzeichnung: true, zeit: a.zeit || null };
     // Wurde der Tag ueberhaupt schon einmal gemessen?
     const gemessen = [...kalAufzeichnung.keys()].some((k) => k.startsWith(job.pickupDate + '|'));
     return {
@@ -1060,12 +1963,34 @@ function kalPreis(job) {
   }
 
   let min = Infinity;
+  let zeit = null;
   for (const [k, v] of kalAufzeichnung) {
-    if (k.startsWith(job.pickupDate + '|') && v.preis < min) min = v.preis;
+    if (k.startsWith(job.pickupDate + '|') && v.preis < min) {
+      min = v.preis;
+      zeit = v.zeit || null;
+    }
   }
   return min === Infinity
     ? { geladen: false, preis: null }
-    : { geladen: true, preis: min, ausAufzeichnung: true };
+    : { geladen: true, preis: min, ausAufzeichnung: true, zeit };
+}
+
+/**
+ * "Vor drei Tagen" statt eines Zeitstempels.
+ *
+ * Bei einem gespeicherten Preis ist die Frage nicht, wann genau er gemessen
+ * wurde, sondern ob er noch etwas taugt.
+ */
+function alter(zeit) {
+  if (!zeit) return null;
+  const min = Math.round((Date.now() - zeit) / 60000);
+  if (min < 2) return 'gerade eben';
+  if (min < 60) return `vor ${min} Minuten`;
+  const std = Math.round(min / 60);
+  if (std < 24) return `vor ${std} ${std === 1 ? 'Stunde' : 'Stunden'}`;
+  const tage = Math.round(std / 24);
+  if (tage < 30) return `vor ${tage} ${tage === 1 ? 'Tag' : 'Tagen'}`;
+  return `am ${new Date(zeit).toLocaleDateString('de-DE')}`;
 }
 
 /**
@@ -1079,18 +2004,203 @@ function kalPreis(job) {
  */
 function kalStand() {
   const d = kalJobs();
-  if (!d) return { offen: [], bestaetigtLeer: 0 };
+  if (!d) return { offen: [], bestaetigtLeer: 0, ausAufzeichnung: 0, aeltester: null };
 
   const offen = [];
   let bestaetigtLeer = 0;
+  let ausAufzeichnung = 0;
+  let aeltester = null;
   for (const j of d.jobs) {
-    if (kalPreis(j).preis != null) continue;
+    const p = kalPreis(j);
+    if (p.preis != null) {
+      // Woher der Wert kommt, entscheidet, ob ein neuer Abruf etwas bringt.
+      if (p.ausAufzeichnung) {
+        ausAufzeichnung++;
+        if (p.zeit && (aeltester == null || p.zeit < aeltester)) aeltester = p.zeit;
+      }
+      continue;
+    }
     // Ein frischer Abruf liegt vor und enthaelt die Klasse trotzdem nicht:
     // damit ist die Frage beantwortet.
     if (prices.has(j.key)) bestaetigtLeer++;
     else offen.push(j);
   }
-  return { offen, bestaetigtLeer };
+  return { offen, bestaetigtLeer, ausAufzeichnung, aeltester };
+}
+
+/**
+ * Alles noch einmal messen.
+ *
+ * Der Kalender fuellt sonst nur Luecken: was schon im gespeicherten
+ * Preisverlauf steht, gilt als erledigt, und der Knopf ist tot. Nach ein paar
+ * Tagen sieht man dann alte Zahlen und hat kein Mittel dagegen.
+ *
+ * Geloescht wird nur die Anzeige dieses Kalenders — der Preisverlauf selbst
+ * bleibt vollstaendig. Er ist die Grundlage der Preisentwicklung; ihn
+ * wegzuwerfen, um eine Ansicht aufzufrischen, waere ein schlechter Tausch.
+ */
+async function kalNeuMessen() {
+  const d = kalJobs();
+  if (!d) return;
+  for (const j of d.jobs) prices.delete(j.key);
+  kalAufzeichnung = new Map();
+  kalTagAuswahl = null;
+  // Auch beim Dienst wegraeumen, sonst kaemen die alten Werte beim naechsten
+  // Takt gleich wieder herein.
+  await fetch('/api/results/clear', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ keys: d.jobs.map((j) => j.key) }),
+  }).catch(() => {});
+  renderKalFormular();
+  renderKalBild();
+  await starteKalender();
+}
+
+function kalBetrag(preis, waehrung) {
+  return new Intl.NumberFormat('de-DE', {
+    style: 'currency', currency: waehrung, minimumFractionDigits: 2, maximumFractionDigits: 2,
+  }).format(preis);
+}
+
+function kalDatum(datum, lang = false) {
+  return new Date(datum + 'T12:00:00').toLocaleDateString('de-DE', {
+    weekday: lang ? 'long' : 'short', day: 'numeric', month: lang ? 'long' : 'short',
+    ...(lang ? { year: 'numeric' } : {}),
+  });
+}
+
+/**
+ * Einen Kalendertag in den Preisvergleich übernehmen.
+ *
+ * Der Kalender beantwortet "wann", der Preisvergleich "wo und mit welchem
+ * Schutz". Ohne diesen Weg müsste man Station und beide Daten von Hand
+ * abtippen — und tippt sich dabei irgendwann vertan.
+ */
+function uebernehmeKalendertag(job) {
+  state.stations = [state.kalender.station];
+  state.returnStation = null;
+  state.pickupDate = job.pickupDate;
+  state.returnDate = job.returnDate;
+  state.pickupTime = state.kalender.zeit;
+  state.returnTime = state.kalender.zeit;
+  state.dayShifts = [0];
+  state.returnShifts = [0];
+  state.durations = [];
+  // Die Länderseite des Kalenders ist vorgewählt — sie ist die, auf die man
+  // gerade geschaut hat. Weitere kommen gleich dazu: der Bereich geht offen
+  // auf, statt die Auswahl hinter einem zugeklappten Reiter zu verstecken.
+  const markt = providerById(PROVIDER).markets.find((m) => m.host === state.kalender.host);
+  if (markt) state.markets = [markt.code];
+  state.inkognito = Boolean(state.kalender.inkognito);
+  state.mode = 'work';
+  persist();
+  showScreen('work');
+  update();
+  offenerBereich = null;
+  zeigeBereich('land');
+  $('#panelLand').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  flash(
+    `${kalDatum(job.pickupDate, true)} übernommen. Weitere Länderseiten dazuwählen, ` +
+      'dann „Preise vergleichen“ — der Schutz lässt sich dort je Klasse öffnen.'
+  );
+}
+
+/** Tagesdetails sind auch per Tastatur und auf Touch-Geräten erreichbar. */
+function renderKalTag() {
+  document.querySelectorAll('#kalBild .ktag').forEach((button) => {
+    const aktiv = button.dataset.datum === kalTagAuswahl;
+    button.classList.toggle('ausgewaehlt', aktiv);
+    button.setAttribute('aria-pressed', String(aktiv));
+  });
+  const box = $('#kalAuswahl');
+  const d = kalJobs();
+  const desTages = d?.jobs.filter((j) => j.pickupDate === kalTagAuswahl) || [];
+  // Der Auftrag mit dem günstigsten Preis vertritt den Tag; die übrigen
+  // Uhrzeiten stehen darunter, damit man sieht, was die Wahl kostet.
+  const job = kalTagBester(desTages).job || desTages[0];
+  if (!job) {
+    box.dataset.signatur = '';
+    setChildren(box, el('p', {}, kalLaeuft
+      ? 'Deine Preise werden geladen. Du kannst die ersten Tage schon auswählen.'
+      : 'Wähle einen Tag im Kalender. Mit „Preise im Kalender finden“ startest du den Vergleich.'));
+    return;
+  }
+  const p = kalPreis(job);
+  // Alle Uhrzeiten des Tages, günstigste zuerst — das ist bei mehreren Zeiten
+  // die eigentliche Aussage: nicht nur was, sondern wann.
+  const zeiten = desTages
+    .map((j) => ({ job: j, p: kalPreis(j) }))
+    .filter((x) => x.p.preis != null)
+    .sort((a, b) => a.p.preis - b.p.preis);
+  const signatur = JSON.stringify([job, p, state.kalender.klasse, zeiten.map((z) => z.p.preis)]);
+  if (box.dataset.signatur === signatur) return;
+  box.dataset.signatur = signatur;
+  const klasse = state.kalender.klasse || p.acriss;
+  const modell = p.modell || (klasse && kalKatalog[klasse]?.modelle?.[0]);
+  setChildren(box,
+    el('div', {},
+      el('p', { class: 'eyebrow' }, 'DEIN ABHOLTAG'),
+      el('h3', {}, kalDatum(job.pickupDate, true)),
+      el('p', {}, `Rückgabe ${kalDatum(job.returnDate)} · ${state.kalender.dauer} ${state.kalender.dauer === 1 ? 'Tag' : 'Tage'}`),
+      p.preis == null
+        ? el('p', {}, p.grund || (p.geladen ? 'Kein Preis vorhanden.' : 'Dieser Tag wurde noch nicht abgerufen.'))
+        : modell ? el('p', {}, `${modell}${klasse ? ` · ${klasse}` : ''}`) : null,
+      // Der Kalender vergleicht Grundpreise. Das Schutzpaket verschiebt die
+      // Reihenfolge kräftig — deshalb führt der Weg von hier in den
+      // Preisvergleich, wo es mit echtem Kassenpreis danebensteht.
+      p.preis != null
+        ? el(
+            'button',
+            {
+              type: 'button',
+              class: 'ghost mini',
+              onclick: () => uebernehmeKalendertag(job),
+              title:
+                'Übernimmt Station und Zeitraum in den Preisvergleich. Dort lässt sich zu ' +
+                'dieser Klasse auch der Schutz vergleichen.',
+            },
+            'Diesen Tag im Preisvergleich öffnen'
+          )
+        : null
+    ),
+    p.preis != null ? el('div', { class: 'calendar-selection-price' },
+      el('strong', {}, kalBetrag(p.preis, d.markt.cur)),
+      el('span', {}, `Gesamtpreis · ${kalBetrag(p.preis / state.kalender.dauer, d.markt.cur)} pro Tag`),
+      el(
+        'span',
+        {},
+        p.ausAufzeichnung
+          ? `Aus dem gespeicherten Preisverlauf${p.zeit ? ` · gemessen ${alter(p.zeit)}` : ''}`
+          : 'Aus dem aktuellen Abruf'
+      ),
+      // Bei mehreren Uhrzeiten: was jede kostet, und wie viel die Wahl
+      // ausmacht. Genau das ist der Grund, warum es die Zeiten überhaupt gibt.
+      zeiten.length > 1
+        ? el(
+            'div',
+            { class: 'kal-zeiten' },
+            el('span', { class: 'kal-zeiten-kopf' }, 'Nach Abholzeit'),
+            ...zeiten.map((z, i) =>
+              el(
+                'span',
+                { class: 'kal-zeit-zeile' + (i === 0 ? ' beste' : '') },
+                el(
+                  'b',
+                  {},
+                  z.job.pickupTime +
+                    (z.job.returnTime !== z.job.pickupTime ? ` → ${z.job.returnTime}` : '')
+                ),
+                kalBetrag(z.p.preis, d.markt.cur),
+                i === 0
+                  ? el('em', {}, 'günstigste')
+                  : el('em', {}, `+${kalBetrag(z.p.preis - zeiten[0].p.preis, d.markt.cur)}`)
+              )
+            )
+          )
+        : null
+    ) : null
+  );
 }
 
 function renderKalBild() {
@@ -1099,83 +2209,92 @@ function renderKalBild() {
     $('#kalErgebnis').hidden = true;
     return;
   }
-
-  const tage = d.jobs.map((j) => ({ datum: j.pickupDate, ...kalPreis(j) }));
-  const werte = tage.map((t) => t.preis).filter((p) => p != null);
-
-  if (!werte.length) {
-    $('#kalErgebnis').hidden = !kalLaeuft;
-    if (kalLaeuft) {
-      $('#kalTitel').textContent = 'Wird berechnet …';
-      setChildren($('#kalBild'), el('p', { class: 'empty' }, 'Die ersten Tage kommen gleich.'));
-    }
-    return;
+  // Ein Feld je Abholtag, nicht je Auftrag: bei mehreren Uhrzeiten gehören
+  // sie zusammen, und gezeigt wird die günstigste — mit der Uhrzeit dazu.
+  const nachTag = new Map();
+  for (const j of d.jobs) {
+    if (!nachTag.has(j.pickupDate)) nachTag.set(j.pickupDate, []);
+    nachTag.get(j.pickupDate).push(j);
   }
-
-  const min = Math.min(...werte);
-  const max = Math.max(...werte);
-  const spanne = Math.max(max - min, 1);
-
-  // Vor den ersten Tag so viele Lücken, dass die Wochentage untereinander
-  // stehen — ein Kalender, in dem Montag nicht unter Montag steht, ist keiner.
-  const luecke = (new Date(tage[0].datum + 'T12:00:00').getDay() + 6) % 7;
+  const tage = [...nachTag].map(([datum, js]) => ({ datum, ...kalTagBester(js) }));
+  const werte = tage.map((t) => t.preis).filter((p) => p != null);
+  const min = werte.length ? Math.min(...werte) : null;
+  const max = werte.length ? Math.max(...werte) : null;
+  const beste = min == null ? [] : tage.filter((t) => t.preis === min);
+  if (!tage.some((t) => t.datum === kalTagAuswahl)) kalTagAuswahl = beste[0]?.datum || null;
 
   $('#kalErgebnis').hidden = false;
-  $('#kalTitel').textContent =
-    `${d.station.name} · ${state.kalender.klasse || 'billigste Klasse'} · ` +
-    `${state.kalender.dauer} ${state.kalender.dauer === 1 ? 'Tag' : 'Tage'} · ${d.markt.label}`;
-
-  setChildren(
-    $('#kalBild'),
-    el(
-      'div',
-      { class: 'kalender' },
-      ...['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((t) => el('span', { class: 'kkopf' }, t)),
-      ...Array.from({ length: luecke }, () => el('span', { class: 'ktag leer' })),
-      ...tage.map((t) => {
-        const datum = new Date(t.datum + 'T12:00:00');
-        const anteil = t.preis != null ? (t.preis - min) / spanne : null;
-        return el(
-          'span',
-          {
-            class:
-              'ktag' + (t.preis === min ? ' billigster' : '') + (t.preis == null && t.geladen ? ' nichts' : ''),
-            // Von grün (billig) nach rot (teuer). Der Farbton trägt die
-            // Aussage, die Zahl darunter die Genauigkeit.
-            style:
-              anteil == null
-                ? ''
-                : `background: color-mix(in oklab, #16a34a ${Math.round((1 - anteil) * 100)}%, #dc2626)`,
-            title:
-              datum.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' }) +
-              ` → ${pretty(addDays(t.datum, state.kalender.dauer))}` +
-              (t.preis != null
-                ? ` · ${money(t.preis, d.markt.cur)}${t.modell ? ' · ' + t.modell : ''}${
-                    t.acriss ? ' (' + t.acriss + ')' : ''
-                  }`
-                : ` · ${t.grund || 'noch nicht berechnet'}`),
-          },
-          el('b', {}, String(datum.getDate())),
-          el(
-            'span',
-            { class: 'kpreis' },
-            t.preis != null ? Math.round(t.preis).toLocaleString('de-DE') : t.geladen ? '—' : '…'
-          )
-        );
-      })
-    ),
-    el(
-      'p',
-      { class: 'tabnote' },
-      `${werte.length} von ${tage.length} Tagen mit Preis · günstigster ${money(min, d.markt.cur)}, ` +
-        `teuerster ${money(max, d.markt.cur)} — ` +
-        `${Math.round(((max - min) / min) * 100)} % Unterschied allein durch den Abholtag.` +
-        (state.kalender.klasse
-          ? ` Graue Felder: ${state.kalender.klasse} war an dem Tag nicht im Angebot. ` +
-            'Tage mit „…" sind noch nicht abgerufen — dafür ist der Knopf oben da.'
-          : '')
-    )
+  // Die Legende erklärt den Punkt nur, wenn es auch welche gibt.
+  $('#kalLegendeAlt').hidden = !tage.some((t) => t.ausAufzeichnung);
+  $('#kalCsv').disabled = !werte.length;
+  $('#kalTitel').textContent = 'Dein Preiskalender';
+  $('#kalUntertitel').textContent = `${d.station.name} · ${d.markt.label} · ${state.kalender.klasse || 'Günstigste Klasse je Tag'}`;
+  const kennzahl = (label, wert, note) => el('div', { class: 'calendar-insight' },
+    el('span', { class: 'calendar-insight-label' }, label),
+    el('strong', { class: 'calendar-insight-value' }, wert),
+    el('span', { class: 'calendar-insight-note' }, note)
   );
+  setChildren($('#kalKennzahlen'),
+    kennzahl('Bester Gesamtpreis', min == null ? '—' : kalBetrag(min, d.markt.cur),
+      beste.length ? `${kalDatum(beste[0].datum)}${beste.length > 1 ? ` und ${beste.length - 1} ${beste.length === 2 ? 'weiterer Tag' : 'weitere Tage'}` : ''}` : 'Sobald die ersten Preise vorliegen'),
+    kennzahl('Preisunterschied', min == null ? '—' : kalBetrag(max - min, d.markt.cur), 'Zwischen günstigstem und teuerstem Abholtag'),
+    kennzahl('Tage mit Preis', `${werte.length} / ${tage.length}`, `${state.kalender.dauer} ${state.kalender.dauer === 1 ? 'Tag' : 'Tage'} Mietdauer · ${d.markt.cur}`)
+  );
+
+  // Jeder Monat erhält sein eigenes Raster. Auch Jahreswechsel und kurze
+  // Restmonate behalten so die richtigen Wochentage und eine klare Überschrift.
+  const monate = new Map();
+  for (const tag of tage) {
+    const monat = tag.datum.slice(0, 7);
+    if (!monate.has(monat)) monate.set(monat, []);
+    monate.get(monat).push(tag);
+  }
+  const fokusDatum = document.activeElement?.closest('#kalBild .ktag')?.dataset.datum;
+  const tageNamen = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+  setChildren($('#kalBild'), ...[...monate].map(([monat, monatstage]) => {
+    const titel = new Date(monat + '-01T12:00:00').toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+    const luecke = (new Date(monatstage[0].datum + 'T12:00:00').getDay() + 6) % 7;
+    const felder = [...Array(luecke).fill(null), ...monatstage];
+    while (felder.length % 7) felder.push(null);
+    const wochen = [];
+    for (let i = 0; i < felder.length; i += 7) wochen.push(felder.slice(i, i + 7));
+    return el('section', { class: 'kal-month', 'aria-label': titel },
+      el('div', { class: 'kal-month-heading' }, el('h3', {}, titel),
+        el('span', {}, `${d.markt.cur} · ${state.kalender.dauer} ${state.kalender.dauer === 1 ? 'Tag' : 'Tage'}`)),
+      el('table', { class: 'kalender' },
+        el('caption', { class: 'visually-hidden' }, `${titel}: Gesamtpreise in ${d.markt.cur} für ${state.kalender.dauer} Tage Mietdauer`),
+        el('thead', {}, el('tr', {}, ...tageNamen.map((name) => el('th', { scope: 'col', abbr: name }, name.slice(0, 2))))),
+        el('tbody', {}, ...wochen.map((woche) => el('tr', {}, ...woche.map((t) => {
+          if (!t) return el('td', { class: 'kal-blank', 'aria-hidden': 'true' });
+          const istBest = min != null && t.preis === min;
+          const exakt = t.preis == null ? (t.geladen ? '—' : '…') : t.preis.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const kurz = t.preis == null ? exakt : Math.round(t.preis).toLocaleString('de-DE');
+          const beschreibung =
+            `${kalDatum(t.datum, true)} · ${t.preis != null ? kalBetrag(t.preis, d.markt.cur) : (t.grund || 'Noch nicht abgerufen')}` +
+            (istBest ? ' · Günstigster Tag' : '') +
+            // Bei mehreren Uhrzeiten gehört dazu, welche den Preis gemacht hat.
+            (d.zeiten.length > 1 && t.uhr
+              ? ` · beste Zeit ${t.uhr}${t.rueckUhr !== t.uhr ? ` → ${t.rueckUhr}` : ''}`
+              : '') +
+            // Ein gespeicherter Wert sagt selbst, wie alt er ist — sonst waere
+            // nicht zu sehen, ob er von heute oder von vorletzter Woche ist.
+            (t.ausAufzeichnung ? ` · aus dem Preisverlauf${t.zeit ? `, ${alter(t.zeit)}` : ''}` : '');
+          return el('td', {}, el('button', {
+            type: 'button', class: 'ktag' + (istBest ? ' billigster' : '') + (t.preis == null ? ' nichts' : '') + (t.ausAufzeichnung ? ' gespeichert' : ''),
+            'data-datum': t.datum, 'aria-label': beschreibung, 'aria-pressed': String(kalTagAuswahl === t.datum),
+            title: beschreibung, onclick: () => { kalTagAuswahl = t.datum; renderKalTag(); },
+          },
+          el('span', { class: 'kdatum', 'aria-hidden': 'true' }, String(new Date(t.datum + 'T12:00:00').getDate())),
+          el('span', { 'aria-hidden': 'true' },
+            el('span', { class: 'kpreis' }, el('span', { class: 'kpreis-genau' }, exakt), el('span', { class: 'kpreis-kurz' }, kurz)),
+            el('span', { class: 'kal-day-note' }, istBest ? 'Bestpreis' : t.preis == null ? (t.geladen ? 'kein Preis' : 'offen') : '')
+          )));
+        }))))
+      )
+    );
+  }));
+  renderKalTag();
+  if (fokusDatum) document.querySelector(`#kalBild [data-datum="${fokusDatum}"]`)?.focus({ preventScroll: true });
 }
 
 /**
@@ -1232,6 +2351,372 @@ async function starteKalender({ nurFehlende = false } = {}) {
   }
 }
 
+/* ---------------------------------------------------- Mehrere Stationen
+ *
+ * Derselbe Zeitraum an mehreren Stationen. Das ist ein langer Lauf — bei drei
+ * Stationen und 28 Abholtagen 84 Abrufe — und deshalb ein eigener Bereich mit
+ * eigenem Fortschritt, statt eines Hakens irgendwo im Formular.
+ *
+ * Gerechnet wird ueber die Tage, die an *allen* Stationen einen Preis haben.
+ * Dieselbe Ueberlegung wie beim Stationsvergleich oben: mittelt man ueber
+ * unterschiedliche Tage, vergleicht man zwei verschiedene Zeitraeume und nennt
+ * das Ergebnis Stationsunterschied.
+ */
+
+let kalMultiLaeuft = false;
+let kalMultiStand = null;
+
+/** Die Auftraege einer Station fuer den eingestellten Kalenderzeitraum. */
+function kalJobsFuer(stationCode) {
+  const station = stationByCode(stationCode);
+  const markt = providerById(PROVIDER).markets.find((m) => m.host === state.kalender.host);
+  if (!station || !markt || !/^\d{4}-\d{2}-\d{2}$/.test(state.kalender.start)) return null;
+
+  const jobs = [];
+  for (let i = 0; i < state.kalender.spanne; i++) {
+    const ab = addDays(state.kalender.start, i);
+    const bis = addDays(ab, state.kalender.dauer);
+    // Auch hier jede Uhrzeit — sonst verglichen sich Stationen zu einer Zeit,
+    // waehrend der Kalender daneben die guenstigste ueber alle zeigt.
+    for (const z of kalZeitVarianten()) {
+      const v = {
+        pickupDate: ab,
+        returnDate: bis,
+        duration: state.kalender.dauer,
+        pickupTime: z.ab,
+        returnTime: z.zurueck,
+      };
+      jobs.push({
+        key: jobKey(state.kalender.host, station.code, v, null, state.kalender.inkognito),
+        provider: PROVIDER,
+        host: state.kalender.host,
+        stationCode: station.code,
+        pickupDate: ab,
+        returnDate: bis,
+        pickupTime: z.ab,
+        returnTime: z.zurueck,
+        currency: markt.cur,
+        inkognito: state.kalender.inkognito || undefined,
+      });
+    }
+  }
+  return { jobs, station, markt };
+}
+
+/** Der billigste Preis eines Tages an einer Station — aus frischem Abruf. */
+function kalMultiPreis(key) {
+  const r = prices.get(key);
+  if (!r?.offers?.length) return null;
+  const klasse = state.kalender.klasse;
+  if (klasse) {
+    const t = r.offers.find((o) => o.acriss === klasse);
+    return t?.total ?? null;
+  }
+  const werte = r.offers.map((o) => o.total).filter((n) => n != null);
+  return werte.length ? Math.min(...werte) : null;
+}
+
+function renderKalMulti() {
+  const liste = state.kalender.stationen || [];
+  $('#kalMultiZahl').textContent = `${liste.length} ${liste.length === 1 ? 'Station' : 'Stationen'}`;
+
+  setChildren(
+    $('#kalMultiListe'),
+    ...liste.map((code) => {
+      const s = stationByCode(code);
+      return el(
+        'div',
+        { class: 'station on' },
+        el('span', { class: 'flag' }, s?.country || ''),
+        el('span', { class: 'sname' }, s?.name || code),
+        el('span', { class: 'scode' }, code),
+        el(
+          'button',
+          {
+            type: 'button',
+            class: 'ghost mini',
+            title: 'Aus dem Vergleich nehmen',
+            onclick: () => {
+              state.kalender.stationen = liste.filter((c) => c !== code);
+              persist();
+              renderKalMulti();
+            },
+          },
+          '×'
+        )
+      );
+    })
+  );
+
+  const tage = state.kalender.spanne;
+  const abrufe = liste.length * tage;
+  $('#kalMultiStart').disabled = kalMultiLaeuft || liste.length < 2;
+  $('#kalMultiAbbrechen').hidden = !kalMultiLaeuft;
+  $('#kalMultiHinweis').textContent = kalMultiLaeuft
+    ? ''
+    : liste.length < 2
+      ? 'Mindestens zwei Stationen wählen — sonst gibt es nichts zu vergleichen.'
+      : `${abrufe} Abrufe, rund ${minutenText(abrufe)}.`;
+
+  if (kalMultiStand) renderKalMultiErgebnis();
+}
+
+function renderKalMultiTreffer() {
+  const feld = $('#kalMultiTreffer');
+  const needle = $('#kalMultiSuche').value;
+  if (!needle.trim()) {
+    feld.hidden = true;
+    return;
+  }
+  const treffer = suche(needle, 12);
+  feld.hidden = false;
+  setChildren(
+    feld,
+    ...(treffer.length
+      ? treffer.map((s) =>
+          el(
+            'button',
+            {
+              type: 'button',
+              class: 'station' + ((state.kalender.stationen || []).includes(s.code) ? ' on' : ''),
+              onclick: () => {
+                const liste = state.kalender.stationen || (state.kalender.stationen = []);
+                if (!liste.includes(s.code)) liste.push(s.code);
+                persist();
+                $('#kalMultiSuche').value = '';
+                feld.hidden = true;
+                renderKalMulti();
+              },
+            },
+            el('span', { class: 'flag' }, s.country),
+            el('span', { class: 'sname' }, s.name),
+            el('span', { class: 'scode' }, s.code)
+          )
+        )
+      : [el('p', { class: 'empty' }, 'Kein Treffer.')])
+  );
+}
+
+async function starteKalMulti() {
+  const codes = state.kalender.stationen || [];
+  if (codes.length < 2 || kalMultiLaeuft) return;
+
+  const paket = codes.map(kalJobsFuer).filter(Boolean);
+  if (paket.length < 2) {
+    flash('Bitte erst Zeitraum und Länderseite im Kalender einstellen.');
+    return;
+  }
+
+  kalMultiLaeuft = true;
+  kalMultiStand = null;
+  renderKalMulti();
+  $('#kalMultiFortschritt').hidden = false;
+
+  const alle = paket.flatMap((p) => p.jobs);
+  for (const j of alle) extraSchluessel.add(j.key);
+
+  try {
+    // Station für Station, nicht alles auf einmal: so sind die ersten
+    // Ergebnisse früh brauchbar, und ein Abbruch mittendrin lässt eine
+    // vollständige Station zurück statt drei halbe.
+    for (const p of paket) {
+      if (!kalMultiLaeuft) break;
+      const offen = p.jobs.filter((j) => !prices.has(j.key));
+      if (!offen.length) continue;
+      await sendeJobs(offen, $('#kalMultiStart'));
+
+      for (let i = 0; i < 900 && kalMultiLaeuft; i++) {
+        await new Promise((r) => setTimeout(r, 2500));
+        await pollErgebnisse();
+        const fertig = alle.filter((j) => prices.has(j.key)).length;
+        $('#kalMultiBalken').style.width = `${Math.round((fertig / alle.length) * 100)}%`;
+        $('#kalMultiText').textContent =
+          `${p.station.name}: ${fertig} von ${alle.length} Abrufen · ` +
+          `${paket.indexOf(p) + 1} von ${paket.length} Stationen`;
+        const q = service.queue;
+        if (q && !q.laufend && !q.offen) break;
+      }
+    }
+
+    // Was nichts geliefert hat, einmal von selbst nachfassen — bei einem Lauf
+    // dieser Länge klemmt fast immer irgendwo eine Seite.
+    const fehlt = alle.filter((j) => {
+      const r = prices.get(j.key);
+      return !r || r.error != null || !r.offers?.length;
+    });
+    if (fehlt.length && kalMultiLaeuft) {
+      $('#kalMultiText').textContent = `${fehlt.length} Abrufe ohne Ergebnis — zweiter Versuch …`;
+      for (const j of fehlt) prices.delete(j.key);
+      await sendeJobs(fehlt, $('#kalMultiStart'));
+      for (let i = 0; i < 900 && kalMultiLaeuft; i++) {
+        await new Promise((r) => setTimeout(r, 2500));
+        await pollErgebnisse();
+        const q = service.queue;
+        if (q && !q.laufend && !q.offen) break;
+      }
+    }
+
+    kalMultiStand = { paket, alle };
+  } finally {
+    kalMultiLaeuft = false;
+    $('#kalMultiFortschritt').hidden = true;
+    renderKalMulti();
+  }
+}
+
+function renderKalMultiErgebnis() {
+  const { paket } = kalMultiStand;
+  const waehrung = paket[0]?.markt.cur || '';
+
+  // Je Station: Tag → Preis
+  const proStation = paket.map((p) => {
+    const tage = new Map();
+    for (const j of p.jobs) {
+      const preis = kalMultiPreis(j.key);
+      // Mehrere Uhrzeiten je Tag: der guenstigste zaehlt, wie im Kalender.
+      if (preis != null && (!tage.has(j.pickupDate) || preis < tage.get(j.pickupDate))) {
+        tage.set(j.pickupDate, preis);
+      }
+    }
+    // Ein Tag zaehlt als fehlend, wenn *keine* seiner Uhrzeiten einen Preis
+    // hat — nicht schon dann, wenn eine von dreien ausfiel.
+    const alleTage = new Set(p.jobs.map((j) => j.pickupDate));
+    const fehlend = [...alleTage].filter((t) => !tage.has(t)).length;
+    return { station: p.station, tage, fehlend };
+  });
+
+  // Nur Tage, die es überall gibt — sonst verglichen sich zwei Zeiträume.
+  let gemeinsam = [...(proStation[0]?.tage.keys() || [])];
+  for (const s of proStation.slice(1)) gemeinsam = gemeinsam.filter((t) => s.tage.has(t));
+
+  const mitWerten = proStation.filter((s) => s.tage.size);
+  if (mitWerten.length < 2 || !gemeinsam.length) {
+    setChildren(
+      $('#kalMultiErgebnis'),
+      el(
+        'p',
+        { class: 'note warn' },
+        !gemeinsam.length && mitWerten.length >= 2
+          ? 'Die Stationen haben keinen gemeinsamen Abholtag mit Preis — ohne den lässt ' +
+            'sich nichts sauber gegenüberstellen. Lauf wiederholen.'
+          : 'Zu wenige Stationen haben Preise geliefert. Lauf wiederholen.'
+      )
+    );
+    return;
+  }
+
+  const zeilen = proStation.map((s) => {
+    const werte = gemeinsam.map((t) => s.tage.get(t)).filter((n) => n != null);
+    const schnitt = werte.length ? werte.reduce((a, b) => a + b, 0) / werte.length : null;
+    const bestTag = [...s.tage].reduce((a, b) => (b[1] < a[1] ? b : a), [null, Infinity]);
+    return {
+      station: s.station,
+      schnitt,
+      bester: bestTag[0] ? { datum: bestTag[0], preis: bestTag[1] } : null,
+      gewinntBei: 0,
+      fehlend: s.fehlend,
+    };
+  });
+
+  // Wer gewinnt an wie vielen Tagen — die Zahl, die zählt.
+  for (const t of gemeinsam) {
+    let best = null;
+    for (const z of zeilen) {
+      const p = proStation.find((s) => s.station.code === z.station.code).tage.get(t);
+      if (p != null && (best == null || p < best.p)) best = { p, z };
+    }
+    if (best) best.z.gewinntBei++;
+  }
+
+  zeilen.sort((a, b) => (a.schnitt ?? Infinity) - (b.schnitt ?? Infinity));
+  const sieger = zeilen[0];
+
+  setChildren(
+    $('#kalMultiErgebnis'),
+    el(
+      'div',
+      { class: 'stationsvergleich' },
+      el(
+        'div',
+        { class: 'sv-block' },
+        el('p', { class: 'eyebrow' }, `ÜBER ${gemeinsam.length} GEMEINSAME ABHOLTAGE`),
+        el(
+          'p',
+          { class: 'sv-satz' },
+          el('b', {}, sieger.station.name),
+          ' ist im Schnitt am günstigsten — ',
+          el('b', {}, kalBetrag(sieger.schnitt, waehrung)),
+          ` je ${state.kalender.dauer} ${state.kalender.dauer === 1 ? 'Tag' : 'Tage'}, ` +
+            `und an ${sieger.gewinntBei} von ${gemeinsam.length} Tagen die billigste.`
+        ),
+        ...zeilen.slice(1).map((z) =>
+          el(
+            'p',
+            { class: 'sv-zeile' },
+            el('span', { class: 'sv-name leise' }, z.station.name),
+            ' liegt im Schnitt ',
+            el('b', {}, kalBetrag(z.schnitt - sieger.schnitt, waehrung)),
+            ` (${(((z.schnitt - sieger.schnitt) / sieger.schnitt) * 100).toFixed(1).replace('.', ',')} %) darüber` +
+              (z.gewinntBei ? `, ist aber an ${z.gewinntBei} Tagen die billigste.` : '.')
+          )
+        ),
+        el(
+          'p',
+          { class: 'sv-fuss' },
+          'Verglichen wird nur über Abholtage, die an allen Stationen einen Preis haben.'
+        ),
+        zeilen.some((z) => z.fehlend)
+          ? el(
+              'p',
+              { class: 'sv-fuss warn' },
+              'Ohne Ergebnis geblieben: ' +
+                zeilen.filter((z) => z.fehlend).map((z) => `${z.station.name} (${z.fehlend})`).join(', ') +
+                '. Diese Tage fehlen im Vergleich.'
+            )
+          : null
+      )
+    ),
+    el(
+      'div',
+      { class: 'tabellenrahmen' },
+      el(
+        'table',
+        {},
+        el(
+          'thead',
+          {},
+          el(
+            'tr',
+            {},
+            el('th', {}, 'Station'),
+            el('th', {}, 'Schnitt'),
+            el('th', {}, 'Billigste Tage'),
+            el('th', {}, 'Bester Einzeltag')
+          )
+        ),
+        el(
+          'tbody',
+          {},
+          ...zeilen.map((z) =>
+            el(
+              'tr',
+              {},
+              el('td', {}, z.station.name),
+              el('td', { class: 'betrag' }, kalBetrag(z.schnitt, waehrung)),
+              el('td', {}, `${z.gewinntBei} von ${gemeinsam.length}`),
+              el(
+                'td',
+                {},
+                z.bester ? `${kalDatum(z.bester.datum)} · ${kalBetrag(z.bester.preis, waehrung)}` : '—'
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
 function renderKalFortschritt(jobs) {
   const fertig = jobs.filter((j) => prices.has(j.key)).length;
   const box = $('#kalFortschritt');
@@ -1252,7 +2737,7 @@ function kalenderCsv() {
       .join(';'),
   ];
   for (const j of d.jobs) {
-    const p = kalPreis(j.key);
+    const p = kalPreis(j);
     zeilen.push(
       [
         feld(j.pickupDate),
@@ -1284,17 +2769,46 @@ function kalenderCsv() {
 
 async function oeffneKalender() {
   showScreen('kalender');
-  await ladeKalKlassen();
+  // Die Schlüssel des Kalenders in den Abfragetakt geben. Ohne das holt die
+  // Seite nach einem Neuladen nur die Aufträge des Preisvergleichs ab, und
+  // der Kalender stünde leer da, obwohl der Dienst seine Preise noch hat —
+  // was besonders auffällt, seit die Aufzeichnung bei mehreren Uhrzeiten
+  // nicht mehr aushilft.
+  for (const j of kalJobs()?.jobs || []) extraSchluessel.add(j.key);
+  await pollErgebnisse();
+  if (!(await ladeKalKlassen())) return;
   // Was frueher schon gemessen wurde, steht sofort da — auch nach einem
   // Neustart des Programms.
   await ladeKalAufzeichnung();
   renderKalFormular();
   renderKalBild();
+  renderKalMulti();
 }
 
 /* =========================================================== Preiswecker */
 
 let weckerListe = [];
+
+/** Welche Sorte Wecker gerade angelegt wird: 'wunsch' oder 'buchung'. */
+let weckerArt = 'wunsch';
+
+/**
+ * Solange die Weckerliste zu sehen ist, zieht sie sich selbst nach.
+ *
+ * Die Prüfungen laufen im Dienst, nicht in der Seite. Ohne das stünde nach
+ * einer Runde im Hintergrund immer noch "noch nicht geprüft" da, während das
+ * Ergebnis längst vorliegt — und wer eine gebuchte Reise beobachtet, sieht
+ * genau auf diese Zeile.
+ */
+let weckerTakt = null;
+
+function haltWeckerFrisch(an) {
+  if (an && !weckerTakt) weckerTakt = setInterval(ladeWecker, 30000);
+  if (!an && weckerTakt) {
+    clearInterval(weckerTakt);
+    weckerTakt = null;
+  }
+}
 
 async function ladeWecker() {
   try {
@@ -1309,6 +2823,12 @@ async function ladeWecker() {
 function renderWecker() {
   const g = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
 
+  // Das Formular wird gleich neu gebaut. Weil die Liste im Takt nachlädt,
+  // träfe das mitten in eine Eingabe: der halb getippte Betrag wäre weg und
+  // der Cursor gleich mit. Deshalb vorher merken, hinterher zurücksetzen.
+  const getippt = $('#weckerGrenze')?.value || '';
+  const hatteFokus = document.activeElement?.id === 'weckerGrenze';
+
   // Anlegen ist nur sinnvoll, wenn eine beobachtete Suche gewählt ist —
   // Station, Zeitraum und Klasse kommen von dort.
   setChildren(
@@ -1318,22 +2838,119 @@ function renderWecker() {
           'div',
           { class: 'weckerform' },
           el(
-            'span',
-            { class: 'hint' },
+            'p',
+            { class: 'wecker-reise' },
             `${stationByCode(g.station)?.name || g.station} · ${kurveKlasse} · ` +
-              `${pretty(g.von)} → ${pretty(g.bis)} · `
+              `${pretty(g.von)} – ${pretty(g.bis)}`
           ),
-          el('select', { id: 'weckerHost' }, ...g.hosts.map((h) => el('option', { value: h }, h.replace(/^www\./, '')))),
-          el('span', { class: 'hint' }, 'melden unter'),
-          el('input', { type: 'number', id: 'weckerGrenze', placeholder: '300', min: '1', step: '1' }),
+          el('div', { class: 'field' },
+            el('label', { class: 'flabel', for: 'weckerHost' }, 'Länderseite'),
+            el('select', { id: 'weckerHost', class: 'premium-select', onchange: (e) => {
+              const cur = providerById(PROVIDER).markets.find((m) => m.host === e.target.value)?.cur;
+              $('#weckerGrenzeLabel').textContent =
+                (weckerArt === 'buchung' ? 'Was du bezahlt hast' : 'Wunschpreis') +
+                (cur ? ' in ' + cur : '');
+            } }, ...g.hosts.map((h) => {
+              const markt = providerById(PROVIDER).markets.find((m) => m.host === h);
+              return el('option', { value: h }, markt ? `${markt.label} (${markt.cur})` : h.replace(/^www\./, ''));
+            }))
+          ),
+          // Uhrzeit nur zur Wahl stellen, wo es mehr als eine gibt. Sixt
+          // rechnet nach Uhrzeit ab — ein Wecker zur falschen Zeit meldet
+          // einen Preis, den es für diese Buchung nie gab.
+          (g.zeiten || []).length > 1
+            ? el(
+                'div',
+                { class: 'field' },
+                el('label', { class: 'flabel', for: 'weckerZeit' }, 'Uhrzeit'),
+                el(
+                  'select',
+                  { id: 'weckerZeit', class: 'premium-select' },
+                  ...g.zeiten.map((z) => {
+                    const [ab, zurueck] = z.split('|');
+                    return el(
+                      'option',
+                      { value: z },
+                      ab === zurueck ? `${ab} Uhr` : `${ab} → ${zurueck} Uhr`
+                    );
+                  })
+                )
+              )
+            : null,
+          // Zwei Sorten: ein Wunschpreis vor der Buchung, oder der schon
+          // gezahlte Preis danach. Die zweite ist die interessantere — sie
+          // beantwortet "hätte ich warten sollen?", solange man noch
+          // umbuchen kann.
+          el(
+            'div',
+            { class: 'field' },
+            el('span', { class: 'flabel' }, 'Was soll beobachtet werden?'),
+            el(
+              'div',
+              { class: 'segmented-actions', id: 'weckerArt', role: 'group' },
+              ...[
+                ['wunsch', 'Wunschpreis', 'Melden, sobald der Preis unter deine Grenze fällt.'],
+                ['buchung', 'Ich habe gebucht', 'Melden, sobald es billiger wird als das, was du bezahlt hast — und bei jedem weiteren Rückgang.'],
+              ].map(([wert, text, titel]) =>
+                el(
+                  'button',
+                  {
+                    type: 'button',
+                    'data-art': wert,
+                    'aria-pressed': String(weckerArt === wert),
+                    class: weckerArt === wert ? 'on' : '',
+                    title: titel,
+                    onclick: () => {
+                      weckerArt = wert;
+                      renderWecker();
+                    },
+                  },
+                  text
+                )
+              )
+            )
+          ),
+          el('div', { class: 'field' },
+            el(
+              'label',
+              { id: 'weckerGrenzeLabel', class: 'flabel', for: 'weckerGrenze' },
+              (weckerArt === 'buchung' ? 'Was du bezahlt hast' : 'Wunschpreis') +
+                (providerById(PROVIDER).markets.find((m) => m.host === g.hosts[0])?.cur
+                  ? ' in ' + providerById(PROVIDER).markets.find((m) => m.host === g.hosts[0]).cur
+                  : '')
+            ),
+            el('input', {
+              type: 'number',
+              id: 'weckerGrenze',
+              placeholder: weckerArt === 'buchung' ? 'Gesamtpreis der Buchung' : 'z. B. 300',
+              min: '1',
+              step: '0.01',
+            })
+          ),
+          el(
+            'p',
+            { class: 'note' },
+            weckerArt === 'buchung'
+              ? 'Wird alle sechs Stunden nachgeprüft, bis zum Abholtag. Gemeldet wird jeder ' +
+                'neue Tiefstand unter deinem Preis — nicht immer wieder derselbe. Ob sich das ' +
+                'Umbuchen lohnt, hängt an den Stornobedingungen deiner Buchung; die kennt ' +
+                'dieses Werkzeug nicht.'
+              : 'Wird alle sechs Stunden nachgeprüft und meldet sich einmal, sobald der Preis ' +
+                'unter deiner Grenze liegt.'
+          ),
           el(
             'button',
             { type: 'button', class: 'primary', onclick: legeWeckerAn },
-            'Wecker stellen'
+            weckerArt === 'buchung' ? 'Buchung beobachten' : 'Preiswecker aktivieren'
           )
         )
       : el('p', { class: 'note' }, 'Oben eine beobachtete Suche und eine Klasse wählen.')
   );
+
+  if (getippt && $('#weckerGrenze')) {
+    $('#weckerGrenze').value = getippt;
+    if (hatteFokus) $('#weckerGrenze').focus({ preventScroll: true });
+  }
 
   if (!weckerListe.length) {
     setChildren($('#weckerListe'), el('p', { class: 'empty' }, 'Kein Wecker gestellt.'));
@@ -1344,6 +2961,11 @@ function renderWecker() {
     $('#weckerListe'),
     ...weckerListe.map((w) => {
       const station = stationByCode(w.station);
+      const buchung = w.art === 'buchung';
+      // Bei einer beobachteten Buchung ist die eine Zahl, die zählt, die
+      // Differenz zum gezahlten Preis — nicht der Preis selbst.
+      const ersparnis =
+        buchung && w.letzterPreis != null ? w.gebucht - w.letzterPreis : null;
       return el(
         'div',
         { class: 'weckerzeile' + (w.ausgeloest ? ' ausgeloest' : '') },
@@ -1353,12 +2975,31 @@ function renderWecker() {
           el(
             'b',
             {},
-            `${station?.name || w.stationName || w.station} · ${w.acriss} · ${w.hostLabel.replace(/^www\./, '')}`
+            `${station?.name || w.stationName || w.station} · ${w.acriss} · ${w.hostLabel.replace(/^www\./, '')}`,
+            buchung ? el('span', { class: 'aktion' }, 'gebucht') : null
           ),
+          ersparnis != null
+            ? el(
+                'span',
+                { class: 'sttext' + (ersparnis > 0 ? ' guenstiger' : '') },
+                ersparnis > 0
+                  ? `Zurzeit ${money(ersparnis, w.waehrung)} billiger als gebucht ` +
+                    `(${money(w.letzterPreis, w.waehrung)} statt ${money(w.gebucht, w.waehrung)}).`
+                  : `Zurzeit nicht billiger als deine Buchung ` +
+                    `(${money(w.letzterPreis, w.waehrung)} gegen ${money(w.gebucht, w.waehrung)}).`
+              )
+            : null,
           el(
             'span',
             { class: 'sttext' },
-            `${pretty(w.von)} → ${pretty(w.bis)} · Grenze ${money(w.grenze, w.waehrung)}` +
+            `${pretty(w.von)} → ${pretty(w.bis)}` +
+              // Die Uhrzeit gehört dazu: sie entscheidet über den Preis, und
+              // ein Wecker, dessen Zeit man nicht sieht, ist eine Falle.
+              (w.zeit && w.zeit !== '10:00'
+                ? ` ${w.zeit}${w.zeitRueck && w.zeitRueck !== w.zeit ? `→${w.zeitRueck}` : ''}`
+                : '') +
+              ' · ' +
+              (buchung ? `gebucht für ${money(w.gebucht, w.waehrung)}` : `Grenze ${money(w.grenze, w.waehrung)}`) +
               (w.letzterPreis != null ? ` · zuletzt ${money(w.letzterPreis, w.waehrung)}` : '') +
               (w.bestPreis != null && w.bestPreis !== w.letzterPreis
                 ? ` · bester ${money(w.bestPreis, w.waehrung)}`
@@ -1437,7 +3078,11 @@ async function legeWeckerAn() {
 
   const grenze = Number($('#weckerGrenze').value);
   if (!(grenze > 0)) {
-    flash('Bitte eine Preisgrenze eintragen.');
+    flash(
+      weckerArt === 'buchung'
+        ? 'Bitte eintragen, was die Buchung gekostet hat.'
+        : 'Bitte eine Preisgrenze eintragen.'
+    );
     $('#weckerGrenze').focus();
     return;
   }
@@ -1456,7 +3101,16 @@ async function legeWeckerAn() {
       host,
       hostLabel: markt?.label || host,
       acriss: kurveKlasse,
+      art: weckerArt,
+      // Die Uhrzeit, zu der geprüft werden soll. Steht keine zur Wahl, ist es
+      // die einzige beobachtete — die erste aus der Gruppe.
+      ...(() => {
+        const wahl = $('#weckerZeit')?.value || (g.zeiten || [])[0] || '10:00|10:00';
+        const [zeit, zeitRueck] = wahl.split('|');
+        return { zeit, zeitRueck: zeitRueck || zeit };
+      })(),
       grenze,
+      gebucht: weckerArt === 'buchung' ? grenze : undefined,
       waehrung: markt?.cur || '',
     }),
   });
@@ -1465,7 +3119,11 @@ async function legeWeckerAn() {
     flash(d.error || 'Wecker konnte nicht gestellt werden.');
     return;
   }
-  flash('Wecker gestellt.');
+  flash(
+    weckerArt === 'buchung'
+      ? 'Buchung wird beobachtet. Erste Prüfung läuft gleich.'
+      : 'Wecker gestellt.'
+  );
   ladeWecker();
 }
 
@@ -1479,6 +3137,129 @@ async function legeWeckerAn() {
 
 const LS_VERLAUF = 'mwt-preistool/verlauf';
 const VERLAUF_MAX = 5;
+
+/* ---------------------------------------------------- Verglichene Fahrzeuge
+ *
+ * Der Verlauf hielt bisher nur Suchen fest: Station, Zeitraum, alle Klassen.
+ * Die Frage, die man hinterher aber wirklich hat, lautet nicht "was habe ich
+ * am Dienstag gesucht", sondern "welchen Wagen habe ich mir angesehen und was
+ * kam dabei heraus" — besonders bei den Schutzpaketen, deren Abruf Minuten
+ * dauert und die man nicht zweimal holen will.
+ *
+ * Deshalb eine zweite, eigene Liste: ein Eintrag je Fahrzeugklasse und
+ * Zeitraum, mit den Preisen je Laenderseite und, sobald abgerufen, den
+ * Schutzpaketen dazu.
+ */
+
+const LS_FAHRZEUGE = 'mwt-preistool/fahrzeuge';
+const FAHRZEUGE_MAX = 24;
+
+function ladeFahrzeuge() {
+  try {
+    const v = JSON.parse(localStorage.getItem(LS_FAHRZEUGE) || '[]');
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+function speichereFahrzeuge(liste) {
+  try {
+    localStorage.setItem(LS_FAHRZEUGE, JSON.stringify(liste.slice(0, FAHRZEUGE_MAX)));
+  } catch {
+    /* privater Modus oder voll */
+  }
+}
+
+/**
+ * Pakete in die vier vergleichbaren Faecher einsortieren.
+ *
+ * Dieselbe Regel wie in der Schutzansicht: "ohne Schutz" ist das billigste
+ * Paket, danach das mit Selbstbeteiligung, dann die beiden SB-freien nach
+ * Preis. Ueber die Namen zu gehen traegt nicht — die heissen in jeder Sprache
+ * anders.
+ */
+function schutzFaecher(pakete) {
+  const rest = [...(pakete || [])].filter((p) => p.gesamt != null);
+  if (!rest.length) return null;
+
+  rest.sort((a, b) => a.gesamt - b.gesamt);
+  const ohne = rest.shift();
+  const sb = rest.find((p) => p.sbBetrag != null && p.sbBetrag > 0) || null;
+  const frei = rest.filter((p) => p !== sb);
+
+  const kurz = (p) => (p ? { name: p.name, gesamt: p.gesamt, aufschlag: p.aufschlag ?? null } : null);
+  return { ohne: kurz(ohne), sb: kurz(sb), frei1: kurz(frei[0]), frei2: kurz(frei[1]) };
+}
+
+/**
+ * Ein angesehenes Fahrzeug festhalten.
+ *
+ * Wird zweimal gerufen: beim Oeffnen einer Klasse (dann stehen die Preise
+ * drin) und nach einem Schutzabruf (dann kommen die Pakete dazu). Der zweite
+ * Aufruf ergaenzt den vorhandenen Eintrag, statt einen neuen anzulegen —
+ * sonst stuende dasselbe Auto zweimal in der Liste.
+ */
+function merkeFahrzeug(acriss) {
+  if (!acriss) return;
+
+  const jobs = aktuelleJobs().filter((j) => j.gruppe === aktiveGruppe);
+  const f = jobs[0];
+  if (!f) return;
+
+  const kennung = `${f.station.code}|${f.variant.pickupDate}|${f.variant.returnDate}|${acriss}`;
+  const liste = ladeFahrzeuge();
+  const vorhanden = liste.find((e) => e.kennung === kennung);
+
+  const preise = [];
+  let modell = vorhanden?.modell || null;
+  for (const j of jobs) {
+    const o = (prices.get(j.key)?.offers || []).find((x) => x.acriss === acriss);
+    if (!o) continue;
+    if (o.model && !modell) modell = o.model;
+    preise.push({
+      host: j.market.host,
+      land: j.market.label,
+      cur: j.market.cur,
+      betrag: o.total ?? null,
+      proTag: o.perDay ?? null,
+      fruehbucher: Boolean(o.fruehbucher),
+    });
+  }
+
+  // Schutzpakete dieser Klasse, sofern abgerufen.
+  const schutzListe = [];
+  for (const [k, r] of schutz) {
+    if (!k.endsWith(`~${acriss}`)) continue;
+    if (!k.includes(`~${f.station.code}~`)) continue;
+    if (!k.includes(`~${f.variant.pickupDate}~`)) continue;
+    const faecher = schutzFaecher(r.pakete);
+    if (!faecher) continue;
+    const markt = providerById(PROVIDER).markets.find((m) => m.host === r.host);
+    schutzListe.push({ host: r.host, land: markt?.label || r.host, cur: markt?.cur || '', ...faecher });
+  }
+
+  // Nichts Neues? Dann auch keinen leeren Eintrag anlegen.
+  if (!preise.length && !schutzListe.length && !vorhanden) return;
+
+  const eintrag = {
+    kennung,
+    acriss,
+    modell,
+    klasse: decodeAcriss(acriss)?.label || '',
+    station: f.station.name,
+    stationCode: f.station.code,
+    von: f.variant.pickupDate,
+    bis: f.variant.returnDate,
+    tage: f.variant.duration,
+    am: Date.now(),
+    preise: preise.length ? preise : vorhanden?.preise || [],
+    schutz: schutzListe.length ? schutzListe : vorhanden?.schutz || null,
+    notiz: vorhanden?.notiz || '',
+  };
+
+  speichereFahrzeuge([eintrag, ...liste.filter((e) => e.kennung !== kennung)]);
+}
 
 function ladeVerlauf() {
   try {
@@ -1708,16 +3489,193 @@ function renderVergleich(liste) {
   );
 }
 
+/**
+ * Ein angesehenes Fahrzeug als Karte.
+ *
+ * Zeigt, was man beim Vergleichen wirklich wissen will: welcher Wagen, wo,
+ * wann — und was er auf welcher Länderseite kostet. Sind Schutzpakete
+ * abgerufen, stehen sie darunter, denn die sind der teure Teil des Abrufs und
+ * niemand will sie zweimal holen.
+ */
+function renderFahrzeugkarte(e) {
+  const mitPreis = (e.preise || []).filter((p) => p.betrag != null);
+  const billigster = mitPreis.length
+    ? mitPreis.reduce((a, b) => (b.betrag < a.betrag ? b : a))
+    : null;
+
+  return el(
+    'section',
+    { class: 'card fahrzeugkarte' },
+    el(
+      'div',
+      { class: 'vkopf' },
+      el(
+        'div',
+        {},
+        el(
+          'h3',
+          {},
+          e.modell || e.acriss,
+          el('span', { class: 'acriss' }, e.acriss)
+        ),
+        el(
+          'p',
+          { class: 'note' },
+          `${e.klasse ? e.klasse + ' · ' : ''}${e.station} · ${pretty(e.von)} → ${pretty(e.bis)} · ${e.tage} Tage · ` +
+            `angesehen ${new Date(e.am).toLocaleString('de-DE', {
+              day: '2-digit',
+              month: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}`
+        )
+      ),
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'ghost mini',
+          title: 'Aus der Liste nehmen',
+          onclick: () => {
+            speichereFahrzeuge(ladeFahrzeuge().filter((x) => x.kennung !== e.kennung));
+            renderVerlauf();
+          },
+        },
+        '×'
+      )
+    ),
+
+    mitPreis.length
+      ? el(
+          'div',
+          { class: 'tabellenrahmen' },
+          el(
+            'table',
+            { class: 'vergleich' },
+            el(
+              'thead',
+              {},
+              el(
+                'tr',
+                {},
+                el('th', { class: 'klasse' }, 'Länderseite'),
+                el('th', {}, 'Gesamt'),
+                el('th', {}, 'pro Tag')
+              )
+            ),
+            el(
+              'tbody',
+              {},
+              ...e.preise.map((p) =>
+                el(
+                  'tr',
+                  {},
+                  el(
+                    'th',
+                    { class: 'klasse' },
+                    p.land,
+                    p.fruehbucher ? el('span', { class: 'aktion' }, 'Frühbucher') : null
+                  ),
+                  el(
+                    'td',
+                    { class: billigster && p.host === billigster.host ? 'best' : '' },
+                    p.betrag != null ? el('span', { class: 'betrag' }, money(p.betrag, p.cur)) : '—'
+                  ),
+                  el('td', {}, p.proTag != null ? `${money(p.proTag, '')}/Tag` : '—')
+                )
+              )
+            )
+          )
+        )
+      : el('p', { class: 'empty' }, 'Für dieses Fahrzeug lagen keine Preise vor.'),
+
+    // Schutzpakete: der Teil, für den man Minuten gewartet hat.
+    e.schutz?.length
+      ? el(
+          'details',
+          { class: 'vschutz', open: '' },
+          el('summary', {}, `Schutzpakete (${e.schutz.length} Länderseiten)`),
+          el(
+            'div',
+            { class: 'tabellenrahmen' },
+            el(
+              'table',
+              { class: 'vergleich' },
+              el(
+                'thead',
+                {},
+                el(
+                  'tr',
+                  {},
+                  el('th', { class: 'klasse' }, 'Länderseite'),
+                  el('th', {}, 'ohne Schutz'),
+                  el('th', {}, 'mit SB'),
+                  el('th', {}, 'ohne SB'),
+                  el('th', {}, 'Rundum')
+                )
+              ),
+              el(
+                'tbody',
+                {},
+                ...e.schutz.map((s) =>
+                  el(
+                    'tr',
+                    {},
+                    el('th', { class: 'klasse' }, s.land),
+                    ...['ohne', 'sb', 'frei1', 'frei2'].map((f) =>
+                      el(
+                        'td',
+                        {},
+                        s[f]
+                          ? el(
+                              'span',
+                              { class: 'betrag', title: s[f].name },
+                              money(s[f].gesamt, s.cur)
+                            )
+                          : '—'
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      : el(
+          'p',
+          { class: 'note' },
+          'Schutzpakete noch nicht abgerufen — in der Preistabelle auf die Zeile klicken.'
+        ),
+
+    el('input', {
+      type: 'text',
+      class: 'notiz',
+      value: e.notiz || '',
+      placeholder: 'Notiz zu diesem Fahrzeug',
+      oninput: (ev) => {
+        const alle = ladeFahrzeuge();
+        const t = alle.find((x) => x.kennung === e.kennung);
+        if (t) {
+          t.notiz = ev.target.value;
+          speichereFahrzeuge(alle);
+        }
+      },
+    })
+  );
+}
+
 function renderVerlauf() {
   const liste = ladeVerlauf();
+  const fahrzeuge = ladeFahrzeuge();
 
-  if (!liste.length) {
+  if (!liste.length && !fahrzeuge.length) {
     setChildren(
       $('#verlaufBody'),
       el(
         'p',
         { class: 'empty' },
-        'Noch nichts gesucht. Nach jedem Abruf wird die Suche hier abgelegt — die letzten fünf.'
+        'Noch nichts angesehen. Klick in der Preistabelle auf eine Fahrzeugzeile — ' +
+          'das Auto erscheint dann hier, mitsamt seinen Schutzpreisen.'
       )
     );
     return;
@@ -1725,6 +3683,31 @@ function renderVerlauf() {
 
   setChildren(
     $('#verlaufBody'),
+
+    // Die Fahrzeuge zuerst: "welchen Wagen habe ich verglichen" ist die Frage,
+    // die man hinterher hat — nicht "was habe ich am Dienstag gesucht".
+    fahrzeuge.length ? el('h2', { class: 'statusteil' }, 'Verglichene Fahrzeuge') : null,
+    ...fahrzeuge.map(renderFahrzeugkarte),
+    fahrzeuge.length
+      ? el(
+          'div',
+          { class: 'btnrow' },
+          el(
+            'button',
+            {
+              type: 'button',
+              class: 'ghost mini',
+              onclick: () => {
+                speichereFahrzeuge([]);
+                renderVerlauf();
+              },
+            },
+            'Fahrzeugliste leeren'
+          )
+        )
+      : null,
+
+    liste.length ? el('h2', { class: 'statusteil' }, 'Gespeicherte Suchen') : null,
     // Der Vergleich zuerst — er ist der Grund, warum es diese Seite gibt.
     liste.length > 1 ? renderVergleich(liste) : null,
     liste.length > 1 ? el('h2', { class: 'statusteil' }, 'Die einzelnen Suchen') : null,
@@ -2096,6 +4079,7 @@ function renderStationPicker() {
  * gewaehlt ist, ohne 23 Zeilen abzusuchen.
  */
 function renderMarkets() {
+  $('#marketSelectionCount').textContent = `${state.markets.length} ausgewählt`;
   setChildren(
     $('#markets'),
     ...providerById(PROVIDER).markets.map((m) => {
@@ -2104,20 +4088,50 @@ function renderMarkets() {
         'button',
         {
           type: 'button',
-          class: 'mchip' + (on ? ' on' : ''),
+          // Gestörte Länderseiten bleiben sichtbar, aber nicht wählbar. Sie
+          // stillschweigend zu entfernen wirft nur die Frage auf, wo sie
+          // geblieben sind.
+          class: 'mchip' + (on ? ' on' : '') + (m.gestoert ? ' gestoert' : ''),
+          disabled: m.gestoert ? '' : null,
+          'aria-pressed': String(on),
+          'aria-label': `${m.label}, ${m.cur}${m.gestoert ? ' — derzeit gestört' : ''}`,
+          title: m.gestoert || `${m.label} · ${m.host}`,
+          'data-market': m.code,
           onclick: () => {
+            if (m.gestoert) return;
             if (on) state.markets = state.markets.filter((c) => c !== m.code);
             else state.markets.push(m.code);
             // Nur das Ergebnis neu zeichnen: die Stationsliste anzufassen
             // liesse sie zurueckscrollen.
             update({ stationen: false });
+            // Der neu gezeichnete Schalter behält den Tastaturfokus.
+            [...$('#markets').children].find((b) => b.dataset.market === m.code)?.focus({ preventScroll: true });
           },
         },
-        el('span', { class: 'mklabel' }, m.label),
-        el('span', { class: 'cur' }, m.cur)
+        el('span', { class: 'market-code', 'aria-hidden': 'true' }, m.code.toUpperCase()),
+        el('span', { class: 'market-copy' }, el('span', { class: 'mklabel' }, m.label), el('span', { class: 'market-domain' }, m.host.replace(/^www\./, ''))),
+        el(
+          'span',
+          { class: 'market-trailing', 'aria-hidden': 'true' },
+          el('span', { class: 'market-check' }, m.gestoert ? '⚠' : on ? '✓' : ''),
+          el('span', { class: 'cur' }, m.gestoert ? 'gestört' : m.cur)
+        )
       );
     })
   );
+}
+
+/**
+ * Gestörte Länderseiten aus einer Auswahl nehmen.
+ *
+ * Sie können noch aus einer früheren Sitzung im gespeicherten Zustand stehen,
+ * und dann liefe jeder Abruf sehenden Auges in einen Fehlschlag.
+ */
+function ohneGestoerte(codes) {
+  const gestoert = new Set(
+    providerById(PROVIDER).markets.filter((m) => m.gestoert).map((m) => m.code)
+  );
+  return codes.filter((c) => !gestoert.has(c));
 }
 
 function renderPills(sel, opts, list, label, onEmpty) {
@@ -2158,6 +4172,9 @@ function renderPills(sel, opts, list, label, onEmpty) {
  *   leer             dort noch nie gesehen
  */
 function renderTable(list) {
+  // Vor dem ersten Ergebnis ist ein klarer Leerzustand hilfreicher als
+  // dutzende Katalogzeilen mit leeren Preisspalten.
+  if (!list.some((j) => prices.has(j.key))) return null;
   const spalten = list;
   const zeilen = new Map();
 
@@ -2403,7 +4420,7 @@ function renderHeld() {
       el(
         'div',
         { class: 'heldleer' },
-        el('p', { class: 'lab' }, 'Bereit'),
+        el('p', { class: 'lab' }, 'DEIN VERGLEICH IST VORBEREITET'),
         el(
           'h2',
           {},
@@ -2498,6 +4515,287 @@ function renderHeld() {
   );
 }
 
+/* ------------------------------------------------- Stationen gegenüberstellen
+ *
+ * Bei mehreren Stationen entstehen Reiter, und man klickt hin und her, um zu
+ * sehen, welche günstiger ist. Diese Rechnung sagt es.
+ *
+ * Nicht als Durchschnitt aller Angebote: eine Station, die drei Luxuswagen im
+ * Katalog hat, bekäme den höheren Schnitt — auch dann, wenn sie bei jeder
+ * Klasse billiger ist, die es an beiden gibt. Verglichen wird deshalb
+ * paarweise über die Klassen, die überall vorkommen.
+ */
+
+/**
+ * Stellt die Stationen derselben Datumsvariante gegenüber.
+ *
+ * @returns {Array|null} je Währung ein Vergleich, oder null wenn es nichts
+ *   zu vergleichen gibt.
+ */
+function stationsvergleich() {
+  const jobs = aktuelleJobs();
+  if (!jobs.length) return null;
+
+  // Nur derselbe Termin. Gruppen heissen station|von|bis; über zwei Termine
+  // hinweg zu vergleichen stellte zwei verschiedene Reisen nebeneinander.
+  const aktiv = jobs.find((j) => j.gruppe === aktiveGruppe);
+  if (!aktiv) return null;
+  const { pickupDate, returnDate } = aktiv.variant;
+  const passend = jobs.filter(
+    (j) => j.variant.pickupDate === pickupDate && j.variant.returnDate === returnDate
+  );
+
+  // Je Station: die günstigste Klasse über alle Länderseiten, getrennt nach
+  // Währung. Zwei Währungen sind zwei verschiedene Fragen — umgerechnet wird
+  // hier grundsätzlich nicht.
+  const stationen = new Map();
+  for (const j of passend) {
+    const st = stationen.get(j.station.code) || {
+      station: j.station,
+      gruppe: j.gruppe,
+      seiten: 0,
+      mitErgebnis: 0,
+      /** waehrung → acriss → günstigster Gesamtpreis */
+      preise: new Map(),
+    };
+    st.seiten++;
+    const r = prices.get(j.key);
+    if (r?.offers?.length) st.mitErgebnis++;
+    for (const o of r?.offers || []) {
+      const wert = o.total ?? o.perDay;
+      if (!o.acriss || wert == null || o.unstimmig) continue;
+      const w = o.currency || '';
+      if (!st.preise.has(w)) st.preise.set(w, new Map());
+      const nach = st.preise.get(w);
+      if (!nach.has(o.acriss) || wert < nach.get(o.acriss)) nach.set(o.acriss, wert);
+    }
+    stationen.set(j.station.code, st);
+  }
+  if (stationen.size < 2) return null;
+
+  const alle = [...stationen.values()];
+  // Eine Station, die nichts geliefert hat, gehört nicht in den Vergleich —
+  // aber sie verschwindet auch nicht stillschweigend, sondern wird benannt.
+  const ohneErgebnis = alle.filter((s) => !s.mitErgebnis);
+  const dabei = alle.filter((s) => s.mitErgebnis);
+  // Bleibt nur eine Station übrig, gibt es nichts zu vergleichen. Das ist
+  // aber kein Grund zu schweigen: sonst fehlt der Kasten und man rätselt,
+  // warum. Liegt für gar keine Station etwas vor, ist der Vergleich schlicht
+  // noch nicht dran — dann still bleiben.
+  if (dabei.length < 2) {
+    return dabei.length && ohneErgebnis.length
+      ? [{ waehrung: null, nurHinweis: true, ohneErgebnis, dabei }]
+      : null;
+  }
+
+  const waehrungen = new Set();
+  for (const s of dabei) for (const w of s.preise.keys()) waehrungen.add(w);
+
+  const ergebnisse = [];
+  for (const waehrung of waehrungen) {
+    const mit = dabei.filter((s) => (s.preise.get(waehrung)?.size ?? 0) > 0);
+    if (mit.length < 2) continue;
+
+    // Nur Klassen, die es an allen verglichenen Stationen gibt.
+    let gemeinsam = [...mit[0].preise.get(waehrung).keys()];
+    for (const s of mit.slice(1)) {
+      const hat = s.preise.get(waehrung);
+      gemeinsam = gemeinsam.filter((a) => hat.has(a));
+    }
+
+    if (!gemeinsam.length) {
+      ergebnisse.push({ waehrung, stationen: mit, gemeinsam: [], sieger: null, ohneErgebnis });
+      continue;
+    }
+
+    // Je Klasse: wer ist am billigsten, und wie weit liegt der Rest zurück?
+    const punkte = new Map(mit.map((s) => [s.station.code, 0]));
+    const abstaende = new Map(mit.map((s) => [s.station.code, []]));
+    for (const acriss of gemeinsam) {
+      let bester = null;
+      for (const s of mit) {
+        const p = s.preise.get(waehrung).get(acriss);
+        if (bester == null || p < bester.p) bester = { p, code: s.station.code };
+      }
+      punkte.set(bester.code, punkte.get(bester.code) + 1);
+      for (const s of mit) {
+        const p = s.preise.get(waehrung).get(acriss);
+        // Abstand zum Besten dieser Klasse — für den Sieger ist er null.
+        if (s.station.code !== bester.code) {
+          abstaende.get(s.station.code).push({ acriss, diff: p - bester.p, anteil: (p - bester.p) / bester.p });
+        }
+      }
+    }
+
+    const sieger = mit.reduce((a, b) =>
+      punkte.get(b.station.code) > punkte.get(a.station.code) ? b : a
+    );
+    const siegerPreise = sieger.preise.get(waehrung);
+
+    // Wie weit die anderen im Mittel danebenliegen — gerechnet gegen den
+    // Sieger, nicht gegen den jeweils Besten. Sonst stünde eine Zahl da, die
+    // keiner Gegenüberstellung entspricht.
+    const gegner = mit
+      .filter((s) => s !== sieger)
+      .map((s) => {
+        const eigene = s.preise.get(waehrung);
+        const diffs = gemeinsam.map((a) => eigene.get(a) - siegerPreise.get(a));
+        const summe = diffs.reduce((x, y) => x + y, 0);
+        const basis = gemeinsam.reduce((x, a) => x + siegerPreise.get(a), 0);
+        return {
+          station: s.station,
+          gruppe: s.gruppe,
+          // Klassen, bei denen der Herausforderer den Sieger unterbietet.
+          billigerBei: gemeinsam.filter((a) => eigene.get(a) < siegerPreise.get(a)),
+          mittel: summe / gemeinsam.length,
+          prozent: basis ? (summe / basis) * 100 : 0,
+        };
+      });
+
+    ergebnisse.push({
+      waehrung,
+      stationen: mit,
+      gemeinsam,
+      sieger: {
+        station: sieger.station,
+        gruppe: sieger.gruppe,
+        gewinntBei: punkte.get(sieger.station.code),
+        von: gemeinsam.length,
+      },
+      gegner,
+      ohneErgebnis,
+    });
+  }
+
+  return ergebnisse.length ? ergebnisse : null;
+}
+
+function renderStationsvergleich() {
+  const v = stationsvergleich();
+  if (!v) return null;
+
+  const mehrereWaehrungen = v.length > 1;
+
+  return el(
+    'section',
+    { class: 'stationsvergleich', 'aria-label': 'Stationen im Vergleich' },
+    ...v.map((e) =>
+      e.nurHinweis
+        ? el(
+            'div',
+            { class: 'sv-block' },
+            el('p', { class: 'eyebrow' }, 'STATIONEN IM VERGLEICH'),
+            el(
+              'p',
+              { class: 'sv-satz' },
+              'Kein Vergleich möglich: nur ',
+              el('b', {}, e.dabei[0].station.name),
+              ' hat Preise geliefert.'
+            ),
+            el(
+              'p',
+              { class: 'sv-fuss warn' },
+              `Ohne Ergebnis: ${e.ohneErgebnis.map((s) => s.station.name).join(', ')}. ` +
+                'Abruf für diese Station wiederholen, dann steht der Vergleich hier.'
+            )
+          )
+        : el(
+        'div',
+        { class: 'sv-block' },
+        el(
+          'p',
+          { class: 'eyebrow' },
+          'STATIONEN IM VERGLEICH' + (mehrereWaehrungen ? ` · ${e.waehrung}` : '')
+        ),
+        !e.gemeinsam.length
+          ? el(
+              'p',
+              { class: 'sv-satz' },
+              'Diese Stationen haben keine Fahrzeugklasse gemeinsam — es gibt nichts, ' +
+                'was sich sauber gegenüberstellen ließe.'
+            )
+          : el(
+              'p',
+              { class: 'sv-satz' },
+              el(
+                'button',
+                {
+                  type: 'button',
+                  class: 'sv-name',
+                  onclick: () => {
+                    aktiveGruppe = e.sieger.gruppe;
+                    renderResults({ erzwingen: true });
+                  },
+                  title: 'Tabelle dieser Station zeigen',
+                },
+                e.sieger.station.name
+              ),
+              ' ist günstiger — bei ',
+              el('b', {}, `${e.sieger.gewinntBei} von ${e.sieger.von}`),
+              ' gemeinsamen Klassen.'
+            ),
+        ...e.gegner.map((g) =>
+          el(
+            'p',
+            { class: 'sv-zeile' },
+            el(
+              'button',
+              {
+                type: 'button',
+                class: 'sv-name leise',
+                onclick: () => {
+                  aktiveGruppe = g.gruppe;
+                  renderResults({ erzwingen: true });
+                },
+                title: 'Tabelle dieser Station zeigen',
+              },
+              g.station.name
+            ),
+            g.mittel > 0.005
+              ? el(
+                  'span',
+                  {},
+                  ' liegt im Mittel ',
+                  el('b', {}, money(g.mittel, e.waehrung)),
+                  ` (${g.prozent.toFixed(1).replace('.', ',')} %) darüber.`
+                )
+              : g.mittel < -0.005
+                ? el(
+                    'span',
+                    {},
+                    ' liegt im Mittel ',
+                    el('b', {}, money(-g.mittel, e.waehrung)),
+                    ` (${Math.abs(g.prozent).toFixed(1).replace('.', ',')} %) darunter — ` +
+                      'gewinnt aber seltener.'
+                  )
+                : el('span', {}, ' liegt im Mittel gleichauf.'),
+            // Die Ausnahmen sind der eigentliche Wert: dort liegt das Geld,
+            // das ein Blick auf den Sieger allein übersieht.
+            g.billigerBei.length
+              ? el(
+                  'span',
+                  { class: 'sv-ausnahmen' },
+                  ` Billiger bei: ${g.billigerBei.join(', ')}.`
+                )
+              : null
+          )
+        ),
+        mehrereWaehrungen
+          ? el('p', { class: 'sv-fuss' }, 'Getrennt je Währung — es wird nicht umgerechnet.')
+          : null,
+        e.ohneErgebnis.length
+          ? el(
+              'p',
+              { class: 'sv-fuss warn' },
+              `Nicht im Vergleich, weil kein Ergebnis vorliegt: ` +
+                e.ohneErgebnis.map((s) => s.station.name).join(', ') + '.'
+            )
+          : null
+      )
+    )
+  );
+}
+
 /** Kopfzeile: die Einstellung auf eine Zeile eingedampft. */
 function renderKopf() {
   const gewählt = state.stations.map(stationByCode).filter(Boolean);
@@ -2509,6 +4807,10 @@ function renderKopf() {
   $('#kurzZeit').textContent =
     `${pretty(state.pickupDate)} ${state.pickupTime} → ${pretty(state.returnDate)} ${state.returnTime}`;
   $('#knopfLand').textContent = `${state.markets.length} Länderseiten`;
+  // Der Haken steht jetzt am Abruf, nicht mehr in der Länderauswahl — also
+  // auch dann gleichziehen, wenn die Länderkacheln gar nicht neu gezeichnet
+  // werden.
+  $('#inkognito').checked = Boolean(state.inkognito);
 }
 
 /** Aufklappende Bereiche: immer nur einer offen. */
@@ -2523,9 +4825,11 @@ function zeigeBereich(name) {
   ]) {
     $(sel).hidden = offenerBereich !== n;
   }
-  document.querySelectorAll('[data-panel]').forEach((b) =>
-    b.toggleAttribute('data-offen', b.dataset.panel === offenerBereich)
-  );
+  document.querySelectorAll('[data-panel]').forEach((b) => {
+    const offen = b.dataset.panel === offenerBereich;
+    b.toggleAttribute('data-offen', offen);
+    b.setAttribute('aria-expanded', String(offen));
+  });
 }
 
 /**
@@ -2551,7 +4855,14 @@ function gruppenwahl(jobs, aktiv, waehle) {
           onclick: () => waehle(k),
         },
         el('span', {}, f.station.name),
-        el('span', { class: 'gzeit' }, `${pretty(f.variant.pickupDate)} · ${f.variant.duration} Tage`)
+        // Die Uhrzeit gehört auf den Reiter, sobald es mehr als eine gibt —
+        // sonst stünden zwei gleich beschriftete Reiter mit zwei Preisen da.
+        el(
+          'span',
+          { class: 'gzeit' },
+          `${pretty(f.variant.pickupDate)} · ${f.variant.duration} Tage` +
+            (zeitVarianten().length > 1 ? ` · ${zeitKurz(f.variant)}` : '')
+        )
       )
     )
   );
@@ -2604,7 +4915,7 @@ function renderResults({ erzwingen = false } = {}) {
   $('#warn').hidden = jobs.length <= 12;
   $('#warn').textContent =
     jobs.length > 12
-      ? `${jobs.length} Abfragen — das dauert rund ${Math.ceil((jobs.length * 6) / 2 / 60)} Minuten.`
+      ? `${jobs.length} Abfragen — das dauert rund ${minutenText(jobs.length)}.`
       : '';
 
   // Die Tabelle nur anfassen, wenn sich an ihrem Inhalt etwas geaendert hat.
@@ -2637,6 +4948,9 @@ function renderResults({ erzwingen = false } = {}) {
 
   setChildren(
     $('#results'),
+    // Die Aussage steht über den Reitern: sie beantwortet die Frage, wegen
+    // der man sonst zwischen ihnen hin und her klickt.
+    renderStationsvergleich(),
     umschalter,
     ...sichtbar.map((k) => {
       const list = gruppen.get(k);
@@ -2652,17 +4966,16 @@ function renderResults({ erzwingen = false } = {}) {
           el(
             'span',
             { class: 'span' },
-            `${pretty(f.variant.pickupDate)} ${state.pickupTime} → ${pretty(
-              f.variant.returnDate
-            )} ${state.returnTime} · ${f.variant.duration} Tage`
+            `${pretty(f.variant.pickupDate)} ${f.variant.pickupTime} → ` +
+              `${pretty(f.variant.returnDate)} ${f.variant.returnTime} · ${f.variant.duration} Tage`
           )
         ),
         renderTable(list) ||
           el(
             'p',
-            { class: 'empty' },
+            { class: 'empty comparison-empty' },
             service.chrome
-              ? 'Noch keine Preise — „Preise holen" drücken.'
+              ? 'Starte oben mit „Preise vergleichen“. Deine Angebote erscheinen hier, sobald sie eintreffen.'
               : 'Kein Preisabruf verfügbar. Die Links unten führen zur Suche.'
           ),
         el(
@@ -2674,7 +4987,21 @@ function renderResults({ erzwingen = false } = {}) {
               'a',
               { href: j.url, target: '_blank', rel: 'noopener', class: 'lnk' },
               el('span', { class: 'mkname' }, j.market.label),
-              rec?.error ? el('span', { class: 'price err' }, rec.error) : null
+              // Verständlicher Grund statt Rohmeldung, samt Fehlerkennung zum
+              // Nachschlagen und der Zahl der Versuche.
+              rec?.error
+                ? el(
+                    'span',
+                    {
+                      class: 'price err',
+                      title:
+                        (rec.fehlerRat ? rec.fehlerRat + '\n\n' : '') +
+                        `Kennung: ${rec.fehlerCode || '—'} · ${rec.versuche || 1} Versuch(e)\n` +
+                        rec.error,
+                    },
+                    `${rec.fehlerCode || 'FEHLER'} — ${rec.fehlerKlartext || rec.error}`
+                  )
+                : null
             );
           })
         )
@@ -2690,6 +5017,9 @@ function öffneSchutz(acriss) {
   schutzAcriss = acriss;
   // Auf der Station landen, aus deren Tabelle geklickt wurde.
   schutzGruppe = aktiveGruppe;
+  // Ab hier gilt dieses Fahrzeug als angesehen — mit den Preisen, die schon
+  // vorliegen. Die Schutzpakete kommen nach ihrem Abruf dazu.
+  merkeFahrzeug(acriss);
   showScreen('schutz');
   renderSchutz();
   window.scrollTo(0, 0);
@@ -2744,8 +5074,8 @@ function renderSchutz() {
               'p',
               { class: 'kzeit' },
               el('b', {}, gruppe.station.name),
-              ` · ${pretty(gruppe.variant.pickupDate)} ${state.pickupTime} → ` +
-                `${pretty(gruppe.variant.returnDate)} ${state.returnTime} · ${gruppe.variant.duration} Tage`
+              ` · ${pretty(gruppe.variant.pickupDate)} ${gruppe.variant.pickupTime} → ` +
+                `${pretty(gruppe.variant.returnDate)} ${gruppe.variant.returnTime} · ${gruppe.variant.duration} Tage`
             )
           : null
       )
@@ -2996,9 +5326,12 @@ async function fetchSchutz() {
       acriss: j.acriss,
       pickupDate: j.variant.pickupDate,
       returnDate: j.variant.returnDate,
-      pickupTime: state.pickupTime,
-      returnTime: state.returnTime,
+      pickupTime: j.variant.pickupTime ?? state.pickupTime,
+      returnTime: j.variant.returnTime ?? state.returnTime,
       currency: j.market.cur,
+      // Derselbe Modus wie beim Preisabruf: sonst stünde ein Schutzpreis aus
+      // dem Cookie-Abruf neben einem Grundpreis ohne Cookies.
+      inkognito: state.inkognito || undefined,
     })),
     $('#getSchutz')
   );
@@ -3087,6 +5420,9 @@ async function fetchPrices({ nurFehler = false } = {}) {
   // Das alte Ergebnis wegräumen, sonst steht die Fehlermeldung noch in der
   // Zelle, während der neue Abruf längst läuft.
   if (nurFehler) for (const j of offen) prices.delete(j.key);
+  // Wer von Hand anstösst, fängt von vorn an: das automatische Nachfassen
+  // steht ihm danach wieder einmal zu.
+  if (!nurFehler) nachgefasst = new Set();
 
   await sendeJobs(
     offen.map((j) => ({
@@ -3097,9 +5433,10 @@ async function fetchPrices({ nurFehler = false } = {}) {
       returnCode: state.returnStation || undefined,
       pickupDate: j.variant.pickupDate,
       returnDate: j.variant.returnDate,
-      pickupTime: state.pickupTime,
-      returnTime: state.returnTime,
+      pickupTime: j.variant.pickupTime ?? state.pickupTime,
+      returnTime: j.variant.returnTime ?? state.returnTime,
       currency: j.market.cur,
+      inkognito: state.inkognito || undefined,
     })),
     $(nurFehler ? '#nochmal' : '#getPrices')
   );
@@ -3132,7 +5469,7 @@ function renderFortschritt() {
     if (!b) continue;
     b.disabled = aktiv;
   }
-  $('#getPrices').textContent = aktiv ? 'Abruf läuft …' : 'Preise holen';
+  $('#getPrices').textContent = aktiv ? 'Abruf läuft …' : 'Preise vergleichen';
   $('#getSchutz').textContent = aktiv ? 'Abruf läuft …' : 'Schutzpreise holen';
 
   if (!aktiv) ladeKatalog();
@@ -3185,6 +5522,162 @@ const CAP_LABEL = {
   prepaid: 'Prepaid-Filter (Parameter wird verworfen)',
 };
 
+/* ------------------------------------------------------------- Begrüßung
+ *
+ * Einmal beim ersten Start. Wer TRACKER zum ersten Mal öffnet, soll nicht an
+ * einer leeren Tabelle merken, dass Chrome fehlt oder eine Firewall
+ * dazwischensteht — sondern es vorher wissen, samt Grund und Rat.
+ *
+ * Die frühere Fassung hatte eine Animation vor *jedem* Start. Die kommt
+ * bewusst nicht zurück: sie erschien immer und führte nirgendwohin. Diese
+ * erscheint einmal und führt zu einem Testlauf.
+ */
+
+const LS_ERSTSTART = 'mwt-preistool/erststart';
+const SS_LAEUFT = 'mwt-preistool/sitzung';
+
+function erststartErledigt() {
+  try {
+    return localStorage.getItem(LS_ERSTSTART) === 'fertig';
+  } catch {
+    // Ohne Speicher liesse sich die Begrüßung nie abstellen — dann lieber
+    // gar nicht zeigen, als sie bei jedem Start aufzudrängen.
+    return true;
+  }
+}
+
+function zeigeWillkommen() {
+  showScreen('willkommen');
+  $('#wkErgebnis').replaceChildren();
+  $('#wkAbschluss').hidden = true;
+  $('#wkStart').disabled = false;
+  $('#wkStart').textContent = 'Prüfen, ob alles läuft';
+}
+
+/** Die Begrüßung abschliessen und dorthin gehen, wo es losgeht. */
+function beendeWillkommen(merken) {
+  try {
+    if (merken) localStorage.setItem(LS_ERSTSTART, 'fertig');
+    else localStorage.removeItem(LS_ERSTSTART);
+  } catch {
+    /* dann eben nur für diese Sitzung */
+  }
+  state.mode = null;
+  persist();
+  showScreen('start');
+}
+
+/**
+ * Der Testlauf der Begrüßung: erst die Kette, dann drei weitere Länderseiten.
+ *
+ * Jede Seite ist ein eigener Aufruf, damit die Schritte einzeln eintreffen.
+ * Ein Endpunkt, der zwei Minuten schweigt und dann alles auf einmal liefert,
+ * ist von einem Absturz nicht zu unterscheiden.
+ */
+async function willkommenTest() {
+  const knopf = $('#wkStart');
+  const kasten = $('#wkErgebnis');
+  knopf.disabled = true;
+  knopf.textContent = 'Läuft …';
+  $('#wkAbschluss').hidden = true;
+  $('#wkUeberspringen').hidden = true;
+
+  const schritte = [];
+  const zeichne = (laeuft) =>
+    setChildren(
+      kasten,
+      schrittliste(schritte),
+      laeuft ? el('p', { class: 'note wk-laeuft' }, `${laeuft} wird geprüft …`) : null
+    );
+
+  try {
+    zeichne('Die Grundkette');
+    const d = await (await fetch('/api/selbsttest', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
+    })).json();
+
+    if (!d.ok) {
+      setChildren(kasten, el('p', { class: 'note warn' }, d.error));
+      return;
+    }
+    schritte.push(...d.schritte);
+    zeichne(null);
+
+    // Weiter nur, wenn die Grundkette hält — ohne Browser ist jede weitere
+    // Seite dieselbe Fehlermeldung noch einmal.
+    const gebrochen = schritte.some((s) => s.stand === 'schlecht');
+    if (!gebrochen) {
+      for (const seite of d.weitere || []) {
+        zeichne(seite.label);
+        const r = await (await fetch('/api/selbsttest', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ seite: seite.host }),
+        })).json();
+        if (r.ok) schritte.push(...r.schritte);
+        zeichne(null);
+      }
+    }
+
+    const schlecht = schritte.filter((s) => s.stand === 'schlecht').length;
+    const mittel = schritte.filter((s) => s.stand === 'mittel').length;
+
+    setChildren(
+      kasten,
+      schrittliste(schritte),
+      el(
+        'p',
+        { class: 'note ' + (schlecht ? 'warn' : '') },
+        schlecht
+          ? 'Hier hakt es. Der Rat steht am betroffenen Schritt.'
+          : mittel
+            ? `Läuft. ${mittel} von ${schritte.length} Punkten mit Einschränkung — ` +
+              'einzelne Länderseiten können also klemmen, der Rest geht.'
+            : 'Alles in Ordnung. Jede geprüfte Länderseite hat geliefert.'
+      )
+    );
+
+    // Ausblenden anbieten nur, wenn nichts gebrochen ist. Wer ein kaputtes
+    // Setup hat, soll die Meldung beim nächsten Start wiedersehen.
+    $('#wkAbschluss').hidden = false;
+    $('#wkNichtMehr').closest('.optionzeile').hidden = Boolean(schlecht);
+    $('#wkNichtMehr').checked = !schlecht;
+  } catch {
+    setChildren(kasten, el('p', { class: 'note warn' }, 'Der Dienst antwortet nicht.'));
+    $('#wkAbschluss').hidden = false;
+    $('#wkNichtMehr').closest('.optionzeile').hidden = true;
+    $('#wkNichtMehr').checked = false;
+  } finally {
+    knopf.disabled = false;
+    knopf.textContent = 'Noch einmal prüfen';
+    $('#wkStart').hidden = true;
+  }
+}
+
+/** Die Schritte eines Testlaufs als Liste — geteilt von Status und Begrüßung. */
+function schrittliste(schritte) {
+  return el(
+    'ul',
+    { class: 'standliste' },
+    ...schritte.map((s) =>
+      el(
+        'li',
+        { class: 'st ' + (s.stand === 'gut' ? 'ja' : s.stand === 'mittel' ? 'teils' : 'nein') },
+        el('span', { class: 'stmark' }, s.stand === 'gut' ? '✓' : s.stand === 'mittel' ? '~' : '✕'),
+        el(
+          'span',
+          {},
+          el('b', {}, s.name),
+          el('span', { class: 'sttext' }, s.text),
+          s.rat ? el('span', { class: 'sttext rat' }, s.rat) : null
+        )
+      )
+    )
+  );
+}
+
 /**
  * Selbsttest anstossen und das Ergebnis zeigen.
  *
@@ -3216,31 +5709,7 @@ async function starteSelbsttest() {
         ? 'Läuft, mit Einschränkung:'
         : 'Alles in Ordnung.';
 
-    setChildren(
-      $('#testErgebnis'),
-      el(
-        'ul',
-        { class: 'standliste' },
-        ...d.schritte.map((s) =>
-          el(
-            'li',
-            { class: 'st ' + (s.stand === 'gut' ? 'ja' : s.stand === 'mittel' ? 'teils' : 'nein') },
-            el(
-              'span',
-              { class: 'stmark' },
-              s.stand === 'gut' ? '✓' : s.stand === 'mittel' ? '~' : '✕'
-            ),
-            el(
-              'span',
-              {},
-              el('b', {}, s.name),
-              el('span', { class: 'sttext' }, s.text),
-              s.rat ? el('span', { class: 'sttext rat' }, s.rat) : null
-            )
-          )
-        )
-      )
-    );
+    setChildren($('#testErgebnis'), schrittliste(d.schritte));
   } catch {
     hinweis.textContent = '';
     setChildren($('#testErgebnis'), el('p', { class: 'note warn' }, 'Der Dienst antwortet nicht.'));
@@ -3251,10 +5720,10 @@ async function starteSelbsttest() {
 }
 
 /** Eine Kennzahl im Dienst-Kasten. */
-function kennzahl(wert, was, ok = null) {
+function kennzahl(wert, was, ok = null, hinweis = null) {
   return el(
     'div',
-    { class: 'kz' + (ok === true ? ' gut' : ok === false ? ' schlecht' : '') },
+    { class: 'kz' + (ok === true ? ' gut' : ok === false ? ' schlecht' : ''), title: hinweis },
     el('span', { class: 'kzwert' }, String(wert)),
     el('span', { class: 'kzwas' }, was)
   );
@@ -3263,6 +5732,7 @@ function kennzahl(wert, was, ok = null) {
 function renderStatus() {
   const gespeichert = prices.size + schutz.size;
   const klassen = Object.keys(katalog).length;
+  $('#wkWiederZeigen').checked = !erststartErledigt();
 
   setChildren(
     $('#statusBody'),
@@ -3286,7 +5756,15 @@ function renderStatus() {
           service.chrome
         ),
         kennzahl(ALLE_STATIONEN.length, 'Sixt-Stationen hinterlegt'),
-        kennzahl(providerById(PROVIDER).markets.length, 'Länderseiten'),
+        kennzahl(
+          providerById(PROVIDER).markets.filter((m) => !m.gestoert).length,
+          'Länderseiten abrufbar',
+          null,
+          providerById(PROVIDER)
+            .markets.filter((m) => m.gestoert)
+            .map((m) => `${m.label}: ${m.gestoert}`)
+            .join('\n') || null
+        ),
         kennzahl(klassen, 'ACRISS-Klassen im Katalog'),
         kennzahl(gespeichert, 'Abrufe im Speicher')
       ),
@@ -3384,6 +5862,7 @@ function update(teile = {}) {
     ` · ${tage} ${tage === 1 ? 'Tag' : 'Tage'}`;
 
   renderKopf();
+  renderZeiten();
 
   if (stationen) renderStationPicker();
   if (maerkte) renderMarkets();
@@ -3462,61 +5941,8 @@ function haltAmLeben() {
 }
 
 /**
- * Startanimation.
- *
- * Spielt einmal beim Öffnen und verschwindet danach von selbst. Drei Dinge
- * müssen sitzen, sonst ist ein Intro nur im Weg:
- *
- *   Überspringbar   ein Klick, eine Taste — wer sie kennt, will sie nicht
- *                   viermal am Tag sehen.
- *   Nie blockierend Schlägt das Abspielen fehl (manche Browser verweigern
- *                   Autoplay), geht sie sofort weg statt schwarz stehenzubleiben.
- *   Verzichtbar     Bei "Bewegung reduzieren" läuft sie gar nicht erst.
+ * Oberfläche initialisieren. Die Startseite ist ohne Vorspann sofort bedienbar.
  */
-function starteIntro() {
-  const box = $('#intro');
-  const film = $('#introFilm');
-  if (!box || !film) return;
-
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  const weg = () => {
-    if (box.hidden || box.classList.contains('geht')) return;
-    box.classList.add('geht');
-    // Nach der Überblendung ganz raus, damit nichts über der Seite liegt.
-    setTimeout(() => {
-      box.hidden = true;
-      film.pause();
-      film.removeAttribute('src');
-    }, 420);
-    removeEventListener('keydown', weg);
-  };
-
-  /**
-   * Ohne vorherige Nutzergeste verweigern Browser das selbsttätige Abspielen
-   * — beim Programmstart ist das der Normalfall, nicht die Ausnahme. Dann
-   * übernimmt das Standbild in derselben Bildsprache, statt dass der Start
-   * schwarz bleibt und sofort wieder verschwindet.
-   */
-  const ohneFilm = () => {
-    film.hidden = true;
-    $('#introStill').hidden = false;
-    setTimeout(weg, 2200);
-  };
-
-  film.src = '/*INTRO*/';
-  box.hidden = false;
-  film.addEventListener('ended', weg);
-  film.addEventListener('error', ohneFilm);
-  box.addEventListener('click', weg);
-  addEventListener('keydown', weg);
-  // Notbremse: sollte das Ende-Ereignis ausbleiben, ist nach sieben Sekunden
-  // ohnehin Schluss — die Animation dauert viereinhalb.
-  setTimeout(weg, 7000);
-
-  film.play().catch(ohneFilm);
-}
-
 function init() {
   // Als Allererstes: dem Dienst sagen, dass es dieses Fenster gibt. Vorher
   // geschah das erst, nachdem die Dienstpruefung zurueck war — bei einer
@@ -3524,11 +5950,10 @@ function init() {
   // sich das Programm zwischendurch fuer verwaist hielt und beendete.
   haltAmLeben();
 
-  starteIntro();
-  starteHintergrund();
 
-  document.querySelectorAll('.mode').forEach((b) =>
+  document.querySelectorAll('[data-mode]').forEach((b) =>
     b.addEventListener('click', () => {
+      schutzAcriss = null;
       state.mode = b.dataset.mode;
       persist();
       if (state.mode === 'status') {
@@ -3557,6 +5982,7 @@ function init() {
 
   document.querySelectorAll('.back').forEach((b) =>
     b.addEventListener('click', () => {
+      schutzAcriss = null;
       state.mode = null;
       persist();
       showScreen('start');
@@ -3602,16 +6028,94 @@ function init() {
     update();
   });
 
-  // Der Überspringen-Knopf liegt im Intro — sein Klick erreicht dessen
-  // Behandlung von selbst, ein eigener Verweis wäre doppelt.
   $('#testStart').addEventListener('click', starteSelbsttest);
+
+  /* --- Begrüßung --- */
+  $('#wkStart').addEventListener('click', willkommenTest);
+  $('#wkNochmal').addEventListener('click', willkommenTest);
+  // "Später prüfen" merkt sich nichts: beim nächsten Start steht die
+  // Begrüßung wieder da. Wer sie loswerden will, prüft einmal.
+  $('#wkUeberspringen').addEventListener('click', () => beendeWillkommen(false));
+  $('#wkFertig').addEventListener('click', () => beendeWillkommen($('#wkNichtMehr').checked));
+
+  $('#wkWiederZeigen').addEventListener('change', (e) => {
+    // Angehakt heisst "zeigen" — im Speicher steht aber das Gegenteil.
+    try {
+      if (e.target.checked) localStorage.removeItem(LS_ERSTSTART);
+      else localStorage.setItem(LS_ERSTSTART, 'fertig');
+    } catch {
+      /* ohne Speicher lässt sich das nicht merken */
+    }
+    flash(
+      e.target.checked
+        ? 'Die Begrüßung erscheint beim nächsten Start.'
+        : 'Die Begrüßung bleibt aus.'
+    );
+  });
+  $('#wkJetztAnsehen').addEventListener('click', zeigeWillkommen);
 
   /* --- Monatsübersicht --- */
   $('#kalStation').addEventListener('input', renderKalStationSuche);
-  $('#kalStart2').addEventListener('click', () => starteKalender());
+
+  $('#kalZeitHinzu').addEventListener('click', () => {
+    if (!Array.isArray(state.kalender.zeiten)) state.kalender.zeiten = [];
+    const spaeter = (t) => {
+      const [h, m] = String(t || '10:00').split(':').map(Number);
+      return `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    };
+    const letzte = state.kalender.zeiten.at(-1) || { ab: state.kalender.zeit, zurueck: state.kalender.zeit };
+    state.kalender.zeiten.push({ ab: spaeter(letzte.ab), zurueck: spaeter(letzte.zurueck) });
+    kalTagAuswahl = null;
+    persist();
+    renderKalFormular();
+    renderKalBild();
+  });
+
+  /* --- Mehrere Stationen im Kalender --- */
+  $('#kalMultiSuche').addEventListener('input', renderKalMultiTreffer);
+  $('#kalMultiStart').addEventListener('click', starteKalMulti);
+  $('#kalMultiAbbrechen').addEventListener('click', async () => {
+    // Erst das eigene Weiterlaufen stoppen, dann die Warteschlange leeren —
+    // andersherum stellte die Schleife gleich wieder Aufträge nach.
+    kalMultiLaeuft = false;
+    await abbrechen();
+    renderKalMulti();
+  });
+  $('#kalStart2').addEventListener('click', (e) =>
+    e.currentTarget.dataset.neu ? kalNeuMessen() : starteKalender()
+  );
   $('#kalNachfassen').addEventListener('click', () => starteKalender({ nurFehlende: true }));
   $('#kalAbbrechen').addEventListener('click', abbrechen);
   $('#kalCsv').addEventListener('click', kalenderCsv);
+  $('#kalInkognito').addEventListener('change', async (e) => {
+    state.kalender.inkognito = e.target.checked;
+    kalTagAuswahl = null;
+    persist();
+    // Die Aufzeichnung muss mit: sie ist nach Modus gefiltert, und ohne das
+    // Nachladen blieben die Messungen des anderen Modus stehen — der Kalender
+    // sähe voll aus, obwohl im neuen Modus noch nichts gemessen wurde.
+    await ladeKalAufzeichnung();
+    renderKalFormular();
+    renderKalBild();
+  });
+  // Eine frei eingetragene Dauer wird erst übernommen, wenn sie fertig
+  // getippt ist: bei "change" statt "input". Sonst stünde nach der ersten
+  // Ziffer von "45" schon ein Kalender für 4 Tage da und der Abruf liefe an.
+  $('#kalDauerFrei').addEventListener('change', async (e) => {
+    const n = Math.round(Number(e.target.value));
+    if (!Number.isFinite(n) || n < KAL_DAUER_MIN || n > KAL_DAUER_MAX) {
+      e.target.value = String(state.kalender.dauer);
+      flash(`Bitte eine Mietdauer zwischen ${KAL_DAUER_MIN} und ${KAL_DAUER_MAX} Tagen eintragen.`);
+      return;
+    }
+    state.kalender.dauer = n;
+    kalTagAuswahl = null;
+    persist();
+    await ladeKalAufzeichnung();
+    renderKalFormular();
+    renderKalBild();
+  });
+
   for (const [sel, feld, wandeln] of [
     ['#kalHost', 'host', String],
     ['#kalKlasse', 'klasse', String],
@@ -3621,10 +6125,23 @@ function init() {
     ['#kalZeit', 'zeit', String],
   ]) {
     $(sel).addEventListener('input', async (e) => {
+      // "Andere Dauer …" ist keine Zahl, sondern der Weg zum Eingabefeld.
+      if (feld === 'dauer' && e.target.value === 'frei') {
+        const feldFrei = $('#kalDauerFrei');
+        feldFrei.hidden = false;
+        feldFrei.value = String(state.kalender.dauer);
+        feldFrei.focus();
+        feldFrei.select();
+        return;
+      }
       state.kalender[feld] = wandeln(e.target.value);
+      kalTagAuswahl = null;
       persist();
       // Ein Wechsel der Länderseite ändert, welche Klassen es dort gibt.
-      if (feld === 'host') await ladeKalKlassen();
+      if (feld === 'host') {
+        renderKalFahrzeug();
+        if (!(await ladeKalKlassen())) return;
+      }
       // Länderseite und Mietdauer entscheiden mit, welche Messpunkte
       // überhaupt zum Kalender passen — sonst zeigt er Preise für drei Tage,
       // während sieben eingestellt sind.
@@ -3675,10 +6192,47 @@ function init() {
     $(id).addEventListener('click', abbrechen);
   }
   $('#csv').addEventListener('click', ladeCsvHerunter);
+
+  /* --- Excel-Ausgabe --- */
+  const xFelder = [
+    ['#xPreise', 'preise'],
+    ['#xSchutz', 'schutz'],
+    ['#xKalender', 'kalender'],
+    ['#xAlleStationen', 'alleStationen'],
+    ['#xNichtBuchbare', 'nichtBuchbare'],
+    ['#xFarbskala', 'farbskala'],
+  ];
+  $('#excel').addEventListener('click', () => {
+    const karte = $('#xlsxKarte');
+    // Zweiter Klick schliesst wieder — derselbe Umgang wie bei den
+    // aufklappenden Bereichen oben.
+    if (!karte.hidden) {
+      karte.hidden = true;
+      return;
+    }
+    const opt = xlsxOptionen();
+    for (const [sel, feld] of xFelder) $(sel).checked = Boolean(opt[feld]);
+    $('#xBetraege').value = opt.betraege;
+    karte.hidden = false;
+    karte.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+  $('#xAbbrechen').addEventListener('click', () => ($('#xlsxKarte').hidden = true));
+  $('#xSpeichern').addEventListener('click', () => {
+    state.xlsx = {
+      ...xlsxOptionen(),
+      ...Object.fromEntries(xFelder.map(([sel, feld]) => [feld, $(sel).checked])),
+      betraege: $('#xBetraege').value,
+    };
+    persist();
+    ladeExcelHerunter();
+    $('#xlsxKarte').hidden = true;
+  });
   $('#openAll').addEventListener('click', openAll);
   $('#copyAll').addEventListener('click', copyAll);
   $('#marketsAll').addEventListener('click', () => {
-    state.markets = providerById(PROVIDER).markets.map((m) => m.code);
+    state.markets = providerById(PROVIDER)
+      .markets.filter((m) => !m.gestoert)
+      .map((m) => m.code);
     update();
   });
   $('#marketsNone').addEventListener('click', () => {
@@ -3688,6 +6242,35 @@ function init() {
   $('#marketsDACH').addEventListener('click', () => {
     state.markets = ['de', 'at', 'ch'];
     update();
+  });
+  $('#zeitHinzu').addEventListener('click', () => {
+    if (!Array.isArray(state.zeiten)) state.zeiten = [];
+    // Als Vorschlag eine Stunde später als das Grundpaar: so sieht man sofort,
+    // worum es geht, statt zweimal dieselbe Zeit dastehen zu haben.
+    const spaeter = (t) => {
+      const [h, m] = String(t || '10:00').split(':').map(Number);
+      return `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    };
+    const letzte = state.zeiten.at(-1) || { ab: state.pickupTime, zurueck: state.returnTime };
+    state.zeiten.push({ ab: spaeter(letzte.ab), zurueck: spaeter(letzte.zurueck) });
+    update();
+  });
+
+  $('#inkognito').addEventListener('change', (e) => {
+    state.inkognito = e.target.checked;
+    // Der Modus steckt im Schlüssel jedes Auftrags. Was mit Cookies geholt
+    // wurde, gehört nicht in dieselbe Tabelle wie ein Abruf ohne — deshalb
+    // beginnt der Vergleich sichtbar von vorn statt halb gefüllt.
+    prices.clear();
+    schutz.clear();
+    aktiveGruppe = null;
+    letzteSignatur = null;
+    update();
+    flash(
+      e.target.checked
+        ? 'Abruf ohne Cookies. Der nächste Vergleich beginnt von vorn und dauert etwas länger.'
+        : 'Abruf mit gespeicherter Cookie-Auswahl — schneller, aber Sixt erkennt dich wieder.'
+    );
   });
   // Wirklich auf null: keine Station, keine Länderseite, keine Matrix, keine
   // Ergebnisse. Vorher setzte der Knopf auf die Voreinstellung zurück — also
@@ -3719,10 +6302,30 @@ function init() {
   // Die Laenderzahl aus den Daten holen, nicht hinschreiben — sonst stimmt
   // sie nach der naechsten Ernte nicht mehr.
   const laender = new Set(ALLE_STATIONEN.map((s) => s.country).filter(Boolean)).size;
+  $('#stationTotal').textContent = ALLE_STATIONEN.length.toLocaleString('de-DE');
+  $('#marketTotal').textContent = providerById(PROVIDER).markets.length;
   $('#startFuss').textContent =
     `${ALLE_STATIONEN.length} Sixt-Stationen aus ${laender} Ländern hinterlegt.`;
 
-  if (state.mode === 'status') {
+  // Ein Programmstart fängt auf der Übersicht an, ein Neuladen nicht.
+  //
+  // sessionStorage ist genau die richtige Grenze: er überlebt F5, aber nicht
+  // ein neues Fenster. Die EXE öffnet bei jedem Start ein neues — dort ist er
+  // also leer, und man landet vorn. Wer mitten in der Arbeit versehentlich
+  // neu lädt, bleibt dagegen, wo er war.
+  let fortsetzen = false;
+  try {
+    fortsetzen = sessionStorage.getItem(SS_LAEUFT) === '1';
+    sessionStorage.setItem(SS_LAEUFT, '1');
+  } catch {
+    /* privater Modus o. ä. — dann eben immer vorn anfangen */
+  }
+
+  if (!erststartErledigt()) {
+    zeigeWillkommen();
+  } else if (!fortsetzen) {
+    showScreen('start');
+  } else if (state.mode === 'status') {
     renderStatus();
     showScreen('status');
   } else if (state.mode === 'mail') {

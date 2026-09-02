@@ -50,26 +50,46 @@ export async function alleWecker() {
 
 /**
  * @param {object} w  station, stationName, von, bis, host, hostLabel, acriss,
- *                    grenze, waehrung
+ *                    grenze, waehrung, art, gebucht
  */
 export async function legeWecker(w) {
   await laden();
+  // Zwei Sorten. "wunsch": ich hätte den Wagen gern unter X. "buchung": ich
+  // habe für X gebucht, sag mir, wenn es billiger wird — dann kann ich
+  // stornieren und neu buchen. Die zweite läuft weiter, nachdem sie einmal
+  // gemeldet hat: der Preis kann noch tiefer fallen, und jedes weitere Mal
+  // ist wieder Geld.
+  const art = w.art === 'buchung' ? 'buchung' : 'wunsch';
+  const gebucht = art === 'buchung' ? Number(w.gebucht) : null;
   const eintrag = {
     id: randomBytes(6).toString('hex'),
     angelegt: Date.now(),
+    art,
     station: String(w.station),
     stationName: w.stationName || '',
     von: w.von,
     bis: w.bis,
+    // Ohne Uhrzeit ist ein Wecker eine Falle: Sixt rechnet nach Uhrzeit ab,
+    // und gemessen lagen 12:30 und 13:30 am selben Tag 57 % auseinander. Wer
+    // bei 13:30 sucht, bekaeme sonst Alarm ueber einen Preis, den er nie
+    // gesehen hat. '10:00' als Rueckfall, weil aeltere Wecker so geprueft
+    // wurden — sie verhalten sich damit unveraendert.
+    zeit: w.zeit || '10:00',
+    zeitRueck: w.zeitRueck || w.zeit || '10:00',
     host: w.host,
     hostLabel: w.hostLabel || w.host,
     acriss: w.acriss,
-    grenze: Number(w.grenze),
+    // Bei einer Buchung ist der gezahlte Preis die Grenze — etwas anderes
+    // einzutragen ergäbe keinen Sinn.
+    grenze: art === 'buchung' ? gebucht : Number(w.grenze),
+    gebucht,
     waehrung: w.waehrung || '',
     // Betriebsdaten
     zuletztGeprueft: null,
     letzterPreis: null,
     bestPreis: null,
+    /** Der Preis, über den zuletzt Meldung gemacht wurde. */
+    gemeldet: null,
     ausgeloest: false,
     ausgeloestAm: null,
     fehler: null,
@@ -101,10 +121,14 @@ export async function quittiereWecker(id) {
 export async function faelligeWecker() {
   const alle = await laden();
   const jetzt = Date.now();
+  const heute = new Date().toISOString().slice(0, 10);
   return alle.filter((w) => {
     // Abgelaufene Termine nicht mehr prüfen — der Wagen ist längst weg.
-    if (w.bis < new Date().toISOString().slice(0, 10)) return false;
-    if (w.ausgeloest) return false;
+    // Bei einer Buchung zählt der Abholtag: ab da ist nichts mehr umzubuchen.
+    if ((w.art === 'buchung' ? w.von : w.bis) < heute) return false;
+    // Ein Wunschwecker hat seine Aufgabe erfüllt, sobald er einmal gemeldet
+    // hat. Ein Buchungswecker nicht — der Preis kann weiter fallen.
+    if (w.ausgeloest && w.art !== 'buchung') return false;
     return !w.zuletztGeprueft || jetzt - w.zuletztGeprueft > MIN_ABSTAND_MS;
   });
 }
@@ -125,7 +149,18 @@ export async function vermerkePruefung(id, { preis = null, fehler = null } = {})
     if (w.bestPreis == null || preis < w.bestPreis) w.bestPreis = preis;
   }
 
-  const loest = preis != null && preis <= w.grenze;
+  let loest = false;
+  if (preis != null) {
+    if (w.art === 'buchung') {
+      // Melden nur bei einem neuen Tiefstand unter dem gezahlten Preis —
+      // sonst käme alle sechs Stunden dieselbe Nachricht über denselben
+      // Preis, und man hörte irgendwann weg.
+      loest = preis < w.gebucht && (w.gemeldet == null || preis < w.gemeldet);
+      if (loest) w.gemeldet = preis;
+    } else {
+      loest = preis <= w.grenze;
+    }
+  }
   if (loest) {
     w.ausgeloest = true;
     w.ausgeloestAm = Date.now();
