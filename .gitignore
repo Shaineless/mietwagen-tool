@@ -17,3 +17,4 @@ build/
 dist/*.exe
 dist/Tracker-Daten/
 data/verbesserungen.jsonl
+RELEASE-*.md
