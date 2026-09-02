@@ -119,7 +119,11 @@ $kopf = @{
 # --- 4. Release anlegen -----------------------------------------------------
 
 $notizen = "docs\release-notes-$version.md"
-$text = if (Test-Path $notizen) { Get-Content $notizen -Raw } else { "TRACKER $version" }
+# Ausdruecklich als UTF-8 lesen: sonst kommen die Umlaute aus der Notizdatei
+# als Fragezeichen bei GitHub an.
+$text = if (Test-Path $notizen) {
+  [System.IO.File]::ReadAllText((Resolve-Path $notizen), [System.Text.Encoding]::UTF8)
+} else { "TRACKER $version" }
 
 Schritt "Release $tag anlegen ..."
 $basis = "https://api.github.com/repos/$besitzer/$repo"
@@ -131,11 +135,21 @@ try {
   Gut "Release $tag gibt es schon — die Datei wird ersetzt."
 } catch {
   $rumpf = @{ tag_name = $tag; name = "TRACKER $version"; body = $text; draft = $false; prerelease = $false } | ConvertTo-Json
+  # Als UTF-8-Bytes senden, nicht als Zeichenkette: PowerShell 5.1 kodiert
+  # einen Zeichenketten-Rumpf sonst latin-1, und GitHub weist das ab.
+  $bytes = [System.Text.Encoding]::UTF8.GetBytes($rumpf)
   try {
-    $release = Invoke-RestMethod -Uri "$basis/releases" -Method Post -Headers $kopf -Body $rumpf -ContentType 'application/json' -TimeoutSec 120
+    $release = Invoke-RestMethod -Uri "$basis/releases" -Method Post -Headers $kopf -Body $bytes -ContentType 'application/json; charset=utf-8' -TimeoutSec 120
     Gut "Release angelegt."
   } catch {
     Schlecht "Das Release liess sich nicht anlegen: $($_.Exception.Message)"
+    # Die Antwort von GitHub sagt meist genau, was fehlt — sie gehoert
+    # hierher, statt den Nutzer raten zu lassen.
+    if ($_.Exception.Response) {
+      $leser = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+      Write-Host "  $($leser.ReadToEnd())" -ForegroundColor Yellow
+      $leser.Close()
+    }
     exit 1
   }
 }
