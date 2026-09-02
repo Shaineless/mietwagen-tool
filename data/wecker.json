@@ -1,0 +1,21 @@
+[
+ {
+  "id": "969bff668857",
+  "angelegt": 1788320736930,
+  "station": "110",
+  "stationName": "Frankfurt Flughafen (FRA)",
+  "von": "2026-09-23",
+  "bis": "2026-09-27",
+  "host": "www.sixt.at",
+  "hostLabel": "Österreich",
+  "acriss": "CDAR",
+  "grenze": 9999,
+  "waehrung": "EUR",
+  "zuletztGeprueft": 1788320742512,
+  "letzterPreis": 362.99,
+  "bestPreis": 362.99,
+  "ausgeloest": true,
+  "ausgeloestAm": 1788320742512,
+  "fehler": null
+ }
+]

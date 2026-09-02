@@ -993,6 +993,95 @@ td.unstimmig .betrag {
   text-underline-offset: 4px;
 }
 
+/* ============================================================ Preiskurve */
+
+.kurve { width: 100%; height: auto; display: block; margin: 8px 0 4px; }
+.kurvelegende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.kurvelegende i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+
+.weckerform { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+.weckerform select, .weckerform input[type=number] {
+  width: auto;
+  min-width: 120px;
+  margin-top: 0;
+}
+.weckerform input[type=number] { min-width: 100px; }
+
+.weckerzeile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  box-shadow: inset 0 -1px 0 var(--hairline2);
+}
+.weckerzeile:last-of-type { box-shadow: none; }
+.weckerzeile .wtext { flex: 1; min-width: 0; }
+.weckerzeile b { font-weight: 560; letter-spacing: -.01em; }
+/* Ein ausgelöster Wecker ist der ganze Zweck der Sache — der darf auffallen. */
+.weckerzeile.ausgeloest {
+  background: var(--accent-weich);
+  border-radius: var(--r-klein);
+  padding: 12px 14px;
+  box-shadow: none;
+  margin-bottom: 8px;
+}
+.weckerzeile.ausgeloest b { color: var(--accent); }
+
+/* ============================================================ Kalender */
+
+.kalender {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin: 6px 0 14px;
+}
+.kkopf { font-size: 11.5px; color: var(--muted); text-align: center; padding-bottom: 2px; }
+.ktag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  aspect-ratio: 1;
+  border-radius: var(--r-klein);
+  background: var(--flaeche2);
+  /* Weisse Schrift auf den Farbfeldern; ein Schatten haelt sie auch auf
+     hellem Gruen lesbar. */
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+  font-variant-numeric: tabular-nums;
+}
+.ktag.leer { background: transparent; }
+.ktag.nichts { background: var(--flaeche2); color: var(--leise); text-shadow: none; }
+.ktag b { font-size: 15px; font-weight: 600; }
+.kpreis { font-size: 11px; opacity: .95; }
+.ktag.billigster { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+@media (max-width: 560px) {
+  .ktag b { font-size: 13px; }
+  .kpreis { font-size: 9.5px; }
+}
+
+/* Notiz an einer gespeicherten Suche */
+.notiz {
+  margin: 0 0 14px;
+  font-size: 13.5px;
+  background: transparent;
+  box-shadow: inset 0 -1px 0 var(--hairline);
+  border-radius: 0;
+  padding: 8px 2px;
+}
+.notiz:focus-visible { outline: none; box-shadow: inset 0 -2px 0 var(--accent); }
+
+.einweg em { font-style: normal; color: var(--leise); font-weight: 400; }
+
 /* ============================================================ Verlauf */
 
 .verlaufkarte { margin-bottom: 18px; }

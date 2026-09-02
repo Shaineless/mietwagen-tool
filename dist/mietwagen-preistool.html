@@ -996,6 +996,95 @@ td.unstimmig .betrag {
   text-underline-offset: 4px;
 }
 
+/* ============================================================ Preiskurve */
+
+.kurve { width: 100%; height: auto; display: block; margin: 8px 0 4px; }
+.kurvelegende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.kurvelegende i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+
+.weckerform { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+.weckerform select, .weckerform input[type=number] {
+  width: auto;
+  min-width: 120px;
+  margin-top: 0;
+}
+.weckerform input[type=number] { min-width: 100px; }
+
+.weckerzeile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  box-shadow: inset 0 -1px 0 var(--hairline2);
+}
+.weckerzeile:last-of-type { box-shadow: none; }
+.weckerzeile .wtext { flex: 1; min-width: 0; }
+.weckerzeile b { font-weight: 560; letter-spacing: -.01em; }
+/* Ein ausgelöster Wecker ist der ganze Zweck der Sache — der darf auffallen. */
+.weckerzeile.ausgeloest {
+  background: var(--accent-weich);
+  border-radius: var(--r-klein);
+  padding: 12px 14px;
+  box-shadow: none;
+  margin-bottom: 8px;
+}
+.weckerzeile.ausgeloest b { color: var(--accent); }
+
+/* ============================================================ Kalender */
+
+.kalender {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin: 6px 0 14px;
+}
+.kkopf { font-size: 11.5px; color: var(--muted); text-align: center; padding-bottom: 2px; }
+.ktag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  aspect-ratio: 1;
+  border-radius: var(--r-klein);
+  background: var(--flaeche2);
+  /* Weisse Schrift auf den Farbfeldern; ein Schatten haelt sie auch auf
+     hellem Gruen lesbar. */
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+  font-variant-numeric: tabular-nums;
+}
+.ktag.leer { background: transparent; }
+.ktag.nichts { background: var(--flaeche2); color: var(--leise); text-shadow: none; }
+.ktag b { font-size: 15px; font-weight: 600; }
+.kpreis { font-size: 11px; opacity: .95; }
+.ktag.billigster { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+@media (max-width: 560px) {
+  .ktag b { font-size: 13px; }
+  .kpreis { font-size: 9.5px; }
+}
+
+/* Notiz an einer gespeicherten Suche */
+.notiz {
+  margin: 0 0 14px;
+  font-size: 13.5px;
+  background: transparent;
+  box-shadow: inset 0 -1px 0 var(--hairline);
+  border-radius: 0;
+  padding: 8px 2px;
+}
+.notiz:focus-visible { outline: none; box-shadow: inset 0 -2px 0 var(--accent); }
+
+.einweg em { font-style: normal; color: var(--leise); font-weight: 400; }
+
 /* ============================================================ Verlauf */
 
 .verlaufkarte { margin-bottom: 18px; }
@@ -1127,6 +1216,16 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
       <span class="mgo">Los →</span>
     </button>
 
+    <button type="button" class="mode" data-mode="kurve">
+      <span class="mtitle">Preisentwicklung</span>
+      <span class="mdesc">
+        Derselbe Wagen über Wochen: lohnt sich Frühbuchen, oder wird es kurz
+        vorher billiger? Dazu Preiswecker, die sich melden, wenn eine Grenze
+        unterschritten wird.
+      </span>
+      <span class="mgo">Kurve →</span>
+    </button>
+
     <button type="button" class="mode" data-mode="verlauf">
       <span class="mtitle">Zuletzt gesucht</span>
       <span class="mdesc">
@@ -1185,6 +1284,55 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
   </section>
 
   <div id="statusBody"></div>
+</section>
+
+<!-- ===================================================== Preisentwicklung -->
+<section id="kurveScreen" class="screen" hidden>
+  <div class="bar">
+    <button type="button" class="back">← Zurück</button>
+    <h1>Preisentwicklung</h1>
+  </div>
+
+  <section class="card">
+    <h2>Beobachtete Suchen</h2>
+    <p class="note">
+      Jeder Preisabruf hinterlässt einen Messpunkt. Je öfter dieselbe Suche
+      abgerufen wird, desto aussagekräftiger die Kurve.
+    </p>
+    <div id="kurveWahl" class="pills"></div>
+    <div id="kurveKlassen" class="field" hidden>
+      <span class="flabel">Fahrzeugklasse</span>
+      <div id="kurveKlassenPillen" class="pills"></div>
+    </div>
+  </section>
+
+  <section class="card" id="kurveKarte" hidden>
+    <h2 id="kurveTitel">Verlauf</h2>
+    <div id="kurveBild"></div>
+    <p class="tabnote" id="kurveNote"></p>
+  </section>
+
+  <section class="card" id="kalenderKarte">
+    <h2>Ganzer Monat auf einen Blick</h2>
+    <p class="note">
+      Rechnet für jeden Abholtag der nächsten Wochen den Preis derselben Klasse
+      durch und färbt den Kalender danach ein. Eine Länderseite, eine Klasse,
+      eine feste Mietdauer — sonst wären es hunderte Abrufe.
+    </p>
+    <div id="kalenderForm"></div>
+    <div id="kalenderBild"></div>
+  </section>
+
+  <section class="card" id="weckerKarte">
+    <h2>Preiswecker</h2>
+    <p class="note" id="weckerHinweis">
+      Prüft eine Suche in Abständen selbst nach und meldet sich, wenn der Preis
+      unter deine Grenze fällt. Geprüft wird nur, solange dieses Programm
+      läuft — im Hintergrund bleibt nichts zurück.
+    </p>
+    <div id="weckerNeu"></div>
+    <div id="weckerListe"></div>
+  </section>
 </section>
 
 <!-- ===================================================== Verlauf -->
@@ -1336,9 +1484,14 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
         </div>
       </details>
 
-      <label class="wide">Rückgabestation
+      <div class="field einweg">
+        <span class="flabel">Rückgabe an anderer Station <em>(Einweg-Miete)</em></span>
         <select id="returnStation"></select>
-      </label>
+        <p class="note">
+          Leer lassen heißt: zurück an dieselbe Station. Eine andere Rückgabe
+          kostet meist einen Aufschlag — der steckt schon im angezeigten Preis.
+        </p>
+      </div>
     </section>
    </div>
   </main>
@@ -1372,6 +1525,7 @@ footer { margin-top: 56px; font-size: 12.5px; color: var(--leise); line-height: 
     <div class="btnrow nachlauf">
       <span class="count" id="jobCount"></span>
       <button type="button" id="nochmal" class="ghost mini" hidden></button>
+      <button type="button" id="csv" class="ghost mini">Als CSV speichern</button>
       <button type="button" id="openAll" class="ghost mini">Im Browser öffnen</button>
       <button type="button" id="copyAll" class="ghost mini">Links kopieren</button>
       <button type="button" id="reset" class="ghost mini right"
@@ -2453,12 +2607,22 @@ async function ladeKatalog() {
   }
 }
 
+/**
+ * Schluessel, die nicht aus der aktuellen Suche stammen.
+ *
+ * Der Monatskalender fragt dreissig Termine ab, die in keiner der beiden
+ * Auftragslisten stehen. Ohne diesen Zusatz holt der Takt ihre Ergebnisse nie
+ * ab: die Abrufe laufen durch, der Kalender bleibt leer.
+ */
+const extraSchluessel = new Set();
+
 async function pollErgebnisse() {
   if (!service.available) return;
 
-  const offen = [...aktuelleJobs(), ...schutzJobs()]
-    .filter((j) => j.key && !prices.has(j.key) && !schutz.has(j.key))
-    .map((j) => j.key);
+  const offen = [
+    ...[...aktuelleJobs(), ...schutzJobs()].map((j) => j.key),
+    ...extraSchluessel,
+  ].filter((k) => k && !prices.has(k) && !schutz.has(k));
 
   if (offen.length) {
     try {
@@ -2753,6 +2917,758 @@ function showScreen(name) {
   $('#schutzScreen').hidden = name !== 'schutz';
   $('#mailScreen').hidden = name !== 'mail';
   $('#verlaufScreen').hidden = name !== 'verlauf';
+  $('#kurveScreen').hidden = name !== 'kurve';
+}
+
+/**
+ * Die Ergebnistabelle als CSV.
+ *
+ * Semikolon statt Komma und Komma als Dezimaltrennzeichen: so oeffnet Excel
+ * in einer deutschen Einstellung die Datei ohne Rueckfrage. Mit Punkt und
+ * Komma landet alles in einer Spalte, und dann schimpft zu Recht jeder.
+ */
+function alsCsv() {
+  const jobs = aktuelleJobs().filter((j) => j.gruppe === aktiveGruppe);
+  if (!jobs.length) return null;
+
+  const klassen = new Map();
+  for (const j of jobs) {
+    for (const o of prices.get(j.key)?.offers || []) {
+      if (!o.acriss) continue;
+      if (!klassen.has(o.acriss)) klassen.set(o.acriss, { modell: o.model || '', preise: {} });
+      klassen.get(o.acriss).preise[j.market.host] = o;
+    }
+  }
+  if (!klassen.size) return null;
+
+  const zahl = (n) => (n == null ? '' : String(n.toFixed(2)).replace('.', ','));
+  const feld = (s) => `"${String(s ?? '').replaceAll('"', '""')}"`;
+
+  const f = jobs[0];
+  const zeilen = [
+    [
+      feld('Station'),
+      feld('Von'),
+      feld('Bis'),
+      feld('Tage'),
+      feld('ACRISS'),
+      feld('Modell'),
+      ...jobs.flatMap((j) => [feld(`${j.market.label} gesamt`), feld(`${j.market.label} pro Tag`)]),
+    ].join(';'),
+  ];
+
+  for (const [acriss, d] of [...klassen].sort((a, b) => a[0].localeCompare(b[0]))) {
+    zeilen.push(
+      [
+        feld(f.station.name),
+        feld(f.variant.pickupDate),
+        feld(f.variant.returnDate),
+        f.variant.duration,
+        feld(acriss),
+        feld(d.modell),
+        ...jobs.flatMap((j) => {
+          const o = d.preise[j.market.host];
+          return [zahl(o?.total), zahl(o?.perDay)];
+        }),
+      ].join(';')
+    );
+  }
+
+  // BOM voran, sonst zeigt Excel aus Umlauten Kraut und Rüben.
+  return '﻿' + zeilen.join('\r\n') + '\r\n';
+}
+
+function ladeCsvHerunter() {
+  const csv = alsCsv();
+  if (!csv) {
+    flash('Noch keine Preise zum Ausgeben.');
+    return;
+  }
+  const f = aktuelleJobs().find((j) => j.gruppe === aktiveGruppe);
+  const name =
+    `preise-${(f?.station.name || 'station').replace(/[^\wäöüÄÖÜß]+/g, '-').toLowerCase()}` +
+    `-${f?.variant.pickupDate || ''}.csv`;
+
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const a = el('a', { href: url, download: name });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  // Der Browser braucht die Adresse noch einen Moment, bis der Download steht.
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  flash('Als CSV gespeichert.');
+}
+
+/* =========================================================== Preiskurve
+ *
+ * Die Frage, die kein Vergleichsportal ehrlich beantwortet: wird es billiger,
+ * wenn ich warte? Sie laesst sich nur beantworten, indem man denselben Wagen
+ * ueber Wochen beobachtet — der Dienst legt dafuer bei jedem Abruf einen
+ * Messpunkt ab.
+ */
+
+let kurveGruppe = null;
+let kurveKlasse = null;
+let kurveGruppen = [];
+
+async function ladeKurve() {
+  try {
+    const d = await (await fetch('/api/verlauf/uebersicht')).json();
+    kurveGruppen = d.gruppen || [];
+  } catch {
+    kurveGruppen = [];
+  }
+  renderKurve();
+}
+
+/**
+ * Linien in ein SVG zeichnen.
+ *
+ * Von Hand statt mit einer Bibliothek: es ist eine Linie je Laenderseite auf
+ * einer Zeitachse, und dafuer 300 kB Diagrammcode mitzuschleppen waere
+ * unverhaeltnismaessig. Ausserdem kaeme die Bibliothek von einem fremden
+ * Server — das Werkzeug laedt sonst nichts nach.
+ */
+function zeichneKurve(reihen, waehrung) {
+  const B = 720;
+  const H = 260;
+  const links = 58;
+  const unten = 26;
+  const oben = 12;
+  const rechts = 12;
+
+  const alle = reihen.flatMap((r) => r.punkte);
+  if (alle.length < 2) return null;
+
+  const tMin = Math.min(...alle.map((p) => p.t));
+  const tMax = Math.max(...alle.map((p) => p.t));
+  const pMin = Math.min(...alle.map((p) => p.p));
+  const pMax = Math.max(...alle.map((p) => p.p));
+  // Etwas Luft nach oben und unten, sonst klebt die Linie am Rand.
+  const spanne = Math.max(pMax - pMin, pMax * 0.05, 1);
+  const yMin = pMin - spanne * 0.15;
+  const yMax = pMax + spanne * 0.15;
+
+  const x = (t) => links + ((t - tMin) / Math.max(tMax - tMin, 1)) * (B - links - rechts);
+  const y = (p) => oben + (1 - (p - yMin) / (yMax - yMin)) * (H - oben - unten);
+
+  const svg = (tag, attrs, ...kinder) => {
+    const n = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+    for (const kind of kinder.flat()) if (kind != null) n.append(kind);
+    return n;
+  };
+
+  const farben = ['var(--accent)', '#5856d6', '#00a37a', '#c8280f', '#0a84ff', '#a35bd6'];
+
+  // Waagerechte Hilfslinien mit Beschriftung — ohne die ist eine Kurve nur
+  // eine Form, keine Aussage.
+  const linien = [];
+  for (let i = 0; i <= 3; i++) {
+    const wert = yMin + ((yMax - yMin) * i) / 3;
+    const yy = y(wert);
+    linien.push(
+      svg('line', { x1: links, y1: yy, x2: B - rechts, y2: yy, stroke: 'var(--hairline)', 'stroke-width': 1 }),
+      svg(
+        'text',
+        { x: links - 8, y: yy + 4, 'text-anchor': 'end', fill: 'var(--muted)', 'font-size': 11 },
+        document.createTextNode(Math.round(wert).toLocaleString('de-DE'))
+      )
+    );
+  }
+
+  const pfade = reihen.map((r, i) => {
+    const sortiert = [...r.punkte].sort((a, b) => a.t - b.t);
+    const d = sortiert.map((p, j) => `${j ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.p).toFixed(1)}`).join(' ');
+    return svg(
+      'g',
+      {},
+      svg('path', {
+        d,
+        fill: 'none',
+        stroke: farben[i % farben.length],
+        'stroke-width': 2,
+        'stroke-linejoin': 'round',
+        'stroke-linecap': 'round',
+      }),
+      ...sortiert.map((p) =>
+        svg(
+          'circle',
+          { cx: x(p.t).toFixed(1), cy: y(p.p).toFixed(1), r: 3, fill: farben[i % farben.length] },
+          svg(
+            'title',
+            {},
+            document.createTextNode(
+              `${r.label}: ${money(p.p, waehrung)} am ${new Date(p.t).toLocaleDateString('de-DE')}`
+            )
+          )
+        )
+      )
+    );
+  });
+
+  const zeitachse = [tMin, tMax].map((t, i) =>
+    svg(
+      'text',
+      {
+        x: i ? B - rechts : links,
+        y: H - 6,
+        'text-anchor': i ? 'end' : 'start',
+        fill: 'var(--muted)',
+        'font-size': 11,
+      },
+      document.createTextNode(new Date(t).toLocaleDateString('de-DE'))
+    )
+  );
+
+  const bild = svg(
+    'svg',
+    { viewBox: `0 0 ${B} ${H}`, class: 'kurve', role: 'img' },
+    ...linien,
+    ...pfade,
+    ...zeitachse
+  );
+
+  const legende = el(
+    'div',
+    { class: 'kurvelegende' },
+    ...reihen.map((r, i) =>
+      el(
+        'span',
+        {},
+        el('i', { style: `background:${farben[i % farben.length]}` }),
+        `${r.label} — ${money(r.punkte[r.punkte.length - 1].p, waehrung)}`
+      )
+    )
+  );
+
+  return el('div', {}, bild, legende);
+}
+
+async function renderKurveBild() {
+  const g = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
+  if (!g || !kurveKlasse) {
+    $('#kurveKarte').hidden = true;
+    return;
+  }
+
+  const p = new URLSearchParams({ station: g.station, von: g.von, bis: g.bis, acriss: kurveKlasse });
+  const d = await (await fetch(`/api/verlauf?${p}`)).json();
+  const punkte = d.punkte || [];
+
+  const nachHost = new Map();
+  for (const e of punkte) {
+    if (!nachHost.has(e.h)) nachHost.set(e.h, []);
+    nachHost.get(e.h).push(e);
+  }
+  const reihen = [...nachHost.entries()]
+    .map(([host, pkt]) => ({ label: host.replace(/^www\./, ''), punkte: pkt }))
+    .filter((r) => r.punkte.length)
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  const waehrung = punkte[0]?.w || '';
+  const station = stationByCode(g.station);
+  $('#kurveTitel').textContent =
+    `${station?.name || 'Station ' + g.station} · ${kurveKlasse} · ${pretty(g.von)} → ${pretty(g.bis)}`;
+
+  const bild = reihen.length ? zeichneKurve(reihen, waehrung) : null;
+  $('#kurveKarte').hidden = false;
+
+  if (!bild) {
+    setChildren(
+      $('#kurveBild'),
+      el(
+        'p',
+        { class: 'empty' },
+        punkte.length
+          ? 'Erst ein Messpunkt — eine Linie braucht mindestens zwei. Dieselbe Suche später noch einmal abrufen.'
+          : 'Für diese Klasse ist noch nichts aufgezeichnet.'
+      )
+    );
+    $('#kurveNote').textContent = '';
+    return;
+  }
+
+  setChildren($('#kurveBild'), bild);
+  const spanne = Math.max(...punkte.map((e) => e.t)) - Math.min(...punkte.map((e) => e.t));
+  const tage = Math.round(spanne / 86400000);
+  $('#kurveNote').textContent =
+    `${punkte.length} Messpunkte über ${tage < 1 ? 'weniger als einen Tag' : tage + ' Tage'}. ` +
+    'Jeder Punkt ist ein Abruf — die Kurve wird mit jedem weiteren aussagekräftiger.';
+}
+
+function renderKurve() {
+  if (!kurveGruppen.length) {
+    setChildren(
+      $('#kurveWahl'),
+      el(
+        'p',
+        { class: 'empty' },
+        'Noch nichts aufgezeichnet. Nach dem ersten Preisabruf steht hier eine Suche zur Wahl.'
+      )
+    );
+    $('#kurveKlassen').hidden = true;
+    $('#kurveKarte').hidden = true;
+    return;
+  }
+
+  if (!kurveGruppen.some((g) => `${g.station}|${g.von}|${g.bis}` === kurveGruppe)) {
+    const erste = kurveGruppen[0];
+    kurveGruppe = `${erste.station}|${erste.von}|${erste.bis}`;
+    kurveKlasse = null;
+  }
+
+  setChildren(
+    $('#kurveWahl'),
+    ...kurveGruppen.map((g) => {
+      const schluessel = `${g.station}|${g.von}|${g.bis}`;
+      const station = stationByCode(g.station);
+      return el(
+        'button',
+        {
+          type: 'button',
+          class: 'pill' + (schluessel === kurveGruppe ? ' on' : ''),
+          title: `${g.punkte} Messpunkte · ${g.klassen.length} Klassen · ${g.hosts.length} Länderseiten`,
+          onclick: () => {
+            kurveGruppe = schluessel;
+            kurveKlasse = null;
+            renderKurve();
+          },
+        },
+        `${station?.name || g.station} · ${pretty(g.von)}`
+      );
+    })
+  );
+
+  const g = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
+  if (!g) return;
+
+  if (!g.klassen.includes(kurveKlasse)) kurveKlasse = g.klassen[0] || null;
+
+  $('#kurveKlassen').hidden = false;
+  setChildren(
+    $('#kurveKlassenPillen'),
+    ...g.klassen.slice(0, 30).map((k) =>
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'pill' + (k === kurveKlasse ? ' on' : ''),
+          onclick: () => {
+            kurveKlasse = k;
+            renderKurve();
+          },
+        },
+        k
+      )
+    )
+  );
+
+  renderKurveBild();
+  renderKalender();
+  renderWecker();
+}
+
+/* =========================================================== Monatskalender
+ *
+ * Die Datums-Matrix kann das im Kern schon — was fehlte, war die Darstellung.
+ * Dreissig Zahlen in einer Tabelle sagen einem nichts; dieselben dreissig
+ * Zahlen als eingefaerbter Kalender sagen sofort, dass der Dienstag billig
+ * und das Wochenende teuer ist.
+ *
+ * Eine Laenderseite, eine Klasse, eine Dauer: das sind dreissig Abrufe. Alle
+ * Laenderseiten waeren siebenhundert, und das waere niemandem gegenueber in
+ * Ordnung — weder Sixt noch dem Nutzer, der eine halbe Stunde wartet.
+ */
+
+let kalenderTage = 28;
+let kalenderDauer = 3;
+let kalenderLaeuft = false;
+
+function kalenderJobs() {
+  const g = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
+  if (!g || !kurveKlasse) return null;
+
+  const host = $('#kalenderHost')?.value || g.hosts[0];
+  const markt = providerById(PROVIDER).markets.find((m) => m.host === host);
+  const start = new Date();
+  start.setDate(start.getDate() + 3); // die naechsten Tage sind meist ohnehin teuer
+
+  const jobs = [];
+  for (let i = 0; i < kalenderTage; i++) {
+    const ab = new Date(start);
+    ab.setDate(ab.getDate() + i);
+    const bis = new Date(ab);
+    bis.setDate(bis.getDate() + kalenderDauer);
+    jobs.push({
+      key: jobKey(host, g.station, { pickupDate: iso(ab), returnDate: iso(bis) }),
+      provider: PROVIDER,
+      host,
+      stationCode: g.station,
+      pickupDate: iso(ab),
+      returnDate: iso(bis),
+      pickupTime: '10:00',
+      returnTime: '10:00',
+      currency: markt?.cur,
+    });
+  }
+  return { jobs, g, markt };
+}
+
+async function starteKalender() {
+  const d = kalenderJobs();
+  if (!d) return;
+  if (kalenderLaeuft) return;
+
+  kalenderLaeuft = true;
+  // Dem Abholtakt sagen, dass es diese Schlüssel gibt — sonst kommen die
+  // Ergebnisse nie in der Oberfläche an.
+  for (const j of d.jobs) extraSchluessel.add(j.key);
+  renderKalender();
+  try {
+    await sendeJobs(d.jobs, $('#kalenderStart'));
+    flash(`${d.jobs.length} Tage werden durchgerechnet — das dauert ein paar Minuten.`);
+    // Auf das Ende warten und dabei zeichnen, was schon da ist.
+    for (let i = 0; i < 200; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      await pollErgebnisse();
+      renderKalenderBild();
+      const h = service.queue;
+      if (h && !h.laufend && !h.offen) break;
+    }
+  } finally {
+    kalenderLaeuft = false;
+    renderKalender();
+    renderKalenderBild();
+  }
+}
+
+function renderKalenderBild() {
+  const d = kalenderJobs();
+  if (!d) return;
+
+  const werte = d.jobs.map((j) => {
+    const r = prices.get(j.key);
+    const treffer = (r?.offers || []).find((o) => o.acriss === kurveKlasse);
+    return { datum: j.pickupDate, preis: treffer?.total ?? null, geladen: Boolean(r) };
+  });
+
+  const gueltig = werte.map((w) => w.preis).filter((p) => p != null);
+  if (!gueltig.length) {
+    setChildren(
+      $('#kalenderBild'),
+      el(
+        'p',
+        { class: 'empty' },
+        kalenderLaeuft ? 'Wird berechnet …' : 'Noch nichts berechnet.'
+      )
+    );
+    return;
+  }
+
+  const min = Math.min(...gueltig);
+  const max = Math.max(...gueltig);
+  const spanne = Math.max(max - min, 1);
+
+  // Vor den ersten Tag so viele Lücken, dass die Wochentage untereinander
+  // stehen — ein Kalender, in dem Montag nicht unter Montag steht, ist keiner.
+  const ersterTag = new Date(werte[0].datum + 'T12:00:00');
+  const luecke = (ersterTag.getDay() + 6) % 7;
+
+  setChildren(
+    $('#kalenderBild'),
+    el(
+      'div',
+      { class: 'kalender' },
+      ...['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((t) =>
+        el('span', { class: 'kkopf' }, t)
+      ),
+      ...Array.from({ length: luecke }, () => el('span', { class: 'ktag leer' })),
+      ...werte.map((w) => {
+        const datum = new Date(w.datum + 'T12:00:00');
+        const anteil = w.preis != null ? (w.preis - min) / spanne : null;
+        return el(
+          'span',
+          {
+            class:
+              'ktag' +
+              (w.preis === min ? ' billigster' : '') +
+              (w.preis == null && w.geladen ? ' nichts' : ''),
+            // Von grün (billig) nach rot (teuer). Der Farbton trägt die
+            // Aussage, die Zahl darunter die Genauigkeit.
+            style:
+              anteil == null
+                ? ''
+                : `background: color-mix(in oklab, #16a34a ${Math.round((1 - anteil) * 100)}%, #dc2626)`,
+            title: `${datum.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' })}` +
+              ` · ${kalenderDauer} Tage` +
+              (w.preis != null ? ` · ${money(w.preis, d.markt?.cur)}` : ' · kein Preis'),
+          },
+          el('b', {}, String(datum.getDate())),
+          el(
+            'span',
+            { class: 'kpreis' },
+            w.preis != null ? Math.round(w.preis).toLocaleString('de-DE') : w.geladen ? '—' : '…'
+          )
+        );
+      })
+    ),
+    el(
+      'p',
+      { class: 'tabnote' },
+      `${kurveKlasse} · ${kalenderDauer} Tage Mietdauer · ${d.markt?.label || d.jobs[0].host} · ` +
+        `günstigster Tag ${money(min, d.markt?.cur)}, teuerster ${money(max, d.markt?.cur)} — ` +
+        `${Math.round(((max - min) / min) * 100)} % Unterschied allein durch den Abholtag.`
+    )
+  );
+}
+
+function renderKalender() {
+  const g = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
+  if (!g || !kurveKlasse) {
+    setChildren(
+      $('#kalenderForm'),
+      el('p', { class: 'note' }, 'Oben eine beobachtete Suche und eine Klasse wählen.')
+    );
+    setChildren($('#kalenderBild'));
+    return;
+  }
+
+  setChildren(
+    $('#kalenderForm'),
+    el(
+      'div',
+      { class: 'weckerform' },
+      el('span', { class: 'hint' }, `${stationByCode(g.station)?.name || g.station} · ${kurveKlasse}`),
+      el(
+        'select',
+        { id: 'kalenderHost' },
+        ...g.hosts.map((h) => el('option', { value: h }, h.replace(/^www\./, '')))
+      ),
+      el('span', { class: 'hint' }, 'Mietdauer'),
+      el(
+        'select',
+        {
+          id: 'kalenderDauer',
+          onchange: (e) => {
+            kalenderDauer = Number(e.target.value);
+            renderKalenderBild();
+          },
+        },
+        ...[1, 2, 3, 4, 5, 7, 10, 14].map((n) =>
+          el('option', { value: n, selected: n === kalenderDauer ? '' : null }, `${n} Tage`)
+        )
+      ),
+      el(
+        'select',
+        {
+          id: 'kalenderTage',
+          onchange: (e) => {
+            kalenderTage = Number(e.target.value);
+            renderKalenderBild();
+          },
+        },
+        ...[14, 21, 28, 35].map((n) =>
+          el('option', { value: n, selected: n === kalenderTage ? '' : null }, `${n} Abholtage`)
+        )
+      ),
+      el(
+        'button',
+        {
+          type: 'button',
+          id: 'kalenderStart',
+          class: 'primary',
+          disabled: kalenderLaeuft ? '' : null,
+          onclick: starteKalender,
+        },
+        kalenderLaeuft ? 'Rechnet …' : 'Durchrechnen'
+      )
+    ),
+    el(
+      'p',
+      { class: 'note' },
+      `${kalenderTage} Abrufe, also rund ${Math.ceil((kalenderTage * 7) / 60)} Minuten. ` +
+        'Schon berechnete Tage stehen sofort da.'
+    )
+  );
+  renderKalenderBild();
+}
+
+/* =========================================================== Preiswecker */
+
+let weckerListe = [];
+
+async function ladeWecker() {
+  try {
+    const d = await (await fetch('/api/wecker')).json();
+    weckerListe = d.wecker || [];
+  } catch {
+    weckerListe = [];
+  }
+  renderWecker();
+}
+
+function renderWecker() {
+  const g = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
+
+  // Anlegen ist nur sinnvoll, wenn eine beobachtete Suche gewählt ist —
+  // Station, Zeitraum und Klasse kommen von dort.
+  setChildren(
+    $('#weckerNeu'),
+    g && kurveKlasse
+      ? el(
+          'div',
+          { class: 'weckerform' },
+          el(
+            'span',
+            { class: 'hint' },
+            `${stationByCode(g.station)?.name || g.station} · ${kurveKlasse} · ` +
+              `${pretty(g.von)} → ${pretty(g.bis)} · `
+          ),
+          el('select', { id: 'weckerHost' }, ...g.hosts.map((h) => el('option', { value: h }, h.replace(/^www\./, '')))),
+          el('span', { class: 'hint' }, 'melden unter'),
+          el('input', { type: 'number', id: 'weckerGrenze', placeholder: '300', min: '1', step: '1' }),
+          el(
+            'button',
+            { type: 'button', class: 'primary', onclick: legeWeckerAn },
+            'Wecker stellen'
+          )
+        )
+      : el('p', { class: 'note' }, 'Oben eine beobachtete Suche und eine Klasse wählen.')
+  );
+
+  if (!weckerListe.length) {
+    setChildren($('#weckerListe'), el('p', { class: 'empty' }, 'Kein Wecker gestellt.'));
+    return;
+  }
+
+  setChildren(
+    $('#weckerListe'),
+    ...weckerListe.map((w) => {
+      const station = stationByCode(w.station);
+      return el(
+        'div',
+        { class: 'weckerzeile' + (w.ausgeloest ? ' ausgeloest' : '') },
+        el(
+          'div',
+          { class: 'wtext' },
+          el(
+            'b',
+            {},
+            `${station?.name || w.stationName || w.station} · ${w.acriss} · ${w.hostLabel.replace(/^www\./, '')}`
+          ),
+          el(
+            'span',
+            { class: 'sttext' },
+            `${pretty(w.von)} → ${pretty(w.bis)} · Grenze ${money(w.grenze, w.waehrung)}` +
+              (w.letzterPreis != null ? ` · zuletzt ${money(w.letzterPreis, w.waehrung)}` : '') +
+              (w.bestPreis != null && w.bestPreis !== w.letzterPreis
+                ? ` · bester ${money(w.bestPreis, w.waehrung)}`
+                : '') +
+              (w.zuletztGeprueft
+                ? ` · geprüft ${new Date(w.zuletztGeprueft).toLocaleString('de-DE', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}`
+                : ' · noch nicht geprüft') +
+              (w.fehler ? ` · ${w.fehler}` : '')
+          )
+        ),
+        w.ausgeloest
+          ? el(
+              'button',
+              {
+                type: 'button',
+                class: 'ghost mini',
+                onclick: async () => {
+                  await fetch('/api/wecker/quittieren', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ id: w.id }),
+                  });
+                  ladeWecker();
+                },
+              },
+              'Gesehen'
+            )
+          : null,
+        el(
+          'button',
+          {
+            type: 'button',
+            class: 'ghost mini',
+            title: 'Wecker löschen',
+            onclick: async () => {
+              await fetch('/api/wecker/loeschen', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ id: w.id }),
+              });
+              ladeWecker();
+            },
+          },
+          '×'
+        )
+      );
+    }),
+    el(
+      'div',
+      { class: 'btnrow' },
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'ghost mini',
+          onclick: async () => {
+            await fetch('/api/wecker/pruefen', { method: 'POST' });
+            flash('Prüfung läuft — das dauert einen Moment.');
+            setTimeout(ladeWecker, 15000);
+          },
+        },
+        'Jetzt prüfen'
+      )
+    )
+  );
+}
+
+async function legeWeckerAn() {
+  const g = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
+  if (!g || !kurveKlasse) return;
+
+  const grenze = Number($('#weckerGrenze').value);
+  if (!(grenze > 0)) {
+    flash('Bitte eine Preisgrenze eintragen.');
+    $('#weckerGrenze').focus();
+    return;
+  }
+
+  const host = $('#weckerHost').value;
+  const markt = providerById(PROVIDER).markets.find((m) => m.host === host);
+
+  const r = await fetch('/api/wecker', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      station: g.station,
+      stationName: stationByCode(g.station)?.name || '',
+      von: g.von,
+      bis: g.bis,
+      host,
+      hostLabel: markt?.label || host,
+      acriss: kurveKlasse,
+      grenze,
+      waehrung: markt?.cur || '',
+    }),
+  });
+  const d = await r.json();
+  if (!d.ok) {
+    flash(d.error || 'Wecker konnte nicht gestellt werden.');
+    return;
+  }
+  flash('Wecker gestellt.');
+  ladeWecker();
 }
 
 /* =========================================================== Verlauf
@@ -2854,9 +3770,12 @@ function merkeSuche() {
     schutz: schutzTreffer.length ? schutzTreffer : null,
   };
 
-  const liste = ladeVerlauf().filter((e) => e.kennung !== kennung);
-  liste.unshift(eintrag);
-  speichereVerlauf(liste);
+  const liste = ladeVerlauf();
+  // Eine Notiz überlebt das Neuabrufen derselben Suche — sie gehört dem
+  // Nutzer, nicht dem Messwert.
+  const alt = liste.find((e) => e.kennung === kennung);
+  if (alt?.notiz) eintrag.notiz = alt.notiz;
+  speichereVerlauf([eintrag, ...liste.filter((e) => e.kennung !== kennung)]);
 }
 
 /** Welche Fahrzeugklasse im Vergleich gezeigt wird. */
@@ -3061,6 +3980,22 @@ function renderVerlauf() {
             'Erneut suchen'
           )
         ),
+        // Notiz: warum diese Suche aufgehoben wurde. Nach drei Wochen weiss
+        // das sonst niemand mehr — auch der nicht, der sie gemacht hat.
+        el('input', {
+          type: 'text',
+          class: 'notiz',
+          value: e.notiz || '',
+          placeholder: 'Notiz — z. B. „für Mallorca im Mai, Angebot lief noch"',
+          oninput: (ev) => {
+            const liste = ladeVerlauf();
+            const treffer = liste.find((x) => x.kennung === e.kennung);
+            if (treffer) {
+              treffer.notiz = ev.target.value;
+              speichereVerlauf(liste);
+            }
+          },
+        }),
         el(
           'div',
           { class: 'tabellenrahmen' },
@@ -4443,17 +5378,20 @@ function copyAll() {
  */
 function renderVorschlagWohin() {
   $('#vorschlagWohin').textContent = service.weiterleitung
-    ? 'Kurz aufschreiben — wird gespeichert und an den Betreuer des Werkzeugs weitergeleitet.'
-    : 'Kurz aufschreiben — landet in einer Datei auf diesem Rechner, sonst nirgends.';
+    ? 'Kurz aufschreiben — „Absenden" schickt es direkt an den Betreuer des Werkzeugs.'
+    : service.vorschlaegeMail
+      ? `Kurz aufschreiben — „Absenden" öffnet dein Mailprogramm mit dem Text an ${service.vorschlaegeMail}. ` +
+        'Eine Kopie bleibt auf diesem Rechner.'
+      : 'Kurz aufschreiben — landet in einer Datei auf diesem Rechner, sonst nirgends.';
 
-  // Ohne eingerichtete Weiterleitung ist die E-Mail der einzige Weg, auf dem
-  // ein Vorschlag ankommt. Mit Weiterleitung waere der Knopf nur Beiwerk.
-  const mail = $('#vorschlagMail');
-  mail.hidden = service.weiterleitung || !service.vorschlaegeMail;
+  // Der Mail-Knopf ist der ausdrueckliche Weg fuer den Fall, dass jemand nur
+  // schreiben und nichts speichern will. "Absenden" nimmt ohnehin denselben
+  // Weg, wenn keine Weiterleitung eingerichtet ist.
+  $('#vorschlagMail').hidden = service.weiterleitung || !service.vorschlaegeMail;
 }
 
 /** Vorschlag im Mailprogramm des Nutzers öffnen — er drückt selbst auf Senden. */
-function vorschlagAlsMail() {
+function vorschlagAlsMail({ leeren = false } = {}) {
   const text = $('#vorschlagText').value.trim();
   if (text.length < 3) {
     $('#vorschlagStatus').textContent = 'Bitte etwas mehr schreiben.';
@@ -4469,7 +5407,8 @@ function vorschlagAlsMail() {
   location.href =
     `mailto:${encodeURIComponent(service.vorschlaegeMail)}` +
     `?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(koerper)}`;
-  $('#vorschlagStatus').textContent = 'Mailprogramm geöffnet — dort noch absenden.';
+  if (leeren) $('#vorschlagText').value = '';
+  else $('#vorschlagStatus').textContent = 'Mailprogramm geöffnet — dort noch absenden.';
 }
 
 async function sendeVorschlag() {
@@ -4506,12 +5445,26 @@ async function sendeVorschlag() {
     });
     const d = await r.json();
     if (!d.ok) throw new Error(d.error || 'abgelehnt');
+
+    if (d.weitergeleitet) {
+      feld.value = '';
+      status.textContent = 'Danke — angekommen.';
+      return;
+    }
+
+    // Nicht weitergeleitet: dann geht es über das Mailprogramm raus. Ein
+    // Vorschlag, der nur auf dem Rechner des Absenders liegt, erreicht
+    // niemanden — und ein zweiter Knopf, den man erst finden muss, auch nicht.
+    if (service.vorschlaegeMail) {
+      vorschlagAlsMail({ leeren: true });
+      status.textContent = 'Gespeichert. Im Mailprogramm noch auf Senden drücken.';
+      return;
+    }
+
     feld.value = '';
-    status.textContent = d.weitergeleitet
-      ? 'Danke — angekommen.'
-      : service.weiterleitung
-        ? 'Gespeichert. Weiterleitung hat nicht geklappt — später erneut versuchen.'
-        : 'Danke — ist gespeichert.';
+    status.textContent = service.weiterleitung
+      ? 'Gespeichert. Weiterleitung hat nicht geklappt — später erneut versuchen.'
+      : 'Danke — ist gespeichert.';
   } catch {
     status.textContent = 'Konnte nicht gespeichert werden.';
   } finally {
@@ -4832,6 +5785,10 @@ function init() {
       } else if (state.mode === 'verlauf') {
         renderVerlauf();
         showScreen('verlauf');
+      } else if (state.mode === 'kurve') {
+        showScreen('kurve');
+        ladeKurve();
+        ladeWecker();
       } else {
         showScreen('work');
         update();
@@ -4932,6 +5889,7 @@ function init() {
   for (const id of ['#abbrechen', '#abbrechen2']) {
     $(id).addEventListener('click', abbrechen);
   }
+  $('#csv').addEventListener('click', ladeCsvHerunter);
   $('#openAll').addEventListener('click', openAll);
   $('#copyAll').addEventListener('click', copyAll);
   $('#marketsAll').addEventListener('click', () => {
@@ -4988,6 +5946,10 @@ function init() {
   } else if (state.mode === 'verlauf') {
     renderVerlauf();
     showScreen('verlauf');
+  } else if (state.mode === 'kurve') {
+    showScreen('kurve');
+    ladeKurve();
+    ladeWecker();
   } else if (state.mode) {
     showScreen('work');
     update();

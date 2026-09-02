@@ -35,6 +35,16 @@
       <span class="mgo">Los →</span>
     </button>
 
+    <button type="button" class="mode" data-mode="kurve">
+      <span class="mtitle">Preisentwicklung</span>
+      <span class="mdesc">
+        Derselbe Wagen über Wochen: lohnt sich Frühbuchen, oder wird es kurz
+        vorher billiger? Dazu Preiswecker, die sich melden, wenn eine Grenze
+        unterschritten wird.
+      </span>
+      <span class="mgo">Kurve →</span>
+    </button>
+
     <button type="button" class="mode" data-mode="verlauf">
       <span class="mtitle">Zuletzt gesucht</span>
       <span class="mdesc">
@@ -93,6 +103,55 @@
   </section>
 
   <div id="statusBody"></div>
+</section>
+
+<!-- ===================================================== Preisentwicklung -->
+<section id="kurveScreen" class="screen" hidden>
+  <div class="bar">
+    <button type="button" class="back">← Zurück</button>
+    <h1>Preisentwicklung</h1>
+  </div>
+
+  <section class="card">
+    <h2>Beobachtete Suchen</h2>
+    <p class="note">
+      Jeder Preisabruf hinterlässt einen Messpunkt. Je öfter dieselbe Suche
+      abgerufen wird, desto aussagekräftiger die Kurve.
+    </p>
+    <div id="kurveWahl" class="pills"></div>
+    <div id="kurveKlassen" class="field" hidden>
+      <span class="flabel">Fahrzeugklasse</span>
+      <div id="kurveKlassenPillen" class="pills"></div>
+    </div>
+  </section>
+
+  <section class="card" id="kurveKarte" hidden>
+    <h2 id="kurveTitel">Verlauf</h2>
+    <div id="kurveBild"></div>
+    <p class="tabnote" id="kurveNote"></p>
+  </section>
+
+  <section class="card" id="kalenderKarte">
+    <h2>Ganzer Monat auf einen Blick</h2>
+    <p class="note">
+      Rechnet für jeden Abholtag der nächsten Wochen den Preis derselben Klasse
+      durch und färbt den Kalender danach ein. Eine Länderseite, eine Klasse,
+      eine feste Mietdauer — sonst wären es hunderte Abrufe.
+    </p>
+    <div id="kalenderForm"></div>
+    <div id="kalenderBild"></div>
+  </section>
+
+  <section class="card" id="weckerKarte">
+    <h2>Preiswecker</h2>
+    <p class="note" id="weckerHinweis">
+      Prüft eine Suche in Abständen selbst nach und meldet sich, wenn der Preis
+      unter deine Grenze fällt. Geprüft wird nur, solange dieses Programm
+      läuft — im Hintergrund bleibt nichts zurück.
+    </p>
+    <div id="weckerNeu"></div>
+    <div id="weckerListe"></div>
+  </section>
 </section>
 
 <!-- ===================================================== Verlauf -->
@@ -244,9 +303,14 @@
         </div>
       </details>
 
-      <label class="wide">Rückgabestation
+      <div class="field einweg">
+        <span class="flabel">Rückgabe an anderer Station <em>(Einweg-Miete)</em></span>
         <select id="returnStation"></select>
-      </label>
+        <p class="note">
+          Leer lassen heißt: zurück an dieselbe Station. Eine andere Rückgabe
+          kostet meist einen Aufschlag — der steckt schon im angezeigten Preis.
+        </p>
+      </div>
     </section>
    </div>
   </main>
@@ -280,6 +344,7 @@
     <div class="btnrow nachlauf">
       <span class="count" id="jobCount"></span>
       <button type="button" id="nochmal" class="ghost mini" hidden></button>
+      <button type="button" id="csv" class="ghost mini">Als CSV speichern</button>
       <button type="button" id="openAll" class="ghost mini">Im Browser öffnen</button>
       <button type="button" id="copyAll" class="ghost mini">Links kopieren</button>
       <button type="button" id="reset" class="ghost mini right"

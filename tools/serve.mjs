@@ -22,6 +22,15 @@ import { merkeAngebote, bekannteKlassen, katalogStand } from './katalog.mjs';
 import { istExe, quellWurzel, datenOrdner, leseVorrat } from './pfade.mjs';
 import { oeffneFenster } from './fenster.mjs';
 import { protokolliereNach, protokollPfad, zeigeMeldung } from './meldung.mjs';
+import { merkeAbruf, leseVerlauf, verlaufUebersicht } from './beobachtung.mjs';
+import {
+  alleWecker,
+  legeWecker,
+  loescheWecker,
+  quittiereWecker,
+  faelligeWecker,
+  vermerkePruefung,
+} from './wecker.mjs';
 
 const argumente = process.argv.slice(2);
 // Den Port aus dem ersten Zahlenargument holen, nicht aus argv[2] — sonst
@@ -174,6 +183,8 @@ async function tick() {
     // Gesehene Klassen dauerhaft merken, damit spaeter "gerade nicht buchbar"
     // von "gibt es dort nicht" unterscheidbar bleibt.
     if (res.offers?.length) await merkeAngebote(job, res.offers).catch(() => {});
+    // Und den Preis fuer die Kurve — jeder Abruf ist ein Messpunkt.
+    await merkeAbruf(job, res).catch(() => {});
 
     const n = res.offers?.length ?? 0;
     console.log(
@@ -216,6 +227,83 @@ async function readBody(req, limit = 1_000_000) {
     chunks.push(chunk);
   }
   return Buffer.concat(chunks).toString('utf8');
+}
+
+/* ------------------------------------------------------ Weckerrunde
+ *
+ * Faellige Wecker der Reihe nach nachpruefen — einzeln und nur, wenn sonst
+ * nichts laeuft. Eine Weckerrunde darf niemals eine Suche ausbremsen, die
+ * jemand gerade angestossen hat: die wartet einer an, die Runde nicht.
+ */
+
+const WECKER_TAKT_MS = 30 * 60 * 1000;
+let naechsteWeckerRunde = null;
+let weckerLaeuft = false;
+
+async function weckerRunde({ sofort = false } = {}) {
+  if (weckerLaeuft) return;
+  if (laufend > 0 || queue.length) return; // der Nutzer hat Vorrang
+  if (!findBrowser()) return;
+
+  const faellig = sofort ? await alleWecker() : await faelligeWecker();
+  const zuTun = sofort
+    ? faellig.filter((w) => w.bis >= new Date().toISOString().slice(0, 10))
+    : faellig;
+  if (!zuTun.length) return;
+
+  weckerLaeuft = true;
+  console.log(`  ⏰ Weckerrunde: ${zuTun.length} zu prüfen`);
+  try {
+    for (const w of zuTun) {
+      // Zwischendurch abbrechen, sobald jemand selbst etwas sucht.
+      if (laufend > 0 || queue.length) break;
+      try {
+        const r = await quoteSixt({
+          host: w.host,
+          stationCode: w.station,
+          pickupDate: w.von,
+          returnDate: w.bis,
+          pickupTime: '10:00',
+          returnTime: '10:00',
+          currency: w.waehrung || undefined,
+        });
+        await merkeAbruf(
+          { host: w.host, stationCode: w.station, pickupDate: w.von, returnDate: w.bis },
+          r
+        ).catch(() => {});
+
+        const treffer = (r.offers || []).find((o) => o.acriss === w.acriss && o.total != null);
+        const loest = await vermerkePruefung(w.id, {
+          preis: treffer?.total ?? null,
+          fehler: r.error || (treffer ? null : 'Klasse gerade nicht im Angebot'),
+        });
+
+        if (loest) {
+          const text =
+            `${w.stationName || 'Station ' + w.station}\n` +
+            `${w.acriss} auf ${w.host.replace(/^www\./, '')}\n\n` +
+            `${treffer.total} ${w.waehrung} — unter deiner Grenze von ${w.grenze}.\n` +
+            `${w.von} bis ${w.bis}`;
+          console.log(`  ⏰ AUSGELÖST: ${w.acriss} ${treffer.total} ${w.waehrung}`);
+          if (istExe) zeigeMeldung(text, 'Preiswecker');
+        }
+      } catch (e) {
+        await vermerkePruefung(w.id, { fehler: String(e.message).slice(0, 140) }).catch(() => {});
+      }
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+  } finally {
+    weckerLaeuft = false;
+  }
+}
+
+function starteWeckerTakt() {
+  const takt = () => {
+    naechsteWeckerRunde = Date.now() + WECKER_TAKT_MS;
+    weckerRunde().catch(() => {});
+  };
+  takt();
+  setInterval(takt, WECKER_TAKT_MS).unref();
 }
 
 /* ------------------------------------------------------ Weiterleitung
@@ -561,6 +649,72 @@ const server = createServer(async (req, res) => {
     return json(res, 200, { ok: true, verworfen, nochLaufend: laufend });
   }
 
+  /* ---------------------------------------------------- Preisverlauf */
+
+  if (path === '/api/verlauf') {
+    try {
+      const punkte = await leseVerlauf({
+        station: url.searchParams.get('station') || undefined,
+        acriss: url.searchParams.get('acriss') || undefined,
+        host: url.searchParams.get('host') || undefined,
+        von: url.searchParams.get('von') || undefined,
+        bis: url.searchParams.get('bis') || undefined,
+      });
+      return json(res, 200, { ok: true, punkte });
+    } catch (e) {
+      return json(res, 200, { ok: false, punkte: [], error: String(e.message).slice(0, 160) });
+    }
+  }
+
+  if (path === '/api/verlauf/uebersicht') {
+    try {
+      return json(res, 200, { ok: true, gruppen: await verlaufUebersicht() });
+    } catch (e) {
+      return json(res, 200, { ok: false, gruppen: [], error: String(e.message).slice(0, 160) });
+    }
+  }
+
+  /* ---------------------------------------------------- Preiswecker */
+
+  if (path === '/api/wecker' && req.method === 'GET') {
+    return json(res, 200, { ok: true, wecker: await alleWecker(), naechstePruefung: naechsteWeckerRunde });
+  }
+
+  if (path === '/api/wecker' && req.method === 'POST') {
+    try {
+      const body = JSON.parse(await readBody(req, 20_000));
+      if (!body.station || !body.von || !body.bis || !body.host || !body.acriss) {
+        return json(res, 400, { ok: false, error: 'Station, Zeitraum, Länderseite und Klasse nötig' });
+      }
+      if (!(Number(body.grenze) > 0)) {
+        return json(res, 400, { ok: false, error: 'Preisgrenze fehlt' });
+      }
+      const w = await legeWecker(body);
+      console.log(`  ⏰ Wecker: ${w.stationName} ${w.acriss} unter ${w.grenze} ${w.waehrung}`);
+      // Gleich einmal nachsehen, statt bis zur nächsten Runde zu warten.
+      weckerRunde().catch(() => {});
+      return json(res, 200, { ok: true, wecker: w });
+    } catch (e) {
+      return json(res, 400, { ok: false, error: String(e.message).slice(0, 200) });
+    }
+  }
+
+  if (path === '/api/wecker/loeschen' && req.method === 'POST') {
+    const body = JSON.parse(await readBody(req, 4000));
+    return json(res, 200, { ok: await loescheWecker(body.id) });
+  }
+
+  if (path === '/api/wecker/quittieren' && req.method === 'POST') {
+    const body = JSON.parse(await readBody(req, 4000));
+    return json(res, 200, { ok: await quittiereWecker(body.id) });
+  }
+
+  if (path === '/api/wecker/pruefen' && req.method === 'POST') {
+    // Von Hand angestossen — ohne Rücksicht auf den Mindestabstand.
+    weckerRunde({ sofort: true }).catch(() => {});
+    return json(res, 200, { ok: true });
+  }
+
   // Selbsttest: geht die ganze Kette auf diesem Rechner durch?
   if (path === '/api/selbsttest' && req.method === 'POST') {
     if (laufend > 0 || queue.length) {
@@ -748,6 +902,10 @@ async function starteDienst() {
     } else {
       console.log(`Import-Token:         ${IMPORT_TOKEN}`);
     }
+
+    // Erst wenn der Dienst wirklich steht: sonst pruefte die erste Runde,
+    // waehrend der Port noch gesucht wird.
+    starteWeckerTakt();
     return;
   }
 

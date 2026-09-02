@@ -126,13 +126,13 @@
    "zuletzt": "2026-09-02"
   },
   "PFAV": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/chevrolet-suburban-suv-blue-2025.png",
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-tayron-suv-grey-2025.png",
    "modelle": [
     "VW TAYRON",
     "PREMIUM SUV"
    ],
-   "beispielText": "CHEVROLET SUBURBAN",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Premiumklasse SUV Automatik",
+   "zuletzt": "2026-09-02"
   },
   "JDAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/audi-a3-4d-grey-2021.png",
@@ -441,8 +441,8 @@
    "modelle": [
     "BMW X5 XDRIVE"
    ],
-   "beispielText": "Luxury Elite SUV Automático",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Luxusklasse Elite SUV Automatik",
+   "zuletzt": "2026-09-02"
   },
   "UVAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-v-class-long-van-blue-2020.png",
@@ -452,8 +452,8 @@
     "MERCEDES-BENZ CLASE V LARGA",
     "MERCEDES-BENZ CLASE V LUNGO"
    ],
-   "beispielText": "Premium Elite Van Automatico",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Premiumklasse Elite Van Automatik",
+   "zuletzt": "2026-09-02"
   },
   "JTLP": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/porsche-911-carrera-4s-convertible-2d-blue-2024.png",
@@ -497,11 +497,11 @@
     "MERCEDES-BENZ CLE CABRIOLET",
     "MERCEDES-BENZ CLE CABRIO"
    ],
-   "beispielText": "Premium Elite Descapotable Automático",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Premiumklasse Elite Cabrio Automatik",
+   "zuletzt": "2026-09-02"
   },
   "GTAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-4-convertible-2d-black-2026-US.png",
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-4-convertible-2d-black-2023-JV.png",
    "modelle": [
     "BMW SÉRIE 4 CABRIOLET",
     "BMW SERIE 4 CABRIO",
@@ -510,8 +510,8 @@
     "FULLSIZE ELITE DESCAPOTABLE",
     "FULLSIZE ELITE CONVERSÍVEL"
    ],
-   "beispielText": "BMW 4 SERIES CONVERTIBLE",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Oberklasse Elite Cabrio Automatik",
+   "zuletzt": "2026-09-02"
   },
   "WVAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-vito-van-black-2020.png",
@@ -534,16 +534,16 @@
    "modelle": [
     "NISSAN PRIMASTAR"
    ],
-   "beispielText": "Luxury Van Manual",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Luxusklasse Van Manuell",
+   "zuletzt": "2026-09-02"
   },
   "LVAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/nissan-primastar-van-black-2022.png",
    "modelle": [
     "NISSAN PRIMASTAR"
    ],
-   "beispielText": "Luxury Van Automático",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Luxusklasse Van Automatik",
+   "zuletzt": "2026-09-02"
   },
   "DFAE": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/volvo-ex30-suv-white-2024.png",
@@ -606,8 +606,8 @@
    "modelle": [
     "AUDI Q6"
    ],
-   "beispielText": "Premium Elite SUV Automático",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Premiumklasse Elite SUV Automatik",
+   "zuletzt": "2026-09-02"
   },
   "UWAC": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/audi-a6-avant-etron-stw-white-2025.png",
@@ -876,16 +876,17 @@
    "zuletzt": "2026-09-01"
   },
   "GTSR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m440-coupe-black-2025-US.png",
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m4-convertible-silver-2022-open.png",
    "modelle": [
     "FULLSIZE ELITE CABRIO",
     "FULLSIZE ELITE CABRIOLET",
     "FULLSIZE ELITE DESCAPOTABLE",
     "FULLSIZE ELITE CONVERSÍVEL",
-    "FULLSIZE ELITE CONVERTIBLE"
+    "FULLSIZE ELITE CONVERTIBLE",
+    "BMW M440 CABRIO"
    ],
-   "beispielText": "BMW M440 CONVERTIBLE",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Oberklasse Elite Cabrio Automatik",
+   "zuletzt": "2026-09-02"
   },
   "FELR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/chevrolet-corvette-coupe-grey-2026.png",
@@ -939,6 +940,38 @@
    ],
    "beispielText": "Spezialklasse SUV Automatik",
    "zuletzt": "2026-09-02"
+  },
+  "UFXE": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-glc-bev-suv-white-2027.png",
+   "modelle": [
+    "MERCEDES-BENZ GLC"
+   ],
+   "beispielText": "Premiumklasse Elite SUV Automatik",
+   "zuletzt": "2026-09-02"
+  },
+  "GDLR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m3-4d-sedan-black-2026.png",
+   "modelle": [
+    "BMW M3"
+   ],
+   "beispielText": "Oberklasse Elite Limousine Automatik",
+   "zuletzt": "2026-09-02"
+  },
+  "PVMR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/ford-tourneo-custom-van-white-2025.png",
+   "modelle": [
+    "FORD TOURNEO CUSTOM"
+   ],
+   "beispielText": "Premiumklasse Van Manuell",
+   "zuletzt": "2026-09-02"
+  },
+  "PVAR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/ford-tourneo-custom-van-silver-2025.png",
+   "modelle": [
+    "FORD TOURNEO CUSTOM"
+   ],
+   "beispielText": "Premiumklasse Van Automatik",
+   "zuletzt": "2026-09-02"
   }
  },
  "gesehen": {
@@ -957,7 +990,7 @@
    "IFAR": "2026-09-02",
    "IVAV": "2026-09-02",
    "DFAR": "2026-09-02",
-   "PFAV": "2026-09-01",
+   "PFAV": "2026-09-02",
    "JDAR": "2026-09-02",
    "SFAR": "2026-09-02",
    "DVAR": "2026-09-02",
@@ -998,7 +1031,7 @@
    "SFAH": "2026-09-01",
    "PFAH": "2026-09-01",
    "GWAH": "2026-09-01",
-   "UFAE": "2026-09-01",
+   "UFAE": "2026-09-02",
    "UWAC": "2026-09-02",
    "UWAH": "2026-09-01",
    "GLAR": "2026-09-01",
@@ -1010,7 +1043,18 @@
    "GESR": "2026-09-02",
    "UWLR": "2026-09-02",
    "XFLV": "2026-09-02",
-   "JTLP": "2026-09-02"
+   "JTLP": "2026-09-02",
+   "WFDR": "2026-09-02",
+   "UTAR": "2026-09-02",
+   "GTAR": "2026-09-02",
+   "UFXE": "2026-09-02",
+   "UVAR": "2026-09-02",
+   "GDLR": "2026-09-02",
+   "GTSR": "2026-09-02",
+   "PVMR": "2026-09-02",
+   "LVMR": "2026-09-02",
+   "PVAR": "2026-09-02",
+   "LVAR": "2026-09-02"
   },
   "sixt|110|www.sixt.de": {
    "GWAR": "2026-09-02",

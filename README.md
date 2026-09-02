@@ -82,6 +82,17 @@ gebauten SEA-Dateien misstrauisch.
   Stichtag, dazu beliebige Mietdauern.
 - **Klassen, die gerade nicht buchbar sind,** bleiben als Zeile stehen und
   werden markiert, statt aus der Tabelle zu verschwinden.
+- **Preisentwicklung.** Jeder Abruf hinterlässt einen Messpunkt; daraus wird
+  eine Kurve je Länderseite. Beantwortet die Frage, die kein Vergleichsportal
+  ehrlich beantwortet: wird es billiger, wenn ich warte?
+- **Preiswecker.** Eine Suche wird alle paar Stunden selbst nachgeprüft und
+  meldet sich, wenn der Preis unter eine Grenze fällt — nur solange das
+  Programm läuft, im Hintergrund bleibt nichts zurück.
+- **Ganzer Monat auf einen Blick.** Rechnet jeden Abholtag durch und färbt
+  einen Kalender danach ein. Im Test: dieselbe Klasse, dieselbe Mietdauer,
+  113 € am günstigsten und 468 € am teuersten Tag.
+- **Als CSV speichern**, Notiz je gespeicherter Suche, Einweg-Miete direkt in
+  der Stationsauswahl.
 - **Abbrechen** mitten im Abruf.
 - **Hintergrund wählbar** — Space, Sakura, Sixt-Orange oder aus. Die Bewegung
   bleibt oben und endet oberhalb der Preistabelle.
@@ -165,6 +176,10 @@ tools/
   meldung.mjs           Protokolldatei und Meldungsfenster ohne Konsole
   browser.mjs           Chrome starten und verbinden, Cookie-Banner
   katalog.mjs           merkt sich gesehene ACRISS-Klassen je Station
+  beobachtung.mjs       Messpunkte für die Preiskurve (preisverlauf.jsonl)
+  wecker.mjs            Preiswecker: anlegen, prüfen, auslösen
+  selbsttest.mjs        prüft die ganze Kette auf einem fremden Rechner
+  vorschlag-worker.js   Vorlage: Vorschläge per E-Mail weiterleiten
   scrape/sixt.mjs       Preisliste auslesen
   scrape/sixt-schutz.mjs Schutzpakete in der Kasse durchklicken
   try-quote.mjs         Handprobe: eine Preisliste auslesen
