@@ -950,6 +950,60 @@ tr.nurkatalog .fbild { opacity: .5; }
 
 table.vergleich.schutz td, table.vergleich.schutz th.klasse { vertical-align: top; padding-top: 18px; padding-bottom: 18px; }
 
+/* --- Kassenseiten -------------------------------------------------------
+   Solange die Kasse einer Laenderseite offen steht, ist die Preiszelle ein
+   Knopf, der dorthin fuehrt. Der Knopf uebernimmt die Polsterung der Zelle,
+   damit die ganze Flaeche trifft und die Tabelle ihre Ausrichtung behaelt. */
+table.vergleich.schutz td.buchbar { padding: 0; }
+.kassenknopf {
+  all: unset;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 18px 20px 14px;
+  text-align: right;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background .12s ease;
+}
+.kassenknopf:hover, .kassenknopf:focus-visible { background: #eff6ff; }
+.kassenknopf:hover .betrag, .kassenknopf:focus-visible .betrag { color: var(--accent); }
+.kassenknopf:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.kassenknopf:disabled { cursor: progress; opacity: .55; }
+
+/* Der Hinweis erscheint erst beim Zeigen: stuende er dauerhaft in jeder Zelle,
+   waere die Tabelle mit vier mal fuenf Aufforderungen zugepflastert. */
+.buchhinweis {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.kassenknopf:hover .buchhinweis, .kassenknopf:focus-visible .buchhinweis { opacity: 1; }
+
+.kassenleiste {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: #eff6ff;
+  border: 1px solid #d3e4fa;
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.5;
+}
+.kassenleiste.zu { background: var(--flaeche2); border-color: var(--hairline2); color: var(--muted); }
+.kassenleiste b { font-weight: 600; color: var(--ink); }
+.kassenleiste button { flex: none; }
+.kassenram { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
+
 /* ============================================================ Status */
 
 .statusrow { margin-bottom: 16px; }

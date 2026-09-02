@@ -51,14 +51,35 @@ const lastHit = new Map();
  * stoert das Aufraeumen der einen Seite die andere nicht.
  */
 const instanzen = {
-  normal: { port: PORT, profil: PROFILE, proc: null, browser: null },
-  inkognito: { port: PORT + 1, profil: PROFILE + '-inkognito', proc: null, browser: null },
+  normal: { port: PORT, profil: PROFILE, proc: null, browser: null, cdp: null, anker: null, kassenAnker: null },
+  inkognito: {
+    port: PORT + 1,
+    profil: PROFILE + '-inkognito',
+    proc: null,
+    browser: null,
+    cdp: null,
+    anker: null,
+    kassenAnker: null,
+  },
 };
 
 const artVon = (inkognito) => (inkognito ? 'inkognito' : 'normal');
 
 /* ------------------------------------------------------ Chrome finden */
 
+/**
+ * Reihenfolge der Suche. Chrome zuerst, und das ist kein Geschmack:
+ *
+ * FUER DEN PREISABRUF FUNKTIONIERT NUR CHROME. Edge steht weiter in der Liste,
+ * weil es fuer das Programmfenster (fenster.mjs) taugt, aber der Abruf kommt
+ * damit nicht zustande. Nachgemessen auf diesem Rechner: Edge oeffnet den
+ * Debug-Port zwar, lauscht auch darauf, weist die DevTools-Anfrage darauf aber
+ * ab. Playwright scheitert dann beim Holen der WebSocket-Adresse, und der
+ * Abruf bricht mit "Verbindung zu Chrome fehlgeschlagen" ab.
+ *
+ * Wer nur Edge hat, bleibt deshalb im Link-Modus: die Suchen werden gebaut,
+ * geoeffnet werden sie von Hand.
+ */
 const CANDIDATES = [
   [process.env.PROGRAMFILES, 'Google\\Chrome\\Application\\chrome.exe'],
   [process.env['PROGRAMFILES(X86)'], 'Google\\Chrome\\Application\\chrome.exe'],
@@ -199,6 +220,9 @@ async function schliesse(inst) {
     /* egal */
   }
   inst.browser = null;
+  inst.cdp = null;
+  inst.anker = null;
+  inst.kassenAnker = null;
   try {
     if (inst.proc?.pid) process.kill(inst.proc.pid);
   } catch {
@@ -240,7 +264,16 @@ async function throttle(host) {
 export async function withPage({ host, sichtbar = false, inkognito = false }, fn) {
   await throttle(host);
   const b = await getBrowser({ sichtbar, inkognito });
+  const inst = instanzen[artVon(inkognito)];
   const ctx = b.contexts()[0];
+
+  // Das Hauptfenster vorher aktivieren. Chrome legt einen neuen Tab immer im
+  // zuletzt aktiven Fenster an, und wenn gerade jemand eine Kassenseite
+  // angesehen hat, waere das dessen Fenster: der Abruf-Tab poppte dann mitten
+  // in einer laufenden Buchung auf. So bleibt beides getrennt.
+  const halt = await ankerSeite(inst, ctx).catch(() => null);
+  await halt?.bringToFront().catch(() => {});
+
   const page = await ctx.newPage();
   page.setDefaultTimeout(30000);
 
@@ -250,6 +283,157 @@ export async function withPage({ host, sichtbar = false, inkognito = false }, fn
     await page.close().catch(() => {});
   }
 }
+
+/* ------------------------------------------------------ Kassenfenster */
+
+/**
+ * Seiten, die nach dem Abruf offen bleiben, damit man auf ihnen weiterbuchen
+ * kann.
+ *
+ * Sie liegen bewusst in einem EIGENEN Chrome-Fenster, nicht als weiterer Tab
+ * im Abruf-Fenster. Zwei Gruende:
+ *
+ *   1. Beim Hervorholen saehe man sonst das ganze Abrufgeschehen mit, jeden
+ *      Tab, der auf- und zugeht.
+ *   2. Wer das Fenster nach dem Buchen schliesst, wuerde sonst den Abruf
+ *      mitreissen.
+ *
+ * Dasselbe Profil bleibt es trotzdem, und darauf kommt es an: die Kasse haengt
+ * an einer Sitzung, ein frisches Profil hiesse ein anderer Preis.
+ */
+const VERSTECK = { left: -32000, top: -32000, width: 1400, height: 1000 };
+const AUF_DEM_SCHIRM = { left: 60, top: 40, width: 1280, height: 940 };
+
+/** Merkt sich, welche Seiten Kassenseiten sind, damit der Anker sie meidet. */
+const kassenSeiten = new WeakSet();
+
+async function cdpVon(inst) {
+  if (!inst.cdp) inst.cdp = await inst.browser.newBrowserCDPSession();
+  return inst.cdp;
+}
+
+async function fensterVon(inst, ctx, page) {
+  const cdp = await cdpVon(inst);
+  const sitzung = await ctx.newCDPSession(page);
+  try {
+    const { targetInfo } = await sitzung.send('Target.getTargetInfo');
+    const { windowId } = await cdp.send('Browser.getWindowForTarget', {
+      targetId: targetInfo.targetId,
+    });
+    return windowId;
+  } finally {
+    await sitzung.detach().catch(() => {});
+  }
+}
+
+/**
+ * Eine Seite, die im Hauptfenster liegt und es aktiv haelt.
+ *
+ * Chrome legt einen neuen Tab immer im zuletzt aktiven Fenster an. Ohne diesen
+ * Anker wandern nach dem ersten Kassenfenster alle Abruf-Tabs dorthin, und das
+ * Kassenfenster liesse sich nicht mehr allein zeigen. Gemessen und genau so
+ * eingetreten.
+ */
+async function ankerSeite(inst, ctx) {
+  if (inst.anker && !inst.anker.isClosed()) return inst.anker;
+  for (const p of ctx.pages()) {
+    if (!p.isClosed() && !kassenSeiten.has(p)) {
+      inst.anker = p;
+      return p;
+    }
+  }
+  inst.anker = await ctx.newPage();
+  return inst.anker;
+}
+
+/**
+ * Legt eine Kassenseite an: als Reiter im gemeinsamen Kassenfenster, oder,
+ * wenn es das noch nicht gibt, als neues verstecktes Fenster.
+ *
+ * EIN Fenster mit mehreren Reitern statt vieler Fenster, aus zwei Gruenden.
+ * Beim Buchen sieht man alle abgerufenen Laenderseiten nebeneinander und kann
+ * selbst umschalten; und es liegt nicht ein halbes Dutzend Chrome-Fenster in
+ * der Taskleiste. Am Speicher aendert es wenig, siehe die Messung in
+ * buchung.mjs: Chrome nimmt fuer jede Herkunft ohnehin einen eigenen Prozess,
+ * und sixt.de, sixt.fr und sixt.es sind drei Herkuenfte.
+ *
+ * @returns {Promise<{page: import('playwright').Page, windowId: number}>}
+ */
+export async function neueKassenseite({ host, inkognito = false }) {
+  await throttle(host);
+  const b = await getBrowser({ inkognito });
+  const inst = instanzen[artVon(inkognito)];
+  const ctx = b.contexts()[0];
+  const cdp = await cdpVon(inst);
+  const halt = await ankerSeite(inst, ctx);
+
+  // Chrome legt einen neuen Reiter immer im zuletzt aktiven Fenster an. Steht
+  // das Kassenfenster schon, wird es kurz aktiviert, damit der Reiter dort
+  // landet; danach kommt das Hauptfenster wieder nach vorn.
+  const anschluss = inst.kassenAnker && !inst.kassenAnker.isClosed() ? inst.kassenAnker : null;
+  if (anschluss) await anschluss.bringToFront().catch(() => {});
+
+  const wartet = ctx.waitForEvent('page', { timeout: 20000 });
+  await cdp.send('Target.createTarget', {
+    url: 'about:blank',
+    ...(anschluss ? {} : { newWindow: true }),
+  });
+  const page = await wartet;
+  kassenSeiten.add(page);
+  page.setDefaultTimeout(30000);
+
+  const windowId = await fensterVon(inst, ctx, page);
+  if (!anschluss) {
+    // Zuerst verstecken, dann das Hauptfenster wieder nach vorn: in dieser
+    // Reihenfolge blitzt nichts auf und die naechsten Abruf-Tabs sitzen richtig.
+    await cdp.send('Browser.setWindowBounds', { windowId, bounds: VERSTECK }).catch(() => {});
+    inst.kassenAnker = page;
+  }
+  await halt.bringToFront().catch(() => {});
+
+  return { page, windowId };
+}
+
+async function setzeFenster(inkognito, windowId, bounds) {
+  const inst = instanzen[artVon(inkognito)];
+  if (!inst.browser?.isConnected()) return false;
+  const cdp = await cdpVon(inst);
+  // Ein minimiertes Fenster nimmt keine Koordinaten an, deshalb erst der
+  // Zustand, dann die Masse.
+  await cdp.send('Browser.setWindowBounds', { windowId, bounds: { windowState: 'normal' } }).catch(() => {});
+  await cdp.send('Browser.setWindowBounds', { windowId, bounds });
+  return true;
+}
+
+/** Holt ein Kassenfenster auf den Bildschirm und nach vorn. */
+export async function zeigeFenster({ page, windowId, inkognito = false }) {
+  const ok = await setzeFenster(inkognito, windowId, AUF_DEM_SCHIRM);
+  if (ok) await page.bringToFront().catch(() => {});
+  return ok;
+}
+
+/** Parkt ein Kassenfenster wieder ausserhalb des Bildschirms. */
+export async function versteckeFenster({ windowId, inkognito = false }) {
+  return setzeFenster(inkognito, windowId, VERSTECK).catch(() => false);
+}
+
+/*
+ * Was hier bewusst NICHT steht: Kniffe, um eine wartende Kassenseite
+ * sparsamer zu machen. Zwei wurden ausprobiert und beide wieder entfernt.
+ *
+ *   Page.setWebLifecycleState "frozen"
+ *     Ein eingefrorener Renderer fuehrt kein Skript mehr aus. Der spaetere
+ *     Klick lief danach endlos ins Leere, statt das Paket auszuwaehlen.
+ *
+ *   Memory.forciblyPurgeJavaScriptMemory
+ *     Sah harmlos aus und war es nicht: nach dem Aufraeumen antwortete die
+ *     Seite auf keine Abfrage mehr, schon das blosse Nachsehen, ob das
+ *     Schutzformular noch da ist, blieb haengen.
+ *
+ * Gemessen haetten beide zusammen 300 auf 250 MB gebracht. Ein Sechstel
+ * Speicher ist keinen haengenden Knopf wert. Die Seite bleibt deshalb, wie
+ * sie ist: unangetastet und jederzeit bedienbar.
+ */
 
 /**
  * Cookie-Banner ablehnen, bewusst "Ablehnen", nicht "Einverstanden".

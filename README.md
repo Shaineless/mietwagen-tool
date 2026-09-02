@@ -66,9 +66,14 @@ erspart später das Rätselraten. Wenn alles läuft, lässt es sich abstellen.
 
 ### Zwei Dinge vorweg
 
-**Chrome oder Edge muss installiert sein.** TRACKER startet für den Abruf ein
-eigenes, unsichtbares Browserfenster. Ohne einen der beiden bleibt der
-Link-Modus: die Suchen werden gebaut, geöffnet werden sie von Hand.
+**Google Chrome muss installiert sein.** TRACKER startet für den Abruf ein
+eigenes, unsichtbares Browserfenster. Ohne Chrome bleibt der Link-Modus: die
+Suchen werden gebaut, geöffnet werden sie von Hand.
+
+Microsoft Edge genügt dafür **nicht**. Es kann zwar das Programmfenster
+darstellen, aber nicht den Abruf übernehmen: Edge öffnet den Steuerungszugang
+zwar, weist die Anfragen darauf jedoch ab, und der Abruf kommt nicht zustande.
+Nachgeprüft und reproduziert.
 
 **Der Browser wird warnen.** Siehe den nächsten Abschnitt, dort steht, warum
 und was zu tun ist.
@@ -197,8 +202,8 @@ Abfrage mit eigenem Reiter.
 Preis, beim besten Tag mit einem Stern. Darüber sagt eine Kennzahl, welche
 Uhrzeit insgesamt vorn liegt („Beste Abholzeit 10:00, an 6 von 7 Tagen vorn").
 Die Tagesansicht listet auf Klick alle Uhrzeiten auf, günstigste zuerst, mit
-dem Aufschlag daneben. Gemessen: an einem Tag gewann 16:00, am nächsten 10:00 —
-ein pauschales „morgens ist billiger" gibt es nicht.
+dem Aufschlag daneben. Gemessen: an einem Tag gewann 16:00, am nächsten 10:00.
+Ein pauschales „morgens ist billiger" gibt es nicht.
 
 ### 4 · Preiskalender, wann ist es billig?
 
@@ -266,6 +271,22 @@ bleibt.
 > „Ohne SB, Rundum" kostet **441,20 €** auf sixt.de und **507,90 €** auf
 > sixt.at. Die reine Miete lag bei 342,97 € gegen 369,94 €, der Schutz
 > verschiebt den Abstand also deutlich.
+
+**Vom Vergleich direkt in die Buchung.** Nach dem Abruf bleiben die Kassenseiten
+aller geprüften Länderseiten geöffnet, unsichtbar im Hintergrund. Ein Klick auf
+einen Preis in der Tabelle wählt dort genau dieses Paket aus und holt das
+Sixt-Fenster nach vorn, mit dem Preis, der im Vergleich stand. Gemessen dauert
+das **unter einer Sekunde**, weil nichts neu geladen werden muss.
+
+Der Preis wird dabei gegengeprüft: was die Kasse in dem Moment zeigt, wird mit
+dem verglichen, was gemessen wurde. Stimmt es nicht überein, steht das da,
+bevor jemand bucht.
+
+Offene Kassenseiten kosten Arbeitsspeicher, nachgemessen **rund 250 MB je
+Länderseite**. Deshalb räumt TRACKER von selbst auf: beim Verlassen der Ansicht
+geht alles zu, außerdem nach zwölf Minuten und ab der siebten Seite. Wie viel
+gerade belegt ist, steht über der Tabelle. Ist eine Seite schon geschlossen,
+holt der Klick genau diese eine zurück, das dauert rund zwölf Sekunden.
 
 ### 7 · Preisentwicklung, wird es billiger, wenn ich warte?
 

@@ -129,9 +129,10 @@ export async function selbsttest(melde = () => {}) {
     schritt(
       'Browser',
       'schlecht',
-      'Weder Chrome noch Edge gefunden',
-      'Der Preisabruf braucht Chrome oder Edge. Ohne einen der beiden bleibt ' +
-        'es beim Erzeugen der Links, die Suche muss dann von Hand geöffnet werden.'
+      'Google Chrome nicht gefunden',
+      'Der Preisabruf braucht Google Chrome. Ohne ihn bleibt es beim Erzeugen ' +
+        'der Links, die Suche muss dann von Hand geöffnet werden. Edge genügt ' +
+        'dafür nicht: es weist den Steuerungszugang ab, den der Abruf braucht.'
     );
     return schritte;
   }

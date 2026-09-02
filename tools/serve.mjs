@@ -16,8 +16,9 @@ import { writeFile, appendFile, mkdir, readFile } from 'node:fs/promises';
 import { join, extname, normalize } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { quoteSixt } from './scrape/sixt.mjs';
-import { quoteSchutz } from './scrape/sixt-schutz.mjs';
+import { quoteSchutz, waehleSchutzpaket, kasseLebt } from './scrape/sixt-schutz.mjs';
 import { findBrowser, closeBrowser, frischesProfil } from './browser.mjs';
+import * as buchung from './buchung.mjs';
 import { merkeAngebote, bekannteKlassen, katalogStand } from './katalog.mjs';
 import { istExe, quellWurzel, datenOrdner, leseVorrat } from './pfade.mjs';
 import { oeffneFenster } from './fenster.mjs';
@@ -208,6 +209,10 @@ async function enqueue(jobs) {
   // nur der allererste wirklich einer. Aber nur, wenn gerade nichts laeuft:
   // mitten im Durchlauf das Chrome zu beenden, risse die offenen Abrufe ab.
   if (queue.length === 0 && laufend === 0 && jobs.some((j) => j?.inkognito)) {
+    // Das Profil zu leeren beendet das Chrome darauf, und damit stirbt jede
+    // offengehaltene Kassenseite. Sie vorher geordnet zu schliessen ist
+    // sauberer, als sie hinterher als Leiche in der Verwaltung zu finden.
+    await buchung.schliesseAlle('Profil wird geleert').catch(() => {});
     const leer = await frischesProfil();
     console.log(
       leer
@@ -342,10 +347,28 @@ async function tick() {
     const res = await abruf(job);
 
     if (schutz) {
+      // Kassenseite offen halten, wenn der Abruf eine mitgebracht hat. Ab hier
+      // gehoert sie der Verwaltung in buchung.mjs, die sie auch wieder zumacht.
+      if (res.kasse) {
+        await buchung
+          .merke({
+            schluessel: job.key,
+            host: job.host,
+            acriss: job.acriss,
+            inkognito: Boolean(job.inkognito),
+            page: res.kasse.page,
+            windowId: res.kasse.windowId,
+            pakete: (res.pakete || []).map((p) => ({ name: p.name, i: p.i, gesamt: p.gesamt })),
+            mieteOhneSchutz: res.mieteOhneSchutz ?? null,
+          })
+          .catch((e) => console.log('  ! Kassenseite ließ sich nicht merken: ' + e.message));
+      }
       remember(job.key, {
         host: job.host,
         url: res.url || null,
         acriss: job.acriss,
+        // Damit die Oberflaeche weiss, auf welche Zellen man klicken kann.
+        kasse: Boolean(res.kasse),
         // Nur als verfuegbar merken, wenn der Abruf auch geklappt hat.
         // Vorher galt ein gescheiterter Abruf als verfuegbar, weil
         // `undefined !== false` wahr ist, die Oberflaeche zeigte dann ein
@@ -917,6 +940,74 @@ const server = createServer(async (req, res) => {
   }
 
   // Selbsttest: geht die ganze Kette auf diesem Rechner durch?
+  /* ---------------------------------------------------- Kassenseiten */
+
+  // Welche Kassenseiten stehen noch offen? Die Oberflaeche fragt das ab, um
+  // die anklickbaren Zellen zu kennen und die Restzeit anzuzeigen.
+  if (path === '/api/buchung' && req.method === 'GET') {
+    await buchung.raeumeAuf().catch(() => {});
+    return json(res, 200, { ok: true, offen: buchung.liste() });
+  }
+
+  // Ein Paket auf der offengehaltenen Seite auswaehlen und das Fenster zeigen.
+  if (path === '/api/buchung/oeffnen' && req.method === 'POST') {
+    try {
+      const body = JSON.parse(await readBody(req));
+      const begonnen = Date.now();
+
+      const e = buchung.hole(body.key);
+      if (!e) {
+        return json(res, 200, { ok: false, grund: 'weg', error: 'Die Kassenseite ist nicht mehr offen.' });
+      }
+      if (!(await kasseLebt(e.page))) {
+        await buchung.schliesse(body.key, 'Sitzung war hinüber');
+        return json(res, 200, { ok: false, grund: 'weg', error: 'Die Sitzung bei Sixt ist abgelaufen.' });
+      }
+
+      const paket = e.pakete.find((p) => p.i === body.paket);
+      if (!paket) return json(res, 400, { ok: false, error: 'Dieses Paket kennt die Seite nicht.' });
+
+      const jetzt = await waehleSchutzpaket(e.page, paket.i).catch(() => null);
+      const sichtbar = await buchung.zeige(body.key);
+      console.log(
+        `  ⇱ Kasse ${e.host} ${paket.name}` +
+          (jetzt != null ? `  ${jetzt}` : '  Preis nicht lesbar') +
+          `  (${Date.now() - begonnen}ms)`
+      );
+
+      // Der Preis wird zurueckgemeldet, nicht nur behauptet: weicht er vom
+      // gemessenen ab, soll der Nutzer das sehen, bevor er bucht.
+      return json(res, 200, {
+        ok: true,
+        sichtbar,
+        paket: paket.name,
+        gemessen: paket.gesamt ?? null,
+        jetzt: jetzt ?? null,
+        abweichung:
+          jetzt != null && paket.gesamt != null ? Number((jetzt - paket.gesamt).toFixed(2)) : null,
+      });
+    } catch (e) {
+      return json(res, 400, { ok: false, error: String(e.message).slice(0, 200) });
+    }
+  }
+
+  if (path === '/api/buchung/verstecken' && req.method === 'POST') {
+    const body = JSON.parse(await readBody(req).catch(() => '{}') || '{}');
+    return json(res, 200, { ok: await buchung.verstecke(body.key) });
+  }
+
+  // Aufraeumen. Die Oberflaeche ruft das beim Verlassen der Schutzansicht,
+  // damit nicht unsichtbar ein halbes Gigabyte Chrome stehen bleibt.
+  if (path === '/api/buchung/schliessen' && req.method === 'POST') {
+    const body = JSON.parse(await readBody(req).catch(() => '{}') || '{}');
+    if (body.alle) {
+      const n = await buchung.schliesseAlle('Ansicht verlassen');
+      return json(res, 200, { ok: true, geschlossen: n });
+    }
+    const weg = await buchung.schliesse(body.key);
+    return json(res, 200, { ok: true, geschlossen: weg ? 1 : 0 });
+  }
+
   if (path === '/api/selbsttest' && req.method === 'POST') {
     if (laufend > 0 || queue.length) {
       return json(res, 200, {
@@ -1180,6 +1271,11 @@ let beendetGerade = false;
 async function beenden(code = 0) {
   if (beendetGerade) return;
   beendetGerade = true;
+  try {
+    await buchung.schliesseAlle('Dienst endet');
+  } catch {
+    /* das Chrome geht gleich ohnehin mit */
+  }
   try {
     await closeBrowser();
   } catch {

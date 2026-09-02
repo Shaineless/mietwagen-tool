@@ -201,14 +201,22 @@ async function pollErgebnisse() {
       });
       const d = await r.json();
       let neu = false;
+      let neueKasse = false;
       for (const [k, v] of Object.entries(d.results || {})) {
         if (k.startsWith('schutz~')) {
-          if (!schutz.has(k)) { schutz.set(k, v); neu = true; }
+          if (!schutz.has(k)) {
+            schutz.set(k, v);
+            neu = true;
+            if (v.kasse) neueKasse = true;
+          }
         } else if (!prices.has(k)) {
           prices.set(k, v);
           neu = true;
         }
       }
+      // Kam eine Kassenseite dazu, muss die Oberfläche wissen, welche Zellen
+      // ab jetzt anklickbar sind. ladeKassen zeichnet selbst nach.
+      if (neueKasse) ladeKassen();
       if (neu) {
         // Nur neu zeichnen, wenn sich die sichtbare Ansicht wirklich aendert.
         // Frueher wurde bei jedem Takt die ganze Tabelle verworfen und neu
@@ -651,6 +659,11 @@ function showScreen(name) {
   document.body.dataset.screen = name;
   // Der Takt läuft nur, wo die Liste auch zu sehen ist.
   haltWeckerFrisch(name === 'kurve');
+  haltKassenFrisch(name === 'schutz');
+  // Wer die Schutzansicht verlässt, ohne zu buchen, soll keine unsichtbaren
+  // Chrome-Fenster zurücklassen. Jede offene Kassenseite kostet rund 100 MB,
+  // und man sieht sie nicht, also muss es von selbst geschehen.
+  if (previous === 'schutz' && name !== 'schutz') schliesseKassen(true);
   document.querySelectorAll('[data-nav]').forEach((button) => {
     if (button.dataset.nav === name || (name === 'schutz' && button.dataset.nav === 'work')) {
       button.setAttribute('aria-current', 'page');
@@ -5359,9 +5372,7 @@ function renderSchutz() {
           gesamt != null && basis != null ? Number((gesamt - basis).toFixed(2)) : null;
         const echtProTag = aufschlag != null ? aufschlag / tage : null;
 
-        return el(
-          'td',
-          {},
+        const inhalt = [
           // Der Name, wie ihn diese Länderseite nennt, bewusst mitgezeigt,
           // damit man die Zuordnung nachprüfen kann.
           el('span', { class: 'lokalname' }, p.name),
@@ -5388,14 +5399,89 @@ function renderSchutz() {
             : null,
           p.selbstbeteiligung
             ? el('span', { class: 'proTag sb' }, 'SB: ' + p.selbstbeteiligung)
-            : null
-        );
+            : null,
+        ];
+
+        // Steht die Kasse dieser Länderseite noch offen, ist die Zelle ein
+        // Knopf: er wählt dort dasselbe Paket und holt das Sixt-Fenster nach
+        // vorn. Ist sie weg, bleibt die Zahl als Text stehen; nachgeholt wird
+        // nur auf ausdrücklichen Klick, weil ein Abruf zwölf Sekunden dauert.
+        const offenHier = kassen.has(j.key) && p.i != null;
+        if (offenHier) {
+          return el(
+            'td',
+            { class: 'buchbar' },
+            el(
+              'button',
+              {
+                type: 'button',
+                class: 'kassenknopf',
+                title: `Auf ${j.market.label} öffnen, ${p.name} ist dann ausgewählt`,
+                onclick: () => oeffneKasse(j, p),
+              },
+              ...inhalt,
+              el('span', { class: 'buchhinweis' }, 'Zum Buchen öffnen')
+            )
+          );
+        }
+        return el('td', {}, ...inhalt);
       })
     )
   );
 
+  // Leiste über der Tabelle: wie viele Kassenseiten gerade offen stehen. Das
+  // gehört sichtbar hierher, weil jede davon rund 100 MB kostet und in einem
+  // unsichtbaren Fenster liegt, wo niemand sie vermuten würde.
+  const rest = [...kassen.values()].reduce(
+    (m, k) => (m == null ? k.restSekunden : Math.min(m, k.restSekunden)),
+    null
+  );
+  const kassenleiste = kassen.size
+    ? el(
+        'div',
+        { class: 'kassenleiste' },
+        el(
+          'span',
+          {},
+          el('b', {}, `${kassen.size} ${kassen.size === 1 ? 'Kassenseite' : 'Kassenseiten'} offen`),
+          ' · Klick auf einen Preis wählt dort das Paket und holt das Sixt-Fenster nach vorn.',
+          // Der Speicher gehört dazu. Er ist gemessen, nicht geschätzt, und er
+          // ist unsichtbar, weil das Fenster unsichtbar ist. Wer ihn nicht
+          // ausgeben will, verlässt die Ansicht, dann geht alles zu.
+          el(
+            'span',
+            { class: 'kassenram' },
+            `Kostet rund ${kassen.size * 250 >= 1000 ? ((kassen.size * 250) / 1000).toFixed(1).replace('.', ',') + ' GB' : kassen.size * 250 + ' MB'} Arbeitsspeicher` +
+              (rest != null ? `, schließt sich in ${Math.max(1, Math.ceil(rest / 60))} Min. von selbst` : '')
+          )
+        ),
+        el(
+          'button',
+          { type: 'button', class: 'ghost klein', onclick: () => schliesseKassen() },
+          'Alle schließen'
+        )
+      )
+    : fertig.length
+      ? el(
+          'div',
+          { class: 'kassenleiste zu' },
+          el(
+            'span',
+            {},
+            'Die Kassenseiten sind geschlossen, das spart Speicher. Zum Weiterbuchen ' +
+              'müssen sie neu geholt werden.'
+          ),
+          el(
+            'button',
+            { type: 'button', class: 'ghost klein', onclick: () => oeffneKassenNeu() },
+            `Erneut öffnen · rund ${Math.ceil((fertig.length * 12) / 2)} Sekunden`
+          )
+        )
+      : null;
+
   setChildren(
     $('#schutzBody'),
+    kassenleiste,
     el(
       'div',
       { class: 'tabellenrahmen' },
@@ -5415,9 +5501,208 @@ function renderSchutz() {
         'zwischen beiden rund 26 %. Weicht er ab, steht der Wert der Seite klein darunter. ' +
         'Zugeordnet wird über den Inhalt (Selbstbeteiligung ja/nein, günstiger/teurer), ' +
         'nicht über den Namen, der heißt auf jeder Länderseite anders. Der jeweilige ' +
-        'Originalname steht klein über dem Preis, damit die Zuordnung nachprüfbar bleibt.'
+        'Originalname steht klein über dem Preis, damit die Zuordnung nachprüfbar bleibt. ' +
+        'Solange die Kassenseiten offen sind, führt ein Klick auf einen Preis direkt dorthin, ' +
+        'mit dem Paket bereits ausgewählt. Weicht der Preis dort inzwischen ab, wird das ' +
+        'gemeldet, statt es durchgehen zu lassen.'
     )
   );
+}
+
+/**
+ * Die Kassenseiten noch einmal holen, nachdem sie geschlossen wurden.
+ *
+ * Dafür müssen die alten Ergebnisse weg, sonst nimmt der Dienst den Auftrag
+ * gar nicht erst an, er kennt den Schlüssel ja schon. Die Preise stehen so
+ * lange auf "lädt", und das ist richtig so: sie werden wirklich neu gemessen.
+ */
+async function oeffneKassenNeu() {
+  const jobs = schutzJobs().filter((j) => schutz.has(j.key));
+  if (!jobs.length) return;
+  const keys = jobs.map((j) => j.key);
+  try {
+    await fetch('/api/results/clear', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ keys }),
+    });
+  } catch {
+    flash('Der Preisdienst antwortet nicht.');
+    return;
+  }
+  for (const k of keys) schutz.delete(k);
+  renderSchutz();
+  await sendeJobs(jobs.map(schutzAuftrag), $('#getSchutz'));
+}
+
+/* ------------------------------------------------------ Kassenseiten */
+
+/**
+ * Nach einem Schutzabruf bleibt die Kasse jeder Länderseite offen, versteckt
+ * in einem eigenen Chrome-Fenster. Ein Klick auf einen Preis wählt dort
+ * dasselbe Paket und holt das Fenster nach vorn: man steht mitten in der
+ * Buchung, mit genau dem Preis, der hier stand.
+ *
+ * Offen bleiben kostet Speicher, rund 100 MB je Seite, und man sieht es nicht,
+ * weil das Fenster unsichtbar ist. Deshalb wird zugemacht, sobald diese
+ * Ansicht verlassen wird; der Dienst räumt zusätzlich nach zwanzig Minuten und
+ * ab acht offenen Seiten auf.
+ *
+ * Auftragsschlüssel -> { restSekunden, sichtbar }
+ */
+const kassen = new Map();
+let kassenTakt = null;
+
+async function ladeKassen(neuZeichnen = true) {
+  try {
+    const d = await (await fetch('/api/buchung')).json();
+    kassen.clear();
+    for (const e of d.offen || []) kassen.set(e.schluessel, e);
+  } catch {
+    kassen.clear();
+  }
+  if (neuZeichnen && document.body.dataset.screen === 'schutz') renderSchutz();
+}
+
+/** Der Takt läuft nur, solange die Schutzansicht offen ist. */
+function haltKassenFrisch(an) {
+  if (kassenTakt) {
+    clearInterval(kassenTakt);
+    kassenTakt = null;
+  }
+  if (an) kassenTakt = setInterval(() => ladeKassen(), 20000);
+}
+
+async function oeffneKasse(job, paket, zweiterVersuch = false) {
+  const knopf = document.activeElement;
+  if (knopf?.tagName === 'BUTTON') knopf.disabled = true;
+  try {
+    const d = await (
+      await fetch('/api/buchung/oeffnen', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ key: job.key, paket: paket.i }),
+      })
+    ).json();
+
+    if (!d.ok) {
+      // Seite abgelaufen oder für eine neuere weggeräumt: genau diese eine
+      // nachholen, statt den Klick ins Leere laufen zu lassen.
+      if (d.grund === 'weg' && !zweiterVersuch) {
+        await holeKasseNach(job, paket);
+        return;
+      }
+      flash(d.error || 'Die Kassenseite ließ sich nicht öffnen.');
+      await ladeKassen();
+      return;
+    }
+    if (!d.sichtbar) {
+      flash('Das Paket ist gewählt, aber das Fenster ließ sich nicht nach vorn holen.');
+      return;
+    }
+
+    // Der Preis wird gegengeprüft, nicht bloß behauptet. Weicht er ab, ist
+    // das die wichtigste Information überhaupt, bevor jemand bucht.
+    if (d.abweichung != null && Math.abs(d.abweichung) >= 0.01) {
+      flash(
+        `Achtung: die Seite zeigt jetzt ${money(d.jetzt, '')} statt ${money(d.gemessen, '')}. ` +
+          `Unterschied ${d.abweichung > 0 ? '+' : ''}${money(d.abweichung, '')}.`
+      );
+    } else {
+      flash(`${d.paket} ist gewählt. Das Sixt-Fenster steht vorn.`);
+    }
+  } catch {
+    flash('Der Preisdienst antwortet nicht.');
+  } finally {
+    if (knopf?.tagName === 'BUTTON') knopf.disabled = false;
+    await ladeKassen();
+  }
+}
+
+/**
+ * Genau eine Kassenseite nachholen und dann darauf öffnen.
+ *
+ * Passiert, wenn die Seite abgelaufen ist oder für eine neuere weichen musste.
+ * Der Klick soll deshalb nicht ins Leere laufen: er holt sie zurück. Das
+ * dauert rund zwölf Sekunden und hat einen Vorteil, den das Offenhalten nicht
+ * hat: der Preis wird dabei frisch bestätigt.
+ */
+async function holeKasseNach(job, paket) {
+  flash('Die Kassenseite war geschlossen. Sie wird neu geholt, rund 12 Sekunden.');
+  try {
+    await fetch('/api/results/clear', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ keys: [job.key] }),
+    });
+  } catch {
+    flash('Der Preisdienst antwortet nicht.');
+    return;
+  }
+  schutz.delete(job.key);
+  renderSchutz();
+  await sendeJobs([schutzAuftrag(job)], $('#getSchutz'));
+
+  for (let i = 0; i < 30; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    await ladeKassen(false);
+    if (kassen.has(job.key) && schutz.has(job.key)) break;
+  }
+  await ladeKassen();
+
+  if (!kassen.has(job.key)) {
+    flash('Die Kassenseite kam nicht zurück. Klasse dort vermutlich nicht mehr buchbar.');
+    return;
+  }
+  // Über den Namen wiederfinden: die Reihenfolge der Pakete im Formular kann
+  // sich beim neuen Abruf geändert haben, die Nummer von vorhin trüge dann
+  // auf ein anderes Paket.
+  const neu = (schutz.get(job.key)?.pakete || []).find((p) => p.name === paket.name);
+  if (!neu) {
+    flash(`„${paket.name}" gibt es dort gerade nicht mehr.`);
+    return;
+  }
+  await oeffneKasse(job, neu, true);
+}
+
+async function schliesseKassen(still = false) {
+  if (!kassen.size) return;
+  try {
+    const d = await (
+      await fetch('/api/buchung/schliessen', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ alle: true }),
+      })
+    ).json();
+    kassen.clear();
+    if (!still && d.geschlossen) {
+      flash(`${d.geschlossen} Kassenseiten geschlossen, das gibt den Speicher frei.`);
+    }
+  } catch {
+    kassen.clear();
+  }
+  if (document.body.dataset.screen === 'schutz') renderSchutz();
+}
+
+function schutzAuftrag(j) {
+  return {
+    key: j.key,
+    provider: PROVIDER,
+    host: j.market.host,
+    stationCode: j.station.code,
+    acriss: j.acriss,
+    pickupDate: j.variant.pickupDate,
+    returnDate: j.variant.returnDate,
+    pickupTime: j.variant.pickupTime ?? state.pickupTime,
+    returnTime: j.variant.returnTime ?? state.returnTime,
+    currency: j.market.cur,
+    // Derselbe Modus wie beim Preisabruf: sonst stünde ein Schutzpreis aus
+    // dem Cookie-Abruf neben einem Grundpreis ohne Cookies.
+    inkognito: state.inkognito || undefined,
+    // Die Kasse offen lassen, damit man von hier aus weiterbuchen kann.
+    offenhalten: true,
+  };
 }
 
 async function fetchSchutz() {
@@ -5426,24 +5711,7 @@ async function fetchSchutz() {
     flash('Für diese Klasse liegen schon alle Schutzpreise vor.');
     return;
   }
-  await sendeJobs(
-    jobs.map((j) => ({
-      key: j.key,
-      provider: PROVIDER,
-      host: j.market.host,
-      stationCode: j.station.code,
-      acriss: j.acriss,
-      pickupDate: j.variant.pickupDate,
-      returnDate: j.variant.returnDate,
-      pickupTime: j.variant.pickupTime ?? state.pickupTime,
-      returnTime: j.variant.returnTime ?? state.returnTime,
-      currency: j.market.cur,
-      // Derselbe Modus wie beim Preisabruf: sonst stünde ein Schutzpreis aus
-      // dem Cookie-Abruf neben einem Grundpreis ohne Cookies.
-      inkognito: state.inkognito || undefined,
-    })),
-    $('#getSchutz')
-  );
+  await sendeJobs(jobs.map(schutzAuftrag), $('#getSchutz'));
 }
 
 /* =========================================================== Abruf */
@@ -5887,7 +6155,7 @@ function renderStatus() {
         service.available
           ? service.chrome
             ? 'Der Abruf öffnet die Länderseiten in einem eigenen Chrome-Fenster außerhalb des sichtbaren Bereichs. Es wird nichts an Dritte gesendet; Ergebnisse verfallen nach einer Stunde.'
-            : 'Ohne Chrome oder Edge bleibt der Link-Modus: das Werkzeug baut die Suchen, abgerufen wird von Hand.'
+            : 'Ohne Google Chrome bleibt der Link-Modus: das Werkzeug baut die Suchen, abgerufen wird von Hand. Edge genügt dafür nicht, damit kommt der Abruf nicht zustande.'
           : 'Der Dienst läuft nicht. Ohne ihn gibt es nur die Linkliste, zum Abrufen „Preistool starten.cmd" verwenden.'
       )
     ),
