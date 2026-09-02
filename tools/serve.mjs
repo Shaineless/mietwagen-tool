@@ -877,6 +877,13 @@ const server = createServer(async (req, res) => {
           error: body.art === 'buchung' ? 'Gebuchter Preis fehlt' : 'Preisgrenze fehlt',
         });
       }
+      // Das Ziel schon beim Anlegen pruefen, nicht erst beim Abrufen.
+      // weckerRunde() faengt ein unbekanntes Ziel zwar ab, aber bis dahin
+      // stuende der Eintrag mit fremdem Inhalt in der Weckerdatei. Geprueft
+      // wird an der Tuer.
+      if (!(await hostErlaubt(body.host))) {
+        return json(res, 400, { ok: false, error: 'Unbekannte Länderseite' });
+      }
       const w = await legeWecker(body);
       console.log(
         `  ⏰ ${w.art === 'buchung' ? 'Buchung beobachten' : 'Wecker'}: ` +
