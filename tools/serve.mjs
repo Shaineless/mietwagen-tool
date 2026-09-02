@@ -34,8 +34,11 @@ import {
 
 const argumente = process.argv.slice(2);
 // Den Port aus dem ersten Zahlenargument holen, nicht aus argv[2] — sonst
-// verschiebt ein vorangestellter Schalter ihn.
-const port = Number(argumente.find((a) => /^\d+$/.test(a))) || 4173;
+// verschiebt ein vorangestellter Schalter ihn. PORT aus der Umgebung kommt
+// danach: Werkzeuge, die den Dienst starten, teilen ihn so zu, ohne dass am
+// Aufruf etwas geaendert werden muss.
+const port =
+  Number(argumente.find((a) => /^\d+$/.test(a))) || Number(process.env.PORT) || 4173;
 /** Kein Fenster aufmachen — fuer Pruefläufe und stille Starts. */
 const stillerStart = argumente.includes('--kein-browser');
 
@@ -709,7 +712,7 @@ function oeffneProgrammfenster(adresse) {
   if (art === 'keiner') {
     zeigeMeldung(
       'Es liess sich kein Fenster öffnen.\n\n' +
-        'Das Preistool läuft, erreichbar unter:\n' +
+        'TRACKER läuft, erreichbar unter:\n' +
         adresse
     );
     return;
@@ -719,7 +722,7 @@ function oeffneProgrammfenster(adresse) {
     console.log('Kein Chrome und kein Edge gefunden — geöffnet im Standardbrowser.');
     zeigeMeldung(
       'Chrome oder Edge wurde nicht gefunden.\n\n' +
-        'Das Preistool ist im Standardbrowser geöffnet, aber der Preisabruf ' +
+        'TRACKER ist im Standardbrowser geöffnet, aber der Preisabruf ' +
         'braucht Chrome oder Edge. Ohne einen der beiden bleibt es beim ' +
         'Erzeugen der Links.'
     );
@@ -739,7 +742,7 @@ async function starteDienst() {
   for (let p = port; p < port + 12; p++) {
     if (await schonUnserer(p)) {
       const adresse = `http://127.0.0.1:${p}/`;
-      console.log(`Das Preistool läuft bereits auf ${adresse}`);
+      console.log(`TRACKER läuft bereits auf ${adresse}`);
       if (istExe && !stillerStart) {
         // Nur ein weiteres Fenster dazu — der laufende Dienst bleibt der Chef,
         // deshalb hier ohne Ende-Kopplung.
@@ -757,7 +760,7 @@ async function starteDienst() {
 
     const adresse = `http://127.0.0.1:${p}/`;
     const chrome = findBrowser();
-    console.log(`Mietwagen-Preistool:  ${adresse}`);
+    console.log(`TRACKER:              ${adresse}`);
     console.log(
       `Preisabruf:           ${chrome ? chrome : 'kein Chrome gefunden — nur Link-Modus'}`
     );

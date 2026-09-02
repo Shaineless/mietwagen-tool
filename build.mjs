@@ -146,9 +146,26 @@ console.log('  Parser verteilt: extension/content.js, tools/scrape/offer-parse.m
 
 /* --------------------------------- In HTML einsetzen */
 
+/* --------------------------------- Logo und Startanimation einbetten */
+
+// Beides wandert als data:-Adresse in die HTML-Datei. Der Sinn des Werkzeugs
+// ist eine einzige Datei, die auch per Doppelklick aus dem Dateisystem laeuft;
+// eine Datei, die nebenan liegende Bilder nachlaedt, waere keine.
+function alsDatenAdresse(datei, typ) {
+  const roh = readFileSync(join(root, 'src', 'bilder', datei));
+  return `data:${typ};base64,${roh.toString('base64')}`;
+}
+
+const logo = alsDatenAdresse('tracker-logo.png', 'image/png');
+const intro = alsDatenAdresse('tracker-intro.mp4', 'video/mp4');
+console.log(
+  `  Logo ${(logo.length / 1024).toFixed(0)} kB, Startanimation ${(intro.length / 1024).toFixed(0)} kB eingebettet`
+);
+
 const html = readFileSync(src('index.html'), 'utf8')
   .replace('/*STYLES*/', () => readFileSync(src('styles.css'), 'utf8'))
-  .replace('/*SCRIPT*/', () => bundle);
+  .replaceAll('/*LOGO*/', () => logo)
+  .replace('/*SCRIPT*/', () => bundle.replace('/*INTRO*/', () => intro));
 
 mkdirSync(join(root, 'dist'), { recursive: true });
 const outFile = join(root, 'dist', 'mietwagen-preistool.html');

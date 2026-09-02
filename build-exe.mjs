@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const bau = join(root, 'build');
-const ziel = join(root, 'dist', 'Mietwagen-Preistool.exe');
+const ziel = join(root, 'dist', 'Tracker.exe');
 
 const mb = (p) => (statSync(p).size / 1024 / 1024).toFixed(1) + ' MB';
 
@@ -200,6 +200,6 @@ if (process.platform === 'win32') {
   }
 }
 
-console.log(`\nFertig: dist/Mietwagen-Preistool.exe (${mb(ziel)})`);
+console.log(`\nFertig: dist/Tracker.exe (${mb(ziel)})`);
 console.log('Doppelklick öffnet ein eigenes Programmfenster, ohne Konsole.');
 console.log('Chrome oder Edge muss installiert sein — sonst bleibt der Link-Modus.\n');

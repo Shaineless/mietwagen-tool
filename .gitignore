@@ -2,18 +2,17 @@ node_modules/
 tools/_probe*
 
 # Betriebsdaten, keine Quellen: entstehen beim Benutzen und sind auf jedem
-# Rechner andere. Der ACRISS-Katalog bleibt bewusst drin — er ist muehsam
-# gesammeltes Wissen darueber, welche Klassen es wo gibt.
-data/verbesserungen.jsonl
+# Rechner andere. Der ACRISS-Katalog bleibt bewusst drin — er ist mühsam
+# gesammeltes Wissen darüber, welche Klassen es wo gibt.
 data/preisverlauf.jsonl
 data/preisverlauf-*.jsonl
 data/wecker.json
 data/einstellungen.json
-data/preistool.log
+data/tracker.log
 
 # Zwischenstufen und Ergebnis des EXE-Baus. Die EXE ist knapp 100 MB, weil
-# die Node-Laufzeit darin steckt — sie gehoert nicht in die Versionsverwaltung,
-# sondern zu den Veroeffentlichungen.
+# die Node-Laufzeit darin steckt — sie gehört nicht in die Versionsverwaltung,
+# sondern zu den Veröffentlichungen.
 build/
 dist/*.exe
-dist/Preistool-Daten/
+dist/Tracker-Daten/

@@ -17,13 +17,14 @@
 const LS_HG = 'mwt-preistool/hintergrund';
 
 const THEMEN = [
+  { id: 'tracker', name: 'Tracker', beschreibung: 'Mintfarbene Lichtspuren wie im Vorspann' },
   { id: 'space', name: 'Space', beschreibung: 'Sternenfeld mit Sternschnuppen' },
   { id: 'sakura', name: 'Sakura', beschreibung: 'Fallende Kirschblüten' },
   { id: 'sixt', name: 'Sixt', beschreibung: 'Orange Lichtspuren' },
   { id: 'aus', name: 'Aus', beschreibung: 'Ruhiger, einfarbiger Grund' },
 ];
 
-let aktuellesThema = 'space';
+let aktuellesThema = 'tracker';
 let leinwand = null;
 let ctx = null;
 let breite = 0;
@@ -62,6 +63,71 @@ const sternTon = (a) =>
  * doppelt so schnell wie auf einem 60-Hz-Schirm.
  */
 const MOTOREN = {
+  /* --- Tracker: mintfarbene Lichtspuren, die Sprache des Vorspanns --- */
+  tracker: {
+    erzeuge() {
+      // Waagerecht statt schraeg: das liest sich als Fahrt, nicht als Regen.
+      const anzahl = Math.min(Math.round(breite / 60), 26);
+      const spuren = [];
+      for (let i = 0; i < anzahl; i++) spuren.push(neueSpurWaagerecht(true));
+      const staub = [];
+      for (let i = 0; i < Math.min(Math.round(breite / 34), 46); i++) {
+        staub.push({
+          x: Math.random() * breite,
+          y: Math.random() * hoehe,
+          r: zufall(0.7, 1.9),
+          v: zufall(4, 14),
+          a: zufall(0.12, 0.4),
+          phase: Math.random() * Math.PI * 2,
+        });
+      }
+      return { spuren, staub };
+    },
+
+    schritt(s, dt, statisch) {
+      ctx.clearRect(0, 0, breite, hoehe);
+
+      for (const f of s.staub) {
+        if (!statisch) {
+          f.x += f.v * dt;
+          f.phase += dt * 0.9;
+          if (f.x > breite + 6) {
+            f.x = -6;
+            f.y = Math.random() * hoehe;
+          }
+        }
+        const a = f.a * (0.6 + 0.4 * Math.sin(f.phase));
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(138,245,208,${a.toFixed(3)})`;
+        ctx.fill();
+      }
+
+      for (let i = 0; i < s.spuren.length; i++) {
+        const sp = s.spuren[i];
+        if (!statisch) {
+          sp.x += sp.v * dt;
+          if (sp.x - sp.laenge > breite) {
+            s.spuren[i] = neueSpurWaagerecht(false);
+            continue;
+          }
+        }
+        const x0 = sp.x - sp.laenge;
+        const g = ctx.createLinearGradient(x0, sp.y, sp.x, sp.y);
+        g.addColorStop(0, 'rgba(138,245,208,0)');
+        g.addColorStop(0.72, `rgba(103,214,178,${(sp.a * 0.5).toFixed(3)})`);
+        g.addColorStop(1, `rgba(161,246,215,${sp.a.toFixed(3)})`);
+        ctx.strokeStyle = g;
+        ctx.lineWidth = sp.dick;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x0, sp.y);
+        ctx.lineTo(sp.x, sp.y);
+        ctx.stroke();
+      }
+    },
+  },
+
   /* --- Space: drei Sternenebenen mit Parallaxe, dazu Sternschnuppen --- */
   space: {
     erzeuge() {
@@ -289,6 +355,19 @@ function zeichneBluete(b) {
   ctx.restore();
 }
 
+/** Waagerechte Lichtspur — der Vorspann liest sich als Fahrt, nicht als Regen. */
+function neueSpurWaagerecht(verteilt) {
+  const laenge = zufall(90, 340);
+  return {
+    x: verteilt ? Math.random() * breite : zufall(-breite * 0.4, -laenge),
+    y: Math.random() * hoehe,
+    v: zufall(70, 240),
+    laenge,
+    dick: zufall(0.8, 2.2),
+    a: zufall(0.14, 0.5),
+  };
+}
+
 function neueSpur(verteilt) {
   const laenge = zufall(70, 260);
   return {
@@ -360,7 +439,7 @@ function halte() {
 /* ------------------------------------------------------------- Oberfläche */
 
 function setzeThema(id, merken = true) {
-  if (!THEMEN.some((t) => t.id === id)) id = 'space';
+  if (!THEMEN.some((t) => t.id === id)) id = THEMEN[0].id;
   aktuellesThema = id;
   document.querySelector('.schleier')?.setAttribute('data-thema', id);
   if (merken) {
@@ -415,7 +494,7 @@ export function starteHintergrund() {
   } catch {}
 
   passeGroesseAn();
-  setzeThema(gemerkt || 'space', false);
+  setzeThema(gemerkt || THEMEN[0].id, false);
 
   window.addEventListener('resize', () => {
     clearTimeout(groessenTimer);

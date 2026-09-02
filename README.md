@@ -1,4 +1,6 @@
-# Mietwagen-Preistool
+# TRACKER
+
+*Mietwagen. Vergleichen. Losfahren.*
 
 Stellt dieselbe Mietwagensuche auf allen Sixt-Länderseiten gegenüber. Sixt ruft
 für identische Anfragen je nach Landesdomain unterschiedliche Preise auf — das
@@ -12,11 +14,11 @@ dessen URL-Format zwischenzeitlich nicht mehr funktioniert.
 
 ## Benutzen
 
-**Als Programm:** `dist/Mietwagen-Preistool.exe` doppelklicken. Eine einzelne
-Datei, keine Installation, kein Node nötig. Es öffnet sich ein eigenes
+**Als Programm:** `dist/Tracker.exe` doppelklicken. Eine einzelne Datei, keine
+Installation, kein Node nötig. Nach der Startanimation öffnet sich ein eigenes
 Programmfenster — keine Konsole, keine Adresszeile, keine Tabs, eigener Eintrag
 in der Taskleiste. Fenster zu heisst Programm beendet. Alles, was es schreibt,
-landet im Ordner `Preistool-Daten` daneben.
+landet im Ordner `Tracker-Daten` daneben.
 
 **Aus dem Quellbaum:** Doppelklick auf `Preistool starten.cmd`, oder von Hand:
 

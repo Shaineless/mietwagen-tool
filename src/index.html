@@ -1,7 +1,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mietwagen-Preistool</title>
+<title>TRACKER — Mietwagen vergleichen</title>
+<link rel="icon" href="/*LOGO*/">
 <style>/*STYLES*/</style>
+
+<!-- Startanimation. Liegt über allem, spielt einmal beim Öffnen und geht
+     danach von selbst weg; ein Klick überspringt sie. Wer weniger Bewegung
+     eingestellt hat, sieht sie gar nicht erst. -->
+<div class="intro" id="intro" hidden>
+  <video id="introFilm" muted playsinline preload="auto"></video>
+
+  <!-- Rückfallebene: Browser verweigern das selbsttätige Abspielen, wenn
+       vorher niemand geklickt hat. Dann übernimmt dieselbe Bildsprache in
+       reinem HTML — sonst bliebe der Start einfach schwarz. -->
+  <div class="introstill" id="introStill" hidden>
+    <img src="/*LOGO*/" alt="" width="112" height="112">
+    <p class="wortmarke">TRACKER</p>
+    <p class="claim">Mietwagen. Vergleichen. Losfahren.</p>
+  </div>
+
+  <button type="button" class="introweg" id="introWeg">Überspringen</button>
+</div>
 
 <!-- Hintergrund. Liegt hinter allem und wird nach unten ausgeblendet — unter
      Zahlen, die man liest, darf nichts wandern. Die Wolken sind der ruhende
@@ -15,9 +34,11 @@
 
 <!-- ===================================================== Startbildschirm -->
 <section id="start" class="screen">
+  <!-- Kein Logo hier: die Startanimation zeigt es unmittelbar davor. Zweimal
+       hintereinander dasselbe Bild wirkt wie ein Versehen. -->
   <header class="hero">
-    <p class="marke">Sixt · Länderpreis-Vergleich</p>
-    <h1>Mietwagen-Preistool</h1>
+    <h1 class="wortmarke">TRACKER</h1>
+    <p class="claim">Mietwagen. Vergleichen. Losfahren.</p>
     <p class="sub">
       Dieselbe Anfrage auf allen Sixt-Länderseiten, Klasse für Klasse
       gegenübergestellt — inklusive der Schutzpakete, die den Preis am Ende
@@ -170,6 +191,7 @@
 
     <div class="btnrow">
       <button type="button" id="kalStart2" class="primary">Durchrechnen</button>
+      <button type="button" id="kalNachfassen" class="ghost" hidden></button>
       <button type="button" id="kalAbbrechen" class="ghost" hidden>Abbrechen</button>
       <span class="hint" id="kalHinweis"></span>
     </div>

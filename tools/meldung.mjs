@@ -23,7 +23,7 @@ export function protokolliereNach(ordner) {
   } catch {
     return;
   }
-  protokollDatei = join(ordner, 'preistool.log');
+  protokollDatei = join(ordner, 'tracker.log');
 
   for (const art of ['log', 'warn', 'error']) {
     const original = console[art].bind(console);
@@ -60,7 +60,7 @@ export function protokollPfad() {
  * Verdoppeln geschützt; Zeilenumbrüche müssen als Ausdruck zusammengesetzt
  * werden, weil ein Zeilenumbruch im Quelltext die Anweisung beenden würde.
  */
-export function zeigeMeldung(text, titel = 'Mietwagen-Preistool') {
+export function zeigeMeldung(text, titel = 'TRACKER') {
   if (process.platform !== 'win32') {
     console.error(text);
     return;

@@ -1,29 +1,45 @@
 /* ============================================================ Grundlagen
  *
+ * TRACKER: tiefes Nachtblau, mintfarbene Akzente, klare geometrische Schrift —
+ * dieselbe Sprache wie die Startanimation.
+ *
  * Gestaltungslinie: viel Luft, wenige Linien, ruhige Flaechen. Trennung
- * entsteht durch Abstand und feine Graustufen, nicht durch Rahmen. Die
- * Akzentfarbe traegt nur, was wirklich Aufmerksamkeit verdient — der
- * Hauptknopf und der guenstigste Preis. Alles andere bleibt neutral.
+ * entsteht durch Abstand und feine Konturen, nicht durch Rahmen. Das Mint
+ * traegt nur, was wirklich Aufmerksamkeit verdient — den Hauptknopf, den
+ * guenstigsten Preis, das aktive Element. Leuchten bleibt die Ausnahme;
+ * ueberall Glow heisst nirgends Glow.
+ *
+ * Bewusst nur ein Erscheinungsbild statt hell und dunkel: Nachtblau ist die
+ * Marke. Eine helle Fassung waere ein zweites, anderes Produkt.
  */
 
 :root {
-  --bg: #f5f5f7;
-  --flaeche: #ffffff;
-  --flaeche2: #f0f0f3;
-  --ink: #1d1d1f;
-  --ink2: #424248;
-  --muted: #86868b;
-  --leise: #a1a1a6;
-  --hairline: rgba(0, 0, 0, .08);
-  --hairline2: rgba(0, 0, 0, .05);
-  --accent: #ff5f00;
-  --accent-weich: rgba(255, 95, 0, .1);
-  --accent-ink: #ffffff;
-  --warn: #8a5200;
-  --warn-bg: rgba(255, 149, 0, .12);
+  color-scheme: dark;
+
+  --bg: #050E17;
+  --flaeche: #0B1A26;      /* Karten */
+  --flaeche2: #12242F;     /* Eingabefelder, ruhende Flaechen */
+  --ink: #EDF9F5;
+  --ink2: #C6DCD6;
+  --muted: #8FA7AE;
+  --leise: #6B838C;
+  /* Konturen aus dem Mint statt aus Weiss: dadurch wirken die Kanten
+     zugehoerig statt aufgesetzt. */
+  --hairline: rgba(138, 245, 208, .13);
+  --hairline2: rgba(138, 245, 208, .07);
+  --accent: #8AF5D0;
+  --accent-weich: rgba(138, 245, 208, .12);
+  /* Mint ist hell — Schrift darauf muss dunkel sein, sonst ist der
+     Hauptknopf unlesbar. */
+  --accent-ink: #04121B;
+  --verlauf: linear-gradient(135deg, #A1F6D7, #67D6B2);
+  --warn: #FFC46B;
+  --warn-bg: rgba(255, 196, 107, .13);
   --r: 18px;
   --r-klein: 12px;
-  --schatten: 0 1px 3px rgba(0, 0, 0, .04), 0 8px 28px rgba(0, 0, 0, .05);
+  /* Auf dunklem Grund traegt ein Schlagschatten nicht; Tiefe entsteht hier
+     ueber die Flaechenhelligkeit und eine feine obere Lichtkante. */
+  --schatten: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 18px 40px rgba(0, 0, 0, .45);
 
   /* Die eingebauten CSS-Kurven sind zu weich; diese haben Zug.
      ease-in kommt nirgends vor: es startet langsam, und genau den ersten
@@ -35,26 +51,6 @@
   --t-druck: .16s;   /* Druckrueckmeldung */
   --t-klein: .2s;    /* kleine Einblendungen */
   --t-ansicht: .24s; /* Ansichtswechsel */
-
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000000;
-    --flaeche: #1c1c1e;
-    --flaeche2: #2c2c2e;
-    --ink: #f5f5f7;
-    --ink2: #d1d1d6;
-    --muted: #8e8e93;
-    --leise: #6e6e73;
-    --hairline: rgba(255, 255, 255, .1);
-    --hairline2: rgba(255, 255, 255, .06);
-    --accent: #ff7a2f;
-    --accent-weich: rgba(255, 122, 47, .14);
-    --warn: #ffb340;
-    --warn-bg: rgba(255, 159, 10, .14);
-    --schatten: none;
-  }
 }
 
 * { box-sizing: border-box; }
@@ -68,8 +64,11 @@ body {
   padding: 32px 24px 96px;
   background: transparent;
   color: var(--ink);
-  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
-    system-ui, Roboto, sans-serif;
+  /* Bahnschrift zuerst: klar, geometrisch, auf jedem Windows vorhanden und
+     genau die Schrift der Startanimation. Danach die uebliche Systemreihe,
+     damit es auch anderswo ordentlich aussieht. */
+  font: 15px/1.5 Bahnschrift, "DIN Next", "Segoe UI Variable Text", "Segoe UI",
+    -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   /* Laufweite ist groessenabhaengig, kein fester Wert fuers ganze Dokument:
      Fliesstext bei 0, grosse Ueberschriften negativ, kleine Beschriftungen
@@ -78,6 +77,82 @@ body {
 }
 
 .screen, footer { max-width: 1180px; margin-inline: auto; }
+
+/* ============================================================ Startanimation */
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #050E17;
+  display: grid;
+  place-items: center;
+  transition: opacity .4s var(--raus);
+}
+.intro.geht { opacity: 0; pointer-events: none; }
+.intro video {
+  width: 100%;
+  height: 100%;
+  /* Der Film ist 16:9; auf schmalen Fenstern lieber beschneiden als
+     Balken zeigen — das Logo sitzt in der Mitte und bleibt dabei drin. */
+  object-fit: cover;
+}
+/* Standbild statt Film: dieselbe Anordnung wie das Ende der Animation —
+   Logo, Wortmarke, Zeile. Es kommt sanft herein, damit es nicht wie ein
+   Fehler wirkt, sondern wie ein Vorspann. */
+.introstill {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  animation: introAuf .7s var(--raus) both;
+}
+.introstill img {
+  border-radius: 26px;
+  box-shadow: 0 16px 60px rgba(138, 245, 208, .28);
+  margin-bottom: 22px;
+}
+.introstill .wortmarke { font-size: 38px; margin: 0 0 6px; }
+.introstill .claim { margin: 0; }
+
+@keyframes introAuf {
+  from { opacity: 0; transform: translateY(14px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+.introweg {
+  position: absolute;
+  right: 22px;
+  bottom: 20px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 980px;
+  background: rgba(237, 249, 245, .10);
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+}
+.introweg:hover { color: var(--ink); background: rgba(237, 249, 245, .16); }
+
+/* ============================================================ Marke */
+
+.wortmarke {
+  font-size: 42px;
+  font-weight: 600;
+  /* Weiter Buchstabenabstand wie in der Startanimation. */
+  letter-spacing: .30em;
+  /* Der Abstand haengt rechts am letzten Buchstaben und schiebt die Marke
+     sonst sichtbar aus der Mitte. */
+  text-indent: .30em;
+  margin: 0 0 10px;
+  text-align: center;
+}
+.claim {
+  text-align: center;
+  color: var(--accent);
+  font-size: 14px;
+  letter-spacing: .06em;
+  margin: 0 0 16px;
+}
 
 /* ============================================================ Schleier
  *
@@ -132,6 +207,11 @@ body {
   50%      { transform: translate3d(-12vmax, 14vmax, 0) scale(1.1); }
 }
 
+/* --- Tracker: das Mint der Marke, sehr zurückhaltend über dem Nachtblau --- */
+[data-thema=tracker] .w1 { background: radial-gradient(circle, rgba(138,245,208,.16) 0%, rgba(103,214,178,.06) 42%, transparent 68%); }
+[data-thema=tracker] .w2 { background: radial-gradient(circle, rgba(80,190,220,.13) 0%, rgba(60,150,190,.05) 44%, transparent 70%); }
+[data-thema=tracker] .w3 { background: radial-gradient(circle, rgba(161,246,215,.10) 0%, rgba(138,245,208,.04) 46%, transparent 72%); }
+
 /* --- Space: kalter Nebel, das Orange nur als Gegengewicht --- */
 [data-thema=space] .w1 { background: radial-gradient(circle, rgba(255,95,0,.16) 0%, rgba(255,95,0,.07) 42%, transparent 68%); }
 [data-thema=space] .w2 { background: radial-gradient(circle, rgba(88,86,214,.14) 0%, rgba(88,86,214,.06) 44%, transparent 70%); }
@@ -180,6 +260,7 @@ body {
   box-shadow: 0 0 0 1px var(--hairline) inset;
   transition: transform var(--t-druck) var(--raus), box-shadow var(--t-druck) var(--raus);
 }
+.hgs[data-thema=tracker] { background: linear-gradient(140deg, #050E17, #67D6B2 60%, #A1F6D7); }
 .hgs[data-thema=space]  { background: linear-gradient(140deg, #10122b, #3a2a6d 55%, #ff5f00); }
 .hgs[data-thema=sakura] { background: linear-gradient(140deg, #ffe3ee, #ff8ab2 55%, #b76cff); }
 .hgs[data-thema=sixt]   { background: linear-gradient(140deg, #ffb266, #ff5f00 55%, #c8280f); }

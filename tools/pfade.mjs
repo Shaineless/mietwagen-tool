@@ -38,7 +38,7 @@ export const quellWurzel = ermittleQuellWurzel();
 
 /** Ordner für alles, was der Betrieb schreibt. */
 export const datenOrdner = istExe
-  ? join(dirname(process.execPath), 'Preistool-Daten')
+  ? join(dirname(process.execPath), 'Tracker-Daten')
   : join(quellWurzel, 'data');
 
 /**

@@ -4,8 +4,9 @@
     {
       "name": "preistool",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["tools/serve.mjs", "4173"],
-      "port": 4173
+      "runtimeArgs": ["tools/serve.mjs"],
+      "port": 4173,
+      "autoPort": true
     }
   ]
 }

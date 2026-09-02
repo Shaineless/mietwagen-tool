@@ -803,7 +803,8 @@ function renderKurve() {
   );
 
   renderKurveBild();
-  renderKalender();
+  // Der Kalender ist ein eigener Bereich geworden — hier hat er nichts mehr
+  // zu suchen.
   renderWecker();
 }
 
@@ -921,13 +922,30 @@ function renderKalFormular() {
     ? `Gewählt: ${station.name} (Nr. ${station.code})`
     : 'Noch keine Station gewählt.';
 
-  const minuten = Math.ceil((k.spanne * 7) / 60);
-  $('#kalHinweis').textContent = station
-    ? `${k.spanne} Abrufe, rund ${minuten} ${minuten === 1 ? 'Minute' : 'Minuten'}. Schon berechnete Tage stehen sofort da.`
-    : 'Bitte zuerst eine Station wählen.';
-  $('#kalStart2').disabled = !station || kalLaeuft;
+  const { offen, bestaetigtLeer } = station ? kalStand() : { offen: [], bestaetigtLeer: 0 };
+  const minuten = Math.ceil((Math.max(offen.length, 1) * 7) / 60);
+
+  $('#kalHinweis').textContent = !station
+    ? 'Bitte zuerst eine Station wählen.'
+    : offen.length
+      ? `${offen.length} von ${k.spanne} Tagen fehlen noch, rund ${minuten} ${minuten === 1 ? 'Minute' : 'Minuten'}.`
+      : bestaetigtLeer
+        ? `Alle Tage geprüft. An ${bestaetigtLeer} davon gibt es ${k.klasse} nicht.`
+        : 'Alle Tage liegen vor.';
+
+  $('#kalStart2').disabled = !station || kalLaeuft || !offen.length;
   $('#kalStart2').textContent = kalLaeuft ? 'Rechnet …' : 'Durchrechnen';
   $('#kalAbbrechen').hidden = !kalLaeuft;
+
+  // Zweiter Durchgang: erst nach dem ersten Lauf steht die Klassenliste zur
+  // Verfügung, und eine dort gewählte Klasse hat oft Lücken. Der Knopf holt
+  // genau die Tage nach, die noch nie frisch abgerufen wurden — und macht
+  // damit den Unterschied sichtbar zwischen "dort wirklich nicht buchbar" und
+  // "beim ersten Mal nicht mitgekommen". Sind alle geprüft, verschwindet er,
+  // statt dieselben Tage endlos anzubieten.
+  const nach = $('#kalNachfassen');
+  nach.hidden = !station || kalLaeuft || !offen.length || !k.klasse;
+  nach.textContent = `${offen.length} fehlende Tage nachholen`;
 }
 
 function renderKalStationSuche() {
@@ -953,6 +971,7 @@ function renderKalStationSuche() {
             feld.hidden = true;
             persist();
             await ladeKalKlassen();
+            await ladeKalAufzeichnung();
             renderKalFormular();
             renderKalBild();
           },
@@ -966,23 +985,112 @@ function renderKalStationSuche() {
   );
 }
 
-/** Der Preis eines Tages — je nach Wahl die Klasse oder das billigste Angebot. */
-function kalPreis(key) {
-  const r = prices.get(key);
-  if (!r) return { geladen: false, preis: null };
-  const angebote = r.offers || [];
-  if (!angebote.length) return { geladen: true, preis: null, grund: r.error || 'kein Angebot' };
+/**
+ * Aufgezeichnete Messpunkte fuer die Monatsuebersicht.
+ *
+ * Die Ergebnisse im Dienst verfallen nach einer Stunde, und ein Neuladen der
+ * Seite loescht ohnehin alles im Arbeitsspeicher. Ein Kalender, fuer den man
+ * vier Minuten gewartet hat, war danach leer. Die Messpunkte liegen aber
+ * dauerhaft in preisverlauf.jsonl — von dort wird er wieder aufgebaut.
+ *
+ * Schluessel: "Abholdatum|ACRISS" -> Preis. Bei mehreren Messungen desselben
+ * Tages gewinnt die juengste.
+ */
+let kalAufzeichnung = new Map();
 
-  if (state.kalender.klasse) {
-    const t = angebote.find((o) => o.acriss === state.kalender.klasse);
-    return { geladen: true, preis: t?.total ?? null, modell: t?.model, grund: t ? null : 'Klasse nicht im Angebot' };
+async function ladeKalAufzeichnung() {
+  kalAufzeichnung = new Map();
+  const station = stationByCode(state.kalender.station);
+  if (!station) return;
+
+  try {
+    const p = new URLSearchParams({ station: station.code, host: state.kalender.host });
+    const d = await (await fetch(`/api/verlauf?${p}`)).json();
+    const zeiten = new Map();
+    for (const e of d.punkte || []) {
+      // Nur Messungen mit derselben Mietdauer — ein Preis fuer sieben Tage
+      // gehoert nicht in einen Kalender fuer drei.
+      if (daysBetween(e.v, e.b) !== state.kalender.dauer) continue;
+      const k = `${e.v}|${e.k}`;
+      if (!zeiten.has(k) || e.t > zeiten.get(k)) {
+        zeiten.set(k, e.t);
+        kalAufzeichnung.set(k, { preis: e.p, waehrung: e.w });
+      }
+    }
+  } catch {
+    /* ohne Aufzeichnung zeigt der Kalender eben nur die frischen Abrufe */
   }
-  const billigstes = angebote
-    .filter((o) => o.total != null)
-    .reduce((a, b) => (b.total < a.total ? b : a), { total: Infinity });
-  return billigstes.total === Infinity
-    ? { geladen: true, preis: null }
-    : { geladen: true, preis: billigstes.total, modell: billigstes.model, acriss: billigstes.acriss };
+}
+
+/** Der Preis eines Tages — je nach Wahl die Klasse oder das billigste Angebot. */
+function kalPreis(job) {
+  const klasse = state.kalender.klasse;
+  const r = prices.get(job.key);
+
+  // Frischer Abruf hat Vorrang: er ist der aktuellere Stand.
+  if (r) {
+    const angebote = r.offers || [];
+    if (!angebote.length) return { geladen: true, preis: null, grund: r.error || 'kein Angebot' };
+
+    if (klasse) {
+      const t = angebote.find((o) => o.acriss === klasse);
+      if (t?.total != null) return { geladen: true, preis: t.total, modell: t.model };
+      return { geladen: true, preis: null, grund: 'Klasse an dem Tag nicht im Angebot' };
+    }
+    const billigstes = angebote
+      .filter((o) => o.total != null)
+      .reduce((a, b) => (b.total < a.total ? b : a), { total: Infinity });
+    return billigstes.total === Infinity
+      ? { geladen: true, preis: null }
+      : { geladen: true, preis: billigstes.total, modell: billigstes.model, acriss: billigstes.acriss };
+  }
+
+  // Sonst aus der Aufzeichnung. Ohne Klassenwahl ist das der billigste
+  // aufgezeichnete Wert dieses Tages.
+  if (klasse) {
+    const a = kalAufzeichnung.get(`${job.pickupDate}|${klasse}`);
+    if (a) return { geladen: true, preis: a.preis, ausAufzeichnung: true };
+    // Wurde der Tag ueberhaupt schon einmal gemessen?
+    const gemessen = [...kalAufzeichnung.keys()].some((k) => k.startsWith(job.pickupDate + '|'));
+    return {
+      geladen: gemessen,
+      preis: null,
+      grund: gemessen ? 'Klasse an dem Tag nicht gemessen' : null,
+    };
+  }
+
+  let min = Infinity;
+  for (const [k, v] of kalAufzeichnung) {
+    if (k.startsWith(job.pickupDate + '|') && v.preis < min) min = v.preis;
+  }
+  return min === Infinity
+    ? { geladen: false, preis: null }
+    : { geladen: true, preis: min, ausAufzeichnung: true };
+}
+
+/**
+ * Wo bei der aktuellen Wahl noch etwas fehlt — und wo nicht mehr.
+ *
+ * Der Unterschied ist der Kern des zweiten Durchgangs: ein Tag ohne Preis
+ * kann heissen "noch nicht nachgesehen" oder "nachgesehen, gibt es dort
+ * nicht". Nur das erste lohnt einen weiteren Abruf. Ohne diese Trennung
+ * bietet der Knopf immer wieder dieselben Tage an, die schon zweimal
+ * geprueft wurden.
+ */
+function kalStand() {
+  const d = kalJobs();
+  if (!d) return { offen: [], bestaetigtLeer: 0 };
+
+  const offen = [];
+  let bestaetigtLeer = 0;
+  for (const j of d.jobs) {
+    if (kalPreis(j).preis != null) continue;
+    // Ein frischer Abruf liegt vor und enthaelt die Klasse trotzdem nicht:
+    // damit ist die Frage beantwortet.
+    if (prices.has(j.key)) bestaetigtLeer++;
+    else offen.push(j);
+  }
+  return { offen, bestaetigtLeer };
 }
 
 function renderKalBild() {
@@ -992,7 +1100,7 @@ function renderKalBild() {
     return;
   }
 
-  const tage = d.jobs.map((j) => ({ datum: j.pickupDate, ...kalPreis(j.key) }));
+  const tage = d.jobs.map((j) => ({ datum: j.pickupDate, ...kalPreis(j) }));
   const werte = tage.map((t) => t.preis).filter((p) => p != null);
 
   if (!werte.length) {
@@ -1059,14 +1167,28 @@ function renderKalBild() {
     el(
       'p',
       { class: 'tabnote' },
-      `${werte.length} von ${tage.length} Tagen berechnet · günstigster ${money(min, d.markt.cur)}, ` +
+      `${werte.length} von ${tage.length} Tagen mit Preis · günstigster ${money(min, d.markt.cur)}, ` +
         `teuerster ${money(max, d.markt.cur)} — ` +
-        `${Math.round(((max - min) / min) * 100)} % Unterschied allein durch den Abholtag.`
+        `${Math.round(((max - min) / min) * 100)} % Unterschied allein durch den Abholtag.` +
+        (state.kalender.klasse
+          ? ` Graue Felder: ${state.kalender.klasse} war an dem Tag nicht im Angebot. ` +
+            'Tage mit „…" sind noch nicht abgerufen — dafür ist der Knopf oben da.'
+          : '')
     )
   );
 }
 
-async function starteKalender() {
+/**
+ * Durchrechnen.
+ *
+ * @param {boolean} nurFehlende  Nur die Tage, zu denen bei der gewaehlten
+ *   Klasse kein Preis vorliegt. Das ist der zweite Durchgang: nach dem ersten
+ *   Lauf steht die Klassenliste erst zur Verfuegung, und wer dann eine Klasse
+ *   waehlt, sieht Luecken — teils weil die Klasse dort wirklich nicht im
+ *   Angebot war, teils weil ein Abruf dazwischengegangen ist. Welches von
+ *   beidem, weiss man erst nach dem zweiten Versuch.
+ */
+async function starteKalender({ nurFehlende = false } = {}) {
   const d = kalJobs();
   if (!d || kalLaeuft) return;
 
@@ -1075,11 +1197,17 @@ async function starteKalender() {
   renderKalFormular();
 
   try {
-    const offen = d.jobs.filter((j) => !prices.has(j.key));
+    const offen = kalStand().offen;
+
     if (!offen.length) {
-      flash('Alle Tage liegen schon vor.');
+      flash(nurFehlende ? 'Es fehlt kein Tag mehr.' : 'Alle Tage liegen schon vor.');
       return;
     }
+
+    // Beim Nachfassen den alten Stand wegräumen, sonst bleibt die alte
+    // Fehlanzeige stehen, während der neue Abruf längst läuft.
+    if (nurFehlende) for (const j of offen) prices.delete(j.key);
+
     await sendeJobs(offen, $('#kalStart2'));
 
     // Mitzeichnen, statt am Ende alles auf einmal zu zeigen: so sieht man,
@@ -1098,6 +1226,7 @@ async function starteKalender() {
     // Erst jetzt weiss der Katalog, welche Klassen es an dieser Station gibt —
     // vor dem ersten Durchlauf stand in der Auswahl nur "billigste".
     await ladeKalKlassen();
+    await ladeKalAufzeichnung();
     renderKalFormular();
     renderKalBild();
   }
@@ -1156,6 +1285,9 @@ function kalenderCsv() {
 async function oeffneKalender() {
   showScreen('kalender');
   await ladeKalKlassen();
+  // Was frueher schon gemessen wurde, steht sofort da — auch nach einem
+  // Neustart des Programms.
+  await ladeKalAufzeichnung();
   renderKalFormular();
   renderKalBild();
 }
@@ -3329,7 +3461,64 @@ function haltAmLeben() {
   });
 }
 
+/**
+ * Startanimation.
+ *
+ * Spielt einmal beim Öffnen und verschwindet danach von selbst. Drei Dinge
+ * müssen sitzen, sonst ist ein Intro nur im Weg:
+ *
+ *   Überspringbar   ein Klick, eine Taste — wer sie kennt, will sie nicht
+ *                   viermal am Tag sehen.
+ *   Nie blockierend Schlägt das Abspielen fehl (manche Browser verweigern
+ *                   Autoplay), geht sie sofort weg statt schwarz stehenzubleiben.
+ *   Verzichtbar     Bei "Bewegung reduzieren" läuft sie gar nicht erst.
+ */
+function starteIntro() {
+  const box = $('#intro');
+  const film = $('#introFilm');
+  if (!box || !film) return;
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const weg = () => {
+    if (box.hidden || box.classList.contains('geht')) return;
+    box.classList.add('geht');
+    // Nach der Überblendung ganz raus, damit nichts über der Seite liegt.
+    setTimeout(() => {
+      box.hidden = true;
+      film.pause();
+      film.removeAttribute('src');
+    }, 420);
+    removeEventListener('keydown', weg);
+  };
+
+  /**
+   * Ohne vorherige Nutzergeste verweigern Browser das selbsttätige Abspielen
+   * — beim Programmstart ist das der Normalfall, nicht die Ausnahme. Dann
+   * übernimmt das Standbild in derselben Bildsprache, statt dass der Start
+   * schwarz bleibt und sofort wieder verschwindet.
+   */
+  const ohneFilm = () => {
+    film.hidden = true;
+    $('#introStill').hidden = false;
+    setTimeout(weg, 2200);
+  };
+
+  film.src = '/*INTRO*/';
+  box.hidden = false;
+  film.addEventListener('ended', weg);
+  film.addEventListener('error', ohneFilm);
+  box.addEventListener('click', weg);
+  addEventListener('keydown', weg);
+  // Notbremse: sollte das Ende-Ereignis ausbleiben, ist nach sieben Sekunden
+  // ohnehin Schluss — die Animation dauert viereinhalb.
+  setTimeout(weg, 7000);
+
+  film.play().catch(ohneFilm);
+}
+
 function init() {
+  starteIntro();
   starteHintergrund();
 
   document.querySelectorAll('.mode').forEach((b) =>
@@ -3407,11 +3596,14 @@ function init() {
     update();
   });
 
+  // Der Überspringen-Knopf liegt im Intro — sein Klick erreicht dessen
+  // Behandlung von selbst, ein eigener Verweis wäre doppelt.
   $('#testStart').addEventListener('click', starteSelbsttest);
 
   /* --- Monatsübersicht --- */
   $('#kalStation').addEventListener('input', renderKalStationSuche);
-  $('#kalStart2').addEventListener('click', starteKalender);
+  $('#kalStart2').addEventListener('click', () => starteKalender());
+  $('#kalNachfassen').addEventListener('click', () => starteKalender({ nurFehlende: true }));
   $('#kalAbbrechen').addEventListener('click', abbrechen);
   $('#kalCsv').addEventListener('click', kalenderCsv);
   for (const [sel, feld, wandeln] of [
@@ -3426,12 +3618,12 @@ function init() {
       state.kalender[feld] = wandeln(e.target.value);
       persist();
       // Ein Wechsel der Länderseite ändert, welche Klassen es dort gibt.
-      if (feld === 'host') {
-        await ladeKalKlassen();
-        renderKalFormular();
-      } else {
-        renderKalFormular();
-      }
+      if (feld === 'host') await ladeKalKlassen();
+      // Länderseite und Mietdauer entscheiden mit, welche Messpunkte
+      // überhaupt zum Kalender passen — sonst zeigt er Preise für drei Tage,
+      // während sieben eingestellt sind.
+      if (feld === 'host' || feld === 'dauer') await ladeKalAufzeichnung();
+      renderKalFormular();
       renderKalBild();
     });
   }
