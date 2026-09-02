@@ -72,7 +72,17 @@ if ($offen) {
 
 $zweig = git rev-parse --abbrev-ref HEAD
 Schritt "Commits hochschieben ($zweig) ..."
-git push origin $zweig 2>&1 | Out-Null
+# Ohne Umleitung und ohne Abbruch bei Ausgabe: Git schreibt seinen Fortschritt
+# auf den Fehlerkanal, und PowerShell machte daraus sonst einen Abbruch,
+# obwohl der Push gelungen ist. Massgeblich ist allein der Rueckgabewert.
+$ErrorActionPreference = 'Continue'
+git push origin $zweig | Out-Null
+$erfolg = ($LASTEXITCODE -eq 0)
+$ErrorActionPreference = 'Stop'
+if (-not $erfolg) {
+  Schlecht "Der Push ist fehlgeschlagen. Bitte einmal von Hand 'git push' ausfuehren."
+  exit 1
+}
 Gut "Stand ist oben."
 
 # --- 3. Zugangsdaten holen --------------------------------------------------
@@ -85,7 +95,9 @@ $tmp = [System.IO.Path]::GetTempFileName()
 $token = $null
 try {
   [System.IO.File]::WriteAllText($tmp, "protocol=https`nhost=github.com`n`n", (New-Object System.Text.ASCIIEncoding))
-  $antwort = cmd /c "git credential fill < `"$tmp`"" 2>$null
+  $ErrorActionPreference = 'Continue'
+  $antwort = cmd /c "git credential fill < `"$tmp`""
+  $ErrorActionPreference = 'Stop'
   $treffer = $antwort | Select-String '^password=(.+)$'
   if ($treffer) { $token = $treffer.Matches[0].Groups[1].Value }
 } finally {
