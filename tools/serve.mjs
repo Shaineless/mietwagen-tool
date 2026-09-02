@@ -341,15 +341,33 @@ const STILLE_MS = 90_000;
 
 let schliessTimer = null;
 
+/**
+ * Hat sich seit dem Start ueberhaupt schon einmal ein Fenster gemeldet?
+ *
+ * Ohne diese Frage schlaegt der Waechter beim Start zu: die Liste ist dann
+ * leer, weil die Seite noch laedt — und vier Sekunden spaeter beendet sich
+ * das Programm, waehrend der Vorspann noch laeuft. Genau das ist passiert.
+ * Solange noch nie ein Fenster da war, wird nur die grosszuegige Startfrist
+ * abgewartet; erst danach gilt "niemand da" als Grund zu gehen.
+ */
+let jeEinFenster = false;
+const gestartetUm = Date.now();
+const STARTFRIST_MS = 120_000;
+
 function pruefeObNochWer() {
   if (!istExe) return;
   if (offeneFenster.size > 0) {
+    jeEinFenster = true;
     if (schliessTimer) {
       clearTimeout(schliessTimer);
       schliessTimer = null;
     }
     return;
   }
+  // Beim Start geduldig sein: eine grosse Seite mit eingebettetem Vorspann
+  // braucht auf einem langsamen Rechner spuerbar laenger, als vier Sekunden
+  // Nachfrist erlauben.
+  if (!jeEinFenster && Date.now() - gestartetUm < STARTFRIST_MS) return;
   if (schliessTimer) return;
   // Nicht sofort: ein Neuladen meldet sich ab und gleich darauf neu an.
   schliessTimer = setTimeout(() => {

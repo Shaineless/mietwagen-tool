@@ -3518,6 +3518,12 @@ function starteIntro() {
 }
 
 function init() {
+  // Als Allererstes: dem Dienst sagen, dass es dieses Fenster gibt. Vorher
+  // geschah das erst, nachdem die Dienstpruefung zurueck war — bei einer
+  // grossen Seite mit eingebettetem Vorspann dauert das lange genug, dass
+  // sich das Programm zwischendurch fuer verwaist hielt und beendete.
+  haltAmLeben();
+
   starteIntro();
   starteHintergrund();
 
@@ -3752,7 +3758,6 @@ function init() {
     $('#getSchutz').hidden = !(ok && service.chrome);
 
     if (ok) {
-      haltAmLeben();
       startPolling();
       ladeKatalog().then(() => {
         if (state.mode && state.mode !== 'status') update();

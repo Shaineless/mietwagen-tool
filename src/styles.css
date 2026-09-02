@@ -97,19 +97,14 @@ body {
      Balken zeigen — das Logo sitzt in der Mitte und bleibt dabei drin. */
   object-fit: cover;
 }
-/* Standbild statt Film: dieselbe Anordnung wie das Ende der Animation —
-   Logo, Wortmarke, Zeile. Es kommt sanft herein, damit es nicht wie ein
-   Fehler wirkt, sondern wie ein Vorspann. */
+/* Standbild statt Film — bewusst ohne Logo: der Film zeigt es bereits, und
+   wenn beides erscheint, sieht man dasselbe Bild zweimal hintereinander.
+   Wortmarke und Zeile genügen, um den Start als Vorspann zu lesen. */
 .introstill {
   display: grid;
   justify-items: center;
   gap: 4px;
   animation: introAuf .7s var(--raus) both;
-}
-.introstill img {
-  border-radius: 26px;
-  box-shadow: 0 16px 60px rgba(138, 245, 208, .28);
-  margin-bottom: 22px;
 }
 .introstill .wortmarke { font-size: 38px; margin: 0 0 6px; }
 .introstill .claim { margin: 0; }
