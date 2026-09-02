@@ -394,6 +394,9 @@ async function tick() {
       fehlerRat: gedeutet?.rat || null,
       versuche: job.versuch || 1,
       warnung: res.warnung || null,
+      // "Nichts im Angebot" ist kein Fehler, sondern eine Antwort. Ohne diese
+      // Notiz saehe der Tag in der Oberflaeche aus wie ein misslungener Abruf.
+      note: res.note || null,
     });
     if (res.warnung) console.log(`  ! ${job.host}  ${res.warnung}`);
 
@@ -405,7 +408,7 @@ async function tick() {
 
     const n = res.offers?.length ?? 0;
     console.log(
-      `  ← ${job.host}  ${res.error ? 'Fehler: ' + res.error : n + ' Angebote'}` +
+      `  ← ${job.host}  ${res.error ? 'Fehler: ' + res.error : n ? n + ' Angebote' : res.note || '0 Angebote'}` +
         (res.ms ? `  (${(res.ms / 1000).toFixed(1)}s)` : '')
     );
   } catch (e) {

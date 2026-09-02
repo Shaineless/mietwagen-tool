@@ -81,6 +81,17 @@ if ($offen) {
 }
 
 $zweig = git rev-parse --abbrev-ref HEAD
+
+# Nur von main veroeffentlichen. Beim Ausprobieren liegt man auf einem
+# Nebenzweig, und ein Doppelklick aus Versehen wuerde sonst einen halbfertigen
+# Stand als Release online stellen. Das laesst sich schlecht zuruecknehmen.
+if ($zweig -ne 'main') {
+  Schlecht "Veroeffentlicht wird nur von main. Du bist gerade auf '$zweig'."
+  Write-Host "  Das ist Absicht: auf einem Nebenzweig wird ausprobiert, nicht ausgeliefert." -ForegroundColor Yellow
+  Write-Host "  Wenn der Stand wirklich raus soll, erst nach main holen." -ForegroundColor Yellow
+  exit 1
+}
+
 Schritt "Commits hochschieben ($zweig) ..."
 # Ohne Umleitung und ohne Abbruch bei Ausgabe: Git schreibt seinen Fortschritt
 # auf den Fehlerkanal, und PowerShell machte daraus sonst einen Abbruch,

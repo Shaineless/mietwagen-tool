@@ -16,6 +16,8 @@ import { withPage, dismissConsent, dismissPopups } from '../browser.mjs';
 import { mwtParseTile } from './offer-parse.mjs';
 
 const TILE = '[data-testid="rent-offer-list-tile"]';
+/** Sixts eigene Meldung, dass es fuer diese Suche nichts gibt. */
+const LEER = '[data-testid="rent-offer-list-error"]';
 const CTA =
   '[data-testid="rent-search-form-cta"] button, [data-testid="rent-minimized-form-cta"] button';
 
@@ -120,15 +122,31 @@ export async function quoteSixt(q) {
       return { ok: false, station, error: 'Suche ließ sich nicht auslösen', url, ms: Date.now() - started };
     }
 
-    const kamen = await page
-      .waitForSelector(TILE, { timeout: 60000 })
-      .then(() => true)
-      .catch(() => false);
+    // Auf beides zugleich warten: die Angebotskacheln *oder* Sixts eigene
+    // Meldung, dass es an dem Tag nichts gibt.
+    //
+    // Vorher lief hier nur der Timeout auf die Kacheln, 60 Sekunden lang.
+    // Eine ausgebuchte Station kostete damit 65 Sekunden statt 6, kam als
+    // Fehler zurueck und wurde anschliessend dreimal wiederholt: ueber vier
+    // Minuten fuer einen Tag, an dem es schlicht nichts zu holen gab.
+    //
+    // `rent-offer-list-error` ist Sixts eigenes Merkmal fuer diesen Fall und
+    // damit unabhaengig von der Sprache der Laenderseite. Gemessen an
+    // Frankfurt Zentrum/Zeil, 04.09.2026: dort steht "Wir konnten keine
+    // passenden Fahrzeuge finden" — kein Wort, nach dem die alte Textsuche
+    // gefahndet hat.
+    const ausgang = await Promise.race([
+      page.waitForSelector(TILE, { timeout: 60000 }).then(() => 'liste').catch(() => 'nichts'),
+      page.waitForSelector(LEER, { timeout: 60000 }).then(() => 'leer').catch(() => 'nichts'),
+    ]);
 
-    if (!kamen) {
+    if (ausgang !== 'liste') {
       const text = await page.locator('body').innerText().catch(() => '');
       const blockiert = /access denied|request has been blocked/i.test(text);
-      const ausgebucht = /keine.*verfügbar|nicht verfügbar|no.*available|sold out/i.test(text);
+      // Merkmal im Seitengeruest, sonst noch die Formulierungen als Rueckfall.
+      const ausgebucht =
+        ausgang === 'leer' ||
+        /keine.*(verfügbar|gefunden|finden)|nicht verfügbar|no.*available|sold out|tut uns leid/i.test(text);
       return {
         ok: ausgebucht,
         station,
@@ -138,7 +156,7 @@ export async function quoteSixt(q) {
           : ausgebucht
             ? null
             : 'Trefferliste kam nicht',
-        note: ausgebucht ? 'keine Fahrzeuge verfügbar' : null,
+        note: ausgebucht ? 'An diesem Tag bietet die Station nichts an' : null,
         url: page.url(),
         ms: Date.now() - started,
       };

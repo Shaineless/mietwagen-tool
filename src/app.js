@@ -1645,17 +1645,23 @@ function renderKalZeiten() {
 function kalTagBester(jobsDesTages) {
   let bester = null;
   let offen = 0;
+  /** Warum es keinen Preis gibt, falls es keinen gibt. */
+  let grund = null;
   for (const j of jobsDesTages) {
     const p = kalPreis(j);
     if (p.preis == null) {
       if (!p.geladen) offen++;
+      // Den Grund mitnehmen statt wegzuwerfen: sonst steht am Tag "Noch nicht
+      // abgerufen", obwohl die Station geantwortet hat, dass sie an dem Tag
+      // nichts anbietet. Das ist ein Unterschied, den man sehen muss.
+      else if (!grund && p.grund) grund = p.grund;
       continue;
     }
     // `uhr`, nicht `zeit`: `zeit` ist im Preisergebnis schon der Zeitpunkt der
     // Messung. Zwei Bedeutungen unter einem Namen sind ein Fehler auf Vorrat.
     if (!bester || p.preis < bester.preis) bester = { ...p, uhr: j.pickupTime, rueckUhr: j.returnTime, job: j };
   }
-  return bester || { geladen: offen === 0, preis: null, uhr: null };
+  return bester || { geladen: offen === 0, preis: null, uhr: null, grund };
 }
 
 /** Welche Klassen sind an dieser Station schon einmal gesehen worden? */
@@ -1802,7 +1808,12 @@ function renderKalFormular() {
           : `${offen.length} von ${k.spanne} Tagen fehlen noch, rund `) +
         `${minuten} ${minuten === 1 ? 'Minute' : 'Minuten'}.`
       : bestaetigtLeer
-        ? `Alle Tage geprüft. An ${bestaetigtLeer} davon gibt es ${k.klasse} nicht.`
+        // Ohne Klassenwahl stand hier "gibt es  nicht" mit einer Lücke, wo der
+        // Klassenname fehlte. Ohne gewählte Klasse ist die Aussage ohnehin eine
+        // andere: dann bietet die Station an dem Tag überhaupt nichts an.
+        ? k.klasse
+          ? `Alle Tage geprüft. An ${bestaetigtLeer} davon gibt es ${k.klasse} nicht.`
+          : `Alle Tage geprüft. An ${bestaetigtLeer} davon bietet die Station nichts an.`
         : ausAufzeichnung
           ? `Alle Tage liegen vor, ${ausAufzeichnung} davon aus dem gespeicherten ` +
             `Preisverlauf${altText ? `, ältester Wert ${altText}` : ''}.`
@@ -1926,7 +1937,11 @@ function kalPreis(job) {
   // Frischer Abruf hat Vorrang: er ist der aktuellere Stand.
   if (r) {
     const angebote = r.offers || [];
-    if (!angebote.length) return { geladen: true, preis: null, grund: r.error || 'kein Angebot' };
+    // Reihenfolge mit Absicht: der Fehler zuerst, dann Sixts eigene Auskunft,
+    // erst zuletzt die nichtssagende Ersatzformel.
+    if (!angebote.length) {
+      return { geladen: true, preis: null, grund: r.error || r.note || 'kein Angebot' };
+    }
 
     if (klasse) {
       const t = angebote.find((o) => o.acriss === klasse);
@@ -5494,7 +5509,11 @@ async function abbrechen() {
 function jobsOhneErgebnis(jobs = aktuelleJobs()) {
   return jobs.filter((j) => {
     const r = prices.get(j.key);
-    return r && (r.error != null || !r.offers?.length);
+    if (!r) return false;
+    // Eine Station, die an dem Tag nichts anbietet, hat sauber geantwortet.
+    // Sie noch dreimal zu fragen kostet Minuten und ändert nichts.
+    if (r.note && !r.error) return false;
+    return r.error != null || !r.offers?.length;
   });
 }
 
