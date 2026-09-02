@@ -95,6 +95,20 @@ function enqueue(jobs) {
   for (let i = laufend; i < PARALLEL; i++) tick();
 }
 
+/**
+ * Mindestabstand zwischen zwei Startvorgaengen.
+ *
+ * browser.mjs bremst je Host — bei einem Rundumschlag ueber dreissig
+ * verschiedene Laenderseiten greift das nie, weil jeder Host nur einmal
+ * drankommt. Der Abruf lief dadurch dauerhaft mit zwei parallelen Zugriffen
+ * auf Sixt, und im Test stiegen dabei reihenweise Seiten mit "Station wurde
+ * nicht uebernommen" aus — einzeln aufgerufen liefen dieselben Seiten
+ * einwandfrei. Eine dreiviertel Sekunde Abstand kostet bei dreissig Seiten
+ * gut zehn Sekunden und erspart das Nachfassen.
+ */
+const START_ABSTAND_MS = 750;
+let letzterStart = 0;
+
 async function tick() {
   if (laufend >= PARALLEL) return;
   const job = queue.shift();
@@ -110,6 +124,10 @@ async function tick() {
 
   laufend++;
   try {
+    const wartet = START_ABSTAND_MS - (Date.now() - letzterStart);
+    if (wartet > 0) await new Promise((r) => setTimeout(r, wartet));
+    letzterStart = Date.now();
+
     // Zwei Arten von Auftrag: Preisliste einer Station, oder Schutzpakete
     // fuer eine bestimmte Fahrzeugklasse.
     const schutz = Boolean(job.acriss);
@@ -149,7 +167,9 @@ async function tick() {
       station: res.station || null,
       offers: res.offers || [],
       error: res.error || null,
+      warnung: res.warnung || null,
     });
+    if (res.warnung) console.log(`  ! ${job.host}  ${res.warnung}`);
 
     // Gesehene Klassen dauerhaft merken, damit spaeter "gerade nicht buchbar"
     // von "gibt es dort nicht" unterscheidbar bleibt.
@@ -196,6 +216,79 @@ async function readBody(req, limit = 1_000_000) {
     chunks.push(chunk);
   }
   return Buffer.concat(chunks).toString('utf8');
+}
+
+/* ------------------------------------------------------ Weiterleitung
+ *
+ * Vorschlaege liegen zuerst und immer auf dem Rechner, auf dem sie entstehen.
+ * Damit sie auch beim Betreuer des Werkzeugs ankommen, kann eine Adresse
+ * hinterlegt werden, an die sie zusaetzlich geschickt werden.
+ *
+ * Bewusst eine URL und keine Zugangsdaten: alles, was in der EXE steht, kann
+ * jeder auslesen, der sie hat. Ein Postfachpasswort dort abzulegen waere, es
+ * zu veroeffentlichen. Ein Formulardienst oder ein kleiner eigener Endpunkt
+ * ist genau dafuer gedacht, oeffentlich angesprochen zu werden.
+ *
+ * Eingerichtet wird sie in `Preistool-Daten/einstellungen.json`:
+ *   { "vorschlaegeAn": "https://...", "vorschlaegeMail": "name@beispiel.de" }
+ * oder ueber die Umgebungsvariablen MWT_VORSCHLAEGE_URL / MWT_VORSCHLAEGE_MAIL.
+ */
+
+/**
+ * Voreinstellungen, die mit dem Programm mitgehen.
+ *
+ * Die Adresse steht hier, damit ein Vorschlag auch von einem fremden Rechner
+ * ankommt — dort gibt es keine einstellungen.json. Sie ist damit fuer jeden
+ * lesbar, der die EXE hat; das ist der Preis dafuer, erreichbar zu sein, und
+ * eine E-Mail-Adresse ist genau dafuer da. Zugangsdaten stehen hier nicht und
+ * duerfen hier nie stehen.
+ */
+const VOREINSTELLUNG = {
+  vorschlaegeMail: 'tool@qylar.com',
+};
+
+let einstellungen = null;
+
+async function ladeEinstellungen() {
+  if (einstellungen) return einstellungen;
+  einstellungen = { ...VOREINSTELLUNG };
+  try {
+    const roh = await readFile(join(datenOrdner, 'einstellungen.json'), 'utf8');
+    // Notepad und PowerShell schreiben UTF-8 mit BOM. JSON.parse stolpert
+    // darueber, und die Datei sieht dabei voellig richtig aus — deshalb weg
+    // damit, statt den Nutzer raten zu lassen.
+    einstellungen = { ...VOREINSTELLUNG, ...JSON.parse(roh.replace(/^﻿/, '')) };
+  } catch (e) {
+    // Zwischen "gibt es nicht" (Normalfall) und "ist kaputt" (bitte melden)
+    // unterscheiden, sonst sucht man den Fehler an der falschen Stelle.
+    if (e.code !== 'ENOENT') {
+      console.log(`  ! einstellungen.json unlesbar: ${String(e.message).slice(0, 120)}`);
+    }
+  }
+  if (process.env.MWT_VORSCHLAEGE_URL) einstellungen.vorschlaegeAn = process.env.MWT_VORSCHLAEGE_URL;
+  if (process.env.MWT_VORSCHLAEGE_MAIL) {
+    einstellungen.vorschlaegeMail = process.env.MWT_VORSCHLAEGE_MAIL;
+  }
+  return einstellungen;
+}
+
+async function weiterleiten(zeile) {
+  const e = await ladeEinstellungen();
+  if (!e.vorschlaegeAn) return false;
+  try {
+    const r = await fetch(e.vorschlaegeAn, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: zeile,
+      signal: AbortSignal.timeout(8000),
+    });
+    console.log(`  → Vorschlag weitergeleitet (${r.status})`);
+    return r.ok;
+  } catch (err) {
+    // Kein Grund, dem Nutzer einen Fehler zu zeigen: gespeichert ist er.
+    console.log(`  ! Weiterleitung fehlgeschlagen: ${String(err.message).slice(0, 120)}`);
+    return false;
+  }
 }
 
 /* ------------------------------------------------------ Lebenszeichen
@@ -289,6 +382,7 @@ const server = createServer(async (req, res) => {
 
   // Lebenszeichen — die Oberflaeche schaltet daran den Preis-Modus frei.
   if (path === '/api/health') {
+    const e = await ladeEinstellungen();
     return json(res, 200, {
       ok: true,
       service: 'mwt-preistool',
@@ -296,6 +390,10 @@ const server = createServer(async (req, res) => {
       // Ohne Chrome gibt es keinen automatischen Abruf; die Oberflaeche sagt
       // das dann statt es zu versuchen und stillschweigend zu scheitern.
       chrome: Boolean(findBrowser()),
+      // Damit die Oberflaeche wahrheitsgemaess sagen kann, wohin ein
+      // Vorschlag geht — "bleibt auf diesem Rechner" waere sonst gelogen.
+      weiterleitung: Boolean(e.vorschlaegeAn),
+      vorschlaegeMail: e.vorschlaegeMail || null,
       queue: { laufend, offen: queue.length, erledigt, gesamt },
     });
   }
@@ -402,7 +500,8 @@ const server = createServer(async (req, res) => {
   //
   // Bewusst eine einfache Datei im JSON-Lines-Format: eine Zeile je Vorschlag,
   // anhaengend geschrieben. Nichts kann dabei verlorengehen, und man kann sie
-  // mit jedem Editor lesen.
+  // mit jedem Editor lesen. Ist eine Weiterleitung eingerichtet, geht der
+  // Vorschlag zusaetzlich dorthin — die Oberflaeche sagt das dann auch.
   if (path === '/api/feedback' && req.method === 'POST') {
     try {
       const body = JSON.parse(await readBody(req, 40_000));
@@ -420,7 +519,9 @@ const server = createServer(async (req, res) => {
       await mkdir(datenOrdner, { recursive: true });
       await appendFile(join(datenOrdner, 'verbesserungen.jsonl'), zeile, 'utf8');
       console.log(`  ✎ Vorschlag gespeichert (${text.length} Zeichen)`);
-      return json(res, 200, { ok: true });
+
+      const weiter = await weiterleiten(zeile);
+      return json(res, 200, { ok: true, weitergeleitet: weiter });
     } catch (e) {
       return json(res, 400, { ok: false, error: String(e.message).slice(0, 200) });
     }
@@ -458,6 +559,23 @@ const server = createServer(async (req, res) => {
     gesamt -= verworfen;
     console.log(`  ! Abgebrochen: ${verworfen} wartende Abrufe verworfen`);
     return json(res, 200, { ok: true, verworfen, nochLaufend: laufend });
+  }
+
+  // Selbsttest: geht die ganze Kette auf diesem Rechner durch?
+  if (path === '/api/selbsttest' && req.method === 'POST') {
+    if (laufend > 0 || queue.length) {
+      return json(res, 200, {
+        ok: false,
+        error: 'Erst den laufenden Abruf abwarten — beides gleichzeitig verfälscht das Ergebnis.',
+      });
+    }
+    try {
+      const { selbsttest } = await import('./selbsttest.mjs');
+      const schritte = await selbsttest();
+      return json(res, 200, { ok: true, schritte });
+    } catch (e) {
+      return json(res, 200, { ok: false, error: String(e.message).slice(0, 300) });
+    }
   }
 
   // Die Seite meldet, dass ihr Fenster noch offen ist.

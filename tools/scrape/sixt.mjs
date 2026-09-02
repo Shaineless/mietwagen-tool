@@ -167,6 +167,43 @@ export async function quoteSixt(q) {
       .map((r) => mwtParseTile(r, q.currency))
       .filter((o) => o && (o.perDay != null || o.total != null));
 
-    return { ok: true, station, offers, url: page.url(), ms: Date.now() - started };
+    // Stimmigkeitspruefung: der Gesamtpreis muss zum Tagespreis mal Mietdauer
+    // passen. Zwei Mal ist ein Zahlenformat still danebengegangen — spanische
+    // Betraege ohne Tausendertrenner, danach Schweizer mit Apostroph — und
+    // beide Male stand einfach eine falsche Zahl in der Tabelle. Eine Ziffer
+    // zu verlieren ist schlimmer als gar nichts zu lesen, deshalb wird das
+    // hier gemeldet statt hingenommen.
+    const tage = Math.max(
+      1,
+      Math.round(
+        (new Date(q.returnDate + 'T12:00:00') - new Date(q.pickupDate + 'T12:00:00')) / 86400000
+      )
+    );
+    const unstimmig = [];
+    for (const o of offers) {
+      if (o.total == null || o.perDay == null) continue;
+      const soll = o.perDay * tage;
+      if (soll > 0 && Math.abs(o.total - soll) / soll > 0.02) {
+        o.unstimmig = true;
+        unstimmig.push(`${o.acriss || '?'} ${o.total} statt ~${soll.toFixed(2)}`);
+      }
+    }
+
+    return {
+      ok: true,
+      station,
+      offers,
+      // Nur melden, wenn wirklich etwas nicht stimmt — sonst steht in jedem
+      // Ergebnis ein leeres Feld herum.
+      ...(unstimmig.length
+        ? {
+            warnung:
+              `${unstimmig.length} von ${offers.length} Preisen passen nicht zum Tagespreis ` +
+              `(${unstimmig.slice(0, 3).join(', ')}) — vermutlich ein unbekanntes Zahlenformat.`,
+          }
+        : {}),
+      url: page.url(),
+      ms: Date.now() - started,
+    };
   });
 }

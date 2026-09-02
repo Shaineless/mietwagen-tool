@@ -23,7 +23,10 @@ const SIXT_MARKETS = [
   { code: 'ch', host: 'www.sixt.ch', label: 'Schweiz', cur: 'CHF' },
   { code: 'nl', host: 'www.sixt.nl', label: 'Niederlande', cur: 'EUR' },
   { code: 'be', host: 'www.sixt.be', label: 'Belgien', cur: 'EUR' },
-  { code: 'lu', host: 'www.sixt.lu', label: 'Luxemburg', cur: 'EUR' },
+  // Luxemburg ist bewusst nicht dabei: sixt.lu zeigt auf Sixts eigenen
+  // Domain-Parkplatz (rproxy-domainparking.ingress.classic.sixt.cloud), das
+  // Zertifikat passt nicht einmal zum Namen. Dort laeuft keine Laenderseite,
+  // und eine tote Auswahlmoeglichkeit anzubieten waere schlechter als keine.
   { code: 'fr', host: 'www.sixt.fr', label: 'Frankreich', cur: 'EUR' },
   { code: 'es', host: 'www.sixt.es', label: 'Spanien', cur: 'EUR' },
   { code: 'it', host: 'www.sixt.it', label: 'Italien', cur: 'EUR' },
@@ -40,8 +43,40 @@ const SIXT_MARKETS = [
   { code: 'hr', host: 'www.sixt.hr', label: 'Kroatien', cur: 'EUR' },
   { code: 'gr', host: 'www.sixt.gr', label: 'Griechenland', cur: 'EUR' },
   { code: 'tr', host: 'www.sixt.com.tr', label: 'Türkei', cur: 'TRY' },
+
+  // Nachgetragen, nachdem ein echter Abruf sie bestätigt hat: alle sieben
+  // nehmen unsere Suchparameter an und liefern eine vollständige Trefferliste
+  // für eine deutsche Station (geprüft mit Frankfurt Flughafen, je 66
+  // Angebote). Die Währungen stammen aus dem Kacheltext, nicht aus dem
+  // Länderkürzel — "A$" und "R$" hätte ein Dollarzeichen sonst zu US-Dollar
+  // gemacht.
+  { code: 'si', host: 'www.sixt.si', label: 'Slowenien', cur: 'EUR' },
+  { code: 'ee', host: 'www.sixt.ee', label: 'Estland', cur: 'EUR' },
+  { code: 'lv', host: 'www.sixt.lv', label: 'Lettland', cur: 'EUR' },
+  { code: 'lt', host: 'www.sixt.lt', label: 'Litauen', cur: 'EUR' },
+  { code: 'is', host: 'www.sixt.is', label: 'Island', cur: 'ISK' },
+  { code: 'au', host: 'www.sixt.com.au', label: 'Australien', cur: 'AUD' },
+  { code: 'br', host: 'www.sixt.com.br', label: 'Brasilien', cur: 'BRL' },
+
   { code: 'com', host: 'www.sixt.com', label: 'International (.com)', cur: 'EUR' },
 ];
+
+/**
+ * Geprueft und bewusst NICHT aufgenommen.
+ *
+ * Alle diese Domains gehoeren Sixt und antworten, liefern fuer eine deutsche
+ * Station aber keine Trefferliste — die Seite laeuft durch, die Liste bleibt
+ * leer. Vermutlich bedienen sie nur ihre eigene Region. Sie hier zu fuehren
+ * hiesse, dem Nutzer eine Spalte anzubieten, die immer leer bleibt.
+ *
+ *   sixt.ro, sixt.rs, sixt.ma, sixt.ae, sixt.jp, sixt.ca   Seite laeuft, keine Angebote
+ *   ua.sixt.ua                                             Station wird nicht uebernommen
+ *   sixt.lu, sixt.bg, sixt.sk, sixt.cy,
+ *   sixt.co.za, sixt.co.nz, sixt.mx                        geparkt (Zertifikat passt nicht)
+ *   sixt.mt, sixt.sa                                       kein DNS-Eintrag
+ *
+ * Nachpruefen mit: node tools/try-laender.mjs www.sixt.ro …
+ */
 
 /**
  * Farbthemen zur Orientierung — angelehnt an die Hausfarben der Vermieter,

@@ -18,6 +18,21 @@ const src = (f) => join(root, 'src', f);
 
 /* ------------------------------------------------ Stationen: txt -> js */
 
+/**
+ * Flughafen oder nicht?
+ *
+ * Entscheidet ueber die Form der Stationsadresse: Flughafenstationen tragen
+ * bei Sixt das Kuerzel `ap`, alle uebrigen `dt`. Das IATA-Feld taugt dafuer
+ * nicht — nur 43 der 2250 Stationen haben eines, waehrend ueber 700 dem Namen
+ * nach Flughaefen sind. Also entscheidet der Name.
+ *
+ * Die Namen stammen von sixt.de und sind deshalb deutsch; die uebrigen
+ * Schreibweisen stehen mit drin, falls die Liste einmal aus einer anderen
+ * Laenderseite nachgezogen wird.
+ */
+const FLUGHAFEN_RE =
+  /(flughafen|airport|a[eé]roport|aeropuerto|aeroporto|luchthaven|lufthavn|lentoasema|havaliman|repülőtér|letiště|lotnisko)/i;
+
 function parseStations(file, providerId) {
   const lines = readFileSync(file, 'utf8').split(/\r?\n/);
   const out = [];
@@ -48,6 +63,9 @@ function parseStations(file, providerId) {
       iata: (iata || '').trim(),
       name,
       provider: providerId,
+      // Nur bei Flughafenstationen gesetzt — spart in der erzeugten Datei
+      // 1500 Mal `false`.
+      ...(FLUGHAFEN_RE.test(name) ? { flughafen: true } : {}),
     });
   });
 
@@ -56,7 +74,10 @@ function parseStations(file, providerId) {
 
 console.log('Stationen einlesen …');
 const stations = parseStations(src('data/stations.sixt.txt'), 'sixt');
-console.log(`  ${stations.length} Sixt-Stationen`);
+const flughaefen = stations.filter((s) => s.flughafen).length;
+console.log(
+  `  ${stations.length} Sixt-Stationen (${flughaefen} Flughafen, ${stations.length - flughaefen} übrige)`
+);
 
 const stationsModule =
   '// Automatisch erzeugt von build.mjs aus src/data/*.txt — nicht direkt bearbeiten.\n' +

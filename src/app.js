@@ -19,6 +19,7 @@ const defaults = () => {
     pickupTime: '10:00',
     returnTime: '10:00',
     dayShifts: [0],
+    returnShifts: [0],
     durations: [],
     stations: ['110'],
     returnStation: null,
@@ -72,7 +73,13 @@ function persist() {
 
 /* =========================================================== Dienst */
 
-const service = { available: false, chrome: false, queue: null };
+const service = {
+  available: false,
+  chrome: false,
+  queue: null,
+  weiterleitung: false,
+  vorschlaegeMail: null,
+};
 const prices = new Map(); // Auftragsschlüssel -> Preisergebnis
 const schutz = new Map(); // Auftragsschlüssel -> Schutzergebnis
 let katalog = {}; // ACRISS -> {bild, modelle, beispielText}
@@ -86,6 +93,8 @@ async function checkService() {
       const d = await r.json();
       service.chrome = Boolean(d.chrome);
       service.queue = d.queue || null;
+      service.weiterleitung = Boolean(d.weiterleitung);
+      service.vorschlaegeMail = d.vorschlaegeMail || null;
     }
   } catch {
     service.available = false;
@@ -160,8 +169,14 @@ async function pollErgebnisse() {
 
   try {
     const h = await (await fetch('/api/health', { cache: 'no-store' })).json();
+    const liefNoch = Boolean(service.queue && (service.queue.laufend || service.queue.offen));
     service.queue = h.queue || null;
     renderFortschritt();
+
+    // Genau im Moment des Leerlaufens die Suche in den Verlauf legen — nicht
+    // bei jedem Takt, sonst stünde sie fünfmal drin.
+    const laeuftNoch = Boolean(h.queue && (h.queue.laufend || h.queue.offen));
+    if (liefNoch && !laeuftNoch) merkeSuche();
   } catch {
     /* egal */
   }
@@ -270,16 +285,52 @@ function marktListe() {
 
 /* =========================================================== Aufträge */
 
+/**
+ * Die Termine, die abgefragt werden.
+ *
+ * Zwei Denkweisen, und sie schliessen einander aus:
+ *
+ *   Mietdauer     Die Rueckgabe haengt an der Abholung. "Sieben Tage, egal wann
+ *                 ich starte." Ist eine Dauer gewaehlt, gilt nur das.
+ *   Rueckgabetag  Beide Enden sind unabhaengig. "Montag bis Montag — aber was
+ *                 kostet Dienstag bis Montag, was Sonntag bis Montag?" Genau
+ *                 dafuer laesst sich die Rueckgabe getrennt verschieben.
+ *
+ * Kombinationen, bei denen die Rueckgabe nicht nach der Abholung liegt, fallen
+ * weg: dafuer gibt es keinen Preis, nur eine Fehlermeldung von Sixt.
+ */
 function dateVariants() {
-  const base = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
-  const durations = state.durations.length ? state.durations : [base];
+  const grunddauer = Math.max(1, daysBetween(state.pickupDate, state.returnDate));
   const shifts = state.dayShifts.length ? state.dayShifts : [0];
   const out = [];
-  for (const shift of shifts) {
-    for (const dur of durations) {
-      const pickupDate = addDays(state.pickupDate, shift);
-      out.push({ pickupDate, returnDate: addDays(pickupDate, dur), duration: dur });
+
+  if (state.durations.length) {
+    for (const shift of shifts) {
+      for (const dur of state.durations) {
+        const pickupDate = addDays(state.pickupDate, shift);
+        out.push({ pickupDate, returnDate: addDays(pickupDate, dur), duration: dur });
+      }
     }
+    return out;
+  }
+
+  const rueck = state.returnShifts?.length ? state.returnShifts : [0];
+  for (const shift of shifts) {
+    for (const rshift of rueck) {
+      const pickupDate = addDays(state.pickupDate, shift);
+      const returnDate = addDays(state.returnDate, rshift);
+      const duration = daysBetween(pickupDate, returnDate);
+      if (duration < 1) continue;
+      out.push({ pickupDate, returnDate, duration });
+    }
+  }
+  // Alles weggefallen? Dann wenigstens der eingestellte Zeitraum selbst.
+  if (!out.length) {
+    out.push({
+      pickupDate: state.pickupDate,
+      returnDate: state.returnDate,
+      duration: grunddauer,
+    });
   }
   return out;
 }
@@ -379,6 +430,532 @@ function showScreen(name) {
   $('#statusScreen').hidden = name !== 'status';
   $('#work').hidden = name !== 'work';
   $('#schutzScreen').hidden = name !== 'schutz';
+  $('#mailScreen').hidden = name !== 'mail';
+  $('#verlaufScreen').hidden = name !== 'verlauf';
+}
+
+/* =========================================================== Verlauf
+ *
+ * Die Preisergebnisse selbst verfallen nach einer Stunde — bewusst, es ist
+ * kein Beobachtungsdienst. Der Verlauf ist etwas anderes: eine Handvoll
+ * Momentaufnahmen zum Nachschlagen, "was war letzte Woche derselbe Wagen".
+ * Deshalb liegt er im Browser und nicht im Ergebnisspeicher.
+ */
+
+const LS_VERLAUF = 'mwt-preistool/verlauf';
+const VERLAUF_MAX = 5;
+
+function ladeVerlauf() {
+  try {
+    const v = JSON.parse(localStorage.getItem(LS_VERLAUF) || '[]');
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+function speichereVerlauf(liste) {
+  try {
+    localStorage.setItem(LS_VERLAUF, JSON.stringify(liste.slice(0, VERLAUF_MAX)));
+  } catch {
+    /* privater Modus oder voll — dann eben kein Verlauf */
+  }
+}
+
+/**
+ * Die gerade gezeigte Gruppe als Momentaufnahme sichern.
+ *
+ * Gleiche Station, gleicher Zeitraum, gleiche Länderseiten überschreiben den
+ * vorhandenen Eintrag statt einen zweiten anzulegen — sonst ist die Liste
+ * nach dreimal Nachfassen voll mit derselben Suche.
+ */
+function merkeSuche() {
+  const jobs = aktuelleJobs().filter((j) => j.gruppe === aktiveGruppe);
+  const fertig = jobs.filter((j) => prices.get(j.key)?.offers?.length);
+  if (!fertig.length) return;
+
+  const f = jobs[0];
+  const kennung = `${f.station.code}|${f.variant.pickupDate}|${f.variant.returnDate}`;
+
+  // Nicht nur der billigste Wagen je Land, sondern jede Klasse: nur so lassen
+  // sich zwei Suchen spaeter fuer eine bestimmte Fahrzeugklasse nebeneinander
+  // stellen, und genau darum geht es beim Vergleichen.
+  const laender = [];
+  const preise = {}; // ACRISS -> { host: Betrag }
+  const modelle = {}; // ACRISS -> Modellname
+
+  for (const j of fertig) {
+    laender.push({ host: j.market.host, land: j.market.label, cur: j.market.cur });
+    for (const o of prices.get(j.key).offers) {
+      if (!o.acriss || o.total == null) continue;
+      (preise[o.acriss] ||= {})[j.market.host] = o.total;
+      if (o.model && !modelle[o.acriss]) modelle[o.acriss] = o.model;
+    }
+  }
+
+  const treffer = fertig.map((j) => {
+    const angebote = prices.get(j.key).offers;
+    const billigstes = angebote.reduce((a, b) =>
+      (b.total ?? b.perDay ?? Infinity) < (a.total ?? a.perDay ?? Infinity) ? b : a
+    );
+    return {
+      host: j.market.host,
+      land: j.market.label,
+      betrag: billigstes.total ?? billigstes.perDay ?? null,
+      waehrung: billigstes.currency || j.market.cur,
+      acriss: billigstes.acriss || null,
+      modell: billigstes.model || null,
+      klassen: angebote.length,
+    };
+  });
+
+  // Schutzpreise nur, wenn für diese Gruppe welche abgerufen wurden.
+  const schutzTreffer = [...schutz.entries()]
+    .filter(([k, r]) => k.includes(`~${f.station.code}~`) && r.pakete?.length)
+    .map(([, r]) => ({
+      host: r.host,
+      acriss: r.acriss,
+      pakete: r.pakete.map((p) => ({ name: p.name, gesamt: p.gesamt ?? null })),
+    }));
+
+  const eintrag = {
+    kennung,
+    am: Date.now(),
+    station: f.station.name,
+    stationCode: f.station.code,
+    von: f.variant.pickupDate,
+    bis: f.variant.returnDate,
+    tage: f.variant.duration,
+    treffer,
+    laender,
+    preise,
+    modelle,
+    schutz: schutzTreffer.length ? schutzTreffer : null,
+  };
+
+  const liste = ladeVerlauf().filter((e) => e.kennung !== kennung);
+  liste.unshift(eintrag);
+  speichereVerlauf(liste);
+}
+
+/** Welche Fahrzeugklasse im Vergleich gezeigt wird. */
+let verlaufKlasse = null;
+
+/**
+ * Mehrere Suchen nebeneinander.
+ *
+ * Untereinander liegende Karten beantworten die eigentliche Frage nicht:
+ * "war derselbe Wagen letzte Woche billiger?" heisst, zwei Zahlen direkt
+ * nebeneinander zu sehen. Deshalb bilden die Suchen die Spalten, die
+ * Länderseiten die Zeilen — und oben wird die Fahrzeugklasse gewählt, denn
+ * ohne die vergleicht man Golf mit S-Klasse.
+ */
+function renderVergleich(liste) {
+  // Klassen, die in mindestens zwei Suchen vorkommen, führen die Liste an —
+  // nur die taugen zum Vergleich.
+  const zaehler = new Map();
+  for (const e of liste) {
+    for (const acriss of Object.keys(e.preise || {})) {
+      zaehler.set(acriss, (zaehler.get(acriss) || 0) + 1);
+    }
+  }
+  const klassen = [...zaehler.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([k]) => k);
+
+  if (!klassen.length) return null;
+  if (!klassen.includes(verlaufKlasse)) verlaufKlasse = klassen[0];
+
+  // Alle Länderseiten, die in irgendeiner der Suchen vorkommen.
+  const hosts = new Map();
+  for (const e of liste) {
+    for (const l of e.laender || []) if (!hosts.has(l.host)) hosts.set(l.host, l);
+  }
+  const zeilen = [...hosts.values()].filter((l) =>
+    liste.some((e) => e.preise?.[verlaufKlasse]?.[l.host] != null)
+  );
+
+  const modell = liste.map((e) => e.modelle?.[verlaufKlasse]).find(Boolean);
+
+  return el(
+    'section',
+    { class: 'card' },
+    el('h2', {}, 'Nebeneinander'),
+    el(
+      'div',
+      { class: 'field' },
+      el('span', { class: 'flabel' }, 'Fahrzeugklasse'),
+      el(
+        'div',
+        { class: 'pills' },
+        ...klassen.slice(0, 24).map((k) =>
+          el(
+            'button',
+            {
+              type: 'button',
+              class: 'pill' + (k === verlaufKlasse ? ' on' : ''),
+              title: `${k}${liste[0]?.modelle?.[k] ? ' · ' + liste[0].modelle[k] : ''}` +
+                ` · in ${zaehler.get(k)} von ${liste.length} Suchen`,
+              onclick: () => {
+                verlaufKlasse = k;
+                renderVerlauf();
+              },
+            },
+            k
+          )
+        )
+      )
+    ),
+    el(
+      'p',
+      { class: 'note' },
+      modell
+        ? `${verlaufKlasse} — zum Beispiel ${modell}. Verglichen wird nur innerhalb derselben Währung.`
+        : 'Verglichen wird nur innerhalb derselben Währung.'
+    ),
+    el(
+      'div',
+      { class: 'tabellenrahmen' },
+      el(
+        'table',
+        { class: 'vergleich' },
+        el(
+          'thead',
+          {},
+          el(
+            'tr',
+            {},
+            el('th', { class: 'klasse' }, 'Länderseite'),
+            ...liste.map((e) =>
+              el(
+                'th',
+                {},
+                el('span', {}, pretty(e.von)),
+                el('span', { class: 'thcur' }, `${e.tage} Tg · ${e.station.split(' ')[0]}`)
+              )
+            )
+          )
+        ),
+        el(
+          'tbody',
+          {},
+          ...zeilen.map((l) => {
+            // Bester Wert dieser Zeile, aber nur unter gleicher Währung.
+            const werte = liste.map((e) => e.preise?.[verlaufKlasse]?.[l.host] ?? null);
+            const gueltig = werte.filter((w) => w != null);
+            const min = gueltig.length > 1 ? Math.min(...gueltig) : null;
+
+            return el(
+              'tr',
+              {},
+              el('th', { class: 'klasse' }, l.land),
+              ...werte.map((w) =>
+                el(
+                  'td',
+                  { class: w != null && w === min ? 'best' : '' },
+                  w != null ? el('span', { class: 'betrag' }, money(w, l.cur)) : '—'
+                )
+              )
+            );
+          })
+        )
+      )
+    ),
+    el(
+      'p',
+      { class: 'tabnote' },
+      'Jede Spalte ist eine gespeicherte Suche. Markiert ist der günstigste ' +
+        'Termin je Länderseite — dieselbe Klasse, dieselbe Währung.'
+    )
+  );
+}
+
+function renderVerlauf() {
+  const liste = ladeVerlauf();
+
+  if (!liste.length) {
+    setChildren(
+      $('#verlaufBody'),
+      el(
+        'p',
+        { class: 'empty' },
+        'Noch nichts gesucht. Nach jedem Abruf wird die Suche hier abgelegt — die letzten fünf.'
+      )
+    );
+    return;
+  }
+
+  setChildren(
+    $('#verlaufBody'),
+    // Der Vergleich zuerst — er ist der Grund, warum es diese Seite gibt.
+    liste.length > 1 ? renderVergleich(liste) : null,
+    liste.length > 1 ? el('h2', { class: 'statusteil' }, 'Die einzelnen Suchen') : null,
+    ...liste.map((e) => {
+      const vergleichbar = e.treffer.filter((t) => t.betrag != null);
+      const billigster = vergleichbar.length
+        ? vergleichbar.reduce((a, b) => (b.betrag < a.betrag ? b : a))
+        : null;
+
+      return el(
+        'section',
+        { class: 'card verlaufkarte' },
+        el(
+          'div',
+          { class: 'vkopf' },
+          el(
+            'div',
+            {},
+            el('h3', {}, e.station),
+            el(
+              'p',
+              { class: 'note' },
+              `${pretty(e.von)} → ${pretty(e.bis)} · ${e.tage} Tage · ` +
+                `abgerufen ${new Date(e.am).toLocaleString('de-DE', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}`
+            )
+          ),
+          el(
+            'button',
+            {
+              type: 'button',
+              class: 'ghost mini',
+              title: 'Diese Suche wieder einstellen',
+              onclick: () => {
+                state.stations = [e.stationCode];
+                state.pickupDate = e.von;
+                state.returnDate = e.bis;
+                state.dayShifts = [0];
+                state.returnShifts = [0];
+                state.durations = [];
+                state.mode = 'markets';
+                aktiveGruppe = null;
+                showScreen('work');
+                update();
+              },
+            },
+            'Erneut suchen'
+          )
+        ),
+        el(
+          'div',
+          { class: 'tabellenrahmen' },
+          el(
+            'table',
+            { class: 'vergleich' },
+            el(
+              'thead',
+              {},
+              el(
+                'tr',
+                {},
+                el('th', { class: 'klasse' }, 'Länderseite'),
+                el('th', {}, 'günstigstes Angebot'),
+                el('th', {}, 'Klasse'),
+                el('th', {}, 'Angebote')
+              )
+            ),
+            el(
+              'tbody',
+              {},
+              ...e.treffer.map((t) =>
+                el(
+                  'tr',
+                  {},
+                  el('th', { class: 'klasse' }, t.land),
+                  el(
+                    'td',
+                    { class: billigster && t.host === billigster.host ? 'best' : '' },
+                    t.betrag != null
+                      ? el('span', { class: 'betrag' }, money(t.betrag, t.waehrung))
+                      : '—'
+                  ),
+                  el(
+                    'td',
+                    {},
+                    t.acriss ? el('span', { class: 'acriss' }, t.acriss) : '—',
+                    t.modell ? el('span', { class: 'proTag' }, t.modell) : null
+                  ),
+                  el('td', {}, String(t.klassen))
+                )
+              )
+            )
+          )
+        ),
+        e.schutz
+          ? el(
+              'details',
+              { class: 'vschutz' },
+              el('summary', {}, `Schutzpakete (${e.schutz.length} Länderseiten)`),
+              ...e.schutz.map((s) =>
+                el(
+                  'p',
+                  { class: 'note' },
+                  el('b', {}, `${s.host.replace(/^www\./, '')} · ${s.acriss}: `),
+                  s.pakete
+                    .map((p) => `${p.name}${p.gesamt != null ? ` ${p.gesamt.toFixed(2)}` : ''}`)
+                    .join(' · ')
+                )
+              )
+            )
+          : null
+      );
+    }),
+    el(
+      'div',
+      { class: 'btnrow' },
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'ghost mini',
+          onclick: () => {
+            speichereVerlauf([]);
+            renderVerlauf();
+          },
+        },
+        'Verlauf leeren'
+      )
+    )
+  );
+}
+
+/* =========================================================== Adressen */
+
+/**
+ * Adresse einer Station.
+ *
+ * Sixt bildet sie aus der Stationsnummer: Flughafenstationen `ap<Nummer>`,
+ * alle uebrigen `dt<Nummer>`. Ob eine Station als Flughafen zaehlt, steht als
+ * `flughafen` am Datensatz und entscheidet sich am Namen (siehe build.mjs) —
+ * das IATA-Feld taugt dafuer nicht, das haben nur 43 von 2250 Stationen.
+ */
+function stationsAdresse(station, alsFlughafen = station.flughafen === true) {
+  return `${alsFlughafen ? 'ap' : 'dt'}${station.code}@sixt.com`;
+}
+
+/** Stationen auf der Adressliste; Wert sagt, ob als Flughafen gewertet wird. */
+const mailAuswahl = new Map();
+
+function renderMailTreffer() {
+  const needle = $('#mailSuche').value;
+  const hits = suche(needle);
+  const scroll = $('#mailTreffer').scrollTop;
+
+  $('#mailAnzahl').textContent =
+    `${hits.length} von ${ALLE_STATIONEN.length} Stationen` +
+    (needle.trim() ? '' : ' — tippen zum Filtern');
+  $('#mailAlleTreffer').hidden = !needle.trim() || !hits.length;
+  $('#mailAlleTreffer').textContent = `Alle ${hits.length} übernehmen`;
+
+  setChildren(
+    $('#mailTreffer'),
+    ...hits.map((s) => {
+      const drin = mailAuswahl.has(s.code);
+      return el(
+        'button',
+        {
+          type: 'button',
+          class: 'station' + (drin ? ' on' : ''),
+          title: `${stationsAdresse(s)} · Stationsnummer ${s.code}`,
+          onclick: () => {
+            if (drin) mailAuswahl.delete(s.code);
+            else mailAuswahl.set(s.code, s.flughafen === true);
+            renderMail();
+          },
+        },
+        el('span', { class: 'flag' }, s.country),
+        el('span', { class: 'sname' }, s.name),
+        el('span', { class: 'art' }, s.flughafen ? 'ap' : 'dt')
+      );
+    }),
+    hits.length ? null : el('p', { class: 'empty' }, 'Keine Station gefunden.')
+  );
+  $('#mailTreffer').scrollTop = scroll;
+}
+
+function mailAdressen() {
+  return [...mailAuswahl]
+    .map(([code, alsFlughafen]) => {
+      const s = stationByCode(code);
+      return s ? stationsAdresse(s, alsFlughafen) : null;
+    })
+    .filter(Boolean);
+}
+
+function renderMailListe() {
+  const eintraege = [...mailAuswahl];
+  $('#mailListeKarte').hidden = !eintraege.length;
+  if (!eintraege.length) return;
+
+  setChildren(
+    $('#mailListe'),
+    ...eintraege.map(([code, alsFlughafen]) => {
+      const s = stationByCode(code);
+      if (!s) return null;
+      const adresse = stationsAdresse(s, alsFlughafen);
+      return el(
+        'div',
+        { class: 'mailzeile' },
+        el(
+          'div',
+          { class: 'mailort' },
+          el('b', {}, s.name),
+          el('span', { class: 'gid' }, s.code)
+        ),
+        el('code', { class: 'mailadr' }, adresse),
+        // Die Einordnung ist geraten, nicht gewusst — also umstellbar.
+        el(
+          'button',
+          {
+            type: 'button',
+            class: 'ghost mini',
+            title: alsFlughafen
+              ? 'Als Stadtstation behandeln (dt)'
+              : 'Als Flughafenstation behandeln (ap)',
+            onclick: () => {
+              mailAuswahl.set(code, !alsFlughafen);
+              renderMail();
+            },
+          },
+          alsFlughafen ? 'ap → dt' : 'dt → ap'
+        ),
+        el(
+          'button',
+          {
+            type: 'button',
+            class: 'ghost mini',
+            onclick: async () => {
+              await navigator.clipboard.writeText(adresse).catch(() => {});
+              flash(`${adresse} kopiert`);
+            },
+          },
+          'Kopieren'
+        ),
+        el(
+          'button',
+          {
+            type: 'button',
+            class: 'ghost mini',
+            title: 'Von der Liste nehmen',
+            onclick: () => {
+              mailAuswahl.delete(code);
+              renderMail();
+            },
+          },
+          '×'
+        )
+      );
+    })
+  );
+}
+
+function renderMail() {
+  renderMailTreffer();
+  renderMailListe();
 }
 
 
@@ -612,6 +1189,11 @@ function renderTable(list) {
         {},
         el('a', { href: j.url, target: '_blank', rel: 'noopener' }, j.market.label),
         el('span', { class: 'thcur' }, j.market.cur),
+        // Der Abruf hat selbst gemerkt, dass Zahlen nicht zusammenpassen —
+        // das gehört an die Spalte, nicht nur ins Protokoll.
+        prices.get(j.key)?.warnung
+          ? el('span', { class: 'aktion warnmark', title: prices.get(j.key).warnung }, 'Prüfen')
+          : null,
         fruehbucherSpalten.has(j.key)
           ? el('span', { class: 'aktion', title: 'Frühbucherrabatt aktiv' }, 'Frühbucher')
           : prices.get(j.key)
@@ -686,10 +1268,12 @@ function renderTable(list) {
         return el(
           'td',
           {
-            class: billigste ? 'best' : '',
-            title: `${o.model}${o.unlimitedKm ? ' · unbegrenzte km' : ''}${
-              o.aktionen?.length ? ' · ' + o.aktionen.join(' · ') : ''
-            }`,
+            class: (billigste ? 'best' : '') + (o.unstimmig ? ' unstimmig' : ''),
+            title:
+              (o.unstimmig ? 'Betrag passt nicht zum Tagespreis — bitte auf der Seite prüfen. ' : '') +
+              `${o.model}${o.unlimitedKm ? ' · unbegrenzte km' : ''}${
+                o.aktionen?.length ? ' · ' + o.aktionen.join(' · ') : ''
+              }`,
           },
           el('span', { class: 'betrag' }, money(wert, o.currency)),
           el(
@@ -957,6 +1541,12 @@ function renderResults({ erzwingen = false } = {}) {
     : '';
   $('#openAll').disabled = !jobs.length;
   $('#copyAll').disabled = !jobs.length;
+
+  // Nachfassen anbieten, sobald eine Länderseite nichts geliefert hat.
+  const ohne = jobsOhneErgebnis(jobs);
+  const nochmal = $('#nochmal');
+  nochmal.hidden = !ohne.length;
+  nochmal.textContent = `${ohne.length} ohne Ergebnis — nochmal versuchen`;
   $('#warn').hidden = jobs.length <= 12;
   $('#warn').textContent =
     jobs.length > 12
@@ -1407,10 +1997,45 @@ async function abbrechen() {
   }
 }
 
-async function fetchPrices() {
-  const jobs = aktuelleJobs()
-    .filter((j) => !prices.has(j.key))
-    .map((j) => ({
+/**
+ * Abrufe ohne brauchbares Ergebnis.
+ *
+ * Der Dienst merkt sehr wohl, wenn eine Länderseite nicht durchkommt — der
+ * Grund steht in der Zelle. Nur nachgefasst hat bisher niemand: der Abruf
+ * überging jeden Schlüssel, zu dem schon irgendein Ergebnis vorlag, und ein
+ * Fehler ist eben auch eines. Damit blieb eine Seite, die einmal
+ * dazwischenging, für immer leer.
+ *
+ * Als "ohne Ergebnis" zählt auch eine leere Trefferliste ohne Fehlermeldung.
+ * Es kann sein, dass dort wirklich nichts frei ist; häufiger ist es ein still
+ * gescheiterter Abruf, und ein zweiter Versuch kostet wenig.
+ */
+function jobsOhneErgebnis(jobs = aktuelleJobs()) {
+  return jobs.filter((j) => {
+    const r = prices.get(j.key);
+    return r && (r.error != null || !r.offers?.length);
+  });
+}
+
+async function fetchPrices({ nurFehler = false } = {}) {
+  const alle = aktuelleJobs();
+  const offen = nurFehler ? jobsOhneErgebnis(alle) : alle.filter((j) => !prices.has(j.key));
+
+  if (!offen.length) {
+    flash(
+      nurFehler
+        ? 'Alle Länderseiten haben ein Ergebnis geliefert.'
+        : 'Für diese Auswahl liegen schon alle Preise vor.'
+    );
+    return;
+  }
+
+  // Das alte Ergebnis wegräumen, sonst steht die Fehlermeldung noch in der
+  // Zelle, während der neue Abruf längst läuft.
+  if (nurFehler) for (const j of offen) prices.delete(j.key);
+
+  await sendeJobs(
+    offen.map((j) => ({
       key: j.key,
       provider: PROVIDER,
       host: j.market.host,
@@ -1421,13 +2046,10 @@ async function fetchPrices() {
       pickupTime: state.pickupTime,
       returnTime: state.returnTime,
       currency: j.market.cur,
-    }));
-
-  if (!jobs.length) {
-    flash('Für diese Auswahl liegen schon alle Preise vor.');
-    return;
-  }
-  await sendeJobs(jobs, $('#getPrices'));
+    })),
+    $(nurFehler ? '#nochmal' : '#getPrices')
+  );
+  renderResults({ erzwingen: true });
   $('#fortschritt').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
@@ -1491,6 +2113,44 @@ function copyAll() {
 
 /* =========================================================== Vorschläge */
 
+/**
+ * Sagen, wohin ein Vorschlag geht — und zwar bevor jemand tippt.
+ *
+ * Der Text stand fest auf "bleibt auf diesem Rechner". Sobald eine
+ * Weiterleitung eingerichtet ist, waere das nicht mehr wahr, und Vertrauen
+ * verliert man genau an solchen Stellen.
+ */
+function renderVorschlagWohin() {
+  $('#vorschlagWohin').textContent = service.weiterleitung
+    ? 'Kurz aufschreiben — wird gespeichert und an den Betreuer des Werkzeugs weitergeleitet.'
+    : 'Kurz aufschreiben — landet in einer Datei auf diesem Rechner, sonst nirgends.';
+
+  // Ohne eingerichtete Weiterleitung ist die E-Mail der einzige Weg, auf dem
+  // ein Vorschlag ankommt. Mit Weiterleitung waere der Knopf nur Beiwerk.
+  const mail = $('#vorschlagMail');
+  mail.hidden = service.weiterleitung || !service.vorschlaegeMail;
+}
+
+/** Vorschlag im Mailprogramm des Nutzers öffnen — er drückt selbst auf Senden. */
+function vorschlagAlsMail() {
+  const text = $('#vorschlagText').value.trim();
+  if (text.length < 3) {
+    $('#vorschlagStatus').textContent = 'Bitte etwas mehr schreiben.';
+    $('#vorschlagText').focus();
+    return;
+  }
+  const betreff = 'Mietwagen-Preistool — Verbesserungsvorschlag';
+  const koerper =
+    `${text}\n\n— — —\nStand beim Schreiben:\n` +
+    `Stationen: ${state.stations.join(', ') || '—'}\n` +
+    `Länderseiten: ${state.markets.join(', ') || '—'}\n` +
+    `Zeitraum: ${state.pickupDate} → ${state.returnDate}\n`;
+  location.href =
+    `mailto:${encodeURIComponent(service.vorschlaegeMail)}` +
+    `?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(koerper)}`;
+  $('#vorschlagStatus').textContent = 'Mailprogramm geöffnet — dort noch absenden.';
+}
+
 async function sendeVorschlag() {
   const feld = $('#vorschlagText');
   const text = feld.value.trim();
@@ -1526,7 +2186,11 @@ async function sendeVorschlag() {
     const d = await r.json();
     if (!d.ok) throw new Error(d.error || 'abgelehnt');
     feld.value = '';
-    status.textContent = 'Danke — ist gespeichert.';
+    status.textContent = d.weitergeleitet
+      ? 'Danke — angekommen.'
+      : service.weiterleitung
+        ? 'Gespeichert. Weiterleitung hat nicht geklappt — später erneut versuchen.'
+        : 'Danke — ist gespeichert.';
   } catch {
     status.textContent = 'Konnte nicht gespeichert werden.';
   } finally {
@@ -1554,6 +2218,71 @@ const CAP_LABEL = {
   vehicleClass: 'Fahrzeugklasse (Parameter wird verworfen)',
   prepaid: 'Prepaid-Filter (Parameter wird verworfen)',
 };
+
+/**
+ * Selbsttest anstossen und das Ergebnis zeigen.
+ *
+ * Auf dem eigenen Rechner laeuft immer alles. Der Test ist fuer den fremden
+ * gedacht: er sagt nicht nur, dass etwas nicht geht, sondern an welcher Stelle
+ * der Kette und was dagegen hilft.
+ */
+async function starteSelbsttest() {
+  const knopf = $('#testStart');
+  const hinweis = $('#testHinweis');
+  knopf.disabled = true;
+  knopf.textContent = 'Läuft …';
+  hinweis.textContent = 'Chrome wird gestartet, eine echte Suche durchgeführt.';
+  setChildren($('#testErgebnis'));
+
+  try {
+    const d = await (await fetch('/api/selbsttest', { method: 'POST' })).json();
+    if (!d.ok) {
+      hinweis.textContent = '';
+      setChildren($('#testErgebnis'), el('p', { class: 'note warn' }, d.error));
+      return;
+    }
+
+    const schlecht = d.schritte.filter((s) => s.stand === 'schlecht').length;
+    const mittel = d.schritte.filter((s) => s.stand === 'mittel').length;
+    hinweis.textContent = schlecht
+      ? 'Hier hakt es:'
+      : mittel
+        ? 'Läuft, mit Einschränkung:'
+        : 'Alles in Ordnung.';
+
+    setChildren(
+      $('#testErgebnis'),
+      el(
+        'ul',
+        { class: 'standliste' },
+        ...d.schritte.map((s) =>
+          el(
+            'li',
+            { class: 'st ' + (s.stand === 'gut' ? 'ja' : s.stand === 'mittel' ? 'teils' : 'nein') },
+            el(
+              'span',
+              { class: 'stmark' },
+              s.stand === 'gut' ? '✓' : s.stand === 'mittel' ? '~' : '✕'
+            ),
+            el(
+              'span',
+              {},
+              el('b', {}, s.name),
+              el('span', { class: 'sttext' }, s.text),
+              s.rat ? el('span', { class: 'sttext rat' }, s.rat) : null
+            )
+          )
+        )
+      )
+    );
+  } catch {
+    hinweis.textContent = '';
+    setChildren($('#testErgebnis'), el('p', { class: 'note warn' }, 'Der Dienst antwortet nicht.'));
+  } finally {
+    knopf.disabled = false;
+    knopf.textContent = 'Selbsttest starten';
+  }
+}
 
 /** Eine Kennzahl im Dienst-Kasten. */
 function kennzahl(wert, was, ok = null) {
@@ -1703,12 +2432,29 @@ function update(teile = {}) {
       }
     );
     renderPills(
+      '#returnShifts',
+      [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5],
+      () => state.returnShifts,
+      (n) => (n === 0 ? 'Stichtag' : (n > 0 ? `+${n}` : `${n}`) + ' Tg'),
+      (arr) => {
+        if (!arr.length) arr.push(0);
+      }
+    );
+    renderPills(
       '#durations',
       [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 28],
       () => state.durations,
       (n) => `${n} Tg`,
       () => {}
     );
+
+    // Eine feste Mietdauer setzt den Rückgabetag ausser Kraft — das muss man
+    // sehen, sonst stellt man dort etwas ein, das nichts bewirkt.
+    const dauerGesetzt = state.durations.length > 0;
+    $('#feldRueck').classList.toggle('stillgelegt', dauerGesetzt);
+    $('#rueckNote').textContent = dauerGesetzt
+      ? 'Ohne Wirkung, solange unten eine Mietdauer gewählt ist.'
+      : 'Beide Enden getrennt: Mo→Mo bleibt, dazu Di→Mo und So→Mo.';
   }
   // Aus update() heraus hat sich der Zustand geaendert — hier muss die
   // Tabelle tatsaechlich neu gebaut werden.
@@ -1759,6 +2505,12 @@ function init() {
       if (state.mode === 'status') {
         renderStatus();
         showScreen('status');
+      } else if (state.mode === 'mail') {
+        renderMail();
+        showScreen('mail');
+      } else if (state.mode === 'verlauf') {
+        renderVerlauf();
+        showScreen('verlauf');
       } else {
         showScreen('work');
         update();
@@ -1815,14 +2567,47 @@ function init() {
     update();
   });
 
+  $('#testStart').addEventListener('click', starteSelbsttest);
+
+  $('#mailSuche').addEventListener('input', renderMailTreffer);
+  $('#mailAlleTreffer').addEventListener('click', () => {
+    for (const s of suche($('#mailSuche').value)) {
+      if (!mailAuswahl.has(s.code)) mailAuswahl.set(s.code, s.flughafen === true);
+    }
+    renderMail();
+  });
+  $('#mailLeeren').addEventListener('click', () => {
+    mailAuswahl.clear();
+    renderMail();
+  });
+  $('#mailKopieren').addEventListener('click', async () => {
+    const adressen = mailAdressen();
+    await navigator.clipboard.writeText(adressen.join('; ')).catch(() => {});
+    flash(`${adressen.length} Adressen kopiert`);
+  });
+  $('#mailSchreiben').addEventListener('click', () => {
+    const adressen = mailAdressen();
+    // Ins BCC-Feld: die Stationen sollen die Adressen der anderen nicht sehen.
+    // Sehr lange Listen sprengen die Laengengrenze mancher Mailprogramme —
+    // dann ist "kopieren" der bessere Weg, und das steht dann auch da.
+    const link = `mailto:?bcc=${encodeURIComponent(adressen.join(','))}`;
+    if (link.length > 1800) {
+      flash(`${adressen.length} Adressen sind zu viele für einen Mail-Link — bitte kopieren.`);
+      return;
+    }
+    location.href = link;
+  });
+
   // Einstellungen klappen auf, statt dauerhaft Platz zu nehmen.
   document.querySelectorAll('[data-panel]').forEach((b) =>
     b.addEventListener('click', () => zeigeBereich(b.dataset.panel))
   );
 
-  $('#getPrices').addEventListener('click', fetchPrices);
+  $('#getPrices').addEventListener('click', () => fetchPrices());
+  $('#nochmal').addEventListener('click', () => fetchPrices({ nurFehler: true }));
   $('#getSchutz').addEventListener('click', fetchSchutz);
   $('#vorschlagSenden').addEventListener('click', sendeVorschlag);
+  $('#vorschlagMail').addEventListener('click', vorschlagAlsMail);
   for (const id of ['#abbrechen', '#abbrechen2']) {
     $(id).addEventListener('click', abbrechen);
   }
@@ -1840,9 +2625,31 @@ function init() {
     state.markets = ['de', 'at', 'ch'];
     update();
   });
-  $('#reset').addEventListener('click', () => {
-    localStorage.removeItem(LS_KEY);
-    location.reload();
+  // Wirklich auf null: keine Station, keine Länderseite, keine Matrix, keine
+  // Ergebnisse. Vorher setzte der Knopf auf die Voreinstellung zurück — also
+  // wieder Frankfurt und fünf Länder, und wer zwanzig Stationen loswerden
+  // wollte, hatte danach immer noch eine.
+  $('#reset').addEventListener('click', async () => {
+    state.stations = [];
+    state.markets = [];
+    state.returnStation = null;
+    state.dayShifts = [0];
+    state.returnShifts = [0];
+    state.durations = [];
+    prices.clear();
+    schutz.clear();
+    schutzAcriss = null;
+    aktiveGruppe = null;
+    letzteSignatur = null;
+    // Auch beim Dienst wegräumen, sonst kommen die alten Preise beim
+    // nächsten Takt gleich wieder herein.
+    await fetch('/api/results/clear', { method: 'POST' }).catch(() => {});
+    update();
+    // Ohne das Zurücksetzen würde zeigeBereich() umschalten und den schon
+    // offenen Bereich zuklappen — nach einem Reset soll er offen sein.
+    offenerBereich = null;
+    zeigeBereich('station');
+    flash('Auswahl zurückgesetzt.');
   });
 
   // Die Laenderzahl aus den Daten holen, nicht hinschreiben — sonst stimmt
@@ -1854,6 +2661,12 @@ function init() {
   if (state.mode === 'status') {
     renderStatus();
     showScreen('status');
+  } else if (state.mode === 'mail') {
+    renderMail();
+    showScreen('mail');
+  } else if (state.mode === 'verlauf') {
+    renderVerlauf();
+    showScreen('verlauf');
   } else if (state.mode) {
     showScreen('work');
     update();
@@ -1876,6 +2689,7 @@ function init() {
     // Vorschläge brauchen den Dienst — ohne ihn gäbe es nichts, was sie
     // entgegennimmt.
     $('#vorschlagKarte').hidden = !ok;
+    renderVorschlagWohin();
 
     if (ok) {
       haltAmLeben();

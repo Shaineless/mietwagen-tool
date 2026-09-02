@@ -889,6 +889,11 @@ table.vergleich.schutz td, table.vergleich.schutz th.klasse { vertical-align: to
 .standliste b { font-weight: 560; letter-spacing: -.01em; }
 .st.nein b { color: var(--muted); }
 .sttext { display: block; margin-top: 3px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+/* Der Rat steht unter dem Befund und ist als Handlung erkennbar, nicht als
+   weitere Beschreibung. */
+.sttext.rat { margin-top: 6px; color: var(--warn); }
+#testKarte { margin-bottom: 16px; }
+#testErgebnis:not(:empty) { margin-top: 6px; }
 
 /* ============================================================ Rückmeldung
  *
@@ -980,6 +985,61 @@ tr.mietzeile .betrag { color: var(--ink2); font-weight: 500; }
   .muted, .leise { color: var(--ink2); }
 }
 
+/* Ein Betrag, der nicht zum Tagespreis passt, wird nicht versteckt und nicht
+   stillschweigend gezeigt, sondern als fragwürdig markiert. */
+.warnmark { background: var(--warn-bg) !important; color: var(--warn) !important; }
+td.unstimmig .betrag {
+  text-decoration: underline wavy var(--warn);
+  text-underline-offset: 4px;
+}
+
+/* ============================================================ Verlauf */
+
+.verlaufkarte { margin-bottom: 18px; }
+.vkopf { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+.vkopf > div:first-child { flex: 1; min-width: 0; }
+.vkopf h3 { margin: 0 0 4px; }
+.vkopf .note { margin: 0; }
+.vschutz { margin-top: 14px; }
+.vschutz > summary { font-size: 13px; color: var(--muted); cursor: pointer; }
+.vschutz .note { margin: 8px 0 0; }
+
+/* ============================================================ Adressen */
+
+.station .art {
+  margin-left: auto;
+  font-size: 11px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  color: var(--leise);
+  letter-spacing: .04em;
+}
+.station.on .art { color: inherit; opacity: .8; }
+
+.mailzeile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  box-shadow: inset 0 -1px 0 var(--hairline2);
+}
+.mailzeile:last-child { box-shadow: none; }
+.mailort { flex: 1; min-width: 180px; display: flex; align-items: baseline; gap: 10px; }
+.mailort b { font-weight: 560; letter-spacing: -.01em; }
+.mailadr {
+  background: var(--flaeche2);
+  padding: 6px 12px;
+  border-radius: var(--r-klein);
+  font-size: 13px;
+  /* Adressen brechen sonst mitten im Namen um und werden unlesbar. */
+  white-space: nowrap;
+}
+
+/* Eine Einstellung, die gerade nichts bewirkt, wird nicht versteckt — sonst
+   springt das Layout — sondern zurückgenommen und erklärt. */
+.stillgelegt { opacity: .45; }
+.stillgelegt .pill { pointer-events: none; }
+
 /* ============================================================ Vorschläge */
 
 /* Zurueckhaltend: eine Zeile, bis man sie braucht. */
@@ -987,13 +1047,24 @@ tr.mietzeile .betrag { color: var(--ink2); font-weight: 500; }
   max-width: 1180px;
   margin: 26px auto 0;
 }
+/* Zurückhaltend, aber auffindbar: eine Zeile, die man sieht, ohne dass sie
+   sich vordrängt. Vorher stand sie in --leise bei 13px und wurde übersehen. */
 .vorschlag > summary {
-  color: var(--leise);
-  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink2);
+  font-size: 14px;
+  font-weight: 500;
   margin: 0;
-  padding: 6px 0;
+  padding: 9px 16px;
+  border-radius: 980px;
+  background: var(--flaeche2);
+  transition: background var(--t-druck) var(--raus), color var(--t-druck) var(--raus);
 }
-.vorschlag > summary:hover { color: var(--accent); }
+.vorschlag > summary::marker { color: var(--leise); }
+.vorschlag > summary:hover { color: var(--accent); background: var(--accent-weich); }
+.vorschlag[open] > summary { color: var(--accent); background: var(--accent-weich); }
 .vorschlagInhalt {
   background: var(--flaeche);
   border-radius: var(--r);
