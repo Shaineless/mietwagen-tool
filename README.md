@@ -88,9 +88,11 @@ gebauten SEA-Dateien misstrauisch.
 - **Preiswecker.** Eine Suche wird alle paar Stunden selbst nachgeprüft und
   meldet sich, wenn der Preis unter eine Grenze fällt — nur solange das
   Programm läuft, im Hintergrund bleibt nichts zurück.
-- **Ganzer Monat auf einen Blick.** Rechnet jeden Abholtag durch und färbt
-  einen Kalender danach ein. Im Test: dieselbe Klasse, dieselbe Mietdauer,
-  113 € am günstigsten und 468 € am teuersten Tag.
+- **Monatsübersicht.** Eigener Bereich: Station, Länderseite, Fahrzeugklasse,
+  Mietdauer, erster Abholtag, Anzahl der Tage und Abholzeit frei wählbar.
+  Rechnet jeden Abholtag durch und färbt einen Kalender danach ein. Im Test
+  München Flughafen, dieselbe Dauer: 111 € am günstigsten, 317 € am teuersten
+  Tag — 186 % Unterschied allein durch den Abholtag.
 - **Als CSV speichern**, Notiz je gespeicherter Suche, Einweg-Miete direkt in
   der Stationsauswahl.
 - **Abbrechen** mitten im Abruf.
@@ -179,7 +181,6 @@ tools/
   beobachtung.mjs       Messpunkte für die Preiskurve (preisverlauf.jsonl)
   wecker.mjs            Preiswecker: anlegen, prüfen, auslösen
   selbsttest.mjs        prüft die ganze Kette auf einem fremden Rechner
-  vorschlag-worker.js   Vorlage: Vorschläge per E-Mail weiterleiten
   scrape/sixt.mjs       Preisliste auslesen
   scrape/sixt-schutz.mjs Schutzpakete in der Kasse durchklicken
   try-quote.mjs         Handprobe: eine Preisliste auslesen
@@ -209,9 +210,6 @@ bekommt, steht in [tools/harvest-sixt.md](tools/harvest-sixt.md).
 Die Stations-IDs stammen aus den öffentlichen, für Suchmaschinen freigegebenen
 Stationsseiten auf sixt.de, wo sie im Seitenquelltext stehen. Es wurde keine
 interne API angezapft.
-
-Verbesserungsvorschläge aus dem Werkzeug landen in `data/verbesserungen.jsonl`
-auf diesem Rechner und werden nirgendwohin gesendet.
 
 Fahrzeugbilder und Preise stammen von Sixt. Die Farbthemen sind an die
 Hausfarben der Vermieter angelehnt und dienen der Orientierung. Keine Logos,

@@ -306,79 +306,6 @@ function starteWeckerTakt() {
   setInterval(takt, WECKER_TAKT_MS).unref();
 }
 
-/* ------------------------------------------------------ Weiterleitung
- *
- * Vorschlaege liegen zuerst und immer auf dem Rechner, auf dem sie entstehen.
- * Damit sie auch beim Betreuer des Werkzeugs ankommen, kann eine Adresse
- * hinterlegt werden, an die sie zusaetzlich geschickt werden.
- *
- * Bewusst eine URL und keine Zugangsdaten: alles, was in der EXE steht, kann
- * jeder auslesen, der sie hat. Ein Postfachpasswort dort abzulegen waere, es
- * zu veroeffentlichen. Ein Formulardienst oder ein kleiner eigener Endpunkt
- * ist genau dafuer gedacht, oeffentlich angesprochen zu werden.
- *
- * Eingerichtet wird sie in `Preistool-Daten/einstellungen.json`:
- *   { "vorschlaegeAn": "https://...", "vorschlaegeMail": "name@beispiel.de" }
- * oder ueber die Umgebungsvariablen MWT_VORSCHLAEGE_URL / MWT_VORSCHLAEGE_MAIL.
- */
-
-/**
- * Voreinstellungen, die mit dem Programm mitgehen.
- *
- * Die Adresse steht hier, damit ein Vorschlag auch von einem fremden Rechner
- * ankommt — dort gibt es keine einstellungen.json. Sie ist damit fuer jeden
- * lesbar, der die EXE hat; das ist der Preis dafuer, erreichbar zu sein, und
- * eine E-Mail-Adresse ist genau dafuer da. Zugangsdaten stehen hier nicht und
- * duerfen hier nie stehen.
- */
-const VOREINSTELLUNG = {
-  vorschlaegeMail: 'tool@qylar.com',
-};
-
-let einstellungen = null;
-
-async function ladeEinstellungen() {
-  if (einstellungen) return einstellungen;
-  einstellungen = { ...VOREINSTELLUNG };
-  try {
-    const roh = await readFile(join(datenOrdner, 'einstellungen.json'), 'utf8');
-    // Notepad und PowerShell schreiben UTF-8 mit BOM. JSON.parse stolpert
-    // darueber, und die Datei sieht dabei voellig richtig aus — deshalb weg
-    // damit, statt den Nutzer raten zu lassen.
-    einstellungen = { ...VOREINSTELLUNG, ...JSON.parse(roh.replace(/^﻿/, '')) };
-  } catch (e) {
-    // Zwischen "gibt es nicht" (Normalfall) und "ist kaputt" (bitte melden)
-    // unterscheiden, sonst sucht man den Fehler an der falschen Stelle.
-    if (e.code !== 'ENOENT') {
-      console.log(`  ! einstellungen.json unlesbar: ${String(e.message).slice(0, 120)}`);
-    }
-  }
-  if (process.env.MWT_VORSCHLAEGE_URL) einstellungen.vorschlaegeAn = process.env.MWT_VORSCHLAEGE_URL;
-  if (process.env.MWT_VORSCHLAEGE_MAIL) {
-    einstellungen.vorschlaegeMail = process.env.MWT_VORSCHLAEGE_MAIL;
-  }
-  return einstellungen;
-}
-
-async function weiterleiten(zeile) {
-  const e = await ladeEinstellungen();
-  if (!e.vorschlaegeAn) return false;
-  try {
-    const r = await fetch(e.vorschlaegeAn, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: zeile,
-      signal: AbortSignal.timeout(8000),
-    });
-    console.log(`  → Vorschlag weitergeleitet (${r.status})`);
-    return r.ok;
-  } catch (err) {
-    // Kein Grund, dem Nutzer einen Fehler zu zeigen: gespeichert ist er.
-    console.log(`  ! Weiterleitung fehlgeschlagen: ${String(err.message).slice(0, 120)}`);
-    return false;
-  }
-}
-
 /* ------------------------------------------------------ Lebenszeichen
  *
  * Woher weiss ein Programm ohne Konsolenfenster, dass es fertig ist?
@@ -470,7 +397,6 @@ const server = createServer(async (req, res) => {
 
   // Lebenszeichen — die Oberflaeche schaltet daran den Preis-Modus frei.
   if (path === '/api/health') {
-    const e = await ladeEinstellungen();
     return json(res, 200, {
       ok: true,
       service: 'mwt-preistool',
@@ -478,10 +404,6 @@ const server = createServer(async (req, res) => {
       // Ohne Chrome gibt es keinen automatischen Abruf; die Oberflaeche sagt
       // das dann statt es zu versuchen und stillschweigend zu scheitern.
       chrome: Boolean(findBrowser()),
-      // Damit die Oberflaeche wahrheitsgemaess sagen kann, wohin ein
-      // Vorschlag geht — "bleibt auf diesem Rechner" waere sonst gelogen.
-      weiterleitung: Boolean(e.vorschlaegeAn),
-      vorschlaegeMail: e.vorschlaegeMail || null,
       queue: { laufend, offen: queue.length, erledigt, gesamt },
     });
   }
@@ -584,63 +506,6 @@ const server = createServer(async (req, res) => {
     }
   }
 
-  // Verbesserungsvorschlaege einsammeln.
-  //
-  // Bewusst eine einfache Datei im JSON-Lines-Format: eine Zeile je Vorschlag,
-  // anhaengend geschrieben. Nichts kann dabei verlorengehen, und man kann sie
-  // mit jedem Editor lesen. Ist eine Weiterleitung eingerichtet, geht der
-  // Vorschlag zusaetzlich dorthin — die Oberflaeche sagt das dann auch.
-  if (path === '/api/feedback' && req.method === 'POST') {
-    try {
-      const body = JSON.parse(await readBody(req, 40_000));
-      const text = String(body.text || '').trim();
-      if (text.length < 3) return json(res, 400, { ok: false, error: 'Zu kurz' });
-
-      const zeile =
-        JSON.stringify({
-          am: new Date().toISOString(),
-          text: text.slice(0, 4000),
-          // Was gerade eingestellt war — hilft beim Nachvollziehen.
-          kontext: typeof body.kontext === 'object' ? body.kontext : null,
-        }) + '\n';
-
-      await mkdir(datenOrdner, { recursive: true });
-      await appendFile(join(datenOrdner, 'verbesserungen.jsonl'), zeile, 'utf8');
-      console.log(`  ✎ Vorschlag gespeichert (${text.length} Zeichen)`);
-
-      const weiter = await weiterleiten(zeile);
-      return json(res, 200, { ok: true, weitergeleitet: weiter });
-    } catch (e) {
-      return json(res, 400, { ok: false, error: String(e.message).slice(0, 200) });
-    }
-  }
-
-  // Gesammelte Vorschlaege ansehen.
-  if (path === '/api/feedback/list') {
-    try {
-      const roh = await readFile(join(datenOrdner, 'verbesserungen.jsonl'), 'utf8');
-      const eintraege = roh
-        .split('\n')
-        .filter(Boolean)
-        .map((z) => {
-          try {
-            return JSON.parse(z);
-          } catch {
-            return null;
-          }
-        })
-        .filter(Boolean);
-      return json(res, 200, { ok: true, eintraege });
-    } catch {
-      return json(res, 200, { ok: true, eintraege: [] });
-    }
-  }
-
-  // Laufende Warteschlange abbrechen.
-  //
-  // Die bereits gestarteten Abrufe laufen zu Ende — sie mittendrin abzuwuergen
-  // hiesse, ein Chrome-Fenster mit halb geladener Seite stehen zu lassen.
-  // Alles Wartende wird verworfen.
   if (path === '/api/cancel' && req.method === 'POST') {
     const verworfen = queue.length;
     queue.length = 0;

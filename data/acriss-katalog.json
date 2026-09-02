@@ -468,8 +468,8 @@
    "modelle": [
     "CUPRA TAVASCAN"
    ],
-   "beispielText": "Standard SUV Automático",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Standardklasse SUV Automatik",
+   "zuletzt": "2026-09-02"
   },
   "CWMR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-golf-variant-stw-4d-grey-2022.png",
@@ -518,8 +518,8 @@
    "modelle": [
     "MERCEDES-BENZ VITO TOURER"
    ],
-   "beispielText": "Lujo Elite Van Automático",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Luxusklasse Elite Van Automatik",
+   "zuletzt": "2026-09-02"
   },
   "JESR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m2-coupe-2d-black-2023.png",
@@ -550,16 +550,16 @@
    "modelle": [
     "VOLVO EX30"
    ],
-   "beispielText": "Compact Elite SUV Automático",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Kompaktklasse Elite SUV Automatik",
+   "zuletzt": "2026-09-02"
   },
   "JFAE": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/volvo-ex40-suv-white-2025.png",
    "modelle": [
     "VOLVO EX40"
    ],
-   "beispielText": "Midsize Elite SUV Automático",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Mittelklasse Elite SUV Automatik",
+   "zuletzt": "2026-09-02"
   },
   "DDAH": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/audi-a3-sportback-black-2021.png",
@@ -840,13 +840,14 @@
    "zuletzt": "2026-09-01"
   },
   "GELR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m4-coupe-blue-2022.png",
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m4-coupe-2d-blue-2023-JV.png",
    "modelle": [
     "FULLSIZE ELITE COUPÉ",
-    "FULLSIZE ELITE COUPE"
+    "FULLSIZE ELITE COUPE",
+    "BMW M4 COUPÉ"
    ],
-   "beispielText": "BMW M4 COMPETITION COUPE",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Oberklasse Elite Coupé Automatik",
+   "zuletzt": "2026-09-02"
   },
   "WFAV": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/cadillac-escalade-suv-black-2026.png",
@@ -971,6 +972,62 @@
     "FORD TOURNEO CUSTOM"
    ],
    "beispielText": "Premiumklasse Van Automatik",
+   "zuletzt": "2026-09-02"
+  },
+  "JDAE": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-cla-4d-sedan-white-2026.png",
+   "modelle": [
+    "MERCEDES-BENZ CLA"
+   ],
+   "beispielText": "Mittelklasse Elite Limousine Automatik",
+   "zuletzt": "2026-09-02"
+  },
+  "IFSR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/cupra-formentor-suv-white-2025.png",
+   "modelle": [
+    "CUPRA FORMENTOR VZ"
+   ],
+   "beispielText": "Mittelklasse SUV Automatik",
+   "zuletzt": "2026-09-02"
+  },
+  "GWLR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m3-amg-stw-lila-2023.png",
+   "modelle": [
+    "BMW M3 COMPETITION TOURING"
+   ],
+   "beispielText": "Oberklasse Elite Kombi Automatik",
+   "zuletzt": "2026-09-02"
+  },
+  "XFLP": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/land-rover-range-rover-5d-suv-grey-2022.png",
+   "modelle": [
+    "RANGE ROVER"
+   ],
+   "beispielText": "Spezialklasse SUV Automatik",
+   "zuletzt": "2026-09-02"
+  },
+  "GTLR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m4-competition-convertible-2d-grey-2023.png",
+   "modelle": [
+    "BMW M4 COMPETITION CABRIO"
+   ],
+   "beispielText": "Oberklasse Elite Cabrio Automatik",
+   "zuletzt": "2026-09-02"
+  },
+  "UDLR": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m5-4d-sedan-grey-2025.png",
+   "modelle": [
+    "BMW M5"
+   ],
+   "beispielText": "Premiumklasse Elite Limousine Automatik",
+   "zuletzt": "2026-09-02"
+  },
+  "EFAE": {
+   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/citroen-c3-e-bev-5d-blue-2024.png",
+   "modelle": [
+    "CITROEN E-C3"
+   ],
+   "beispielText": "Kleinwagen SUV Automatik",
    "zuletzt": "2026-09-02"
   }
  },
@@ -3113,6 +3170,75 @@
    "GELP": "2026-09-02",
    "JELP": "2026-09-02",
    "GTLP": "2026-09-02"
+  },
+  "sixt|11|www.sixt.de": {
+   "GWAR": "2026-09-02",
+   "CFMR": "2026-09-02",
+   "DFAE": "2026-09-02",
+   "IFAE": "2026-09-02",
+   "CFAR": "2026-09-02",
+   "IFMR": "2026-09-02",
+   "DDAR": "2026-09-02",
+   "IVMV": "2026-09-02",
+   "SFMR": "2026-09-02",
+   "IFAR": "2026-09-02",
+   "DFAR": "2026-09-02",
+   "JDAR": "2026-09-02",
+   "SFAR": "2026-09-02",
+   "DVAR": "2026-09-02",
+   "JDAE": "2026-09-02",
+   "IVAV": "2026-09-02",
+   "PFAV": "2026-09-02",
+   "GDAR": "2026-09-02",
+   "GFAR": "2026-09-02",
+   "UFAR": "2026-09-02",
+   "UWAR": "2026-09-02",
+   "SVAR": "2026-09-02",
+   "DDSR": "2026-09-02",
+   "IFSR": "2026-09-02",
+   "JDSR": "2026-09-02",
+   "GFSR": "2026-09-02",
+   "GWSR": "2026-09-02",
+   "WFDR": "2026-09-02",
+   "UFSR": "2026-09-02",
+   "XFDR": "2026-09-02",
+   "WVAR": "2026-09-02",
+   "UVAR": "2026-09-02",
+   "WFSR": "2026-09-02",
+   "WFLP": "2026-09-02",
+   "GWLR": "2026-09-02",
+   "XDLP": "2026-09-02",
+   "WFLR": "2026-09-02",
+   "XFLR": "2026-09-02",
+   "XFLV": "2026-09-02",
+   "GTLP": "2026-09-02",
+   "XFLP": "2026-09-02",
+   "GLSR": "2026-09-02",
+   "LVMR": "2026-09-02",
+   "LVAR": "2026-09-02",
+   "UDAR": "2026-09-02",
+   "GEAR": "2026-09-02",
+   "JESR": "2026-09-02",
+   "GESR": "2026-09-02",
+   "UTAR": "2026-09-02",
+   "XDDR": "2026-09-02",
+   "XFDV": "2026-09-02",
+   "XDSR": "2026-09-02",
+   "JELP": "2026-09-02",
+   "JTLP": "2026-09-02",
+   "SFAE": "2026-09-02",
+   "GTLR": "2026-09-02",
+   "UDLR": "2026-09-02",
+   "GELP": "2026-09-02",
+   "CZMR": "2026-09-02",
+   "JFAE": "2026-09-02",
+   "EDMR": "2026-09-02",
+   "EDAR": "2026-09-02",
+   "EFMR": "2026-09-02",
+   "EFAR": "2026-09-02",
+   "GDLR": "2026-09-02",
+   "GELR": "2026-09-02",
+   "EFAE": "2026-09-02"
   }
  }
 }

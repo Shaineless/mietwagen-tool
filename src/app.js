@@ -26,6 +26,18 @@ const defaults = () => {
     markets: ['de', 'at', 'ch', 'nl', 'es'],
     /** Nur bekannte, aber gerade nicht buchbare Klassen mitzeigen? */
     zeigeNichtBuchbare: true,
+    /** Einstellungen der Monatsübersicht — eigener Bereich, eigener Zustand. */
+    kalender: {
+      station: '110',
+      host: 'www.sixt.de',
+      klasse: '',
+      dauer: 3,
+      // Drei Tage Vorlauf: was übermorgen abgeholt wird, ist ohnehin teuer,
+      // und ein Kalender, der mit Ausreissern anfängt, führt in die Irre.
+      start: iso(new Date(Date.now() + 3 * 86400000)),
+      spanne: 28,
+      zeit: '10:00',
+    },
   };
 };
 
@@ -51,7 +63,11 @@ function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
     if (!saved) return defaults();
-    const merged = { ...defaults(), ...saved };
+    // Verschachtelte Bereiche einzeln zusammenfuehren: ein flaches Spread
+    // wuerde einen alten kalender-Block ohne neue Felder uebernehmen und
+    // damit undefined-Werte einschleppen.
+    const grund = defaults();
+    const merged = { ...grund, ...saved, kalender: { ...grund.kalender, ...(saved.kalender || {}) } };
     if (merged.pickupDate < iso(new Date())) {
       const d = defaults();
       merged.pickupDate = d.pickupDate;
@@ -77,8 +93,6 @@ const service = {
   available: false,
   chrome: false,
   queue: null,
-  weiterleitung: false,
-  vorschlaegeMail: null,
 };
 const prices = new Map(); // Auftragsschlüssel -> Preisergebnis
 const schutz = new Map(); // Auftragsschlüssel -> Schutzergebnis
@@ -93,8 +107,6 @@ async function checkService() {
       const d = await r.json();
       service.chrome = Boolean(d.chrome);
       service.queue = d.queue || null;
-      service.weiterleitung = Boolean(d.weiterleitung);
-      service.vorschlaegeMail = d.vorschlaegeMail || null;
     }
   } catch {
     service.available = false;
@@ -443,6 +455,7 @@ function showScreen(name) {
   $('#mailScreen').hidden = name !== 'mail';
   $('#verlaufScreen').hidden = name !== 'verlauf';
   $('#kurveScreen').hidden = name !== 'kurve';
+  $('#kalenderScreen').hidden = name !== 'kalender';
 }
 
 /**
@@ -794,146 +807,251 @@ function renderKurve() {
   renderWecker();
 }
 
-/* =========================================================== Monatskalender
+/* =========================================================== Monatsübersicht
  *
- * Die Datums-Matrix kann das im Kern schon — was fehlte, war die Darstellung.
- * Dreissig Zahlen in einer Tabelle sagen einem nichts; dieselben dreissig
- * Zahlen als eingefaerbter Kalender sagen sofort, dass der Dienstag billig
+ * Die Datums-Matrix im Vergleich kann dasselbe rechnen — was fehlte, war die
+ * Darstellung. Dreissig Zahlen in einer Tabelle sagen einem nichts; dieselben
+ * dreissig als eingefaerbter Kalender sagen sofort, dass der Dienstag billig
  * und das Wochenende teuer ist.
  *
- * Eine Laenderseite, eine Klasse, eine Dauer: das sind dreissig Abrufe. Alle
- * Laenderseiten waeren siebenhundert, und das waere niemandem gegenueber in
- * Ordnung — weder Sixt noch dem Nutzer, der eine halbe Stunde wartet.
+ * Eine Laenderseite, eine Klasse, eine Dauer je Durchlauf: das sind dreissig
+ * Abrufe. Alle Laenderseiten gleichzeitig waeren neunhundert — das waere
+ * weder gegenueber Sixt in Ordnung noch gegenueber dem Nutzer, der eine
+ * halbe Stunde wartet.
  */
 
-let kalenderTage = 28;
-let kalenderDauer = 3;
-let kalenderLaeuft = false;
+const KAL_DAUERN = [1, 2, 3, 4, 5, 6, 7, 10, 14, 21];
+const KAL_SPANNEN = [7, 14, 21, 28, 35, 42, 56];
 
-function kalenderJobs() {
-  const g = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
-  if (!g || !kurveKlasse) return null;
+let kalLaeuft = false;
+let kalKlassen = [];
 
-  const host = $('#kalenderHost')?.value || g.hosts[0];
+/** Die aktuelle Einstellung als Auftragsliste. */
+function kalJobs() {
+  const station = stationByCode(state.kalender.station);
+  if (!station) return null;
+
+  const host = state.kalender.host;
   const markt = providerById(PROVIDER).markets.find((m) => m.host === host);
-  const start = new Date();
-  start.setDate(start.getDate() + 3); // die naechsten Tage sind meist ohnehin teuer
+  if (!markt) return null;
 
   const jobs = [];
-  for (let i = 0; i < kalenderTage; i++) {
-    const ab = new Date(start);
-    ab.setDate(ab.getDate() + i);
-    const bis = new Date(ab);
-    bis.setDate(bis.getDate() + kalenderDauer);
+  for (let i = 0; i < state.kalender.spanne; i++) {
+    const ab = addDays(state.kalender.start, i);
+    const bis = addDays(ab, state.kalender.dauer);
+    const v = { pickupDate: ab, returnDate: bis, duration: state.kalender.dauer };
     jobs.push({
-      key: jobKey(host, g.station, { pickupDate: iso(ab), returnDate: iso(bis) }),
+      key: jobKey(host, station.code, v),
       provider: PROVIDER,
       host,
-      stationCode: g.station,
-      pickupDate: iso(ab),
-      returnDate: iso(bis),
-      pickupTime: '10:00',
-      returnTime: '10:00',
-      currency: markt?.cur,
+      stationCode: station.code,
+      pickupDate: ab,
+      returnDate: bis,
+      pickupTime: state.kalender.zeit,
+      returnTime: state.kalender.zeit,
+      currency: markt.cur,
     });
   }
-  return { jobs, g, markt };
+  return { jobs, station, markt };
 }
 
-async function starteKalender() {
-  const d = kalenderJobs();
-  if (!d) return;
-  if (kalenderLaeuft) return;
-
-  kalenderLaeuft = true;
-  // Dem Abholtakt sagen, dass es diese Schlüssel gibt — sonst kommen die
-  // Ergebnisse nie in der Oberfläche an.
-  for (const j of d.jobs) extraSchluessel.add(j.key);
-  renderKalender();
+/** Welche Klassen sind an dieser Station schon einmal gesehen worden? */
+async function ladeKalKlassen() {
+  const station = stationByCode(state.kalender.station);
+  if (!station) {
+    kalKlassen = [];
+    return;
+  }
   try {
-    await sendeJobs(d.jobs, $('#kalenderStart'));
-    flash(`${d.jobs.length} Tage werden durchgerechnet — das dauert ein paar Minuten.`);
-    // Auf das Ende warten und dabei zeichnen, was schon da ist.
-    for (let i = 0; i < 200; i++) {
-      await new Promise((r) => setTimeout(r, 3000));
-      await pollErgebnisse();
-      renderKalenderBild();
-      const h = service.queue;
-      if (h && !h.laufend && !h.offen) break;
-    }
-  } finally {
-    kalenderLaeuft = false;
-    renderKalender();
-    renderKalenderBild();
+    const r = await fetch(
+      `/api/katalog?provider=${PROVIDER}&station=${encodeURIComponent(station.code)}` +
+        `&hosts=${encodeURIComponent(state.kalender.host)}`
+    );
+    const d = await r.json();
+    kalKlassen = Object.keys(d.klassen || {}).sort();
+  } catch {
+    kalKlassen = [];
   }
 }
 
-function renderKalenderBild() {
-  const d = kalenderJobs();
-  if (!d) return;
+function renderKalFormular() {
+  const k = state.kalender;
 
-  const werte = d.jobs.map((j) => {
-    const r = prices.get(j.key);
-    const treffer = (r?.offers || []).find((o) => o.acriss === kurveKlasse);
-    return { datum: j.pickupDate, preis: treffer?.total ?? null, geladen: Boolean(r) };
-  });
-
-  const gueltig = werte.map((w) => w.preis).filter((p) => p != null);
-  if (!gueltig.length) {
+  // Länderseiten
+  const host = $('#kalHost');
+  if (!host.options.length) {
     setChildren(
-      $('#kalenderBild'),
-      el(
-        'p',
-        { class: 'empty' },
-        kalenderLaeuft ? 'Wird berechnet …' : 'Noch nichts berechnet.'
+      host,
+      ...providerById(PROVIDER).markets.map((m) =>
+        el('option', { value: m.host }, `${m.label} (${m.cur})`)
       )
     );
+  }
+  host.value = k.host;
+
+  // Klassen: billigste zuerst, dann alles, was der Katalog kennt
+  setChildren(
+    $('#kalKlasse'),
+    el('option', { value: '' }, 'Billigste Klasse des Tages'),
+    ...kalKlassen.map((c) => {
+      const d = decodeAcriss(c);
+      return el('option', { value: c }, d ? `${c} — ${d.label}` : c);
+    })
+  );
+  $('#kalKlasse').value = kalKlassen.includes(k.klasse) ? k.klasse : '';
+  if (!kalKlassen.includes(k.klasse)) k.klasse = '';
+
+  setChildren(
+    $('#kalDauer'),
+    ...KAL_DAUERN.map((n) => el('option', { value: n }, `${n} ${n === 1 ? 'Tag' : 'Tage'}`))
+  );
+  $('#kalDauer').value = String(k.dauer);
+
+  setChildren(
+    $('#kalSpanne'),
+    ...KAL_SPANNEN.map((n) => el('option', { value: n }, `${n} Abholtage`))
+  );
+  $('#kalSpanne').value = String(k.spanne);
+
+  $('#kalStart').value = k.start;
+  $('#kalZeit').value = k.zeit;
+
+  const station = stationByCode(k.station);
+  $('#kalStationGewaehlt').textContent = station
+    ? `Gewählt: ${station.name} (Nr. ${station.code})`
+    : 'Noch keine Station gewählt.';
+
+  const minuten = Math.ceil((k.spanne * 7) / 60);
+  $('#kalHinweis').textContent = station
+    ? `${k.spanne} Abrufe, rund ${minuten} ${minuten === 1 ? 'Minute' : 'Minuten'}. Schon berechnete Tage stehen sofort da.`
+    : 'Bitte zuerst eine Station wählen.';
+  $('#kalStart2').disabled = !station || kalLaeuft;
+  $('#kalStart2').textContent = kalLaeuft ? 'Rechnet …' : 'Durchrechnen';
+  $('#kalAbbrechen').hidden = !kalLaeuft;
+}
+
+function renderKalStationSuche() {
+  const needle = $('#kalStation').value;
+  const feld = $('#kalStationTreffer');
+  if (!needle.trim()) {
+    feld.hidden = true;
+    return;
+  }
+  const hits = suche(needle, 30);
+  feld.hidden = false;
+  setChildren(
+    feld,
+    ...hits.map((s) =>
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'station' + (s.code === state.kalender.station ? ' on' : ''),
+          onclick: async () => {
+            state.kalender.station = s.code;
+            $('#kalStation').value = '';
+            feld.hidden = true;
+            persist();
+            await ladeKalKlassen();
+            renderKalFormular();
+            renderKalBild();
+          },
+        },
+        el('span', { class: 'flag' }, s.country),
+        el('span', { class: 'sname' }, s.name),
+        el('span', { class: 'art' }, s.flughafen ? 'ap' : 'dt')
+      )
+    ),
+    hits.length ? null : el('p', { class: 'empty' }, 'Keine Station gefunden.')
+  );
+}
+
+/** Der Preis eines Tages — je nach Wahl die Klasse oder das billigste Angebot. */
+function kalPreis(key) {
+  const r = prices.get(key);
+  if (!r) return { geladen: false, preis: null };
+  const angebote = r.offers || [];
+  if (!angebote.length) return { geladen: true, preis: null, grund: r.error || 'kein Angebot' };
+
+  if (state.kalender.klasse) {
+    const t = angebote.find((o) => o.acriss === state.kalender.klasse);
+    return { geladen: true, preis: t?.total ?? null, modell: t?.model, grund: t ? null : 'Klasse nicht im Angebot' };
+  }
+  const billigstes = angebote
+    .filter((o) => o.total != null)
+    .reduce((a, b) => (b.total < a.total ? b : a), { total: Infinity });
+  return billigstes.total === Infinity
+    ? { geladen: true, preis: null }
+    : { geladen: true, preis: billigstes.total, modell: billigstes.model, acriss: billigstes.acriss };
+}
+
+function renderKalBild() {
+  const d = kalJobs();
+  if (!d) {
+    $('#kalErgebnis').hidden = true;
     return;
   }
 
-  const min = Math.min(...gueltig);
-  const max = Math.max(...gueltig);
+  const tage = d.jobs.map((j) => ({ datum: j.pickupDate, ...kalPreis(j.key) }));
+  const werte = tage.map((t) => t.preis).filter((p) => p != null);
+
+  if (!werte.length) {
+    $('#kalErgebnis').hidden = !kalLaeuft;
+    if (kalLaeuft) {
+      $('#kalTitel').textContent = 'Wird berechnet …';
+      setChildren($('#kalBild'), el('p', { class: 'empty' }, 'Die ersten Tage kommen gleich.'));
+    }
+    return;
+  }
+
+  const min = Math.min(...werte);
+  const max = Math.max(...werte);
   const spanne = Math.max(max - min, 1);
 
   // Vor den ersten Tag so viele Lücken, dass die Wochentage untereinander
   // stehen — ein Kalender, in dem Montag nicht unter Montag steht, ist keiner.
-  const ersterTag = new Date(werte[0].datum + 'T12:00:00');
-  const luecke = (ersterTag.getDay() + 6) % 7;
+  const luecke = (new Date(tage[0].datum + 'T12:00:00').getDay() + 6) % 7;
+
+  $('#kalErgebnis').hidden = false;
+  $('#kalTitel').textContent =
+    `${d.station.name} · ${state.kalender.klasse || 'billigste Klasse'} · ` +
+    `${state.kalender.dauer} ${state.kalender.dauer === 1 ? 'Tag' : 'Tage'} · ${d.markt.label}`;
 
   setChildren(
-    $('#kalenderBild'),
+    $('#kalBild'),
     el(
       'div',
       { class: 'kalender' },
-      ...['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((t) =>
-        el('span', { class: 'kkopf' }, t)
-      ),
+      ...['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((t) => el('span', { class: 'kkopf' }, t)),
       ...Array.from({ length: luecke }, () => el('span', { class: 'ktag leer' })),
-      ...werte.map((w) => {
-        const datum = new Date(w.datum + 'T12:00:00');
-        const anteil = w.preis != null ? (w.preis - min) / spanne : null;
+      ...tage.map((t) => {
+        const datum = new Date(t.datum + 'T12:00:00');
+        const anteil = t.preis != null ? (t.preis - min) / spanne : null;
         return el(
           'span',
           {
             class:
-              'ktag' +
-              (w.preis === min ? ' billigster' : '') +
-              (w.preis == null && w.geladen ? ' nichts' : ''),
+              'ktag' + (t.preis === min ? ' billigster' : '') + (t.preis == null && t.geladen ? ' nichts' : ''),
             // Von grün (billig) nach rot (teuer). Der Farbton trägt die
             // Aussage, die Zahl darunter die Genauigkeit.
             style:
               anteil == null
                 ? ''
                 : `background: color-mix(in oklab, #16a34a ${Math.round((1 - anteil) * 100)}%, #dc2626)`,
-            title: `${datum.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' })}` +
-              ` · ${kalenderDauer} Tage` +
-              (w.preis != null ? ` · ${money(w.preis, d.markt?.cur)}` : ' · kein Preis'),
+            title:
+              datum.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' }) +
+              ` → ${pretty(addDays(t.datum, state.kalender.dauer))}` +
+              (t.preis != null
+                ? ` · ${money(t.preis, d.markt.cur)}${t.modell ? ' · ' + t.modell : ''}${
+                    t.acriss ? ' (' + t.acriss + ')' : ''
+                  }`
+                : ` · ${t.grund || 'noch nicht berechnet'}`),
           },
           el('b', {}, String(datum.getDate())),
           el(
             'span',
             { class: 'kpreis' },
-            w.preis != null ? Math.round(w.preis).toLocaleString('de-DE') : w.geladen ? '—' : '…'
+            t.preis != null ? Math.round(t.preis).toLocaleString('de-DE') : t.geladen ? '—' : '…'
           )
         );
       })
@@ -941,82 +1059,105 @@ function renderKalenderBild() {
     el(
       'p',
       { class: 'tabnote' },
-      `${kurveKlasse} · ${kalenderDauer} Tage Mietdauer · ${d.markt?.label || d.jobs[0].host} · ` +
-        `günstigster Tag ${money(min, d.markt?.cur)}, teuerster ${money(max, d.markt?.cur)} — ` +
+      `${werte.length} von ${tage.length} Tagen berechnet · günstigster ${money(min, d.markt.cur)}, ` +
+        `teuerster ${money(max, d.markt.cur)} — ` +
         `${Math.round(((max - min) / min) * 100)} % Unterschied allein durch den Abholtag.`
     )
   );
 }
 
-function renderKalender() {
-  const g = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
-  if (!g || !kurveKlasse) {
-    setChildren(
-      $('#kalenderForm'),
-      el('p', { class: 'note' }, 'Oben eine beobachtete Suche und eine Klasse wählen.')
+async function starteKalender() {
+  const d = kalJobs();
+  if (!d || kalLaeuft) return;
+
+  kalLaeuft = true;
+  for (const j of d.jobs) extraSchluessel.add(j.key);
+  renderKalFormular();
+
+  try {
+    const offen = d.jobs.filter((j) => !prices.has(j.key));
+    if (!offen.length) {
+      flash('Alle Tage liegen schon vor.');
+      return;
+    }
+    await sendeJobs(offen, $('#kalStart2'));
+
+    // Mitzeichnen, statt am Ende alles auf einmal zu zeigen: so sieht man,
+    // dass etwas passiert, und die ersten Tage sind sofort brauchbar.
+    for (let i = 0; i < 400; i++) {
+      await new Promise((r) => setTimeout(r, 2500));
+      await pollErgebnisse();
+      renderKalFortschritt(d.jobs);
+      renderKalBild();
+      const q = service.queue;
+      if (q && !q.laufend && !q.offen) break;
+    }
+  } finally {
+    kalLaeuft = false;
+    $('#kalFortschritt').hidden = true;
+    // Erst jetzt weiss der Katalog, welche Klassen es an dieser Station gibt —
+    // vor dem ersten Durchlauf stand in der Auswahl nur "billigste".
+    await ladeKalKlassen();
+    renderKalFormular();
+    renderKalBild();
+  }
+}
+
+function renderKalFortschritt(jobs) {
+  const fertig = jobs.filter((j) => prices.has(j.key)).length;
+  const box = $('#kalFortschritt');
+  box.hidden = !kalLaeuft;
+  $('#kalFuellung').style.width = `${Math.round((fertig / jobs.length) * 100)}%`;
+  $('#kalText').textContent = `${fertig} von ${jobs.length} Tagen berechnet`;
+}
+
+function kalenderCsv() {
+  const d = kalJobs();
+  if (!d) return;
+  const zahl = (n) => (n == null ? '' : String(n.toFixed(2)).replace('.', ','));
+  const feld = (s) => `"${String(s ?? '').replaceAll('"', '""')}"`;
+
+  const zeilen = [
+    ['Abholtag', 'Rückgabe', 'Wochentag', 'Klasse', 'Modell', 'Preis', 'Währung']
+      .map(feld)
+      .join(';'),
+  ];
+  for (const j of d.jobs) {
+    const p = kalPreis(j.key);
+    zeilen.push(
+      [
+        feld(j.pickupDate),
+        feld(j.returnDate),
+        feld(
+          new Date(j.pickupDate + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'long' })
+        ),
+        feld(state.kalender.klasse || p.acriss || ''),
+        feld(p.modell || ''),
+        zahl(p.preis),
+        feld(d.markt.cur),
+      ].join(';')
     );
-    setChildren($('#kalenderBild'));
-    return;
   }
 
-  setChildren(
-    $('#kalenderForm'),
-    el(
-      'div',
-      { class: 'weckerform' },
-      el('span', { class: 'hint' }, `${stationByCode(g.station)?.name || g.station} · ${kurveKlasse}`),
-      el(
-        'select',
-        { id: 'kalenderHost' },
-        ...g.hosts.map((h) => el('option', { value: h }, h.replace(/^www\./, '')))
-      ),
-      el('span', { class: 'hint' }, 'Mietdauer'),
-      el(
-        'select',
-        {
-          id: 'kalenderDauer',
-          onchange: (e) => {
-            kalenderDauer = Number(e.target.value);
-            renderKalenderBild();
-          },
-        },
-        ...[1, 2, 3, 4, 5, 7, 10, 14].map((n) =>
-          el('option', { value: n, selected: n === kalenderDauer ? '' : null }, `${n} Tage`)
-        )
-      ),
-      el(
-        'select',
-        {
-          id: 'kalenderTage',
-          onchange: (e) => {
-            kalenderTage = Number(e.target.value);
-            renderKalenderBild();
-          },
-        },
-        ...[14, 21, 28, 35].map((n) =>
-          el('option', { value: n, selected: n === kalenderTage ? '' : null }, `${n} Abholtage`)
-        )
-      ),
-      el(
-        'button',
-        {
-          type: 'button',
-          id: 'kalenderStart',
-          class: 'primary',
-          disabled: kalenderLaeuft ? '' : null,
-          onclick: starteKalender,
-        },
-        kalenderLaeuft ? 'Rechnet …' : 'Durchrechnen'
-      )
-    ),
-    el(
-      'p',
-      { class: 'note' },
-      `${kalenderTage} Abrufe, also rund ${Math.ceil((kalenderTage * 7) / 60)} Minuten. ` +
-        'Schon berechnete Tage stehen sofort da.'
-    )
+  const url = URL.createObjectURL(
+    new Blob(['﻿' + zeilen.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' })
   );
-  renderKalenderBild();
+  const a = el('a', {
+    href: url,
+    download: `monat-${d.station.name.replace(/[^\wäöüÄÖÜß]+/g, '-').toLowerCase()}-${state.kalender.start}.csv`,
+  });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  flash('Als CSV gespeichert.');
+}
+
+async function oeffneKalender() {
+  showScreen('kalender');
+  await ladeKalKlassen();
+  renderKalFormular();
+  renderKalBild();
 }
 
 /* =========================================================== Preiswecker */
@@ -2892,112 +3033,6 @@ function copyAll() {
   );
 }
 
-/* =========================================================== Vorschläge */
-
-/**
- * Sagen, wohin ein Vorschlag geht — und zwar bevor jemand tippt.
- *
- * Der Text stand fest auf "bleibt auf diesem Rechner". Sobald eine
- * Weiterleitung eingerichtet ist, waere das nicht mehr wahr, und Vertrauen
- * verliert man genau an solchen Stellen.
- */
-function renderVorschlagWohin() {
-  $('#vorschlagWohin').textContent = service.weiterleitung
-    ? 'Kurz aufschreiben — „Absenden" schickt es direkt an den Betreuer des Werkzeugs.'
-    : service.vorschlaegeMail
-      ? `Kurz aufschreiben — „Absenden" öffnet dein Mailprogramm mit dem Text an ${service.vorschlaegeMail}. ` +
-        'Eine Kopie bleibt auf diesem Rechner.'
-      : 'Kurz aufschreiben — landet in einer Datei auf diesem Rechner, sonst nirgends.';
-
-  // Der Mail-Knopf ist der ausdrueckliche Weg fuer den Fall, dass jemand nur
-  // schreiben und nichts speichern will. "Absenden" nimmt ohnehin denselben
-  // Weg, wenn keine Weiterleitung eingerichtet ist.
-  $('#vorschlagMail').hidden = service.weiterleitung || !service.vorschlaegeMail;
-}
-
-/** Vorschlag im Mailprogramm des Nutzers öffnen — er drückt selbst auf Senden. */
-function vorschlagAlsMail({ leeren = false } = {}) {
-  const text = $('#vorschlagText').value.trim();
-  if (text.length < 3) {
-    $('#vorschlagStatus').textContent = 'Bitte etwas mehr schreiben.';
-    $('#vorschlagText').focus();
-    return;
-  }
-  const betreff = 'Mietwagen-Preistool — Verbesserungsvorschlag';
-  const koerper =
-    `${text}\n\n— — —\nStand beim Schreiben:\n` +
-    `Stationen: ${state.stations.join(', ') || '—'}\n` +
-    `Länderseiten: ${state.markets.join(', ') || '—'}\n` +
-    `Zeitraum: ${state.pickupDate} → ${state.returnDate}\n`;
-  location.href =
-    `mailto:${encodeURIComponent(service.vorschlaegeMail)}` +
-    `?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(koerper)}`;
-  if (leeren) $('#vorschlagText').value = '';
-  else $('#vorschlagStatus').textContent = 'Mailprogramm geöffnet — dort noch absenden.';
-}
-
-async function sendeVorschlag() {
-  const feld = $('#vorschlagText');
-  const text = feld.value.trim();
-  const status = $('#vorschlagStatus');
-
-  if (text.length < 3) {
-    status.textContent = 'Bitte etwas mehr schreiben.';
-    feld.focus();
-    return;
-  }
-
-  const btn = $('#vorschlagSenden');
-  btn.disabled = true;
-  status.textContent = 'wird gespeichert …';
-
-  try {
-    const r = await fetch('/api/feedback', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        text,
-        // Der eingestellte Zustand hilft beim Nachvollziehen — ohne
-        // persoenliche Daten, das steht hier ohnehin nichts.
-        kontext: {
-          stationen: state.stations,
-          maerkte: state.markets,
-          von: state.pickupDate,
-          bis: state.returnDate,
-          klasse: schutzAcriss,
-        },
-      }),
-    });
-    const d = await r.json();
-    if (!d.ok) throw new Error(d.error || 'abgelehnt');
-
-    if (d.weitergeleitet) {
-      feld.value = '';
-      status.textContent = 'Danke — angekommen.';
-      return;
-    }
-
-    // Nicht weitergeleitet: dann geht es über das Mailprogramm raus. Ein
-    // Vorschlag, der nur auf dem Rechner des Absenders liegt, erreicht
-    // niemanden — und ein zweiter Knopf, den man erst finden muss, auch nicht.
-    if (service.vorschlaegeMail) {
-      vorschlagAlsMail({ leeren: true });
-      status.textContent = 'Gespeichert. Im Mailprogramm noch auf Senden drücken.';
-      return;
-    }
-
-    feld.value = '';
-    status.textContent = service.weiterleitung
-      ? 'Gespeichert. Weiterleitung hat nicht geklappt — später erneut versuchen.'
-      : 'Danke — ist gespeichert.';
-  } catch {
-    status.textContent = 'Konnte nicht gespeichert werden.';
-  } finally {
-    btn.disabled = false;
-    setTimeout(() => (status.textContent = ''), 4000);
-  }
-}
-
 let flashTimer;
 function flash(msg) {
   const n = $('#flash');
@@ -3314,6 +3349,8 @@ function init() {
         showScreen('kurve');
         ladeKurve();
         ladeWecker();
+      } else if (state.mode === 'kalender') {
+        oeffneKalender();
       } else {
         showScreen('work');
         update();
@@ -3372,6 +3409,33 @@ function init() {
 
   $('#testStart').addEventListener('click', starteSelbsttest);
 
+  /* --- Monatsübersicht --- */
+  $('#kalStation').addEventListener('input', renderKalStationSuche);
+  $('#kalStart2').addEventListener('click', starteKalender);
+  $('#kalAbbrechen').addEventListener('click', abbrechen);
+  $('#kalCsv').addEventListener('click', kalenderCsv);
+  for (const [sel, feld, wandeln] of [
+    ['#kalHost', 'host', String],
+    ['#kalKlasse', 'klasse', String],
+    ['#kalDauer', 'dauer', Number],
+    ['#kalSpanne', 'spanne', Number],
+    ['#kalStart', 'start', String],
+    ['#kalZeit', 'zeit', String],
+  ]) {
+    $(sel).addEventListener('input', async (e) => {
+      state.kalender[feld] = wandeln(e.target.value);
+      persist();
+      // Ein Wechsel der Länderseite ändert, welche Klassen es dort gibt.
+      if (feld === 'host') {
+        await ladeKalKlassen();
+        renderKalFormular();
+      } else {
+        renderKalFormular();
+      }
+      renderKalBild();
+    });
+  }
+
   $('#mailSuche').addEventListener('input', renderMailTreffer);
   $('#mailAlleTreffer').addEventListener('click', () => {
     for (const s of suche($('#mailSuche').value)) {
@@ -3409,8 +3473,6 @@ function init() {
   $('#getPrices').addEventListener('click', () => fetchPrices());
   $('#nochmal').addEventListener('click', () => fetchPrices({ nurFehler: true }));
   $('#getSchutz').addEventListener('click', fetchSchutz);
-  $('#vorschlagSenden').addEventListener('click', sendeVorschlag);
-  $('#vorschlagMail').addEventListener('click', vorschlagAlsMail);
   for (const id of ['#abbrechen', '#abbrechen2']) {
     $(id).addEventListener('click', abbrechen);
   }
@@ -3475,6 +3537,8 @@ function init() {
     showScreen('kurve');
     ladeKurve();
     ladeWecker();
+  } else if (state.mode === 'kalender') {
+    oeffneKalender();
   } else if (state.mode) {
     showScreen('work');
     update();
@@ -3494,10 +3558,6 @@ function init() {
 
     $('#getPrices').hidden = !(ok && service.chrome);
     $('#getSchutz').hidden = !(ok && service.chrome);
-    // Vorschläge brauchen den Dienst — ohne ihn gäbe es nichts, was sie
-    // entgegennimmt.
-    $('#vorschlagKarte').hidden = !ok;
-    renderVorschlagWohin();
 
     if (ok) {
       haltAmLeben();

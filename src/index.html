@@ -35,6 +35,16 @@
       <span class="mgo">Los →</span>
     </button>
 
+    <button type="button" class="mode" data-mode="kalender">
+      <span class="mtitle">Monatsübersicht</span>
+      <span class="mdesc">
+        Jeden Abholtag durchrechnen und als eingefärbten Kalender zeigen.
+        Station, Länderseite, Klasse, Mietdauer und Zeitraum frei wählbar —
+        so sieht man auf einen Blick, welcher Tag der günstige ist.
+      </span>
+      <span class="mgo">Kalender →</span>
+    </button>
+
     <button type="button" class="mode" data-mode="kurve">
       <span class="mtitle">Preisentwicklung</span>
       <span class="mdesc">
@@ -105,6 +115,80 @@
   <div id="statusBody"></div>
 </section>
 
+<!-- ===================================================== Monatsübersicht -->
+<section id="kalenderScreen" class="screen" hidden>
+  <div class="bar">
+    <button type="button" class="back">← Zurück</button>
+    <h1>Monatsübersicht</h1>
+  </div>
+
+  <section class="card">
+    <h2>Was soll durchgerechnet werden?</h2>
+
+    <div class="kgrid">
+      <div class="field">
+        <span class="flabel">Station</span>
+        <input type="search" id="kalStation" placeholder="Frankfurt Flughafen · Bonn · MUC …" autocomplete="off">
+        <div id="kalStationTreffer" class="stations klein" hidden></div>
+        <p class="hint" id="kalStationGewaehlt"></p>
+      </div>
+
+      <div class="field">
+        <span class="flabel">Länderseite</span>
+        <select id="kalHost"></select>
+      </div>
+
+      <div class="field">
+        <span class="flabel">Fahrzeugklasse</span>
+        <select id="kalKlasse"></select>
+        <p class="hint">
+          „Billigste“ nimmt je Tag das günstigste Angebot — gut, um überhaupt
+          erst die billigen Tage zu finden.
+        </p>
+      </div>
+
+      <div class="field">
+        <span class="flabel">Mietdauer</span>
+        <select id="kalDauer"></select>
+      </div>
+
+      <div class="field">
+        <span class="flabel">Erster Abholtag</span>
+        <input type="date" id="kalStart">
+      </div>
+
+      <div class="field">
+        <span class="flabel">Wie viele Abholtage</span>
+        <select id="kalSpanne"></select>
+      </div>
+
+      <div class="field">
+        <span class="flabel">Abholzeit</span>
+        <input type="time" id="kalZeit" step="900" value="10:00">
+      </div>
+    </div>
+
+    <div class="btnrow">
+      <button type="button" id="kalStart2" class="primary">Durchrechnen</button>
+      <button type="button" id="kalAbbrechen" class="ghost" hidden>Abbrechen</button>
+      <span class="hint" id="kalHinweis"></span>
+    </div>
+
+    <div id="kalFortschritt" class="fortschritt" hidden>
+      <div class="fbalken"><div class="ffuellung" id="kalFuellung"></div></div>
+      <p class="ftext" id="kalText"></p>
+    </div>
+  </section>
+
+  <section class="card" id="kalErgebnis" hidden>
+    <h2 id="kalTitel">Kalender</h2>
+    <div id="kalBild"></div>
+    <div class="btnrow">
+      <button type="button" id="kalCsv" class="ghost mini">Als CSV speichern</button>
+    </div>
+  </section>
+</section>
+
 <!-- ===================================================== Preisentwicklung -->
 <section id="kurveScreen" class="screen" hidden>
   <div class="bar">
@@ -129,17 +213,6 @@
     <h2 id="kurveTitel">Verlauf</h2>
     <div id="kurveBild"></div>
     <p class="tabnote" id="kurveNote"></p>
-  </section>
-
-  <section class="card" id="kalenderKarte">
-    <h2>Ganzer Monat auf einen Blick</h2>
-    <p class="note">
-      Rechnet für jeden Abholtag der nächsten Wochen den Preis derselben Klasse
-      durch und färbt den Kalender danach ein. Eine Länderseite, eine Klasse,
-      eine feste Mietdauer — sonst wären es hunderte Abrufe.
-    </p>
-    <div id="kalenderForm"></div>
-    <div id="kalenderBild"></div>
   </section>
 
   <section class="card" id="weckerKarte">
@@ -383,21 +456,6 @@
   </div>
 </section>
 
-<!-- Zusammengeklappt: das Feld wird selten gebraucht und soll nicht dauernd
-     Platz und Aufmerksamkeit beanspruchen. -->
-<details class="vorschlag" id="vorschlagKarte" hidden>
-  <summary>Etwas fehlt oder stört?</summary>
-  <div class="vorschlagInhalt">
-    <p class="note" id="vorschlagWohin"></p>
-    <textarea id="vorschlagText" rows="3"
-      placeholder="Zum Beispiel: Station XY fehlt · Preis stimmt nicht mit der Seite überein · Ansicht Z wäre nützlich"></textarea>
-    <div class="btnrow">
-      <button type="button" id="vorschlagSenden" class="primary">Abschicken</button>
-      <button type="button" id="vorschlagMail" class="ghost" hidden>Als E-Mail schicken</button>
-      <span class="hint" id="vorschlagStatus"></span>
-    </div>
-  </div>
-</details>
 
 <footer>
   <p>

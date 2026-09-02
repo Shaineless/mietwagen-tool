@@ -1069,6 +1069,18 @@ td.unstimmig .betrag {
   .kpreis { font-size: 9.5px; }
 }
 
+/* Die Auswahl der Monatsübersicht: viele Felder, aber in Spalten statt
+   untereinander — sonst scrollt man an der Einstellung vorbei. */
+.kgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 18px 22px;
+  margin-bottom: 20px;
+}
+.kgrid .field { margin: 0; }
+.kgrid .hint { margin-top: 6px; display: block; line-height: 1.4; }
+.stations.klein { max-height: 220px; margin-top: 8px; }
+
 /* Notiz an einer gespeicherten Suche */
 .notiz {
   margin: 0 0 14px;
@@ -1128,52 +1140,6 @@ td.unstimmig .betrag {
    springt das Layout — sondern zurückgenommen und erklärt. */
 .stillgelegt { opacity: .45; }
 .stillgelegt .pill { pointer-events: none; }
-
-/* ============================================================ Vorschläge */
-
-/* Zurueckhaltend: eine Zeile, bis man sie braucht. */
-.vorschlag {
-  max-width: 1180px;
-  margin: 26px auto 0;
-}
-/* Zurückhaltend, aber auffindbar: eine Zeile, die man sieht, ohne dass sie
-   sich vordrängt. Vorher stand sie in --leise bei 13px und wurde übersehen. */
-.vorschlag > summary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--ink2);
-  font-size: 14px;
-  font-weight: 500;
-  margin: 0;
-  padding: 9px 16px;
-  border-radius: 980px;
-  background: var(--flaeche2);
-  transition: background var(--t-druck) var(--raus), color var(--t-druck) var(--raus);
-}
-.vorschlag > summary::marker { color: var(--leise); }
-.vorschlag > summary:hover { color: var(--accent); background: var(--accent-weich); }
-.vorschlag[open] > summary { color: var(--accent); background: var(--accent-weich); }
-.vorschlagInhalt {
-  background: var(--flaeche);
-  border-radius: var(--r);
-  padding: 22px 24px;
-  margin-top: 10px;
-  box-shadow: var(--schatten);
-}
-.vorschlag textarea {
-  width: 100%;
-  margin: 6px 0 16px;
-  padding: 13px 15px;
-  border: 0;
-  border-radius: var(--r-klein);
-  background: var(--flaeche2);
-  color: var(--ink);
-  font: inherit;
-  resize: vertical;
-  min-height: 78px;
-}
-.vorschlag textarea:focus-visible { outline: 3px solid var(--accent-weich); }
 
 /* ============================================================ Fuß */
 
