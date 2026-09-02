@@ -324,6 +324,17 @@
       <div><p class="eyebrow">DEIN ÜBERBLICK</p><h2 id="kalTitel">Dein Preiskalender</h2><p id="kalUntertitel"></p></div>
       <button type="button" id="kalCsv" class="ghost mini">CSV exportieren <span aria-hidden="true">↗</span></button>
     </div>
+
+    <!-- Die Klasse gehoert dorthin, wo man den Kalender ansieht. Sie oben im
+         Formular zu lassen hiess: umstellen, hochscrollen, runterscrollen,
+         wieder umstellen. Die Preise liegen laengst vor — der Wechsel ist ein
+         Umschalten, kein neuer Abruf. -->
+    <div class="kal-klassenleiste">
+      <label class="flabel" for="kalKlasse2">Fahrzeugklasse</label>
+      <select id="kalKlasse2" class="premium-select"></select>
+      <span class="hint" id="kalKlasseHinweis" role="status"></span>
+    </div>
+
     <div id="kalKennzahlen" class="calendar-insights"></div>
     <div class="calendar-legend"><span><i class="calendar-best-dot" aria-hidden="true"></i> Günstigster Tag</span><span id="kalLegendeAlt" hidden><i class="calendar-old-dot" aria-hidden="true"></i> Aus dem gespeicherten Preisverlauf</span><span>Gesamtpreis für die gewählte Mietdauer</span></div>
     <div id="kalBild"></div>

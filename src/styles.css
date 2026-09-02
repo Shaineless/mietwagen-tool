@@ -557,6 +557,23 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 .zpfeil { color: var(--muted); }
 .kal-zeiten-bereich { margin-top: 18px; }
 
+/* Die Klassenwahl direkt ueber dem Kalender: eine Zeile, damit sie beim
+   Durchschalten stehen bleibt und der Blick nicht wandern muss. */
+.kal-klassenleiste {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 20px;
+  padding: 13px 16px;
+  border: 1px solid var(--hairline2);
+  border-radius: var(--r-klein);
+  background: var(--flaeche2);
+}
+.kal-klassenleiste .flabel { margin: 0; flex: none; }
+.kal-klassenleiste select { flex: 1 1 260px; min-width: 0; max-width: 420px; }
+.kal-klassenleiste .hint { flex: none; }
+
 /* Die Uhrzeiten eines Abholtags, guenstigste zuerst. Der Aufschlag steht
    daneben, weil er die eigentliche Aussage ist. */
 .kal-zeiten { display: flex; flex-direction: column; gap: 5px; margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--hairline2); }

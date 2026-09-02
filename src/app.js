@@ -2071,6 +2071,53 @@ function kalDatum(datum, lang = false) {
 }
 
 /**
+ * Die Klassenwahl am Kalender selbst.
+ *
+ * Dieselbe Einstellung wie oben im Formular, nur dort, wo man hinsieht. Der
+ * Wechsel kostet keinen Abruf: die Angebote aller Klassen liegen im Ergebnis,
+ * die Klasse sucht nur aus, welches davon gezeigt wird. Deshalb reagiert es
+ * ohne Warten — und deshalb ist das Hoch- und Runterscrollen überflüssig.
+ */
+function renderKalKlassenleiste(tage, mitPreis) {
+  const wahl = $('#kalKlasse2');
+
+  // Optionen nur neu bauen, wenn sie sich geändert haben — sonst springt die
+  // Auswahl bei jedem Neuzeichnen zu.
+  const soll = ['', ...kalKlassen].join('|');
+  if (wahl.dataset.stand !== soll) {
+    wahl.dataset.stand = soll;
+    setChildren(
+      wahl,
+      el('option', { value: '' }, 'Günstigste Klasse des Tages'),
+      ...kalKlassen.map((c) => {
+        const d = decodeAcriss(c);
+        return el('option', { value: c }, d ? `${c} — ${d.label}` : c);
+      })
+    );
+  }
+  wahl.value = state.kalender.klasse || '';
+
+  // Wie viele Tage diese Klasse überhaupt hat. Beim Durchschalten ist das die
+  // wichtigste Nebeninformation: eine Klasse, die es an neun von 28 Tagen gibt,
+  // sieht im Kalender aus wie ein kaputter Abruf.
+  $('#kalKlasseHinweis').textContent =
+    mitPreis === tage
+      ? `an allen ${tage} Tagen verfügbar`
+      : `an ${mitPreis} von ${tage} Tagen verfügbar`;
+}
+
+/** Klasse gewechselt — neu zeichnen, nicht neu abrufen. */
+function wechsleKalKlasse(wert) {
+  state.kalender.klasse = wert;
+  kalTagAuswahl = null;
+  persist();
+  renderKalFormular();
+  renderKalBild();
+  // Zurück zum Kalender, nicht zum Formular: der Wechsel kam von hier.
+  $('#kalBild')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/**
  * Einen Kalendertag in den Preisvergleich übernehmen.
  *
  * Der Kalender beantwortet "wann", der Preisvergleich "wo und mit welchem
@@ -2229,6 +2276,7 @@ function renderKalBild() {
   $('#kalCsv').disabled = !werte.length;
   $('#kalTitel').textContent = 'Dein Preiskalender';
   $('#kalUntertitel').textContent = `${d.station.name} · ${d.markt.label} · ${state.kalender.klasse || 'Günstigste Klasse je Tag'}`;
+  renderKalKlassenleiste(tage.length, werte.length);
   const kennzahl = (label, wert, note) => el('div', { class: 'calendar-insight' },
     el('span', { class: 'calendar-insight-label' }, label),
     el('strong', { class: 'calendar-insight-value' }, wert),
@@ -6056,6 +6104,11 @@ function init() {
 
   /* --- Monatsübersicht --- */
   $('#kalStation').addEventListener('input', renderKalStationSuche);
+
+  // Die Klassenwahl am Kalender. Dieselbe Einstellung wie im Formular oben —
+  // renderKalFormular() zieht das dortige Feld hinterher, sodass beide nie
+  // auseinanderlaufen.
+  $('#kalKlasse2').addEventListener('change', (e) => wechsleKalKlasse(e.target.value));
 
   $('#kalZeitHinzu').addEventListener('click', () => {
     if (!Array.isArray(state.kalender.zeiten)) state.kalender.zeiten = [];

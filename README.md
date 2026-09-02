@@ -163,6 +163,11 @@ frei eintragbar bis 90.
 > Unterschied allein durch den Abholtag — gleiche Station, gleiche Klasse,
 > gleiche Dauer.
 
+- **Die Fahrzeugklasse steht direkt über dem Kalender** und lässt sich dort
+  wechseln, ohne zum Formular zurückzuscrollen. Der Wechsel kostet keinen
+  neuen Abruf — die Angebote aller Klassen stecken schon im Ergebnis. Daneben
+  steht, an wie vielen Tagen es die Klasse überhaupt gibt („an 6 von 28 Tagen
+  verfügbar"), damit ein fast leerer Kalender nicht wie ein Fehler aussieht.
 - Ein Klick auf einen Tag zeigt den genauen Preis, den Rückgabetag und ein
   Beispielfahrzeug der Klasse.
 - Woher ein Wert stammt, steht dran: frischer Abruf oder gespeicherter
