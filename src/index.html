@@ -187,6 +187,15 @@
       ab, wird das gemeldet und <b>nicht</b> der nächste probiert: das wäre das
       Umgehen einer Sperre, und das tut TRACKER nicht.
     </p>
+    <p class="note warnung">
+      <b>Wie viel ist zu viel?</b> Wer gelegentlich fünfzig Abfragen macht,
+      braucht das hier nicht: in dieser Grössenordnung fällt nichts auf, und
+      TRACKER hält von sich aus Abstand zwischen den Abrufen. Wer dagegen
+      <b>täglich Tausende</b> abfragt, bewegt sich in einer anderen Liga. Dann
+      braucht es <b>hochwertige Proxys</b>, und vor allem Zurückhaltung: ein
+      Kalender über 56 Tage mit drei Uhrzeiten sind schon 168 Abrufe, und das
+      ist ein einziger Klick. Die Zahl steht deshalb vorher im Formular.
+    </p>
     <p class="note leise">
       <b>Zwei Dinge zur Aussagekraft.</b> Bei <i>je Länderseite</i> läuft nur die
       Länderseite selbst über den Proxy; Bilder und Bausteine von anderen
@@ -322,6 +331,10 @@
     <div id="kalFortschritt" class="fortschritt" hidden>
       <div class="fbalken"><div class="ffuellung" id="kalFuellung"></div></div>
       <p class="ftext" id="kalText"></p>
+      <!-- Was gerade im Hintergrund geschieht. Im Kalender wichtiger als im
+           Preisvergleich: 84 Abrufe dauern, und wer nicht weiss, ob gerade
+           nachgefasst wird, haelt es fuer kaputt. -->
+      <div id="kalLageBox" class="lagebox" hidden aria-live="polite"></div>
     </div>
   </section>
 
@@ -632,6 +645,9 @@
         <button type="button" id="abbrechen" class="ghost mini">Abbrechen</button>
       </div>
       <p class="fhinweis">Deine Angebote erscheinen nach und nach. Du kannst dich währenddessen weiter umsehen.</p>
+      <!-- Was gerade im Hintergrund geschieht: Wiederholungen, Proxywechsel.
+           Erscheint nur, wenn es wirklich etwas zu sagen gibt. -->
+      <div id="lageBox" class="lagebox" hidden aria-live="polite"></div>
     </div>
 
     <p id="warn" class="note warn" hidden></p>

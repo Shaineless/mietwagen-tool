@@ -132,6 +132,7 @@ async function checkService() {
       const d = await r.json();
       service.chrome = Boolean(d.chrome);
       service.queue = d.queue || null;
+    service.lage = d.lage || [];
     }
   } catch {
     service.available = false;
@@ -234,6 +235,7 @@ async function pollErgebnisse() {
     const h = await (await fetch('/api/health', { cache: 'no-store' })).json();
     const liefNoch = Boolean(service.queue && (service.queue.laufend || service.queue.offen));
     service.queue = h.queue || null;
+    service.lage = h.lage || [];
     renderFortschritt();
 
     // Genau im Moment des Leerlaufens ablegen, nicht bei jedem Takt, sonst
@@ -3068,6 +3070,7 @@ function renderKalFortschritt(jobs) {
   box.hidden = !kalLaeuft;
   $('#kalFuellung').style.width = `${Math.round((fertig / jobs.length) * 100)}%`;
   $('#kalText').textContent = `${fertig} von ${jobs.length} Tagen berechnet`;
+  renderLage(kalLaeuft);
 }
 
 function kalenderCsv() {
@@ -3224,7 +3227,7 @@ async function setzeProxyModus(modus) {
 }
 
 /** Eine Liste prüfen und den schnellsten übernehmen. */
-async function testeProxy(ziel, knopf, anzahl = 8) {
+async function testeProxy(ziel, knopf, anzahl = 15) {
   if (knopf) {
     knopf.disabled = true;
     knopf.textContent = 'wird geprüft …';
@@ -3557,6 +3560,81 @@ function renderProxy() {
 }
 
 /** Der Haken im Preisvergleich und im Kalender. */
+/** Welche Länderseiten haben einen eigenen Vorrat? */
+function proxySeitenMitVorrat() {
+  return Object.entries(proxy?.hosts || {}).filter(([, k]) => k.anzahl > 0);
+}
+
+/** Ist für die gewählte Betriebsart ein Proxy geprüft und einsatzbereit? */
+function proxyBereit(modus = proxy?.modus) {
+  if (modus === 'allgemein') return proxy?.allgemein?.gewaehlt != null;
+  if (modus === 'jeSeite') return proxySeitenMitVorrat().some(([, k]) => k.gewaehlt != null);
+  return false;
+}
+
+/**
+ * Prüfen, was zur gewählten Betriebsart gehört, und jeweils den schnellsten
+ * übernehmen.
+ *
+ * Bei "je Länderseite" sind das mehrere Listen nacheinander. Der Knopf sagt
+ * mit, wie weit er ist: bei fünf Länderseiten dauert das eine Weile, und ein
+ * Knopf, der eine Minute lang nur ausgegraut ist, sieht kaputt aus.
+ */
+async function testeProxyFuerModus(knopf) {
+  const modus = proxy?.modus;
+  const beschriftung = knopf?.textContent;
+  const setz = (t) => {
+    if (knopf) knopf.textContent = t;
+  };
+  if (knopf) knopf.disabled = true;
+
+  try {
+    if (modus === 'allgemein') {
+      setz('wird geprüft …');
+      await testeProxy('allgemein', null);
+      return;
+    }
+    const seiten = proxySeitenMitVorrat();
+    if (!seiten.length) {
+      return flash('Für keine Länderseite ist eine Liste hinterlegt. Das geht unter Einstellungen.');
+    }
+    let gut = 0;
+    for (const [host] of seiten) {
+      setz(`prüfe ${host} …`);
+      const d = await (
+        await fetch('/api/proxy/test', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ziel: host, anzahl: 15 }),
+        })
+      ).json();
+      if (d.ok) {
+        proxy = d;
+        if (d.davonGut) gut++;
+      }
+    }
+    flash(`${gut} von ${seiten.length} Länderseiten haben jetzt einen geprüften Proxy.`);
+    renderProxy();
+    renderProxyVerbrauch();
+  } catch {
+    flash('Der Preisdienst antwortet nicht.');
+  } finally {
+    if (knopf) {
+      knopf.disabled = false;
+      knopf.textContent = beschriftung || 'Proxys testen';
+    }
+    renderProxyWahl();
+  }
+}
+
+/**
+ * Der Proxy-Block im Preisvergleich und im Kalender.
+ *
+ * Bis 1.5.1 stand hier nur ein Haken, der zwischen "aus" und dem allgemeinen
+ * Vorrat umschaltete. Die Länderproxys ließen sich nur in den Einstellungen
+ * wählen, und der Testknopf erschien allein dann, wenn noch nichts geprüft
+ * war. Beides zu wenig: die Wahl gehört dorthin, wo man den Abruf startet.
+ */
 function renderProxyWahl() {
   for (const id of ['#proxyWahl', '#kalProxyWahl']) {
     const ziel = $(id);
@@ -3566,10 +3644,26 @@ function renderProxyWahl() {
       continue;
     }
     const an = proxy.modus !== 'aus';
-    const bereit =
-      proxy.modus === 'allgemein'
-        ? proxy.allgemein?.gewaehlt != null
-        : Object.values(proxy.hosts || {}).some((h) => h.gewaehlt != null);
+    const seiten = proxySeitenMitVorrat();
+
+    /** Eine der beiden Vorratsarten als Auswahlzeile. */
+    const art = (wert, titel, vorhanden, gewaehltText) =>
+      el(
+        'label',
+        { class: 'pxart' + (proxy.modus === wert ? ' an' : '') + (vorhanden ? '' : ' leer') },
+        el('input', {
+          type: 'radio',
+          name: 'pxart' + id,
+          checked: proxy.modus === wert,
+          onchange: () => setzeProxyModus(wert),
+        }),
+        el(
+          'span',
+          {},
+          el('b', {}, titel),
+          el('small', {}, vorhanden ? gewaehltText : 'nichts hinterlegt, siehe Einstellungen')
+        )
+      );
 
     setChildren(
       ziel,
@@ -3589,23 +3683,50 @@ function renderProxyWahl() {
             'small',
             {},
             an
-              ? bereit
-                ? PROXY_ARTEN.find(([w]) => w === proxy.modus)[1] +
-                  '. Verwaltet wird das unter „Was geht gerade".'
-                : 'Eingeschaltet, aber noch kein Proxy geprüft. Erst testen, sonst geht der Abruf direkt hinaus.'
-              : 'Aus. Der Abruf geht direkt von diesem Rechner. Listen liegen unter „Was geht gerade".'
+              ? 'Der Abruf nimmt den Weg über den geprüften Proxy.'
+              : 'Aus. Der Abruf geht direkt von diesem Rechner. Listen liegen unter Einstellungen.'
           )
         )
       ),
-      an && !bereit
+      an
         ? el(
-            'button',
-            {
-              type: 'button',
-              class: 'ghost klein',
-              onclick: (e) => testeProxy(proxy.modus === 'allgemein' ? 'allgemein' : null, e.currentTarget),
-            },
-            'Proxys testen'
+            'div',
+            { class: 'pxarten' },
+            art(
+              'allgemein',
+              'Allgemeiner Vorrat',
+              Boolean(proxy.allgemein?.anzahl),
+              proxy.allgemein?.gewaehlt != null
+                ? `derselbe Weg für alle Länderseiten · ${proxy.allgemein.geprueft?.schnellste?.ip || 'geprüft'}`
+                : `${proxy.allgemein?.anzahl?.toLocaleString('de-DE') || 0} Einträge, noch nicht geprüft`
+            ),
+            art(
+              'jeSeite',
+              'Je Länderseite ein eigener',
+              seiten.length > 0,
+              `${seiten.filter(([, k]) => k.gewaehlt != null).length} von ${seiten.length} Länderseiten geprüft` +
+                ', übrige gehen direkt'
+            ),
+            el(
+              'div',
+              { class: 'pxartfuss' },
+              el(
+                'button',
+                {
+                  type: 'button',
+                  class: 'ghost klein',
+                  onclick: (e) => testeProxyFuerModus(e.currentTarget),
+                },
+                'Proxys testen'
+              ),
+              el(
+                'span',
+                { class: 'pxhinweis' },
+                proxyBereit()
+                  ? 'Erneut prüfen sucht den derzeit schnellsten heraus.'
+                  : 'Noch nicht geprüft. Ohne Prüfung geht der Abruf direkt hinaus.'
+              )
+            )
           )
         : null
     );
@@ -6681,6 +6802,45 @@ async function fetchPrices({ nurFehler = false } = {}) {
   $('#fortschritt').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+/**
+ * Was gerade im Hintergrund geschieht, im Klartext.
+ *
+ * Ein Balken sagt nur "3 von 84". Stockt es dann, weiss niemand, ob etwas
+ * kaputt ist oder ob nachgefasst wird. Hier stehen die letzten Ereignisse:
+ * Wiederholungen, Proxywechsel, Aufgaben. Nur wenn es wirklich welche gibt,
+ * ein leerer Kasten waere nur Rauschen.
+ */
+function renderLage(aktiv) {
+  // Nur frische Meldungen: was vor zehn Minuten war, hilft jetzt niemandem.
+  const frisch = (service.lage || [])
+    .slice(0, 4)
+    .filter((e) => Date.now() - e.zeit < 10 * 60 * 1000);
+  const zeigen = frisch.length && (aktiv || Date.now() - frisch[0].zeit <= 60000);
+
+  for (const id of ['#lageBox', '#kalLageBox']) {
+    const ziel = $(id);
+    if (!ziel) continue;
+    if (!zeigen) {
+      ziel.hidden = true;
+      setChildren(ziel);
+      continue;
+    }
+    ziel.hidden = false;
+    setChildren(
+      ziel,
+      ...frisch.map((e) =>
+        el(
+          'p',
+          { class: 'lagezeile ' + e.art },
+          el('span', { class: 'lagezeit' }, new Date(e.zeit).toLocaleTimeString('de-DE').slice(0, 5)),
+          e.text,
+          e.wieOft > 1 ? el('span', { class: 'lagezahl' }, `${e.wieOft}×`) : null
+        )
+      )
+    );
+  }
+}
+
 function renderFortschritt() {
   const q = service.queue;
   const aktiv = Boolean(q && (q.laufend > 0 || q.offen > 0));
@@ -6700,6 +6860,7 @@ function renderFortschritt() {
         (q.laufend ? ` · ${q.laufend} unterwegs` : '');
     }
   }
+  renderLage(aktiv);
 
   for (const id of ['#getPrices', '#getSchutz']) {
     const b = $(id);

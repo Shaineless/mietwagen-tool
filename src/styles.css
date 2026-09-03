@@ -615,7 +615,49 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 .hgnaechste { display: block; margin-top: 3px; }
 .hgzeile { margin: 0 0 16px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
 
+/* Was gerade im Hintergrund geschieht. Ruhig gehalten: es ist eine Auskunft,
+   kein Alarm. Nur die Farbe unterscheidet die Art. */
+.lagebox {
+  margin-top: 10px;
+  padding: 9px 13px;
+  border-radius: 10px;
+  background: var(--flaeche2);
+  display: grid;
+  gap: 3px;
+}
+.lagezeile {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.lagezeit {
+  display: inline-block;
+  min-width: 38px;
+  color: var(--leise);
+  font-variant-numeric: tabular-nums;
+}
+.lagezahl {
+  margin-left: 7px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--hairline2);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.lagezeile.proxy { color: var(--accent); }
+.lagezeile.aufgegeben { color: var(--warn); }
+
 /* --- Proxys ------------------------------------------------------------- */
+/* Der Hinweis zur Menge. Er soll auffallen, ohne wie eine Fehlermeldung
+   auszusehen: es ist eine Warnung, kein Problem. */
+.note.warnung {
+  padding: 11px 15px;
+  border-radius: 11px;
+  background: #fdf6e7;
+  border: 1px solid #f0e0bb;
+  color: var(--ink2);
+}
 .pxmodus { display: grid; gap: 8px; margin: 4px 0 18px; }
 .pxwahl {
   display: flex;
@@ -673,6 +715,28 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
   resize: vertical;
 }
 .pxhinweis { font-size: 11px; color: var(--leise); }
+
+/* Die Vorratswahl beim Abruf: welcher der beiden Vorraete gilt, und ein
+   Testknopf gleich daneben. Eingerueckt unter dem Haken, damit sichtbar
+   bleibt, dass es seine Unterpunkte sind. */
+.pxarten { margin: 8px 0 0 28px; display: grid; gap: 7px; }
+.pxart {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 9px 13px;
+  border: 1px solid var(--hairline2);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12.5px;
+}
+.pxart.an { background: #eff6ff; border-color: #d3e4fa; }
+.pxart.leer { opacity: .6; }
+.pxart input { margin-top: 2px; }
+.pxart b { font-weight: 600; }
+.pxart small { display: block; margin-top: 1px; font-size: 11px; color: var(--muted); }
+.pxartfuss { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 2px; }
+.pxartfuss button:disabled { cursor: progress; opacity: .6; }
 .pxtreffer { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
 .pxtreffer1 {
   font-size: 10.5px;

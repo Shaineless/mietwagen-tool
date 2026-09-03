@@ -31,6 +31,9 @@ import {
   pruefeListe,
   starteWeiche,
   stoppeWeiche,
+  weicheGebraucht,
+  wechsleProxy,
+  setzeLagemelder,
 } from './proxy.mjs';
 import { merkeAngebote, bekannteKlassen, katalogStand } from './katalog.mjs';
 import { istExe, quellWurzel, datenOrdner, leseVorrat } from './pfade.mjs';
@@ -145,6 +148,22 @@ let gesamt = 0;
  */
 const PARALLEL_MIN = 2;
 const PARALLEL_MAX = 6;
+
+/**
+ * Mit Proxy gilt eine engere Grenze, und zwar aus einem anderen Grund als oben.
+ *
+ * Ohne Proxy verteilen sich die Verbindungen ueber Sixts eigene Server. Mit
+ * Proxy laufen ALLE durch ein einziges Gateway, und das ist dann der Engpass,
+ * nicht der eigene Rechner. Gemessen mit Proxy und zugleich geleertem Profil,
+ * also ohne alles im Zwischenspeicher: bei drei gleichzeitigen Abrufen
+ * brauchten sechs Kalendertage zehn Anlaeufe, vier davon scheiterten mit
+ * "Station wurde nicht uebernommen". Die Seite war schlicht nicht rechtzeitig
+ * fertig aufgebaut.
+ *
+ * Der Selbstregler haette das auch bemerkt, aber erst nach den Fehlversuchen.
+ * Also gar nicht erst hochtasten, solange ein Proxy im Spiel ist.
+ */
+const PARALLEL_MAX_PROXY = 2;
 let parallel = PARALLEL_MIN;
 
 /** Die letzten Abrufdauern, jüngste zuerst. */
@@ -183,7 +202,7 @@ function regleParallel(dauerMs) {
   }
 
   // Laeuft es rund und wartet genug Arbeit, einen Schritt hoch.
-  if (jetzt < besteDauer * 1.5 && parallel < PARALLEL_MAX && queue.length > parallel) {
+  if (jetzt < besteDauer * 1.5 && parallel < obergrenze() && queue.length > parallel) {
     parallel++;
     dauern = [];
     console.log(`  ⇡ ${parallel} gleichzeitig`);
@@ -191,8 +210,13 @@ function regleParallel(dauerMs) {
 }
 
 /** Vor einem neuen Durchlauf wieder klein anfangen. */
+/** Wie weit darf sich der Regler hochtasten? Mit Proxy weniger weit. */
+function obergrenze() {
+  return weicheGebraucht() ? PARALLEL_MAX_PROXY : PARALLEL_MAX;
+}
+
 function setzeParallelZurueck() {
-  parallel = PARALLEL_MIN;
+  parallel = Math.min(PARALLEL_MIN, obergrenze());
   dauern = [];
   besteDauer = null;
 }
@@ -296,6 +320,17 @@ let letzterStart = 0;
  */
 function deuteFehler(text) {
   const t = String(text || '');
+  // Zuerst der Proxy: dieselbe Meldung darf nicht als "Verbindung weg"
+  // durchgehen, denn hier ist nicht das Netz kaputt, sondern der eingestellte
+  // Weg. Wer das nicht erfaehrt, sucht den Fehler bei Sixt.
+  if (/ERR_PROXY_CONNECTION_FAILED|ERR_TUNNEL_CONNECTION_FAILED|ERR_PROXY_AUTH/i.test(t)) {
+    return {
+      code: 'PROXY',
+      klartext: 'Der eingestellte Proxy war nicht erreichbar.',
+      rat: 'Unter Einstellungen die Proxys erneut prüfen, oder den Proxy abschalten.',
+      nochmal: false,
+    };
+  }
   if (/access denied|blocked|blockiert/i.test(t)) {
     return {
       code: 'ZUGRIFF',
@@ -342,6 +377,115 @@ function deuteFehler(text) {
 /** So oft wird ein gescheiterter Abruf von selbst wiederholt. */
 const VERSUCHE_MAX = 3;
 
+/**
+ * Wie lange ein einzelner Auftrag hoechstens laufen darf.
+ *
+ * Grosszuegig bemessen: gemessen dauert ein Abruf mit Proxy und ohne Cookies
+ * rund fuenf Sekunden, der langsamste gemessene Einzelfall 25. Drei Minuten
+ * sind also weit jenseits von allem Normalen und greifen nur, wenn wirklich
+ * etwas haengt.
+ */
+const JOB_FRIST_MS = 180000;
+
+/**
+ * Was gerade passiert, fuer die Oberflaeche.
+ *
+ * Ein Fortschrittsbalken sagt nur "3 von 84". Wenn es dann stockt, weiss
+ * niemand, ob etwas kaputt ist oder ob im Hintergrund gerade nachgefasst
+ * wird. Deshalb hier die letzten Ereignisse im Klartext, mit Zeitstempel.
+ */
+const LAGE_MAX = 12;
+const lage = [];
+
+function merkeLage(art, text) {
+  // Dieselbe Meldung nicht mehrfach. Ein Proxyausfall trifft alle Verbindungen
+  // einer Seite gleichzeitig, und ungefiltert stand die Zeile fuenfmal
+  // untereinander, mit derselben Uhrzeit. Das sieht nach fuenf Problemen aus
+  // und ist eines.
+  const gleich = lage.find((e) => e.text === text && Date.now() - e.zeit < 30000);
+  if (gleich) {
+    gleich.zeit = Date.now();
+    gleich.wieOft = (gleich.wieOft || 1) + 1;
+    return;
+  }
+  lage.unshift({ zeit: Date.now(), art, text });
+  if (lage.length > LAGE_MAX) lage.pop();
+}
+
+/**
+ * Was einem Menschen ueber einen Fehler zu sagen ist.
+ *
+ * NICHT der Rohtext. `deuteFehler` gibt bei einem unbekannten Fehler die
+ * Meldung der Bibliothek zurueck, und die sieht so aus:
+ *   "page.goto: Target page, context or browser has been closed Call log:
+ *    [2m - navigating to \"https://www.sixt.de/?uci=4485&rci=..."
+ * Steuerzeichen, Aufrufprotokoll, eine halbe URL. In einer Statuszeile ist
+ * das schlimmer als gar nichts. Der Rohtext bleibt im Protokoll und in der
+ * Tabellenzelle, hier steht ein Satz.
+ */
+function lagesatz(d) {
+  if (d.code === 'UNBEKANNT') return 'Ein unerwarteter Fehler, Einzelheiten stehen im Protokoll.';
+  return d.klartext;
+}
+
+/**
+ * Was nach einem gescheiterten Abruf geschieht.
+ *
+ * EINE Stelle fuer beide Wege, und das ist der Punkt: ein Abruf kann
+ * scheitern, indem er einen Fehler ZURUECKGIBT (Station nicht uebernommen)
+ * oder indem er einen WIRFT (page.goto bei ERR_PROXY_CONNECTION_FAILED).
+ * Frueher hatte jeder Weg seine eigene Behandlung, und der Proxywechsel hing
+ * nur am ersten: gemessen wurde bei einem toten Proxy deshalb nie
+ * gewechselt, obwohl acht gepruefte Ersatzeintraege bereitlagen.
+ *
+ * @returns {Promise<boolean>} true, wenn der Auftrag erneut eingereiht wurde
+ */
+async function behandleFehler(job, roh) {
+  const d = deuteFehler(roh);
+
+  // Transportfehler am Proxy: auf den naechsten geprueften ausweichen.
+  // Das ist Ausfallsicherheit. Bei einer Zurueckweisung durch die
+  // Laenderseite (ZUGRIFF) geschieht das ausdruecklich NICHT, siehe
+  // wechsleProxy in proxy.mjs.
+  if (d.code === 'PROXY' && weicheGebraucht() && (job.proxyWechsel || 0) < 2) {
+    const neu = await wechsleProxy(job.host).catch(() => null);
+    if (neu) {
+      job.proxyWechsel = (job.proxyWechsel || 0) + 1;
+      // BEWUSST OHNE Chrome-Neustart. Die Adresse der Weiche bleibt dieselbe,
+      // nur ihre innere Zuordnung wechselt; die naechste Verbindung nimmt
+      // schon den neuen Weg. Ein Neustart riss dagegen die gerade laufenden
+      // Nachbarabrufe mit ("Target page, context or browser has been closed"),
+      // die dann unnoetig wiederholt werden mussten.
+      const text = `Proxy war nicht erreichbar. Gewechselt auf ${neu.ip}, der Abruf läuft weiter.`;
+      console.log(`  ⇄ ${text}`);
+      merkeLage('proxy', text);
+      queue.push(job);
+      gesamt++;
+      return true;
+    }
+    merkeLage('aufgegeben', 'Der Proxy ist nicht erreichbar, und es gibt keinen geprüften Ersatz. Unter Einstellungen erneut prüfen.');
+    return false;
+  }
+
+  if ((job.versuch || 1) < VERSUCHE_MAX && d.nochmal) {
+    job.versuch = (job.versuch || 1) + 1;
+    // Ans Ende der Schlange: erst kommen die anderen Länderseiten dran, dann
+    // der zweite Anlauf. Das gibt der Seite Zeit und hält den Fortschritt in
+    // Bewegung.
+    queue.push(job);
+    gesamt++;
+    console.log(`  ↻ ${job.host}  ${d.code}. Versuch ${job.versuch} von ${VERSUCHE_MAX}`);
+    merkeLage(
+      'wiederholung',
+      `${job.host.replace(/^www\./, '')}: ${lagesatz(d)} Versuch ${job.versuch} von ${VERSUCHE_MAX}.`
+    );
+    return true;
+  }
+
+  merkeLage('aufgegeben', `${job.host.replace(/^www\./, '')}: ${lagesatz(d)} ${d.rat || ''}`.trim());
+  return false;
+}
+
 async function tick() {
   if (laufend >= parallel) return;
   const job = queue.shift();
@@ -376,7 +520,18 @@ async function tick() {
         (schutz ? `  Schutz ${job.acriss}` : `  ${job.pickupDate}`) +
         (job.inkognito ? '  ohne Cookies' : '')
     );
-    const res = await abruf(job);
+
+    // Wachhund. Die einzelnen Schritte im Abruf haben zwar eigene Zeitlimits,
+    // aber sie summieren sich, und ein Schritt ohne Limit (page.evaluate hat
+    // keins) koennte einen Auftrag fuer immer festhalten. Dann stuende die
+    // Warteschlange still und in der Oberflaeche passierte scheinbar nichts.
+    // Nach dieser Frist gilt der Auftrag als gescheitert und wird wiederholt.
+    const res = await Promise.race([
+      abruf(job),
+      new Promise((f) =>
+        setTimeout(() => f({ ok: false, error: 'Zeitlimit für den ganzen Abruf erreicht' }), JOB_FRIST_MS)
+      ),
+    ]);
 
     if (schutz) {
       // Kassenseite offen halten, wenn der Abruf eine mitgebracht hat. Ab hier
@@ -419,21 +574,7 @@ async function tick() {
 
     // Gescheitert? Dann nicht gleich aufgeben, aber auch nicht stur
     // wiederholen, wo es nachweislich nichts bringt.
-    if (res.error && (job.versuch || 1) < VERSUCHE_MAX) {
-      const d = deuteFehler(res.error);
-      if (d.nochmal) {
-        job.versuch = (job.versuch || 1) + 1;
-        // Ans Ende der Schlange: erst kommen die anderen Länderseiten dran,
-        // dann der zweite Anlauf. Das gibt der Seite Zeit und hält den
-        // Fortschritt in Bewegung.
-        queue.push(job);
-        gesamt++;
-        console.log(
-          `  ↻ ${job.host}  ${d.code}. Versuch ${job.versuch} von ${VERSUCHE_MAX}`
-        );
-        return;
-      }
-    }
+    if (res.error && (await behandleFehler(job, res.error))) return;
 
     const gedeutet = res.error ? deuteFehler(res.error) : null;
     remember(job.key, {
@@ -469,13 +610,10 @@ async function tick() {
   } catch (e) {
     const roh = String(e.message).slice(0, 160);
     const d = deuteFehler(roh);
-    if ((job.versuch || 1) < VERSUCHE_MAX && d.nochmal) {
-      job.versuch = (job.versuch || 1) + 1;
-      queue.push(job);
-      gesamt++;
-      console.log(`  ↻ ${job.host}  ${d.code}. Versuch ${job.versuch} von ${VERSUCHE_MAX}`);
-      return;
-    }
+    // Dieselbe Behandlung wie beim zurueckgegebenen Fehler. Genau hier fehlte
+    // sie: ein toter Proxy wirft eine Ausnahme, und der Wechsel hing bis 1.5.2
+    // nur am anderen Weg.
+    if (await behandleFehler(job, roh)) return;
     remember(job.key, {
       host: job.host,
       offers: [],
@@ -782,6 +920,9 @@ const server = createServer(async (req, res) => {
       // das dann statt es zu versuchen und stillschweigend zu scheitern.
       chrome: Boolean(findBrowser()),
       queue: { laufend, offen: queue.length, erledigt, gesamt },
+      // Was zuletzt geschehen ist, im Klartext. Ein Fortschrittsbalken allein
+      // laesst offen, ob es stockt oder ob im Hintergrund nachgefasst wird.
+      lage,
     });
   }
 
@@ -1405,8 +1546,22 @@ async function starteDienst() {
     }
 
     // Die Proxy-Weiche muss stehen, bevor Chrome startet: sie wird ihm als
-    // Startparameter genannt.
+    // Startparameter genannt. Und sie soll sagen koennen, was sie tut.
+    setzeLagemelder(merkeLage);
     await starteWeiche().catch((e) => console.log('  ! Proxy-Weiche: ' + e.message));
+
+    // Und ein Chrome, das noch von einem frueheren Lauf steht, muss weg.
+    //
+    // Die Weiche nimmt beim Start einen freien Port, nach einem Neustart also
+    // einen anderen. getBrowser haengt sich per CDP an ein laufendes Chrome an,
+    // ohne dessen Startparameter zu kennen: es zeigte dann weiter auf die alte,
+    // tote Adresse. Gemessen scheiterten so NEUN VON NEUN Abrufen mit
+    // ERR_PROXY_CONNECTION_FAILED, und in der Oberflaeche sah es aus, als
+    // passiere gar nichts.
+    if (weicheGebraucht()) {
+      await closeBrowser().catch(() => {});
+      console.log('  ⇄ Proxy aktiv: Chrome startet mit der neuen Weichenadresse neu');
+    }
 
     // Erst wenn der Dienst wirklich steht: sonst pruefte die erste Runde,
     // waehrend der Port noch gesucht wird.

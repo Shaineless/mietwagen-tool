@@ -44,8 +44,23 @@ import { datenOrdner } from './pfade.mjs';
 
 const DATEI = join(datenOrdner, 'proxies.json');
 
-/** Wie viele Einträge eine Prüfung höchstens anfasst. */
+/**
+ * Wie viele Einträge eine Prüfung höchstens anfasst.
+ *
+ * Die Zahl ist ein Abwägen. Gemessen streuen die Ausgänge desselben Anbieters
+ * zwischen 306 und 930 ms, also um den Faktor drei. Wer nur fünf Stichproben
+ * zieht, erwischt mit einiger Wahrscheinlichkeit einen der langsamen und
+ * schleppt ihn durch den ganzen Lauf; bei 84 Kalenderabrufen ist das der
+ * Unterschied zwischen einer und zwei Stunden.
+ *
+ * Jede Prüfung kostet rund eine halbe Sekunde, nacheinander. Fünfundzwanzig
+ * sind also gut zwölf Sekunden einmalig, und das ist gegenüber dem Gewinn
+ * nichts.
+ */
 export const PRUEF_GRENZE = 25;
+
+/** Was der Knopf in der Oberfläche prüft, wenn nichts anderes gesagt wird. */
+export const PRUEF_VORGABE = 15;
 
 /* ------------------------------------------------------ Einträge lesen */
 
@@ -215,6 +230,47 @@ export async function loescheListe(ziel) {
   return { ok: true, anzahl: 0 };
 }
 
+/**
+ * Auf den nächsten geprüften Proxy wechseln, weil der jetzige technisch
+ * ausgefallen ist.
+ *
+ * DIE GRENZE, die hier gilt und die nicht verhandelbar ist: gewechselt wird
+ * nur bei einem TRANSPORTFEHLER, also wenn der Proxy selbst nicht erreichbar
+ * ist oder den Tunnel verweigert. Weist die Länderseite den Zugriff ab, wird
+ * NICHT gewechselt, sondern gemeldet. Das eine ist ein kaputter Weg, das
+ * andere wäre das Umgehen einer Sperre.
+ *
+ * Genommen wird der nächstschnellste aus der letzten Prüfung, nicht ein
+ * beliebiger: die Reihenfolge ist gemessen und soll auch beim Ausweichen
+ * gelten.
+ */
+export async function wechsleProxy(zielHost) {
+  await laden();
+  const ziel =
+    einstellungen.modus === 'allgemein'
+      ? 'allgemein'
+      : [...Object.keys(einstellungen.hosts)].find((h) => {
+          const kern = h.toLowerCase().replace(/^www\./, '');
+          const z = String(zielHost || '').toLowerCase();
+          return z === h.toLowerCase() || z === kern || z.endsWith('.' + kern);
+        });
+  if (!ziel) return null;
+
+  const k = vorrat(ziel);
+  const gute = (k?.geprueft?.einzeln || []).filter((e) => e.ok);
+  if (gute.length < 2) return null;
+
+  const jetzt = gute.findIndex((e) => e.i === k.gewaehlt);
+  const naechster = gute[(jetzt + 1) % gute.length];
+  if (!naechster || naechster.i === k.gewaehlt) return null;
+
+  k.gewaehlt = naechster.i;
+  letzterAusgang = naechster.ip;
+  await sichern();
+  aktualisiereWeiche();
+  return { ziel, ip: naechster.ip, ms: naechster.ms, uebrig: gute.length };
+}
+
 export async function setzeModus(modus) {
   await laden();
   if (!['aus', 'allgemein', 'jeSeite'].includes(modus)) {
@@ -292,7 +348,7 @@ export function pruefeProxy(zeile, { zeitlimit = 15000, ziel = 'api.ipify.org' }
  * mit einem einzigen Gateway sind es keine zehntausend Wege, sondern
  * zehntausend Sitzungskennungen auf demselben Weg.
  */
-export async function pruefeListe(ziel, { anzahl = 10 } = {}) {
+export async function pruefeListe(ziel, { anzahl = PRUEF_VORGABE } = {}) {
   await laden();
   const k = vorrat(ziel);
   if (!k?.liste?.length) return { ok: false, error: 'Dort ist keine Liste hinterlegt.' };
@@ -495,6 +551,69 @@ function aktualisiereWeiche() {
   }
 }
 
+/**
+ * Wer meldet, was die Weiche tut? Wird vom Dienst gesetzt.
+ *
+ * Ueber einen Rueckruf statt eines Imports, weil serve.mjs bereits proxy.mjs
+ * einliest und ein gegenseitiger Import ein Kreis waere.
+ */
+let lagemelder = null;
+export function setzeLagemelder(fn) {
+  lagemelder = fn;
+}
+function sagLage(art, text) {
+  console.log(`  ⇄ ${text}`);
+  try {
+    lagemelder?.(art, text);
+  } catch {
+    /* eine Meldung darf nichts umwerfen */
+  }
+}
+
+/**
+ * Welcher Eintrag gehoert zu diesem Ziel, und welche kaemen als Ersatz?
+ *
+ * Der gewaehlte zuerst, danach die uebrigen aus der letzten Pruefung nach
+ * Laufzeit. So bleibt die gemessene Reihenfolge auch beim Ausweichen gueltig.
+ */
+function kandidatenFuer(zielHost) {
+  const e = einstellungen;
+  if (!e || e.modus === 'aus') return { ziel: null, liste: [] };
+
+  let ziel = null;
+  if (e.modus === 'allgemein') {
+    if (e.allgemein?.liste?.length) ziel = 'allgemein';
+  } else {
+    const h = String(zielHost || '').toLowerCase();
+    ziel = Object.keys(e.hosts).find((k) => {
+      const kern = k.toLowerCase().replace(/^www\./, '');
+      return h === k.toLowerCase() || h === kern || h.endsWith('.' + kern);
+    });
+  }
+  if (!ziel) return { ziel: null, liste: [] };
+
+  const k = vorrat(ziel);
+  if (!k?.liste?.length || k.gewaehlt == null) return { ziel: null, liste: [] };
+
+  const reihen = [k.gewaehlt];
+  for (const g of (k.geprueft?.einzeln || []).filter((x) => x.ok)) {
+    if (!reihen.includes(g.i)) reihen.push(g.i);
+  }
+  return {
+    ziel,
+    liste: reihen.map((i) => ({ i, p: zerlegeProxy(k.liste[i]) })).filter((x) => x.p),
+  };
+}
+
+/** Einen Ersatz dauerhaft uebernehmen, nachdem er sich bewaehrt hat. */
+async function uebernimm(ziel, index) {
+  const k = vorrat(ziel);
+  if (!k || k.gewaehlt === index) return;
+  k.gewaehlt = index;
+  await sichern();
+  aktualisiereWeiche();
+}
+
 /** Findet den Proxy für ein Ziel, auch für Unterdomänen. */
 function proxyFuer(zielHost) {
   if (fuerAlle) return fuerAlle;
@@ -575,49 +694,82 @@ export async function starteWeiche() {
       return;
     }
 
-    const oben = connect(p.port, p.host);
-    oben.setTimeout(20000, () => {
-      oben.destroy();
-      scheitern('Zeitüberschreitung');
-    });
-    oben.on('error', (e) => scheitern(e.code || e.message));
-    klient.on('close', () => oben.destroy());
+    /**
+     * Einen Kandidaten nach dem anderen probieren.
+     *
+     * DAS IST DER KERN. Ein toter Proxy darf hier nicht nach aussen dringen:
+     * Chrome merkt sich einen gescheiterten Proxy als schlecht und probiert
+     * ihn danach gar nicht mehr, auch nicht, wenn die Weiche laengst einen
+     * anderen benutzt. Gemessen hiess das: nach dem ersten Ausfall scheiterte
+     * jeder weitere Abruf sofort, obwohl acht gepruefte Ersatzeintraege
+     * bereitlagen. Also wird hier durchprobiert, und Chrome sieht entweder
+     * eine stehende Verbindung oder gar nichts.
+     */
+    const { ziel: proxyZiel, liste: kandidaten } = kandidatenFuer(zielHost);
+    const reihe = kandidaten.length ? kandidaten : [{ i: null, p }];
 
-    oben.on('connect', () => oben.write(connectKopf(p, zielHost, zielPort)));
+    const versuche = (nr) => {
+      if (nr >= reihe.length) {
+        return scheitern(`kein erreichbarer Proxy (${reihe.length} versucht)`);
+      }
+      const { i, p: dieser } = reihe[nr];
+      const oben = connect(dieser.port, dieser.host);
 
-    let kopf = '';
-    oben.on('data', function antwort(d) {
-      kopf += d.toString('latin1');
-      const schluss = kopf.indexOf('\r\n\r\n');
-      if (schluss < 0) return;
-      oben.off('data', antwort);
-      const status = Number((kopf.match(/^HTTP\/1\.[01] (\d{3})/) || [])[1]);
-      if (status !== 200) {
-        return scheitern(status === 407 ? 'Zugangsdaten abgelehnt' : `Tunnel abgelehnt (${status || '?'})`);
-      }
-      oben.setTimeout(0);
-      fertig = true;
-      merkeBenutzt(p);
-      zaehleVerbindung(zielHost);
-      klient.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-      // Was der Proxy nach dem Kopf schon mitgeschickt hat, gehört dem Klienten.
-      const rest = Buffer.from(kopf.slice(schluss + 4), 'latin1');
-      if (rest.length) {
-        zaehle(zielHost, 'rein', rest.length);
-        klient.write(rest);
-      }
-      if (kopfRest?.length) {
-        zaehle(zielHost, 'raus', kopfRest.length);
-        oben.write(kopfRest);
-      }
-      // Mitzaehlen, bevor weitergeleitet wird. Ein zusaetzlicher Zuhoerer auf
-      // "data" verbraucht nichts, er sieht dieselben Stuecke wie die
-      // Weiterleitung darunter.
-      oben.on('data', (d) => zaehle(zielHost, 'rein', d.length));
-      klient.on('data', (d) => zaehle(zielHost, 'raus', d.length));
-      oben.pipe(klient);
-      klient.pipe(oben);
-    });
+      const weiter = (grund) => {
+        oben.destroy();
+        if (nr === 0 && reihe.length > 1) {
+          sagLage(
+            'proxy',
+            `Proxy war nicht erreichbar (${grund}). Gewechselt, der Abruf läuft weiter.`
+          );
+        }
+        versuche(nr + 1);
+      };
+
+      oben.setTimeout(20000, () => weiter('Zeitüberschreitung'));
+      oben.on('error', (e) => weiter(e.code || e.message));
+      klient.on('close', () => oben.destroy());
+      oben.on('connect', () => oben.write(connectKopf(dieser, zielHost, zielPort)));
+
+      let kopf = '';
+      oben.on('data', function antwort(d) {
+        kopf += d.toString('latin1');
+        const schluss = kopf.indexOf('\r\n\r\n');
+        if (schluss < 0) return;
+        oben.off('data', antwort);
+        const status = Number((kopf.match(/^HTTP\/1\.[01] (\d{3})/) || [])[1]);
+        if (status !== 200) {
+          return weiter(status === 407 ? 'Zugangsdaten abgelehnt' : `Tunnel abgelehnt (${status || '?'})`);
+        }
+        oben.setTimeout(0);
+        fertig = true;
+        // Hat ein Ersatz getragen, wird er der neue Gewaehlte. Sonst faengt
+        // jede weitere Verbindung wieder beim toten an.
+        if (nr > 0 && proxyZiel && i != null) uebernimm(proxyZiel, i).catch(() => {});
+        merkeBenutzt(dieser);
+        zaehleVerbindung(zielHost);
+        klient.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+        // Was der Proxy nach dem Kopf schon mitgeschickt hat, gehört dem Klienten.
+        const rest = Buffer.from(kopf.slice(schluss + 4), 'latin1');
+        if (rest.length) {
+          zaehle(zielHost, 'rein', rest.length);
+          klient.write(rest);
+        }
+        if (kopfRest?.length) {
+          zaehle(zielHost, 'raus', kopfRest.length);
+          oben.write(kopfRest);
+        }
+        // Mitzaehlen, bevor weitergeleitet wird. Ein zusaetzlicher Zuhoerer auf
+        // "data" verbraucht nichts, er sieht dieselben Stuecke wie die
+        // Weiterleitung darunter.
+        oben.on('data', (d) => zaehle(zielHost, 'rein', d.length));
+        klient.on('data', (d) => zaehle(zielHost, 'raus', d.length));
+        oben.pipe(klient);
+        klient.pipe(oben);
+      });
+    };
+
+    versuche(0);
   });
 
   // Reines HTTP kommt bei Sixt praktisch nicht vor, aber Chrome fragt

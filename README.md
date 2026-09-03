@@ -403,6 +403,15 @@ Frankreich kommen. Beim Testen hier war genau das der Fall.
 > identisch, auf beiden Seiten.** Die Herkunft des Besuchers ändert bei Sixt
 > nichts. Die Länderseite dagegen sehr wohl.
 
+**Wie viel ist zu viel?** Wer gelegentlich fünfzig Abfragen macht, braucht
+Proxys nicht: in dieser Größenordnung fällt nichts auf, und TRACKER hält von
+sich aus Abstand zwischen den Abrufen (1,5 s je Länderseite, 0,75 s zwischen
+zwei Starts, zwei bis sechs gleichzeitig und mit Proxy nur noch zwei). Wer
+dagegen **täglich Tausende** abfragt, bewegt sich in einer anderen Liga. Dann
+braucht es **hochwertige Proxys** und vor allem Zurückhaltung. Ein Kalender
+über 56 Tage mit drei Uhrzeiten sind 168 Abrufe, ausgelöst von einem einzigen
+Klick; die Zahl steht deshalb vorher im Formular.
+
 Technisch läuft das über eine **lokale Weiche**: der Browser bekommt genau
 einen Proxy genannt, nämlich sie, und sie entscheidet je Ziel, welcher Proxy
 wirklich benutzt wird. Nötig, weil ein Browser den Proxy nur für den ganzen

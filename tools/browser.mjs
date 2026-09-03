@@ -228,6 +228,37 @@ async function bereiteKontextVor(b) {
 }
 
 async function schliesse(inst) {
+  // Auch ein Chrome schliessen, das ein FRUEHERER Lauf gestartet hat.
+  //
+  // Ohne das half ein Neustart nicht: der neue Dienstprozess kennt weder
+  // Browser-Objekt noch Prozesskennung des alten Chrome, also blieb es stehen
+  // und wurde ueber den Debug-Port einfach weiterbenutzt. Mit Proxy war das
+  // fatal, denn die Weiche haengt an einem neuen Port: gemessen scheiterten
+  // NEUN VON NEUN Abrufen mit ERR_PROXY_CONNECTION_FAILED, waehrend der
+  // Neustart scheinbar sauber durchlief.
+  if (!inst.browser) {
+    inst.browser = await chromium
+      .connectOverCDP(`http://127.0.0.1:${inst.port}`, { timeout: 1500 })
+      .catch(() => null);
+  }
+
+  // Chrome ueber CDP wirklich BEENDEN, nicht nur die Verbindung trennen.
+  //
+  // Bei einem per connectOverCDP verbundenen Browser klinkt sich close() nur
+  // aus; der Prozess laeuft weiter. Das war lange unsichtbar und dann teuer:
+  // nach einem Neustart des Dienstes lief das alte Chrome mit der ALTEN
+  // Weichenadresse weiter, und jeder Abruf scheiterte mit
+  // ERR_PROXY_CONNECTION_FAILED, waehrend die Weiche putzmunter auf einem
+  // anderen Port lauschte. Nachgemessen: --proxy-server=127.0.0.1:65368,
+  // Weiche auf 55059.
+  if (inst.browser) {
+    try {
+      const s = await inst.browser.newBrowserCDPSession();
+      await s.send('Browser.close');
+    } catch {
+      /* schon zu, oder die Sitzung bricht mit dem Browser ab: beides recht */
+    }
+  }
   try {
     await inst.browser?.close();
   } catch {
