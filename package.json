@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "node build.mjs",
+    "test": "node --test tools/*.test.mjs",
     "serve": "node build.mjs && node tools/serve.mjs",
     "exe": "node build-exe.mjs"
   },

@@ -23,7 +23,13 @@ import { merkeAngebote, bekannteKlassen, katalogStand } from './katalog.mjs';
 import { istExe, quellWurzel, datenOrdner, leseVorrat } from './pfade.mjs';
 import { oeffneFenster } from './fenster.mjs';
 import { protokolliereNach, protokollPfad, zeigeMeldung } from './meldung.mjs';
-import { merkeAbruf, leseVerlauf, verlaufUebersicht } from './beobachtung.mjs';
+import {
+  merkeAbruf,
+  leseVerlauf,
+  verlaufUebersicht,
+  verlaufGroesse,
+  duenneAus,
+} from './beobachtung.mjs';
 import {
   alleWecker,
   legeWecker,
@@ -878,9 +884,38 @@ const server = createServer(async (req, res) => {
 
   if (path === '/api/verlauf/uebersicht') {
     try {
-      return json(res, 200, { ok: true, gruppen: await verlaufUebersicht() });
+      // Mit ?schlank=1 kommen nur die Anzahlen statt der vollen Klassen-,
+      // Host- und Uhrzeitlisten. Das ist der weitaus groesste Teil der
+      // Antwort, und gebraucht wird er erst, wenn eine Reise gewaehlt ist.
+      const schlank = url.searchParams.get('schlank') === '1';
+      return json(res, 200, {
+        ok: true,
+        gruppen: await verlaufUebersicht({ schlank }),
+        groesse: await verlaufGroesse(),
+      });
     } catch (e) {
       return json(res, 200, { ok: false, gruppen: [], error: String(e.message).slice(0, 160) });
+    }
+  }
+
+  /**
+   * Alte Messpunkte ausduennen.
+   *
+   * Ohne `bestaetigt: true` wird nur gezaehlt. Diese Daten sind muehsam
+   * gesammelt und nicht wiederherstellbar; sie verschwinden nur, wenn jemand
+   * gesehen hat, wie viel es waere, und dann ausdruecklich zustimmt.
+   */
+  if (path === '/api/verlauf/ausduennen' && req.method === 'POST') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const vorTagen = Number.isFinite(body.vorTagen) ? Math.max(0, body.vorTagen) : 30;
+      const erg = await duenneAus({ vorTagen, nurZaehlen: body.bestaetigt !== true });
+      if (erg.geschrieben) {
+        console.log(`  ✂ Preisverlauf ausgedünnt: ${erg.entfernt} Punkte entfernt, ${erg.nachher} bleiben`);
+      }
+      return json(res, 200, { ok: true, ...erg });
+    } catch (e) {
+      return json(res, 200, { ok: false, error: String(e.message).slice(0, 160) });
     }
   }
 

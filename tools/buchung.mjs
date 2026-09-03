@@ -179,21 +179,29 @@ export async function raeumeAuf() {
 }
 
 /**
- * Ein Fenster nach vorn holen. Alle anderen wandern dabei zurueck ins
- * Versteck, sonst stapeln sich nach mehreren Klicks die Chrome-Fenster auf
- * dem Bildschirm.
+ * Ein Fenster nach vorn holen.
+ *
+ * Fenster, die ein ANDERES sind, wandern dabei zurueck ins Versteck, sonst
+ * stapeln sie sich auf dem Bildschirm. Entscheidend ist die Pruefung auf die
+ * `windowId`: seit alle Kassenseiten Reiter desselben Fensters sind, teilen
+ * sie sich eine. Ohne diese Pruefung schob der zweite Klick dasselbe Fenster
+ * erst hinaus und holte es sofort wieder herein, sichtbar als Flackern.
  */
 export async function zeige(schluessel) {
   const e = hole(schluessel);
   if (!e) return false;
   for (const anderer of offen.values()) {
-    if (anderer !== e && anderer.sichtbar) {
+    if (anderer !== e && anderer.sichtbar && anderer.windowId !== e.windowId) {
       await versteckeFenster(anderer).catch(() => {});
       anderer.sichtbar = false;
     }
   }
   const ok = await zeigeFenster(e);
   e.sichtbar = ok;
+  // Alle Eintraege desselben Fensters sind jetzt sichtbar, nicht nur dieser.
+  // Sonst behauptet die Uebersicht spaeter, eine Seite sei versteckt, waehrend
+  // ihr Fenster offen vor dem Nutzer steht.
+  if (ok) for (const a of offen.values()) if (a.windowId === e.windowId) a.sichtbar = true;
   return ok;
 }
 

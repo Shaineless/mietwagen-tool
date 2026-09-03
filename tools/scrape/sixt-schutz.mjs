@@ -132,36 +132,88 @@ export function liesGesamtpreis(page) {
   // Mit eigenem Zeitlimit. page.evaluate hat in Playwright KEINES, auch nicht
   // ueber setDefaultTimeout. Bei einem gedrosselten Hintergrundreiter kommt
   // die Antwort nie, und ohne dieses Rennen haengt der ganze Dienst daran.
+  //
+  // Im Browser geschieht nur noch das Einsammeln des Textblocks. Das Auswerten
+  // der Zahl passiert hier in Node, in lesePreisAusText(). Zwei Gruende: eine
+  // an page.evaluate uebergebene Funktion darf ohnehin nichts aus ihrem Umfeld
+  // sehen, und so laesst sich die Erkennung ueberhaupt erst pruefen. Genau
+  // hier sind zweimal still falsche Betraege entstanden.
   return Promise.race([
-    page.evaluate(() => {
-      const marke = [...document.querySelectorAll('*')].find(
-        (e) => e.children.length === 0 && /Gesamt:|Total:|Totale:|Total :/i.test(e.textContent)
-      );
-      const text = marke?.closest('div,section,aside')?.innerText || '';
-
-      // Zeilenweise auswerten. Ueber Zeilen hinweg zu suchen war ein Fehler:
-      // Sixt zeigt denselben Betrag zweimal, einmal als "411€94" und einmal
-      // als "411,94€". Ein Muster, das Leerraum als Tausendertrenner zulaesst,
-      // klebt das Ende der einen an den Anfang der naechsten Zeile und liest
-      // 94411,94 statt 411,94.
-      for (const zeile of text.split('\n')) {
-        if (!/[€£$]|CHF|SEK|NOK|DKK|PLN|CZK|HUF|TRY/i.test(zeile)) continue;
-        // Zwei Formen noetig. Mit Tausendertrenner ("1.084,66") greift die
-        // erste, ohne ihn ("1025,85") nur die zweite. Fehlte die zweite,
-        // rutschte die Erkennung eine Stelle weiter und las "025,85", aus
-        // 1025,85 wurde 25,85. Genau so entstanden die 33,24 EUR auf der
-        // spanischen Seite, wo Tausender ohne Punkt geschrieben werden.
-        const m = zeile.match(/\d{1,3}(?:[.,]\d{3})+[.,]\d{2}|\d+[.,]\d{2}/);
-        if (!m) continue;
-        const roh = m[0];
-        const sep = Math.max(roh.lastIndexOf('.'), roh.lastIndexOf(','));
-        const wert = Number(roh.slice(0, sep).replace(/[.,]/g, '') + '.' + roh.slice(sep + 1));
-        if (Number.isFinite(wert)) return wert;
-      }
-      return null;
-    }),
+    page
+      .evaluate(() => {
+        const marke = [...document.querySelectorAll('*')].find(
+          (e) => e.children.length === 0 && /Gesamt:|Total:|Totale:|Total :/i.test(e.textContent)
+        );
+        return marke?.closest('div,section,aside')?.innerText || '';
+      })
+      .then(lesePreisAusText),
     new Promise((r) => setTimeout(() => r(null), 8000)),
   ]);
+}
+
+/**
+ * Woran eine Zeile als Geldzeile erkannt wird.
+ *
+ * Die Liste war zu kurz und hat zwei Seiten stillgelegt: die polnische Kasse
+ * schreibt nur "zł", die ungarische nur "Ft", und beide Zeilen wurden dadurch
+ * ueberlesen. Es fehlten ausserdem die ausgeschriebenen Codes.
+ *
+ * Die Buchstabencodes stehen mit Wortgrenze da, und das ist keine Kosmetik:
+ * "TRY" ohne Grenze und mit /i traf mitten in polnischen Woertern wie
+ * "elektryczny", "kr" traefe in "Kreditkarte". Derselbe Fehler ist an der
+ * Kachel-Auswertung schon einmal passiert und steht dort dokumentiert.
+ */
+const KASSE_WAEHRUNG_RE =
+  /[€£$]|zł|Kč|лв|₺|\b(?:CHF|SEK|NOK|DKK|PLN|CZK|HUF|TRY|RON|BGN|EUR|GBP|USD|Ft|kr)\b/i;
+
+/**
+ * Ein Betrag, mit oder ohne Tausendertrenner.
+ *
+ * Als Trenner gelten Punkt, Komma, Apostroph und die schmalen Leerzeichen.
+ * Ein gewoehnliches Leerzeichen ebenfalls, denn Frankreich, Schweden, Norwegen,
+ * Polen und Tschechien schreiben "1 234,56". Ohne das las die Kasse aus
+ * "12 500,00 CZK" den Wert 500 und aus "CHF 1'234.55" den Wert 234,55, beides
+ * still und ohne Fehlermeldung.
+ *
+ * Der Zeilenumbruch ist bewusst NICHT dabei. Genau daran scheiterte ein
+ * frueherer Anlauf: Sixt zeigt denselben Betrag zweimal untereinander, als
+ * "411€94" und als "411,94€", und ein Muster mit \s klebte das Ende der einen
+ * an den Anfang der naechsten Zeile und las 94411,94. Deshalb wird oben
+ * zeilenweise zerlegt und hier nur innerhalb einer Zeile gesucht.
+ */
+const KASSE_BETRAG_RE = /\d{1,3}(?:[.,    '’′]\d{3})+[.,]\d{2}|\d+[.,]\d{2}/;
+
+/**
+ * Den Gesamtpreis aus dem Textblock der Kasse lesen.
+ *
+ * Zeilenweise auswerten. Ueber Zeilen hinweg zu suchen war ein Fehler: Sixt
+ * zeigt denselben Betrag zweimal, einmal als "411€94" und einmal als
+ * "411,94€". Ein Muster, das Leerraum als Tausendertrenner zulaesst, klebt das
+ * Ende der einen an den Anfang der naechsten Zeile und liest 94411,94 statt
+ * 411,94.
+ *
+ * @param {string} text  der Textblock rund um "Gesamt:" / "Total:"
+ * @returns {number|null}
+ */
+export function lesePreisAusText(text) {
+  for (const zeile of String(text || '').split('\n')) {
+    if (!KASSE_WAEHRUNG_RE.test(zeile)) continue;
+    // Zwei Formen noetig. Mit Tausendertrenner ("1.084,66") greift die erste,
+    // ohne ihn ("1025,85") nur die zweite. Fehlte die zweite, rutschte die
+    // Erkennung eine Stelle weiter und las "025,85", aus 1025,85 wurde 25,85.
+    // Genau so entstanden die 33,24 EUR auf der spanischen Seite, wo Tausender
+    // ohne Punkt geschrieben werden.
+    const m = zeile.match(KASSE_BETRAG_RE);
+    if (!m) continue;
+    // Trennzeichen weg, dann entscheidet das LETZTE Punkt oder Komma ueber die
+    // Nachkommastellen.
+    const roh = m[0].replace(/[    '’′]/g, '');
+    const sep = Math.max(roh.lastIndexOf('.'), roh.lastIndexOf(','));
+    if (sep < 0) continue;
+    const wert = Number(roh.slice(0, sep).replace(/[.,]/g, '') + '.' + roh.slice(sep + 1));
+    if (Number.isFinite(wert)) return wert;
+  }
+  return null;
 }
 
 /** Warten, bis sich der Gesamtpreis nach einem Klick beruhigt hat. */
