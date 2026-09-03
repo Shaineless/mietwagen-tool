@@ -36,7 +36,7 @@ keine Anmeldung, keine Daten nach draußen.
 
 ## Was TRACKER beantwortet
 
-Vier Fragen, die ein Vergleichsportal nicht beantwortet, jede mit einer
+Fünf Fragen, die ein Vergleichsportal nicht beantwortet, jede mit einer
 gemessenen Antwort aus diesem Programm:
 
 | Frage | Gemessen |
@@ -45,11 +45,16 @@ gemessenen Antwort aus diesem Programm:
 | **An welchem Tag ist es billiger?** | Frankfurt, gleiche Klasse, 3 Tage: **313,96 €** am 18.09. gegen **1.130,98 €** am 15.09. |
 | **Zu welcher Uhrzeit ist es billiger?** | Köln, gleicher Tag, gleiche Klasse: **67,97 €** um 12:30 gegen **106,99 €** um 13:30 |
 | **An welcher Station ist es billiger?** | Köln-Gremberghoven gegen Bonn Bad Godesberg, gleiche Reise: bei **37 von 37** Klassen günstiger, im Mittel **57,36 € (49,2 %)** |
+| **Ändert meine Herkunft den Preis?** | Französische und spanische Anschlüsse gegen den Abruf aus Deutschland: **34 von 34** Klassen identisch. **Nein.** |
 
-Alle vier Zahlen stammen aus echten Abrufen, nicht aus einem Beispiel. Die
-letzten beiden waren die größte Überraschung: **eine Stunde später abholen kann
-mehr kosten als die Wahl der Länderseite**, und dieselbe Stadt hat Stationen,
-die um die Hälfte auseinanderliegen.
+Alle Zahlen stammen aus echten Abrufen, nicht aus einem Beispiel. Die mittleren
+beiden waren die größte Überraschung: **eine Stunde später abholen kann mehr
+kosten als die Wahl der Länderseite**, und dieselbe Stadt hat Stationen, die um
+die Hälfte auseinanderliegen.
+
+Die letzte Zeile ist ein negatives Ergebnis, und die sind auch etwas wert: aus
+welchem Land man anfragt, ist bei Sixt gleichgültig. Eine Variable weniger,
+über die man rätseln muss.
 
 ---
 
@@ -372,6 +377,8 @@ behaupten.
 
 ### 11 · Proxys je Länderseite
 
+<img src="docs/bilder/11-Proxys.png" alt="Proxys je Länderseite">
+
 Der Vergleich stellt Domains gegenüber, `sixt.de` gegen `sixt.fr`. Die
 **Herkunft des Besuchers** war dabei nie geprüft: sieht jemand aus Frankreich
 auf `sixt.fr` denselben Preis wie jemand aus Deutschland? Mit hinterlegten
@@ -548,12 +555,16 @@ Oberfläche auch ohne Server direkt von der Festplatte.
 | `scrape/sixt-schutz.mjs` | Klickt die Schutzpakete in der Kasse durch und liest die Endsummen |
 | `scrape/offer-parse.mjs` | Vom Build erzeugte Kopie des Parsers, nicht bearbeiten |
 | `katalog.mjs` | Merkt sich dauerhaft, welche ACRISS-Klassen es an welcher Station gab |
-| `beobachtung.mjs` | Legt je Abruf einen Messpunkt ab (`preisverlauf.jsonl`), die Grundlage der Preiskurve |
+| `beobachtung.mjs` | Legt je Abruf einen Messpunkt ab (`preisverlauf.jsonl`), die Grundlage der Preiskurve. Liest Archive mit, dünnt auf Ansage aus |
 | `wecker.mjs` | Preiswecker: anlegen, fällige finden, Prüfung vermerken, auslösen |
+| `hintergrund.mjs` | Trägt die tägliche Prüfung in die Windows-Aufgabenplanung ein und wieder aus |
+| `buchung.mjs` | Hält die Kassenseiten nach dem Schutzabruf offen und räumt sie wieder weg |
+| `proxy.mjs` | Proxys je Länderseite: Listen, Prüfung mit Ausgangsadresse, die lokale Weiche, Verbrauchszähler |
 | `selbsttest.mjs` | Prüft die ganze Kette auf einem fremden Rechner, Schritt für Schritt mit Rat |
 | `pfade.mjs` | Wo gelesen und geschrieben wird, im Quellbaum anders als in der EXE |
 | `fenster.mjs` | Das Programmfenster (Chrome oder Edge im `--app`-Modus) samt Lebenszeichen |
 | `meldung.mjs` | Protokolldatei und Meldungsfenster, damit die EXE ohne Konsole auskommt |
+| `zahlen.test.mjs` | Die Tests für die Betragserkennung, `npm test` |
 | `try-*.mjs` | Handproben für die Entwicklung: eine Preisliste, die Schutzpakete, alle Länderseiten, ein Popup-Test |
 | `harvest-sixt.md` | Anleitung, wie man Stationen nachlädt |
 | `README-preise.md` | Warum der Preisabruf über ein selbst gestartetes Chrome läuft und welche Alternativen daran gescheitert sind |

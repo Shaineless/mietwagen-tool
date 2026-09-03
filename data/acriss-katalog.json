@@ -131,7 +131,7 @@
     "VW TAYRON",
     "PREMIUM SUV"
    ],
-   "beispielText": "Premiumklasse SUV Automatik",
+   "beispielText": "Premium SUV Automatique",
    "zuletzt": "2026-09-03"
   },
   "JDAR": {
@@ -453,7 +453,7 @@
     "MERCEDES-BENZ CLASE V LUNGO",
     "MERCEDES-BENZ V-CLASS LONG"
    ],
-   "beispielText": "Premiumklasse Elite Van Automatik",
+   "beispielText": "Premium Elite Monospace Automatique",
    "zuletzt": "2026-09-03"
   },
   "JTLP": {
@@ -521,7 +521,7 @@
    "modelle": [
     "MERCEDES-BENZ VITO TOURER"
    ],
-   "beispielText": "Luxusklasse Elite Van Automatik",
+   "beispielText": "Classe luxe Elite Monospace Automatique",
    "zuletzt": "2026-09-03"
   },
   "JESR": {
@@ -537,7 +537,7 @@
    "modelle": [
     "NISSAN PRIMASTAR"
    ],
-   "beispielText": "Luxusklasse Van Manuell",
+   "beispielText": "Classe luxe Monospace Manuelle",
    "zuletzt": "2026-09-03"
   },
   "LVAR": {
@@ -545,7 +545,7 @@
    "modelle": [
     "NISSAN PRIMASTAR"
    ],
-   "beispielText": "Luxusklasse Van Automatik",
+   "beispielText": "Classe luxe Monospace Automatique",
    "zuletzt": "2026-09-03"
   },
   "DFAE": {
@@ -970,7 +970,7 @@
    "modelle": [
     "FORD TOURNEO CUSTOM"
    ],
-   "beispielText": "Premiumklasse Van Manuell",
+   "beispielText": "Premium Monospace Manuelle",
    "zuletzt": "2026-09-03"
   },
   "PVAR": {
@@ -978,7 +978,7 @@
    "modelle": [
     "FORD TOURNEO CUSTOM"
    ],
-   "beispielText": "Premiumklasse Van Automatik",
+   "beispielText": "Premium Monospace Automatique",
    "zuletzt": "2026-09-03"
   },
   "JDAE": {
