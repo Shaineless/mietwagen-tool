@@ -154,6 +154,36 @@
     <button type="button" class="back">← Zurück</button>
     <h1>Was geht gerade</h1>
   </div>
+  <section class="card" id="proxyKarte">
+    <h3>Proxys je Länderseite</h3>
+    <p class="note">
+      Normalerweise geht jeder Abruf direkt von diesem Rechner aus. Hier lässt
+      sich je Länderseite ein anderer Weg hinterlegen. Damit wird eine Frage
+      messbar, die der Vergleich sonst offen lässt: <b>sieht ein Besucher aus
+      einem anderen Land denselben Preis?</b> Bisher werden nur die Domains
+      verglichen, die Herkunft des Besuchers war nie geprüft.
+    </p>
+    <p class="note leise">
+      Eine Liste dient als Vorrat. Geprüft wird eine Stichprobe daraus, benutzt
+      wird davon <b>der schnellste, und der bleibt</b>. Fällt er technisch aus,
+      rückt der nächste geprüfte nach. Weist die Länderseite selbst den Zugriff
+      ab, wird das gemeldet und <b>nicht</b> der nächste probiert: das wäre das
+      Umgehen einer Sperre, und das tut TRACKER nicht.
+    </p>
+    <p class="note leise">
+      <b>Zwei Dinge zur Aussagekraft.</b> Bei <i>je Länderseite</i> läuft nur die
+      Länderseite selbst über den Proxy; Bilder und Bausteine von anderen
+      Adressen gehen direkt hinaus. Für eine saubere Herkunftsmessung ist
+      <i>ein Vorrat für alle</i> deshalb der ehrlichere Weg. Und die Prüfung
+      zeigt die Ausgangsadresse nicht als Schmuck: eine Liste, auf der
+      „Frankreich“ steht, muss nicht aus Frankreich kommen. Genau das ist beim
+      Testen hier schon vorgekommen.
+    </p>
+    <div id="proxyBetrieb"></div>
+    <div id="proxyListe"></div>
+    <div id="proxyVerbrauch"></div>
+  </section>
+
   <section class="card" id="testKarte">
     <h3>Selbsttest</h3>
     <p class="note">
@@ -262,6 +292,8 @@
         kostet das spürbar mehr Zeit, dafür verfälscht kein gespeicherter Besuch die Kurve.</small>
       </span>
     </label>
+
+    <div id="kalProxyWahl"></div>
 
     <div class="btnrow calendar-plan-actions">
       <button type="button" id="kalStart2" class="primary">Preise im Kalender finden</button>
@@ -574,6 +606,8 @@
       </span>
     </label>
 
+    <div id="proxyWahl"></div>
+
     <div id="fortschritt" class="fortschritt" hidden>
       <div class="fbalken"><div class="ffuellung" id="ffuellung"></div></div>
       <div class="frow">
@@ -589,6 +623,11 @@
       erneut klicken, oder die Links einzeln anklicken.
     </p>
     <p id="flash" class="flash" hidden></p>
+
+    <!-- Zeigt an, über welchen Weg gerade abgerufen wird. Steht bewusst
+         dauerhaft im Bild, solange ein Proxy aktiv ist: welche Adresse eine
+         Messung erzeugt hat, gehört sichtbar dazu und nicht in ein Protokoll. -->
+    <div id="proxyLampe" class="proxylampe" hidden aria-live="polite"></div>
 
     <div class="card xlsx-karte" id="xlsxKarte" hidden>
       <div class="panel-heading">

@@ -26,3 +26,7 @@ build/
 dist/*.exe
 dist/Tracker-Daten/
 data/verbesserungen.jsonl
+
+# Proxy-Zugangsdaten und Verbrauch: Betriebsdaten, keine Quellen.
+data/proxies.json
+data/proxy-verbrauch.json

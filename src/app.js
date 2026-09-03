@@ -3170,6 +3170,503 @@ async function ladeWecker() {
   renderWecker();
 }
 
+/* ------------------------------------------------------ Proxys */
+
+/**
+ * Zwei Betriebsarten, weil zwei verschiedene Fragen dahinterstehen:
+ *
+ *   allgemein  Ein Vorrat für alle Länderseiten. Ändert sich der Preis, wenn
+ *              die Anfrage von einem anderen Anschluss kommt als meinem?
+ *   jeSeite    Je Länderseite ein eigener Vorrat, sinnvollerweise mit Proxys
+ *              aus dem jeweiligen Land. Sieht ein Franzose auf sixt.fr
+ *              denselben Preis wie ich?
+ */
+let proxy = null;
+let proxyTakt = null;
+let proxyLetzterWechsel = 0;
+
+const PROXY_ARTEN = [
+  ['aus', 'Ohne Proxy', 'Jeder Abruf geht direkt von diesem Rechner aus.'],
+  ['allgemein', 'Ein Vorrat für alle Länderseiten', 'Derselbe Weg für jede Seite. Zeigt, ob ein anderer Anschluss andere Preise sieht.'],
+  ['jeSeite', 'Je Länderseite ein eigener', 'Nur Seiten mit eigenem Eintrag gehen über einen Proxy, die übrigen direkt.'],
+];
+
+async function ladeProxy() {
+  try {
+    proxy = await (await fetch('/api/proxy')).json();
+  } catch {
+    proxy = null;
+  }
+  renderProxy();
+  renderProxyWahl();
+  ladeProxyVerbrauch();
+}
+
+/** Betriebsart umstellen. Chrome startet dabei neu, das dauert kurz. */
+async function setzeProxyModus(modus) {
+  try {
+    const d = await (
+      await fetch('/api/proxy', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ modus }),
+      })
+    ).json();
+    if (!d.ok) return flash(d.error || 'Ging nicht.');
+    proxy = d;
+    if (d.neustartNoetig) flash('Umgestellt. Der Abrufbrowser startet beim nächsten Abruf neu.');
+    renderProxy();
+    renderProxyWahl();
+    haltProxyLampeFrisch();
+  } catch {
+    flash('Der Preisdienst antwortet nicht.');
+  }
+}
+
+/** Eine Liste prüfen und den schnellsten übernehmen. */
+async function testeProxy(ziel, knopf, anzahl = 8) {
+  if (knopf) {
+    knopf.disabled = true;
+    knopf.textContent = 'wird geprüft …';
+  }
+  try {
+    const d = await (
+      await fetch('/api/proxy/test', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ziel, anzahl }),
+      })
+    ).json();
+    if (!d.ok) return flash(d.error || 'Prüfung ging nicht.');
+    proxy = d;
+    flash(
+      d.davonGut
+        ? `${d.davonGut} von ${d.geprueft} erreichbar, ${d.ausgaenge} verschiedene Ausgänge. ` +
+            `Genommen wird der schnellste mit ${d.schnellste.ms} ms über ${d.schnellste.ip}.`
+        : `Keiner von ${d.geprueft} war erreichbar.`
+    );
+    renderProxy();
+    renderProxyWahl();
+  } catch {
+    flash('Der Preisdienst antwortet nicht.');
+  } finally {
+    if (knopf) {
+      knopf.disabled = false;
+      knopf.textContent = 'Proxys testen';
+    }
+  }
+}
+
+async function hinterlegeProxy(ziel, text) {
+  const zeilen = String(text || '').split('\n').map((z) => z.trim()).filter(Boolean);
+  try {
+    const d = await (
+      await fetch('/api/proxy', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ziel, liste: zeilen }),
+      })
+    ).json();
+    if (!d.ok) return flash(d.error || 'Ging nicht.');
+    proxy = d;
+    flash(d.anzahl ? `${d.anzahl} Einträge hinterlegt. Jetzt prüfen.` : 'Liste entfernt.');
+    renderProxy();
+    renderProxyWahl();
+  } catch {
+    flash('Der Preisdienst antwortet nicht.');
+  }
+}
+
+/** Ein Vorrat als Kasten: Zustand, Liste einlesen, prüfen, entfernen. */
+function proxyVorrat(ziel, titel, stand) {
+  const dateiId = 'pxDatei_' + ziel.replace(/\W/g, '_');
+  return el(
+    'div',
+    { class: 'pxvorrat' + (stand ? ' hat' : '') },
+    el(
+      'div',
+      { class: 'pxkopf' },
+      el('b', {}, titel),
+      stand
+        ? el(
+            'span',
+            { class: 'pxzustand' },
+            `${stand.anzahl.toLocaleString('de-DE')} Einträge`,
+            stand.geprueft
+              ? ` · ${stand.geprueft.davonGut} von ${stand.geprueft.geprueft} erreichbar` +
+                (stand.geprueft.schnellste
+                  ? ` · genommen: ${stand.geprueft.schnellste.ip} (${stand.geprueft.schnellste.ms} ms)`
+                  : '')
+              : ' · noch nicht geprüft'
+          )
+        : el('span', { class: 'pxzustand leer' }, 'nichts hinterlegt')
+    ),
+    el(
+      'div',
+      { class: 'pxreihe' },
+      // Zwei Wege, weil beide gebraucht werden: eine Datei vom Anbieter mit
+      // zehntausend Zeilen, oder eben zwei Zeilen von Hand eingefügt.
+      el('label', { class: 'pxdatei' }, 'Datei wählen', el('input', {
+        type: 'file',
+        id: dateiId,
+        accept: '.txt,.csv,text/plain',
+        onchange: async (e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          await hinterlegeProxy(ziel, await f.text());
+        },
+      })),
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'linkknopf',
+          onclick: (e) => {
+            const feld = e.currentTarget.closest('.pxvorrat').querySelector('.pxfeld');
+            feld.hidden = !feld.hidden;
+            if (!feld.hidden) feld.querySelector('textarea').focus();
+          },
+        },
+        stand ? 'bearbeiten' : 'einfügen'
+      ),
+      stand
+        ? el(
+            'button',
+            {
+              type: 'button',
+              class: 'ghost klein',
+              onclick: (e) => testeProxy(ziel, e.currentTarget),
+            },
+            'Proxys testen'
+          )
+        : null,
+      stand
+        ? el(
+            'button',
+            {
+              type: 'button',
+              class: 'linkknopf',
+              onclick: async () => {
+                if (!confirm(`Die Liste für ${titel} entfernen?`)) return;
+                await hinterlegeProxy(ziel, '');
+              },
+            },
+            'entfernen'
+          )
+        : null
+    ),
+    // Eintippen oder einfügen. Zeigt beim Öffnen nicht die ganze Liste: bei
+    // zehntausend Zeilen wäre das Feld unbedienbar und der Browser träge.
+    el(
+      'div',
+      { class: 'pxfeld', hidden: true },
+      el('textarea', {
+        rows: 5,
+        spellcheck: 'false',
+        placeholder:
+          'Eine Zeile je Proxy:\nhost:port:benutzer:passwort\nhost:port\nbenutzer:passwort@host:port',
+      }),
+      el(
+        'div',
+        { class: 'pxreihe' },
+        el(
+          'button',
+          {
+            type: 'button',
+            class: 'ghost klein',
+            onclick: async (e) => {
+              const kasten = e.currentTarget.closest('.pxfeld');
+              const text = kasten.querySelector('textarea').value;
+              if (!text.trim()) return flash('Nichts eingetragen.');
+              await hinterlegeProxy(ziel, text);
+            },
+          },
+          'Speichern'
+        ),
+        el(
+          'span',
+          { class: 'pxhinweis' },
+          stand
+            ? `Ersetzt die vorhandenen ${stand.anzahl.toLocaleString('de-DE')} Einträge.`
+            : 'Am besten host:port:benutzer:passwort.'
+        )
+      )
+    ),
+    // Die Einzelergebnisse der letzten Prüfung, damit die Ausgangsadressen
+    // nachvollziehbar sind und nicht nur eine Zahl dasteht.
+    stand?.geprueft?.einzeln?.length
+      ? el(
+          'div',
+          { class: 'pxtreffer' },
+          ...stand.geprueft.einzeln.map((e) =>
+            el(
+              'span',
+              { class: 'pxtreffer1 ' + (e.ok ? 'gut' : 'schlecht') },
+              e.ok ? `${e.ip} · ${e.ms} ms` : e.grund
+            )
+          )
+        )
+      : null
+  );
+}
+
+/** Datenmengen lesbar: 1,4 GB statt 1503238553. */
+function datenmenge(b) {
+  if (!b) return '0 B';
+  const einheiten = ['B', 'kB', 'MB', 'GB', 'TB'];
+  let i = 0;
+  let n = b;
+  while (n >= 1024 && i < einheiten.length - 1) {
+    n /= 1024;
+    i++;
+  }
+  return `${n.toFixed(n < 10 && i > 0 ? 1 : 0).replace('.', ',')} ${einheiten[i]}`;
+}
+
+/**
+ * Was durch die Proxys gelaufen ist.
+ *
+ * Steht hier bei den Einstellungen und nicht im Bild: es ist eine Zahl zum
+ * Nachschlagen, nicht zum Danebensitzen. Wichtig ist sie trotzdem, weil
+ * Residential-Proxys nach Gigabyte abgerechnet werden.
+ */
+let proxyVerbrauch = null;
+
+async function ladeProxyVerbrauch() {
+  try {
+    proxyVerbrauch = await (await fetch('/api/proxy/verbrauch')).json();
+  } catch {
+    proxyVerbrauch = null;
+  }
+  renderProxyVerbrauch();
+}
+
+function renderProxyVerbrauch() {
+  const ziel = $('#proxyVerbrauch');
+  if (!ziel) return;
+  const v = proxyVerbrauch;
+  if (!v || !v.ok) return setChildren(ziel);
+
+  if (!v.gesamt) {
+    return setChildren(
+      ziel,
+      el('p', { class: 'pxverbrauch leer' }, 'Noch nichts durch einen Proxy gelaufen.')
+    );
+  }
+
+  setChildren(
+    ziel,
+    el(
+      'div',
+      { class: 'pxverbrauch' },
+      el(
+        'p',
+        { class: 'pxsumme' },
+        el('b', {}, datenmenge(v.gesamt)),
+        ` durch Proxys gelaufen · ${v.verbindungen.toLocaleString('de-DE')} Verbindungen · ` +
+          `empfangen ${datenmenge(v.rein)}, gesendet ${datenmenge(v.raus)}`,
+        el(
+          'span',
+          { class: 'pxseit' },
+          'gezählt seit ' + new Date(v.seit).toLocaleString('de-DE'),
+          el(
+            'button',
+            {
+              type: 'button',
+              class: 'linkknopf',
+              onclick: async () => {
+                if (!confirm('Den Zähler auf null setzen?')) return;
+                try {
+                  proxyVerbrauch = await (
+                    await fetch('/api/proxy/verbrauch', { method: 'POST' })
+                  ).json();
+                  renderProxyVerbrauch();
+                } catch {
+                  flash('Der Preisdienst antwortet nicht.');
+                }
+              },
+            },
+            'zurücksetzen'
+          )
+        )
+      ),
+      // Je Ziel, damit man sieht, welche Länderseite teuer ist.
+      v.jeZiel?.length
+        ? el(
+            'table',
+            { class: 'pxtabelle' },
+            el(
+              'tbody',
+              {},
+              ...v.jeZiel.slice(0, 12).map((z) =>
+                el(
+                  'tr',
+                  {},
+                  el('td', {}, z.host),
+                  el('td', { class: 'r' }, datenmenge(z.gesamt)),
+                  el('td', { class: 'r leise' }, `${z.verbindungen.toLocaleString('de-DE')} Verb.`)
+                )
+              )
+            )
+          )
+        : null
+    )
+  );
+}
+
+function renderProxy() {
+  const betrieb = $('#proxyBetrieb');
+  const liste = $('#proxyListe');
+  if (!betrieb || !liste) return;
+  if (!proxy) {
+    setChildren(betrieb, el('p', { class: 'note' }, 'Der Preisdienst antwortet nicht.'));
+    return setChildren(liste);
+  }
+
+  setChildren(
+    betrieb,
+    el(
+      'div',
+      { class: 'pxmodus' },
+      ...PROXY_ARTEN.map(([wert, titel, erklaerung]) =>
+        el(
+          'label',
+          { class: 'pxwahl' + (proxy.modus === wert ? ' an' : '') },
+          el('input', {
+            type: 'radio',
+            name: 'proxymodus',
+            value: wert,
+            checked: proxy.modus === wert,
+            onchange: () => setzeProxyModus(wert),
+          }),
+          el('span', {}, el('b', {}, titel), el('small', {}, erklaerung))
+        )
+      )
+    )
+  );
+
+  const maerkte = providerById(PROVIDER).markets;
+  setChildren(
+    liste,
+    proxyVorrat('allgemein', 'Allgemeiner Vorrat', proxy.allgemein),
+    el('p', { class: 'pxtrenner' }, 'Je Länderseite'),
+    ...maerkte
+      .filter((m) => !m.gestoert)
+      .map((m) => proxyVorrat(m.host, `${m.label} · ${m.host}`, proxy.hosts?.[m.host]))
+  );
+}
+
+/** Der Haken im Preisvergleich und im Kalender. */
+function renderProxyWahl() {
+  for (const id of ['#proxyWahl', '#kalProxyWahl']) {
+    const ziel = $(id);
+    if (!ziel) continue;
+    if (!proxy) {
+      setChildren(ziel);
+      continue;
+    }
+    const an = proxy.modus !== 'aus';
+    const bereit =
+      proxy.modus === 'allgemein'
+        ? proxy.allgemein?.gewaehlt != null
+        : Object.values(proxy.hosts || {}).some((h) => h.gewaehlt != null);
+
+    setChildren(
+      ziel,
+      el(
+        'label',
+        { class: 'optionzeile' + (id === '#proxyWahl' ? ' am-abruf' : '') },
+        el('input', {
+          type: 'checkbox',
+          checked: an,
+          onchange: (e) => setzeProxyModus(e.target.checked ? 'allgemein' : 'aus'),
+        }),
+        el(
+          'span',
+          {},
+          el('b', {}, 'Über Proxy abrufen'),
+          el(
+            'small',
+            {},
+            an
+              ? bereit
+                ? PROXY_ARTEN.find(([w]) => w === proxy.modus)[1] +
+                  '. Verwaltet wird das unter „Was geht gerade".'
+                : 'Eingeschaltet, aber noch kein Proxy geprüft. Erst testen, sonst geht der Abruf direkt hinaus.'
+              : 'Aus. Der Abruf geht direkt von diesem Rechner. Listen liegen unter „Was geht gerade".'
+          )
+        )
+      ),
+      an && !bereit
+        ? el(
+            'button',
+            {
+              type: 'button',
+              class: 'ghost klein',
+              onclick: (e) => testeProxy(proxy.modus === 'allgemein' ? 'allgemein' : null, e.currentTarget),
+            },
+            'Proxys testen'
+          )
+        : null
+    );
+  }
+}
+
+/* --- Die Lampe ----------------------------------------------------------
+   Zeigt dauerhaft, über welchen Weg gerade abgerufen wird. Beim Wechsel
+   blinkt sie kurz auf: eine Messung über eine andere Adresse ist etwas
+   anderes als die davor, und das soll man sehen, ohne ins Protokoll zu
+   schauen. */
+
+function haltProxyLampeFrisch() {
+  if (proxyTakt) {
+    clearInterval(proxyTakt);
+    proxyTakt = null;
+  }
+  ladeProxyLampe();
+  proxyTakt = setInterval(ladeProxyLampe, 3000);
+}
+
+async function ladeProxyLampe() {
+  const lampe = $('#proxyLampe');
+  if (!lampe) return;
+  let d;
+  try {
+    d = await (await fetch('/api/proxy/live')).json();
+  } catch {
+    lampe.hidden = true;
+    return;
+  }
+  if (!d.aktiv) {
+    lampe.hidden = true;
+    return;
+  }
+  lampe.hidden = false;
+
+  const gewechselt = d.seitWann && d.seitWann !== proxyLetzterWechsel;
+  if (gewechselt) {
+    proxyLetzterWechsel = d.seitWann;
+    // Neu anstoßen: die Klasse muss weg und wieder dran, sonst läuft die
+    // Bewegung beim zweiten Wechsel nicht noch einmal.
+    lampe.classList.remove('wechsel');
+    void lampe.offsetWidth;
+    lampe.classList.add('wechsel');
+  }
+
+  // Bewusst knapp: Adresse und Betriebsart. Wie viel durchgelaufen ist, steht
+  // bei den Einstellungen, das ist eine Zahl zum Nachschlagen.
+  setChildren(
+    lampe,
+    el('span', { class: 'pxpunkt' }),
+    el(
+      'span',
+      {},
+      el('b', {}, d.ausgang || d.inBenutzung || 'Proxy aktiv'),
+      el('small', {}, d.modus === 'allgemein' ? 'alle Länderseiten' : 'je Länderseite')
+    )
+  );
+}
+
 /* ------------------------------------------------------ Hintergrundprüfung */
 
 /** Stand der geplanten Aufgabe, vom Dienst geholt. */
@@ -7091,6 +7588,11 @@ function init() {
   } else {
     showScreen('start');
   }
+
+  // Proxy-Zustand einmal holen und die Lampe in Gang setzen. Sie zeigt sich
+  // von selbst nur, wenn wirklich ein Proxy wirkt.
+  ladeProxy();
+  haltProxyLampeFrisch();
 
   checkService().then((ok) => {
     const badge = $('#serviceBadge');

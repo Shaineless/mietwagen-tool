@@ -133,7 +133,7 @@ export async function quoteSixt(q) {
     // `rent-offer-list-error` ist Sixts eigenes Merkmal fuer diesen Fall und
     // damit unabhaengig von der Sprache der Laenderseite. Gemessen an
     // Frankfurt Zentrum/Zeil, 04.09.2026: dort steht "Wir konnten keine
-    // passenden Fahrzeuge finden" — kein Wort, nach dem die alte Textsuche
+    // passenden Fahrzeuge finden", kein Wort, nach dem die alte Textsuche
     // gefahndet hat.
     const ausgang = await Promise.race([
       page.waitForSelector(TILE, { timeout: 60000 }).then(() => 'liste').catch(() => 'nichts'),

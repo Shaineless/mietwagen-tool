@@ -20,6 +20,7 @@
  */
 
 import { chromium } from 'playwright';
+import { weicheGebraucht, weicheAdresse, starteWeiche } from './proxy.mjs';
 import { spawn } from 'node:child_process';
 import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -135,6 +136,19 @@ export async function getBrowser({ sichtbar = false, inkognito = false } = {}) {
     '--no-first-run',
     '--no-default-browser-check',
   ];
+
+  // Sind Proxys je Laenderseite eingestellt, bekommt Chrome GENAU EINEN Proxy
+  // genannt: die eigene Weiche. Sie entscheidet dann je Ziel, welcher Proxy
+  // wirklich benutzt wird, und meldet sich dort an. Chrome selbst koennte
+  // beides nicht, weder je Ziel unterscheiden noch Zugangsdaten mitschicken.
+  if (weicheGebraucht()) {
+    const adresse = weicheAdresse() || `127.0.0.1:${await starteWeiche()}`;
+    // Ohne Ausnahmeliste: Chrome laesst 127.0.0.1 von sich aus am Proxy
+    // vorbei, und genau das ist noetig. Ein erster Versuch mit
+    // "--proxy-bypass-list=<-loopback>" schickte auch die Verbindung zur
+    // eigenen Oberflaeche durch den Proxy, und das Programmfenster war tot.
+    args.push(`--proxy-server=${adresse}`);
+  }
   if (!sichtbar) {
     args.push('--window-position=-32000,-32000', '--window-size=1400,1000');
   }

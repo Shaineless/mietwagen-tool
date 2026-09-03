@@ -20,6 +20,18 @@ import { quoteSchutz, waehleSchutzpaket, kasseLebt } from './scrape/sixt-schutz.
 import { findBrowser, closeBrowser, frischesProfil } from './browser.mjs';
 import * as buchung from './buchung.mjs';
 import { hintergrundStand, setzeHintergrund } from './hintergrund.mjs';
+import {
+  proxyStand,
+  proxyLive,
+  verkehrStand,
+  setzeVerkehrZurueck,
+  setzeListe,
+  setzeModus,
+  loescheListe,
+  pruefeListe,
+  starteWeiche,
+  stoppeWeiche,
+} from './proxy.mjs';
 import { merkeAngebote, bekannteKlassen, katalogStand } from './katalog.mjs';
 import { istExe, quellWurzel, datenOrdner, leseVorrat } from './pfade.mjs';
 import { oeffneFenster } from './fenster.mjs';
@@ -989,6 +1001,85 @@ const server = createServer(async (req, res) => {
   }
 
   // Selbsttest: geht die ganze Kette auf diesem Rechner durch?
+  /* ---------------------------------------------------- Proxys je Länderseite */
+
+  if (path === '/api/proxy' && req.method === 'GET') {
+    return json(res, 200, { ok: true, ...(await proxyStand()) });
+  }
+
+  // Nur der Live-Zustand, klein genug für einen kurzen Takt: woran hängt der
+  // Abruf gerade, und wann hat er zuletzt gewechselt.
+  if (path === '/api/proxy/live') {
+    return json(res, 200, { ok: true, ...proxyLive() });
+  }
+
+  // Verbrauch, für die Einstellungen. Residential-Proxys werden nach
+  // Gigabyte abgerechnet, deshalb ist das Kostenkontrolle und nicht Zierde.
+  if (path === '/api/proxy/verbrauch' && req.method === 'GET') {
+    return json(res, 200, { ok: true, ...verkehrStand() });
+  }
+  if (path === '/api/proxy/verbrauch' && req.method === 'POST') {
+    const stand = await setzeVerkehrZurueck();
+    console.log('  ⇄ Proxy-Verbrauch zurückgesetzt');
+    return json(res, 200, { ok: true, ...stand });
+  }
+
+  // Liste hinterlegen, entfernen, Betriebsart wechseln.
+  if (path === '/api/proxy' && req.method === 'POST') {
+    try {
+      const body = JSON.parse((await readBody(req, 5_000_000)) || '{}');
+
+      if (body.modus) {
+        const erg = await setzeModus(body.modus);
+        // Chrome bekommt den Proxy als Startparameter. Nach einem Wechsel muss
+        // es neu starten, sonst läuft der nächste Abruf noch über den alten
+        // Weg und niemand merkt es.
+        if (erg.ok && erg.neustartNoetig) {
+          await closeBrowser().catch(() => {});
+          console.log(`  ⇄ Proxy-Betriebsart: ${body.modus}, Chrome startet neu`);
+        }
+        return json(res, 200, { ...erg, ...(await proxyStand()) });
+      }
+
+      const ziel = body.ziel === 'allgemein' ? 'allgemein' : body.ziel;
+      if (!ziel || (ziel !== 'allgemein' && !(await hostErlaubt(ziel)))) {
+        return json(res, 400, { ok: false, error: 'Unbekanntes Ziel' });
+      }
+      if (body.loeschen) {
+        await loescheListe(ziel);
+        await closeBrowser().catch(() => {});
+        console.log(`  ⇄ Proxys für ${ziel} entfernt`);
+        return json(res, 200, { ok: true, ...(await proxyStand()) });
+      }
+      const erg = await setzeListe(ziel, body.liste);
+      console.log(`  ⇄ ${erg.anzahl} Proxys für ${ziel} hinterlegt`);
+      return json(res, 200, { ...erg, ...(await proxyStand()) });
+    } catch (e) {
+      return json(res, 400, { ok: false, error: String(e.message).slice(0, 200) });
+    }
+  }
+
+  // Stichprobe prüfen und den schnellsten auswählen.
+  if (path === '/api/proxy/test' && req.method === 'POST') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const ziel = body.ziel === 'allgemein' ? 'allgemein' : body.ziel;
+      if (!ziel) return json(res, 400, { ok: false, error: 'Ziel fehlt' });
+      const erg = await pruefeListe(ziel, { anzahl: Number(body.anzahl) || 10 });
+      // Der gewählte Proxy ändert die Startparameter von Chrome.
+      if (erg.ok) await closeBrowser().catch(() => {});
+      if (erg.ok) {
+        console.log(
+          `  ⇄ ${ziel}: ${erg.davonGut} von ${erg.geprueft} Proxys erreichbar` +
+            (erg.schnellste ? `, schnellster ${erg.schnellste.ms} ms über ${erg.schnellste.ip}` : '')
+        );
+      }
+      return json(res, 200, { ...erg, ...(await proxyStand()) });
+    } catch (e) {
+      return json(res, 400, { ok: false, error: String(e.message).slice(0, 200) });
+    }
+  }
+
   /* ---------------------------------------------------- Hintergrundprüfung */
 
   if (path === '/api/hintergrund' && req.method === 'GET') {
@@ -1313,6 +1404,10 @@ async function starteDienst() {
       console.log(`Import-Token:         ${IMPORT_TOKEN}`);
     }
 
+    // Die Proxy-Weiche muss stehen, bevor Chrome startet: sie wird ihm als
+    // Startparameter genannt.
+    await starteWeiche().catch((e) => console.log('  ! Proxy-Weiche: ' + e.message));
+
     // Erst wenn der Dienst wirklich steht: sonst pruefte die erste Runde,
     // waehrend der Port noch gesucht wird.
     starteWeckerTakt();
@@ -1371,6 +1466,11 @@ async function beenden(code = 0) {
     await closeBrowser();
   } catch {
     /* dann eben nicht, beenden ist wichtiger */
+  }
+  try {
+    await stoppeWeiche();
+  } catch {
+    /* der Prozess geht ohnehin gleich */
   }
   process.exit(code);
 }

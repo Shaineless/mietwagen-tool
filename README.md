@@ -370,7 +370,40 @@ liegt im Rahmen dessen, was sich zwischen zwei Abrufen ohnehin bewegt.
 Der Haken bleibt trotzdem: er macht die Frage nachprüfbar, statt sie zu
 behaupten.
 
-### 11 · Kleinigkeiten, die den Alltag ausmachen
+### 11 · Proxys je Länderseite
+
+Der Vergleich stellt Domains gegenüber, `sixt.de` gegen `sixt.fr`. Die
+**Herkunft des Besuchers** war dabei nie geprüft: sieht jemand aus Frankreich
+auf `sixt.fr` denselben Preis wie jemand aus Deutschland? Mit hinterlegten
+Proxys lässt sich das messen.
+
+Zwei Betriebsarten, weil zwei verschiedene Fragen dahinterstehen:
+
+- **Ein Vorrat für alle Länderseiten.** Derselbe Weg für jede Seite. Zeigt, ob
+  ein anderer Anschluss überhaupt andere Preise sieht.
+- **Je Länderseite ein eigener.** Sinnvollerweise mit Proxys aus dem
+  jeweiligen Land. Seiten ohne eigenen Eintrag gehen bewusst direkt hinaus.
+
+Hinterlegt wird als Datei oder als eingefügte Liste, eine Zeile je Eintrag
+(`host:port:benutzer:passwort`, auch `benutzer:passwort@host:port`). Ein Klick
+prüft eine Stichprobe und zeigt zu jedem Eintrag **Laufzeit und
+Ausgangsadresse**; benutzt wird der schnellste. Die Ausgangsadresse steht dort
+nicht als Schmuck: eine Liste, auf der „Frankreich" steht, muss nicht aus
+Frankreich kommen. Beim Testen hier war genau das der Fall.
+
+> **Gemessen** · Französische Ausgänge auf `sixt.fr`, spanische auf `sixt.es`,
+> jeweils gegen den direkten Abruf aus Deutschland: **34 von 34 Klassen
+> identisch, auf beiden Seiten.** Die Herkunft des Besuchers ändert bei Sixt
+> nichts. Die Länderseite dagegen sehr wohl.
+
+Technisch läuft das über eine **lokale Weiche**: der Browser bekommt genau
+einen Proxy genannt, nämlich sie, und sie entscheidet je Ziel, welcher Proxy
+wirklich benutzt wird. Nötig, weil ein Browser den Proxy nur für den ganzen
+Prozess kennt und keine Zugangsdaten mitschicken kann. Nebenbei macht das den
+**Verbrauch messbar**, aufgeschlüsselt je Ziel: Residential-Proxys werden nach
+Gigabyte abgerechnet, das ist Kostenkontrolle und nicht Statistik.
+
+### 12 · Kleinigkeiten, die den Alltag ausmachen
 
 - **2250 Stationen aus 108 Ländern**: Flughäfen, Bahnhöfe, Stadt-, Hotel-,
   Hafen- und Agenturstationen. Suchfeld mit Umlaut- und IATA-Erkennung:
@@ -423,6 +456,13 @@ gar keine.
 **Keine Tarnkappen-Technik.** TRACKER gibt sich nicht als etwas anderes aus, als
 es ist, und umgeht keine Sperren. Cookie-Banner werden mit *Ablehnen*
 beantwortet, nie mit *Einverstanden*.
+
+Proxys lassen sich hinterlegen, aber als **fester Weg**, nicht als Karussell:
+geprüft wird eine Stichprobe, benutzt wird der schnellste, und der bleibt.
+Fällt er technisch aus, rückt der nächste geprüfte nach. Weist eine
+Länderseite den Zugriff ab, wird das gemeldet und **nicht** der nächste
+probiert. Der Unterschied ist der zwischen einem kaputten Weg und dem Umgehen
+einer Sperre.
 
 ---
 
