@@ -35,7 +35,7 @@
     "VW T-ROC CABRIOLET",
     "VW T-ROC CABRIO"
    ],
-   "beispielText": "Compacto Descapotable Manual",
+   "beispielText": "Kompaktklasse Cabrio Manuell",
    "zuletzt": "2026-09-03"
   },
   "CDAR": {
@@ -60,7 +60,7 @@
     "VW T-ROC CABRIOLET",
     "VW T-ROC CABRIO"
    ],
-   "beispielText": "Compacto Descapotable Automático",
+   "beispielText": "Kompaktklasse Cabrio Automatik",
    "zuletzt": "2026-09-03"
   },
   "IVMV": {
@@ -469,8 +469,8 @@
    "modelle": [
     "CUPRA TAVASCAN"
    ],
-   "beispielText": "Standard SUV Automatique",
-   "zuletzt": "2026-09-02"
+   "beispielText": "Standardklasse SUV Automatik",
+   "zuletzt": "2026-09-03"
   },
   "CWMR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-golf-variant-stw-4d-grey-2022.png",
@@ -500,7 +500,7 @@
     "MERCEDES-BENZ CLE CABRIOLET",
     "MERCEDES-BENZ CLE CABRIO"
    ],
-   "beispielText": "Premium Elite Descapotable Automático",
+   "beispielText": "Premiumklasse Elite Cabrio Automatik",
    "zuletzt": "2026-09-03"
   },
   "GTAR": {
@@ -513,7 +513,7 @@
     "FULLSIZE ELITE DESCAPOTABLE",
     "FULLSIZE ELITE CONVERSÍVEL"
    ],
-   "beispielText": "Fullsize Elite Cabrio Automatico",
+   "beispielText": "Oberklasse Elite Cabrio Automatik",
    "zuletzt": "2026-09-03"
   },
   "WVAR": {
@@ -530,14 +530,14 @@
     "BMW M240 COUPÉ"
    ],
    "beispielText": "Mittelklasse Elite Coupé Automatik",
-   "zuletzt": "2026-09-02"
+   "zuletzt": "2026-09-03"
   },
   "LVMR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/nissan-primastar-van-white-2022.png",
    "modelle": [
     "NISSAN PRIMASTAR"
    ],
-   "beispielText": "Classe luxe Monospace Manuelle",
+   "beispielText": "Luxusklasse Van Manuell",
    "zuletzt": "2026-09-03"
   },
   "LVAR": {
@@ -545,7 +545,7 @@
    "modelle": [
     "NISSAN PRIMASTAR"
    ],
-   "beispielText": "Classe luxe Monospace Automatique",
+   "beispielText": "Luxusklasse Van Automatik",
    "zuletzt": "2026-09-03"
   },
   "DFAE": {
@@ -578,7 +578,7 @@
     "VW ID.7 TOURER"
    ],
    "beispielText": "Premiumklasse Kombi Automatik",
-   "zuletzt": "2026-09-02"
+   "zuletzt": "2026-09-03"
   },
   "SFAH": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-tiguan-suv-black-2024.png",
@@ -618,7 +618,7 @@
     "AUDI A6 AVANT E-TRON"
    ],
    "beispielText": "Premiumklasse Elite Kombi Automatik",
-   "zuletzt": "2026-09-02"
+   "zuletzt": "2026-09-03"
   },
   "UWAH": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/audi-a6-avant-stw-silver-2026.png",
@@ -970,7 +970,7 @@
    "modelle": [
     "FORD TOURNEO CUSTOM"
    ],
-   "beispielText": "Premium Monospace Manuelle",
+   "beispielText": "Premiumklasse Van Manuell",
    "zuletzt": "2026-09-03"
   },
   "PVAR": {
@@ -978,7 +978,7 @@
    "modelle": [
     "FORD TOURNEO CUSTOM"
    ],
-   "beispielText": "Premium Monospace Automatique",
+   "beispielText": "Premiumklasse Van Automatik",
    "zuletzt": "2026-09-03"
   },
   "JDAE": {
@@ -4194,7 +4194,12 @@
    "WVAR": "2026-09-03",
    "JDSR": "2026-09-03",
    "GWSR": "2026-09-03",
-   "UVAR": "2026-09-03"
+   "UVAR": "2026-09-03",
+   "PWAE": "2026-09-03",
+   "SFAE": "2026-09-03",
+   "JDAE": "2026-09-03",
+   "UWAC": "2026-09-03",
+   "JESR": "2026-09-03"
   },
   "sixt|6243|www.sixt.at": {
    "GWAR": "2026-09-03",

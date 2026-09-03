@@ -157,6 +157,9 @@ Dazu:
   Sonst sähe man nicht, dass es die Klasse dort gibt, sie nur gerade weg ist.
 - **Frühbucherrabatt wird ausgewiesen.** Er läuft nicht überall gleichzeitig;
   ohne den Hinweis wäre der Vergleich verzerrt.
+- **Jede Länderseite fällt als eigene Spalte ein**, sobald sie antwortet. Eine
+  Seite braucht zehn bis vierzig Sekunden; so sieht man, welche gerade
+  hereingekommen ist, und nicht nur, dass sich irgendwo etwas geändert hat.
 
 ### 2 · Stationen gegenübergestellt
 
@@ -239,6 +242,12 @@ frei eintragbar bis 90.
 - Der Kalender zeigt **Grundpreise ohne Schutzpaket**, er beantwortet „wann",
   nicht „mit welchem Schutz". Ein Knopf am Tag übernimmt Station und Zeitraum in
   den Preisvergleich, wo der Schutz mit echtem Kassenpreis danebensteht.
+- **Die Tage trudeln einzeln ein**, jeder in dem Moment, in dem sein Preis
+  ankommt, statt am Ende alle auf einmal dazustehen. Der günstigste Tag bekommt
+  einen kurzen Lichtstreif, sobald der Lauf durch ist und feststeht, wer
+  gewonnen hat. Die Kennzahlen darüber zählen zum neuen Wert hoch.
+- Der Fortschritt zählt **Tage mit Preis**, nicht Abrufe: wer sechs Tage aus dem
+  gespeicherten Verlauf vor sich hat, liest jetzt „6 von 28" statt „0 von 28".
 
 ### 5 · Mehrere Stationen über einen ganzen Zeitraum
 

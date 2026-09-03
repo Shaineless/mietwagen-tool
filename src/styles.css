@@ -1047,10 +1047,38 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 .svc.off { background: var(--flaeche2); color: var(--muted); }
 
 .fortschritt { background: var(--flaeche2); border-radius: var(--r-klein); padding: 16px 18px; margin-bottom: 18px; }
-.fbalken { height: 4px; background: var(--hairline); border-radius: 980px; overflow: hidden; }
+.fbalken { height: 4px; background: var(--hairline); border-radius: 980px; overflow: hidden; position: relative; }
 /* Fortschritt ist gleichfoermige Bewegung, linear, sonst luegt der Balken
-   ueber das Tempo. */
-.ffuellung { height: 100%; width: 0; background: var(--accent); border-radius: 980px; transition: width .3s linear; }
+   ueber das Tempo.
+   Bewegt wird scaleX, nicht width: width laesst den Browser bei jedem Schritt
+   neu umbrechen und neu malen, transform nicht. */
+.ffuellung {
+  height: 100%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: var(--accent);
+  border-radius: 980px;
+  transition: transform .3s linear;
+}
+
+/* Zwischen zwei Laenderseiten steht der Balken schon mal zwanzig Sekunden
+   still. Der Schimmer ist das einzige, was dann noch sagt, dass gearbeitet
+   wird und nichts haengt. Gleichfoermig, also linear, und nur solange der
+   Kasten sichtbar ist. */
+.fbalken::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 980px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 34%, transparent), transparent);
+  transform: translateX(-100%);
+  animation: fschimmer 1.9s linear infinite;
+  pointer-events: none;
+}
+@keyframes fschimmer {
+  to { transform: translateX(100%); }
+}
 .frow { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .ftext { margin: 12px 0 4px; font-size: 14px; font-weight: 560; }
 .fhinweis { margin: 0; font-size: 12.5px; color: var(--muted); }
@@ -1183,6 +1211,30 @@ tr.zeile:hover td, tr.zeile:hover th.klasse { background: #f3f7fc; }
 td.best { background: var(--success-bg); }
 td.best .betrag { color: var(--success); font-weight: 640; }
 td.leer { color: var(--leise); }
+
+/* ---------------------------------------------------------- Eintrudeln
+ *
+ * Eine Laenderseite braucht zehn bis vierzig Sekunden. Ist sie da, faellt
+ * ihre Spalte von oben nach unten ein, statt lautlos zu erscheinen. Damit
+ * sieht man, WELCHE Seite gerade geantwortet hat, und nicht nur, dass sich
+ * irgendwo etwas geaendert hat.
+ *
+ * Die Klasse setzt app.js je Spalte genau einmal, siehe tabGezeigt. Bewegt
+ * werden nur Deckkraft und Verschiebung.
+ */
+table.vergleich td.frisch,
+table.vergleich thead th.frisch {
+  animation: zelleEin var(--t-ansicht) var(--raus) backwards;
+  animation-delay: calc(var(--nr, 0) * 32ms);
+}
+@keyframes zelleEin {
+  from { opacity: 0; transform: translateY(6px); }
+}
+/* Der Betrag kommt eine Spur nach der Zelle. */
+table.vergleich td.frisch .betrag {
+  animation: zelleEin var(--t-ansicht) var(--raus) backwards;
+  animation-delay: calc(var(--nr, 0) * 32ms + 55ms);
+}
 
 .tabnote { font-size: 12.5px; color: var(--leise); margin: 16px 0 0; line-height: 1.55; white-space: normal; }
 
@@ -1430,6 +1482,22 @@ tr.mietzeile .betrag { color: var(--ink2); font-weight: 500; }
   .mode:hover:not(:disabled), .mode:active, .station:active, .pill:active { transform: none; }
   .screen:not([hidden]), .modes .mode { animation: none; }
   .ffuellung { transition: none; }
+  button.ktag:hover:not(:disabled) { transform: none; box-shadow: none; }
+
+  /* Das Eintrudeln bleibt, aber ohne Verschiebung: das reine Aufblenden sagt
+     immer noch, welcher Tag und welche Spalte gerade hereingekommen ist, und
+     genau dafuer ist es da. Auch die Staffelung faellt weg, damit nichts
+     mehr wandert. */
+  .ktag.frisch, .ktag.frisch .kpreis, .calendar-selection.gewechselt > *,
+  table.vergleich td.frisch, table.vergleich thead th.frisch, table.vergleich td.frisch .betrag {
+    animation-name: nurAuf;
+    animation-duration: .18s;
+    animation-delay: 0s;
+  }
+  @keyframes nurAuf { from { opacity: 0; } }
+
+  /* Der Lichtstreif und der Laufschimmer sind reine Zugabe, die faellt weg. */
+  .ktag.krone::before, .fbalken::after { animation: none; display: none; }
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -1572,9 +1640,71 @@ button.ktag { display: flex; flex-direction: column; align-items: flex-start; ju
 .ktag.nichts .kpreis { color: #888b93; font-weight: 400; }
 .ktag:focus-visible { position: relative; z-index: 1; }
 @media (hover: hover) and (pointer: fine) {
-  button.ktag:hover:not(:disabled) { background: #edf3fb; opacity: 1; }
+  button.ktag:hover:not(:disabled) {
+    background: #edf3fb;
+    opacity: 1;
+    border-color: #cfdcec;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px -8px rgba(16, 34, 61, .28);
+  }
+}
+
+/* ---------------------------------------------------------- Eintrudeln
+ *
+ * Ein Kalenderlauf holt achtundzwanzig Tage nacheinander. Vorher standen sie
+ * am Ende alle gleichzeitig da, als waere nichts geschehen. Jeder Tag legt
+ * sich jetzt einzeln hin, in dem Moment, in dem sein Preis ankommt: so ist zu
+ * sehen, dass es vorangeht, und wo gerade.
+ *
+ * Nur Deckkraft und Verschiebung, beides ohne Umbruch und ohne Neuzeichnen.
+ * Die Klasse setzt app.js genau einmal je Tag, siehe kalGezeigt.
+ */
+button.ktag {
+  position: relative;
+  overflow: hidden;
+  transition:
+    background var(--t-klein) ease,
+    border-color var(--t-klein) ease,
+    box-shadow var(--t-klein) var(--raus),
+    transform var(--t-klein) var(--raus);
+}
+.ktag.frisch { animation: ktagEin var(--t-ansicht) var(--raus) backwards; animation-delay: calc(var(--nr, 0) * 34ms); }
+@keyframes ktagEin {
+  from { opacity: 0; transform: translateY(5px); }
+}
+/* Der Preis selbst kommt eine Spur spaeter als die Kachel. Das liest sich als
+   "der Wert trifft ein" statt als "hier war schon immer etwas". */
+.ktag.frisch .kpreis { animation: kpreisEin var(--t-ansicht) var(--raus) backwards; animation-delay: calc(var(--nr, 0) * 34ms + 60ms); }
+@keyframes kpreisEin {
+  from { opacity: 0; transform: translateY(3px); }
+}
+
+/* Der guenstigste Tag bekommt einmal einen Lichtstreif, wenn der Lauf fertig
+   ist und feststeht, wer gewonnen hat. Einmal, nicht in Schleife: ein
+   dauernd blinkender Bestpreis waere Zappelei auf genau der Zahl, die man
+   in Ruhe lesen will. */
+.ktag.billigster { box-shadow: 0 0 0 1px #dbe8f8, 0 2px 10px -6px rgba(0, 102, 204, .45); }
+.ktag.krone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 32%, color-mix(in srgb, var(--accent) 26%, transparent) 50%, transparent 68%);
+  transform: translateX(-115%);
+  animation: kronenStreif .62s var(--rein-raus) .1s;
+  pointer-events: none;
+}
+@keyframes kronenStreif {
+  to { transform: translateX(115%); }
 }
 .calendar-selection { display: flex; align-items: center; justify-content: space-between; gap: 22px; background: #f6f8fb; border: 1px solid #e8edf5; border-radius: 16px; padding: 21px 24px; margin-top: 20px; }
+/* Wer im Kalender einen anderen Tag anklickt, tauscht hier den ganzen Inhalt
+   aus. Ohne Ueberblendung ist das ein harter Umschlag, und man muss zweimal
+   hinsehen, um zu merken, ob ueberhaupt etwas passiert ist. Kurz gehalten:
+   Tage klickt man oft. */
+.calendar-selection.gewechselt > * { animation: auswahlEin var(--t-klein) var(--raus) backwards; }
+@keyframes auswahlEin {
+  from { opacity: 0; transform: translateY(4px); }
+}
 .calendar-selection .eyebrow { font-size: .5625rem; margin-bottom: 8px; }
 .calendar-selection h3 { margin: 0 0 5px; font-size: 1rem; letter-spacing: -.025em; }
 .calendar-selection p:not(.eyebrow) { margin: 0; font-size: .75rem; color: var(--muted); }

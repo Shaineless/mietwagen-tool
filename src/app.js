@@ -120,6 +120,9 @@ const service = {
   queue: null,
 };
 const prices = new Map(); // Auftragsschlüssel -> Preisergebnis
+// Spalten des Vergleichs, die schon einmal mit Ergebnis dastanden. Nur wer
+// hier fehlt, wird beim Zeichnen bewegt. Siehe renderTable.
+const tabGezeigt = new Set();
 const schutz = new Map(); // Auftragsschlüssel -> Schutzergebnis
 let katalog = {}; // ACRISS -> {bild, modelle, beispielText}
 let pollTimer = null;
@@ -1745,6 +1748,69 @@ let kalKlassen = [];
 let kalKatalog = {};
 let kalKatalogOrt = '';
 let kalTagAuswahl = null;
+/**
+ * Tage, deren Preis schon einmal auf dem Schirm stand, und die Tafel, zu der
+ * sie gehoeren. Beides steuert nur die Darstellung, siehe renderKalBild.
+ *
+ * Der Merksatz haengt bewusst an der REISE, nicht am Nachladen der
+ * Aufzeichnung: das laeuft auch am Ende eines Laufs und bei jedem
+ * Klassenwechsel, und dann waere wieder genau das da, was hier vermieden
+ * werden soll, naemlich achtundzwanzig Kacheln, die auf einmal losfliegen.
+ */
+let kalGezeigt = new Set();
+let kalTafel = '';
+/**
+ * Tage, die den Lichtstreif fuer den Bestpreis schon bekommen haben.
+ *
+ * Eine Menge, kein einzelner Tag: bei gleichem Preis sind mehrere Tage
+ * "billigster". Mit nur einem Merker haette der zweite den ersten
+ * ueberschrieben, und beide waeren bei jedem Neuzeichnen wieder losgelaufen.
+ */
+let kalKrone = new Set();
+/** Zuletzt gezeigter Stand je Kennzahl, damit von dort aus gezaehlt wird. */
+const kalZahlen = new Map();
+
+/**
+ * Zaehlt den Text eines Feldes vom zuletzt gezeigten Wert zum neuen hoch.
+ *
+ * Entscheidend ist das WOHER. Waehrend eines Laufs wird die Karte alle
+ * zweieinhalb Sekunden neu gebaut; jedes Mal bei null anzufangen hiesse, den
+ * Preis im Sekundentakt zurueckzuwerfen. Steht der Wert still, passiert
+ * nichts.
+ *
+ * Der Endwert wird IMMER gesetzt, auch wenn nicht gezaehlt wird oder das Feld
+ * zwischendurch ersetzt wurde: eine Kennzahl, die auf halber Strecke
+ * stehenbleibt, waere schlimmer als gar keine Bewegung.
+ *
+ * @param {HTMLElement} feld
+ * @param {{jetzt:number, form:(n:number)=>string, schluessel:string}} zahl
+ */
+function zaehleHoch(feld, { jetzt, form, schluessel }) {
+  const vorher = kalZahlen.get(schluessel);
+  kalZahlen.set(schluessel, jetzt);
+  feld.textContent = form(jetzt);
+
+  const ruhig = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Beim ersten Mal gibt es kein Woher, und ohne Unterschied nichts zu zeigen.
+  if (ruhig || !Number.isFinite(vorher) || vorher === jetzt) return;
+
+  // Der richtige Wert steht schon da und wird erst vom ERSTEN Bild ersetzt.
+  // Andersherum waere es gefaehrlich: in einem Fenster im Hintergrund liefert
+  // der Browser keine Bilder, und dann bliebe der alte Wert stehen.
+  const DAUER = 420;
+  let start = null;
+  const schritt = (t) => {
+    if (!feld.isConnected) return; // Karte neu gebaut, hier ist nichts mehr zu tun
+    if (start === null) start = t;
+    const anteil = Math.min(1, (t - start) / DAUER);
+    // Dieselbe Charakteristik wie --raus: schnell los, sanft aus.
+    const e = 1 - Math.pow(1 - anteil, 3);
+    feld.textContent = form(vorher + (jetzt - vorher) * e);
+    if (anteil < 1) requestAnimationFrame(schritt);
+    else feld.textContent = form(jetzt);
+  };
+  requestAnimationFrame(schritt);
+}
 
 /** Die aktuelle Einstellung als Auftragsliste. */
 function kalJobs() {
@@ -2501,6 +2567,14 @@ function renderKalTag() {
         : null
     ) : null
   );
+
+  // Ueberblenden statt harter Umschlag. Die Signaturpruefung weiter oben ist
+  // dafuer schon der richtige Hebel: bis hierher kommt nur, wer wirklich
+  // andere Angaben anzeigt. Beim Takt waehrend eines Laufs steht die Signatur
+  // still, dann bleibt die Karte auch ruhig.
+  box.classList.remove('gewechselt');
+  void box.offsetWidth; // Umbruch erzwingen, sonst faengt nichts neu an
+  box.classList.add('gewechselt');
 }
 
 function renderKalBild() {
@@ -2509,6 +2583,26 @@ function renderKalBild() {
     $('#kalErgebnis').hidden = true;
     return;
   }
+  // Eine andere Station, Laenderseite, Mietdauer oder Spanne ist eine andere
+  // Tafel: die Tage duerfen wieder einzeln eintrudeln, und die Kennzahlen
+  // duerfen nicht vom Bestpreis der vorigen Reise aus hochzaehlen, womoeglich
+  // quer ueber Waehrungen hinweg. Die Fahrzeugklasse steht bewusst NICHT
+  // darin: die wechselt man oft, und die Kacheln bleiben dieselben.
+  //
+  // Das muss GANZ am Anfang stehen. Weiter unten stand es hinter den
+  // Kennzahlen und loeschte den Merker sofort wieder, den sie eben erst
+  // gesetzt hatten, sodass nie etwas hochzaehlte.
+  const tafel = [
+    state.kalender.station, state.kalender.host, state.kalender.dauer,
+    state.kalender.start, state.kalender.spanne, state.kalender.inkognito,
+  ].join('|');
+  if (tafel !== kalTafel) {
+    kalTafel = tafel;
+    kalGezeigt = new Set();
+    kalKrone = new Set();
+    kalZahlen.clear();
+  }
+
   // Ein Feld je Abholtag, nicht je Auftrag: bei mehreren Uhrzeiten gehören
   // sie zusammen, und gezeigt wird die günstigste, mit der Uhrzeit dazu.
   const nachTag = new Map();
@@ -2531,11 +2625,25 @@ function renderKalBild() {
   $('#kalTitel').textContent = 'Dein Preiskalender';
   $('#kalUntertitel').textContent = `${d.station.name} · ${d.markt.label} · ${state.kalender.klasse || 'Günstigste Klasse je Tag'}`;
   renderKalKlassenleiste(tage.length, werte.length);
-  const kennzahl = (label, wert, note) => el('div', { class: 'calendar-insight' },
-    el('span', { class: 'calendar-insight-label' }, label),
-    el('strong', { class: 'calendar-insight-value' }, wert),
-    el('span', { class: 'calendar-insight-note' }, note)
-  );
+  /**
+   * Eine Kennzahl. Mit `zahl` zaehlt der Wert vom zuletzt gezeigten Stand
+   * zum neuen hoch, statt zu springen.
+   *
+   * Wichtig ist das WOHER: waehrend eines Laufs wird die Karte alle
+   * zweieinhalb Sekunden neu gebaut, und von null zu zaehlen hiesse, den
+   * Preis dauernd zurueckzuwerfen. Steht der Wert still, passiert nichts.
+   *
+   * @param {{jetzt:number, form:(n:number)=>string, schluessel:string}} [zahl]
+   */
+  const kennzahl = (label, wert, note, zahl = null) => {
+    const feld = el('strong', { class: 'calendar-insight-value' }, wert);
+    if (zahl && Number.isFinite(zahl.jetzt)) zaehleHoch(feld, zahl);
+    return el('div', { class: 'calendar-insight' },
+      el('span', { class: 'calendar-insight-label' }, label),
+      feld,
+      el('span', { class: 'calendar-insight-note' }, note)
+    );
+  };
   // Bei mehreren Uhrzeiten die Frage beantworten, die man dann hat: welche
   // gewinnt eigentlich? Ohne diese Zahl müsste man Tag für Tag anklicken.
   const zeitBilanz = () => {
@@ -2557,8 +2665,10 @@ function renderKalBild() {
   $('#kalKennzahlen').classList.toggle('vier', Boolean(bilanz));
   setChildren($('#kalKennzahlen'),
     kennzahl('Bester Gesamtpreis', min == null ? '–' : kalBetrag(min, d.markt.cur),
-      beste.length ? `${kalDatum(beste[0].datum)}${beste.length > 1 ? ` und ${beste.length - 1} ${beste.length === 2 ? 'weiterer Tag' : 'weitere Tage'}` : ''}` : 'Sobald die ersten Preise vorliegen'),
-    kennzahl('Preisunterschied', min == null ? '–' : kalBetrag(max - min, d.markt.cur), 'Zwischen günstigstem und teuerstem Abholtag'),
+      beste.length ? `${kalDatum(beste[0].datum)}${beste.length > 1 ? ` und ${beste.length - 1} ${beste.length === 2 ? 'weiterer Tag' : 'weitere Tage'}` : ''}` : 'Sobald die ersten Preise vorliegen',
+      min == null ? null : { jetzt: min, form: (n) => kalBetrag(n, d.markt.cur), schluessel: 'min' }),
+    kennzahl('Preisunterschied', min == null ? '–' : kalBetrag(max - min, d.markt.cur), 'Zwischen günstigstem und teuerstem Abholtag',
+      min == null ? null : { jetzt: max - min, form: (n) => kalBetrag(n, d.markt.cur), schluessel: 'spanne' }),
     bilanz
       ? kennzahl(
           'Beste Abholzeit',
@@ -2568,7 +2678,9 @@ function renderKalBild() {
             : `an allen ${bilanz.mitPreis} Tagen vorn`
         )
       : null,
-    kennzahl('Tage mit Preis', `${werte.length} / ${tage.length}`, `${state.kalender.dauer} ${state.kalender.dauer === 1 ? 'Tag' : 'Tage'} Mietdauer · ${d.markt.cur}`)
+    kennzahl('Tage mit Preis', `${werte.length} / ${tage.length}`, `${state.kalender.dauer} ${state.kalender.dauer === 1 ? 'Tag' : 'Tage'} Mietdauer · ${d.markt.cur}`,
+      // Ganze Tage, keine Nachkommastellen: "18,4 / 28" waere Unsinn.
+      { jetzt: werte.length, form: (n) => `${Math.round(n)} / ${tage.length}`, schluessel: 'tage' })
   );
 
   // Jeder Monat erhält sein eigenes Raster. Auch Jahreswechsel und kurze
@@ -2580,7 +2692,11 @@ function renderKalBild() {
     monate.get(monat).push(tag);
   }
   const fokusDatum = document.activeElement?.closest('#kalBild .ktag')?.dataset.datum;
-  const tageNamen = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+  // Zaehlt ueber alle Monatsraster hinweg weiter, damit die Staffelung beim
+  // ersten Zeichnen einer gefuellten Tafel eine Welle ergibt und nicht in
+  // jedem Monat neu von vorn beginnt.
+  let frischNr = 0;
+  const tageNamen =['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
   setChildren($('#kalBild'), ...[...monate].map(([monat, monatstage]) => {
     const titel = new Date(monat + '-01T12:00:00').toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
     const luecke = (new Date(monatstage[0].datum + 'T12:00:00').getDay() + 6) % 7;
@@ -2597,6 +2713,15 @@ function renderKalBild() {
         el('tbody', {}, ...wochen.map((woche) => el('tr', {}, ...woche.map((t) => {
           if (!t) return el('td', { class: 'kal-blank', 'aria-hidden': 'true' });
           const istBest = min != null && t.preis === min;
+          // Das Raster wird alle zweieinhalb Sekunden neu gebaut. Bewegung
+          // darf deshalb nur an Tagen entstehen, die WIRKLICH gerade einen
+          // Preis bekommen haben; sonst zuckte die ganze Tafel im Takt.
+          const frisch = t.preis != null && !kalGezeigt.has(t.datum);
+          if (t.preis != null) kalGezeigt.add(t.datum);
+          // Erst wenn der Lauf durch ist, steht der Sieger fest. Waehrend des
+          // Laufs wandert der Bestpreis noch, da waere der Streif gelogen.
+          const krone = istBest && !kalLaeuft && !kalKrone.has(t.datum);
+          if (krone) kalKrone.add(t.datum);
           const exakt = t.preis == null ? (t.geladen ? '–' : '…') : t.preis.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           const kurz = t.preis == null ? exakt : Math.round(t.preis).toLocaleString('de-DE');
           const beschreibung =
@@ -2610,7 +2735,11 @@ function renderKalBild() {
             // nicht zu sehen, ob er von heute oder von vorletzter Woche ist.
             (t.ausAufzeichnung ? ` · aus dem Preisverlauf${t.zeit ? `, ${alter(t.zeit)}` : ''}` : '');
           return el('td', {}, el('button', {
-            type: 'button', class: 'ktag' + (istBest ? ' billigster' : '') + (t.preis == null ? ' nichts' : '') + (t.ausAufzeichnung ? ' gespeichert' : ''),
+            type: 'button', class: 'ktag' + (istBest ? ' billigster' : '') + (t.preis == null ? ' nichts' : '') + (t.ausAufzeichnung ? ' gespeichert' : '') + (frisch ? ' frisch' : '') + (krone ? ' krone' : ''),
+            // Die Staffelung greift nur beim ersten Zeichnen, wenn viele Tage
+            // auf einmal ankommen. Waehrend eines Laufs trudelt ohnehin einer
+            // nach dem anderen ein, dann steht hier fast immer 0.
+            style: frisch ? `--nr: ${Math.min(frischNr++, 14)}` : null,
             'data-datum': t.datum, 'aria-label': beschreibung, 'aria-pressed': String(kalTagAuswahl === t.datum),
             title: beschreibung, onclick: () => { kalTagAuswahl = t.datum; renderKalTag(); },
           },
@@ -2876,7 +3005,7 @@ async function starteKalMulti() {
         await new Promise((r) => setTimeout(r, 2500));
         await pollErgebnisse();
         const fertig = alle.filter((j) => prices.has(j.key)).length;
-        $('#kalMultiBalken').style.width = `${Math.round((fertig / alle.length) * 100)}%`;
+        $('#kalMultiBalken').style.transform = `scaleX(${fertig / alle.length})`;
         $('#kalMultiText').textContent =
           `${p.station.name}: ${fertig} von ${alle.length} Abrufen · ` +
           `${paket.indexOf(p) + 1} von ${paket.length} Stationen`;
@@ -3064,12 +3193,33 @@ function renderKalMultiErgebnis() {
   );
 }
 
+/**
+ * Fortschritt in TAGEN mit Preis, nicht in erledigten Abrufen.
+ *
+ * Vorher zaehlte hier, was dieser Lauf geholt hat. Wer den Kalender oeffnete,
+ * sah deshalb sechs Tage mit Preisen und darunter "0 von 21 Tagen berechnet":
+ * die sechs stammten aus dem gespeicherten Verlauf und zaehlten nicht mit.
+ * Jetzt zaehlt, was auf dem Schirm steht, egal woher es kommt.
+ *
+ * Auch die Bezugsgroesse stimmt jetzt: bei mehreren Uhrzeiten sind es dreimal
+ * so viele Auftraege wie Tage, und "13 von 63" haette niemandem etwas gesagt.
+ */
 function renderKalFortschritt(jobs) {
-  const fertig = jobs.filter((j) => prices.has(j.key)).length;
+  const nachTag = new Map();
+  for (const j of jobs) {
+    if (!nachTag.has(j.pickupDate)) nachTag.set(j.pickupDate, []);
+    nachTag.get(j.pickupDate).push(j);
+  }
+  const tage = [...nachTag.values()];
+  const mitPreis = tage.filter((js) => kalTagBester(js).preis != null).length;
+
   const box = $('#kalFortschritt');
   box.hidden = !kalLaeuft;
-  $('#kalFuellung').style.width = `${Math.round((fertig / jobs.length) * 100)}%`;
-  $('#kalText').textContent = `${fertig} von ${jobs.length} Tagen berechnet`;
+  const anteil = tage.length ? mitPreis / tage.length : 0;
+  $('#kalFuellung').style.transform = `scaleX(${anteil})`;
+  $('#kalText').textContent =
+    `${mitPreis} von ${tage.length} Tagen mit Preis` +
+    (mitPreis < tage.length ? ` · ${tage.length - mitPreis} offen` : '');
   renderLage(kalLaeuft);
 }
 
@@ -5343,6 +5493,19 @@ function renderTable(list) {
     return { min, anzahl };
   }
 
+  // Welche Länderseite ist gerade eben hereingekommen? Ihre Spalte darf sich
+  // einmal hinlegen, von oben nach unten. Vorher stand am Ende einfach alles
+  // gleichzeitig da, ohne dass zu sehen war, wer wann geantwortet hat.
+  // Aufgeräumt wird hier gleich mit: was keinen Preis mehr hat, wurde
+  // zurückgesetzt und darf beim nächsten Mal wieder eintrudeln.
+  for (const k of [...tabGezeigt]) if (!prices.has(k)) tabGezeigt.delete(k);
+  const frischeSpalten = new Set();
+  for (const j of spalten) {
+    if (!prices.has(j.key) || tabGezeigt.has(j.key)) continue;
+    frischeSpalten.add(j.key);
+    tabGezeigt.add(j.key);
+  }
+
   // Läuft auf einer Spalte gerade der Frühbucherrabatt?
   const fruehbucherSpalten = new Set();
   for (const z of zeilen.values()) {
@@ -5356,7 +5519,7 @@ function renderTable(list) {
     ...spalten.map((j) =>
       el(
         'th',
-        {},
+        { class: frischeSpalten.has(j.key) ? 'frisch' : '' },
         el('a', { href: j.url, target: '_blank', rel: 'noopener' }, j.market.label),
         el('span', { class: 'thcur' }, j.market.cur),
         // Der Abruf hat selbst gemerkt, dass Zahlen nicht zusammenpassen,
@@ -5373,8 +5536,11 @@ function renderTable(list) {
     )
   );
 
-  const körper = sortiert.map((z) => {
+  const körper = sortiert.map((z, zeilenNr) => {
     const { min, anzahl } = minima(z);
+    // Die Staffelung laeuft die Spalte hinunter. Gedeckelt, weil eine Tabelle
+    // mit dreissig Klassen sonst zwei Sekunden lang tropft.
+    const stufe = `--nr: ${Math.min(zeilenNr, 11)}`;
     const bild = z.beispiel?.image;
 
     return el(
@@ -5416,6 +5582,7 @@ function renderTable(list) {
         )
       ),
       ...spalten.map((j) => {
+        const neu = frischeSpalten.has(j.key);
         const o = z.zellen.get(j.key);
         if (!o) {
           const geladen = prices.get(j.key);
@@ -5424,7 +5591,7 @@ function renderTable(list) {
           const bekannt = katalog[z.cls.key];
           return el(
             'td',
-            { class: 'leer' },
+            { class: 'leer' + (neu ? ' frisch' : ''), style: neu ? stufe : null },
             bekannt ? el('span', { class: 'nichtbuchbar' }, 'nicht buchbar') : '–'
           );
         }
@@ -5438,7 +5605,8 @@ function renderTable(list) {
         return el(
           'td',
           {
-            class: (billigste ? 'best' : '') + (o.unstimmig ? ' unstimmig' : ''),
+            class: (billigste ? 'best' : '') + (o.unstimmig ? ' unstimmig' : '') + (neu ? ' frisch' : ''),
+            style: neu ? stufe : null,
             title:
               (o.unstimmig ? 'Betrag passt nicht zum Tagespreis, bitte auf der Seite prüfen. ' : '') +
               `${o.model}${o.unlimitedKm ? ' · unbegrenzte km' : ''}${
@@ -6853,8 +7021,8 @@ function renderFortschritt() {
     if (!n) continue;
     n.hidden = !aktiv;
     if (aktiv) {
-      const anteil = Math.round((q.erledigt / Math.max(1, q.gesamt)) * 100);
-      $(füllung).style.width = `${anteil}%`;
+      const anteil = q.erledigt / Math.max(1, q.gesamt);
+      $(füllung).style.transform = `scaleX(${anteil})`;
       $(text).textContent =
         `${q.erledigt} von ${q.gesamt} abgerufen` +
         (q.laufend ? ` · ${q.laufend} unterwegs` : '');
