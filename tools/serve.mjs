@@ -19,10 +19,11 @@ import { quoteSixt } from './scrape/sixt.mjs';
 import { quoteSchutz, waehleSchutzpaket, kasseLebt } from './scrape/sixt-schutz.mjs';
 import { findBrowser, closeBrowser, frischesProfil } from './browser.mjs';
 import * as buchung from './buchung.mjs';
+import { hintergrundStand, setzeHintergrund } from './hintergrund.mjs';
 import { merkeAngebote, bekannteKlassen, katalogStand } from './katalog.mjs';
 import { istExe, quellWurzel, datenOrdner, leseVorrat } from './pfade.mjs';
 import { oeffneFenster } from './fenster.mjs';
-import { protokolliereNach, protokollPfad, zeigeMeldung } from './meldung.mjs';
+import { protokolliereNach, protokollPfad, zeigeMeldung, meldungenStehen } from './meldung.mjs';
 import {
   merkeAbruf,
   leseVerlauf,
@@ -48,6 +49,19 @@ const port =
   Number(argumente.find((a) => /^\d+$/.test(a))) || Number(process.env.PORT) || 4173;
 /** Kein Fenster aufmachen, fuer Pruefläufe und stille Starts. */
 const stillerStart = argumente.includes('--kein-browser');
+
+/**
+ * Eine einzelne Weckerrunde laufen lassen und sich danach beenden.
+ *
+ * Das ist die Betriebsart fuer die Windows-Aufgabenplanung. Bis hierher pruefte
+ * der Wecker nur, solange das Programm offen war, und damit war sein Zweck
+ * verfehlt: wer eine Buchung beobachten laesst, hat TRACKER gerade nicht auf.
+ *
+ * Kein Port, kein Fenster, kein Dauerlauf. Alle vorhandenen Sicherungen
+ * greifen unveraendert weiter, vor allem der Mindestabstand von sechs Stunden
+ * je Wecker aus faelligeWecker().
+ */
+const nurWeckerRunde = argumente.includes('--wecker-einmal');
 
 /**
  * Einmal-Token fuer den Stationsimport.
@@ -975,6 +989,27 @@ const server = createServer(async (req, res) => {
   }
 
   // Selbsttest: geht die ganze Kette auf diesem Rechner durch?
+  /* ---------------------------------------------------- Hintergrundprüfung */
+
+  if (path === '/api/hintergrund' && req.method === 'GET') {
+    return json(res, 200, { ok: true, ...(await hintergrundStand()) });
+  }
+
+  if (path === '/api/hintergrund' && req.method === 'POST') {
+    try {
+      const body = JSON.parse((await readBody(req)) || '{}');
+      const erg = await setzeHintergrund(body.an === true, body.uhrzeit || '09:00');
+      console.log(
+        erg.ok
+          ? `  ⏰ Hintergrundprüfung ${body.an ? 'eingeschaltet (' + (body.uhrzeit || '09:00') + ')' : 'abgeschaltet'}`
+          : `  ! Hintergrundprüfung: ${erg.error}`
+      );
+      return json(res, 200, erg);
+    } catch (e) {
+      return json(res, 200, { ok: false, error: String(e.message).slice(0, 200) });
+    }
+  }
+
   /* ---------------------------------------------------- Kassenseiten */
 
   // Welche Kassenseiten stehen noch offen? Die Oberflaeche fragt das ab, um
@@ -1222,6 +1257,27 @@ function oeffneProgrammfenster(adresse) {
 
 async function starteDienst() {
   if (istExe) protokolliereNach(datenOrdner);
+
+  // Einzelrunde: laeuft vor allem anderen, damit weder ein Port belegt noch
+  // ein Fenster geoeffnet wird.
+  if (nurWeckerRunde) {
+    // Laeuft schon ein TRACKER, hat der seinen eigenen Takt. Zweimal
+    // gleichzeitig zu pruefen brauchte niemand und faellt Sixt nur auf.
+    for (let p = port; p < port + 12; p++) {
+      if (await schonUnserer(p)) {
+        console.log('TRACKER läuft bereits, die Weckerrunde übernimmt der laufende Dienst.');
+        return beenden(0);
+      }
+    }
+    console.log('Weckerrunde im Hintergrund …');
+    await weckerRunde({ sofort: false });
+    // Erst wenn ein etwaiges Meldungsfenster wirklich steht. Ohne das beendet
+    // sich der Prozess, bevor mshta ueberhaupt gestartet ist, und die Meldung
+    // erscheint nie: der Wecker haette dann still ausgeloest.
+    await meldungenStehen();
+    console.log('Weckerrunde beendet.');
+    return beenden(0);
+  }
 
   // 127.0.0.1 statt localhost: der Dienst haengt nur an der IPv4-Adresse,
   // waehrend "localhost" unter Windows zuerst als ::1 aufgeloest wird.

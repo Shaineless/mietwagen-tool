@@ -3143,7 +3143,12 @@ let weckerArt = 'wunsch';
 let weckerTakt = null;
 
 function haltWeckerFrisch(an) {
-  if (an && !weckerTakt) weckerTakt = setInterval(ladeWecker, 30000);
+  if (an && !weckerTakt) {
+    weckerTakt = setInterval(ladeWecker, 30000);
+    // Der Stand der geplanten Aufgabe ändert sich nicht von selbst, einmal
+    // beim Öffnen der Ansicht genügt.
+    ladeHintergrund();
+  }
   if (!an && weckerTakt) {
     clearInterval(weckerTakt);
     weckerTakt = null;
@@ -3158,6 +3163,127 @@ async function ladeWecker() {
     weckerListe = [];
   }
   renderWecker();
+}
+
+/* ------------------------------------------------------ Hintergrundprüfung */
+
+/** Stand der geplanten Aufgabe, vom Dienst geholt. */
+let hintergrund = null;
+
+async function ladeHintergrund() {
+  try {
+    hintergrund = await (await fetch('/api/hintergrund')).json();
+  } catch {
+    hintergrund = null;
+  }
+  renderHintergrund();
+}
+
+/**
+ * Der Schalter für die tägliche Prüfung ohne offenes Programm.
+ *
+ * Der vollständige Befehl steht im Klartext daneben, und der Name des
+ * Eintrags auch. Ein Autostart, den man nicht sieht und in der
+ * Aufgabenplanung nicht wiederfindet, ist genau das, was man von fremder
+ * Software nicht haben will.
+ */
+function renderHintergrund() {
+  const ziel = $('#hintergrundBereich');
+  if (!ziel) return;
+  if (!hintergrund) return setChildren(ziel);
+
+  if (!hintergrund.moeglich) {
+    return setChildren(
+      ziel,
+      el('p', { class: 'hgzeile aus' }, el('b', {}, 'Prüfung im Hintergrund: '), hintergrund.grund)
+    );
+  }
+
+  const an = hintergrund.an;
+  setChildren(
+    ziel,
+    el(
+      'div',
+      { class: 'hgkarte' + (an ? ' an' : '') },
+      el(
+        'label',
+        { class: 'hgschalter' },
+        el('input', {
+          type: 'checkbox',
+          checked: an,
+          onchange: async (e) => {
+            const kasten = e.currentTarget;
+            kasten.disabled = true;
+            const uhrzeit = $('#hgUhrzeit')?.value || '09:00';
+            try {
+              const d = await (
+                await fetch('/api/hintergrund', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ an: kasten.checked, uhrzeit }),
+                })
+              ).json();
+              if (!d.ok) flash(d.error || 'Ging nicht.');
+              else
+                flash(
+                  kasten.checked
+                    ? `Eingetragen. TRACKER prüft ab jetzt täglich um ${uhrzeit}, auch wenn es zu ist.`
+                    : 'Der Eintrag ist entfernt. Es läuft nichts mehr im Hintergrund.'
+                );
+            } catch {
+              flash('Der Preisdienst antwortet nicht.');
+            } finally {
+              await ladeHintergrund();
+            }
+          },
+        }),
+        el(
+          'span',
+          {},
+          el('b', {}, 'Täglich prüfen, auch wenn TRACKER zu ist'),
+          el(
+            'span',
+            { class: 'hgunter' },
+            an
+              ? 'Läuft. Meldet sich mit einem Fenster, wenn ein Preis gefallen ist.'
+              : 'Aus. Solange das aus ist, prüft der Wecker nur bei geöffnetem Programm.'
+          )
+        )
+      ),
+      el(
+        'label',
+        { class: 'hguhr' },
+        'um ',
+        el('input', {
+          id: 'hgUhrzeit',
+          type: 'time',
+          value: hintergrund.uhrzeit || '09:00',
+          onchange: async (e) => {
+            if (!an) return;
+            // Schon eingeschaltet? Dann den Eintrag mit der neuen Uhrzeit
+            // überschreiben, statt den Nutzer aus- und wieder einschalten
+            // zu lassen.
+            await fetch('/api/hintergrund', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ an: true, uhrzeit: e.target.value }),
+            }).catch(() => {});
+            flash(`Umgestellt auf ${e.target.value}.`);
+            ladeHintergrund();
+          },
+        })
+      ),
+      // Volle Offenlegung: was genau angelegt wird, und wo man es wiederfindet.
+      el(
+        'p',
+        { class: 'hgbefehl' },
+        an
+          ? `Eintrag „${hintergrund.aufgabe}" in der Windows-Aufgabenplanung: ${hintergrund.befehl}`
+          : `Angelegt würde der Eintrag „${hintergrund.aufgabe}" in der Windows-Aufgabenplanung: ${hintergrund.befehl}`,
+        an && hintergrund.naechste ? el('span', { class: 'hgnaechste' }, `Nächster Lauf: ${hintergrund.naechste}`) : null
+      )
+    )
+  );
 }
 
 function renderWecker() {

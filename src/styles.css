@@ -576,6 +576,33 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 }
 .linkknopf:disabled { color: var(--leise); cursor: progress; text-decoration: none; }
 
+/* --- Hintergrundpruefung --------------------------------------------------
+   Der Schalter fuer die geplante Aufgabe. Er zeigt den vollstaendigen Befehl,
+   damit niemand raten muss, was da angelegt wird. */
+.hgkarte {
+  margin: 0 0 18px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--flaeche2);
+  border: 1px solid var(--hairline2);
+}
+.hgkarte.an { background: #eff6ff; border-color: #d3e4fa; }
+.hgschalter { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.hgschalter input { margin-top: 3px; }
+.hgschalter b { font-size: 13.5px; font-weight: 600; }
+.hgunter { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
+.hguhr { display: inline-flex; align-items: center; gap: 6px; margin: 10px 0 0 26px; font-size: 12.5px; color: var(--muted); }
+.hguhr input { padding: 5px 8px; border: 1px solid var(--hairline2); border-radius: 8px; font: inherit; }
+.hgbefehl {
+  margin: 10px 0 0 26px;
+  font-size: 11px;
+  color: var(--leise);
+  line-height: 1.5;
+  word-break: break-all;
+}
+.hgnaechste { display: block; margin-top: 3px; }
+.hgzeile { margin: 0 0 16px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   display: inline-flex;

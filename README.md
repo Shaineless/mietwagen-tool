@@ -322,10 +322,25 @@ gebucht."
 Beide prüfen zu **deiner** Uhrzeit, nicht zu einer festen, bei 57 % Spanne
 zwischen zwei Abholzeiten wäre alles andere ein falscher Alarm.
 
-> **Ehrliche Einschränkung:** geprüft wird nur, solange TRACKER geöffnet ist. Es
-> installiert nichts, das im Hintergrund weiterläuft. Für „täglich nachschauen"
-> heißt das: einmal am Tag starten. Ob sich Umbuchen lohnt, hängt an den
-> Stornobedingungen deiner Buchung, die kennt dieses Werkzeug nicht.
+**Täglich prüfen, auch wenn TRACKER zu ist.** Ein Schalter bei den Weckern
+trägt eine Aufgabe in die **Windows-Aufgabenplanung** ein. Sie startet TRACKER
+einmal am Tag zur eingestellten Uhrzeit, lässt eine Weckerrunde laufen und
+beendet sich wieder. Ist ein Preis gefallen, kommt ein Meldungsfenster.
+
+Drei Dinge daran sind Absicht:
+
+- **Voreinstellung aus.** Es geschieht nichts, was niemand eingeschaltet hat.
+- **Der vollständige Befehl steht im Klartext daneben**, samt Name des
+  Eintrags (`TRACKER Preiswecker`), mit dem man ihn in der
+  Aufgabenplanung wiederfindet. Kein Autostart-Eintrag, kein Dienst, nichts
+  Verstecktes. Es braucht auch keine Administratorrechte.
+- **Derselbe Schalter macht es wieder weg**, vollständig.
+
+Läuft TRACKER gerade ohnehin, tut die geplante Aufgabe nichts: der laufende
+Dienst prüft ja bereits.
+
+> **Ehrliche Einschränkung:** Ob sich Umbuchen lohnt, hängt an den
+> Stornobedingungen deiner Buchung. Die kennt dieses Werkzeug nicht.
 
 ### 9 · Excel-Ausgabe
 
@@ -389,8 +404,9 @@ der Preis, den ein nicht angemeldeter Besucher sieht.
 
 **Keine Währungsumrechnung.** Verglichen wird nur innerhalb derselben Währung.
 
-**Kein Hintergrunddienst.** Der Preiswecker prüft nur, solange das Programm
-läuft. Es trägt sich nicht in den Autostart ein und lässt nichts zurück.
+**Kein Autostart, kein Dienst.** TRACKER trägt sich nirgends von selbst ein.
+Die tägliche Prüfung im Hintergrund gibt es, aber nur, wenn man sie
+ausdrücklich einschaltet, siehe Abschnitt 8.
 
 **Zwei Länderseiten sind zurzeit aus.** `sixt.cz` und `sixt.com.tr` nehmen eine
 deutsche Station nicht an. Gemessen: vier von vier Abrufen ohne Ergebnis. Sie

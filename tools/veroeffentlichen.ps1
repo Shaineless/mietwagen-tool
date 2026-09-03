@@ -89,6 +89,14 @@ Write-Host "              $([math]::Round($exeInfo.Length/1MB,1)) MB"
 
 # --- 3. Commits hochschieben ------------------------------------------------
 
+# Erst den Index auffrischen. Der Bau schreibt die erzeugten Dateien mit
+# Zeilenumbruechen, die von der Auscheck-Fassung abweichen; inhaltlich ist
+# keine Zeile anders, aber Git merkt sich Groesse und Zeitstempel und meldet
+# sie danach als geaendert. Ohne diese Zeile bricht die Veroeffentlichung mit
+# "ungespeicherte Aenderungen" ab, obwohl es keine gibt. Genau so passiert
+# beim Herausgeben der 1.3.9.
+git update-index --refresh 2>&1 | Out-Null
+
 $offen = git status --porcelain
 if ($offen) {
   Schlecht "Es liegen ungespeicherte Aenderungen vor:"

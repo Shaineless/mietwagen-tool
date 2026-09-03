@@ -583,6 +583,33 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 }
 .linkknopf:disabled { color: var(--leise); cursor: progress; text-decoration: none; }
 
+/* --- Hintergrundpruefung --------------------------------------------------
+   Der Schalter fuer die geplante Aufgabe. Er zeigt den vollstaendigen Befehl,
+   damit niemand raten muss, was da angelegt wird. */
+.hgkarte {
+  margin: 0 0 18px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--flaeche2);
+  border: 1px solid var(--hairline2);
+}
+.hgkarte.an { background: #eff6ff; border-color: #d3e4fa; }
+.hgschalter { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.hgschalter input { margin-top: 3px; }
+.hgschalter b { font-size: 13.5px; font-weight: 600; }
+.hgunter { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
+.hguhr { display: inline-flex; align-items: center; gap: 6px; margin: 10px 0 0 26px; font-size: 12.5px; color: var(--muted); }
+.hguhr input { padding: 5px 8px; border: 1px solid var(--hairline2); border-radius: 8px; font: inherit; }
+.hgbefehl {
+  margin: 10px 0 0 26px;
+  font-size: 11px;
+  color: var(--leise);
+  line-height: 1.5;
+  word-break: break-all;
+}
+.hgnaechste { display: block; margin-top: 3px; }
+.hgzeile { margin: 0 0 16px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   display: inline-flex;
@@ -2150,9 +2177,11 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
     <p class="note" id="weckerHinweis">
       Zwei Möglichkeiten: einen <b>Wunschpreis</b> setzen, bevor du buchst, oder
       nach der Buchung <b>weiter beobachten lassen</b> und Bescheid bekommen, wenn
-      derselbe Wagen billiger wird. Geprüft wird alle sechs Stunden, solange
-      Tracker geöffnet ist.
+      derselbe Wagen billiger wird. Geprüft wird höchstens alle sechs Stunden,
+      solange Tracker geöffnet ist. Darunter lässt sich eine tägliche Prüfung
+      einschalten, die auch bei geschlossenem Programm läuft.
     </p>
+    <div id="hintergrundBereich"></div>
     <div id="weckerNeu"></div>
     <div id="weckerListe"></div>
   </section>
@@ -2679,9 +2708,13 @@ const WERKZEUG_STAND = [
     gruppe: 'Preise',
     punkte: [
       ['ja', 'Preise je Länderseite auslesen',
-        'Läuft in einem eigenen, unsichtbaren Chrome-Fenster auf diesem Rechner. Zwei Abfragen gleichzeitig.'],
+        'Läuft in einem eigenen, unsichtbaren Chrome-Fenster auf diesem Rechner. Zwei bis sechs Abfragen gleichzeitig, selbstregelnd: es misst den eigenen Durchsatz und geht zurück, sobald es langsamer wird.'],
       ['ja', 'Schutzpakete mit echtem Endpreis',
         'Jedes Paket wird in der Kasse angeklickt und die Gesamtsumme abgelesen. Der Tagespreis mal Tage zu rechnen ergab bis zu 26 % daneben.'],
+      ['ja', 'Aus dem Vergleich heraus buchen',
+        'Nach dem Schutzabruf bleiben die Kassenseiten offen. Ein Klick auf einen Preis wählt dort dasselbe Paket und holt das Fenster nach vorn, gemessen unter einer Sekunde. Der Preis wird dabei gegengeprüft.'],
+      ['ja', 'Uhrzeiten getrennt vergleichen',
+        'Abhol- und Rückgabezeit einzeln, beliebig viele Paare je Suche. Gemessen lagen 12:30 und 13:30 am selben Tag 57 % auseinander, das schlägt härter durch als die Länderseite.'],
       ['ja', 'Frühbucherrabatt erkennen',
         'Wird je Länderseite angezeigt, er läuft nicht überall gleichzeitig, und das verzerrt den Vergleich.'],
       ['nein', 'Währungen umrechnen',
@@ -2700,6 +2733,19 @@ const WERKZEUG_STAND = [
         'Datums-Matrix: Abholtag −5 bis +5 Tage, dazu mehrere Mietdauern. Station und Termin sind oben umschaltbar.'],
       ['ja', 'Klassen merken, die gerade nicht buchbar sind',
         'Einmal gesehene Klassen bleiben als Zeile stehen und werden als „nicht buchbar" markiert, statt aus der Tabelle zu verschwinden.'],
+      ['ja', 'Stationen gegenübergestellt',
+        'Paarweise über die Klassen, die es an allen Stationen gibt, nicht als Durchschnitt. Gemessen lagen zwei Stationen derselben Stadt 49 % auseinander.'],
+    ],
+  },
+  {
+    gruppe: 'Über die Zeit',
+    punkte: [
+      ['ja', 'Preiskalender',
+        'Jeder Abholtag einzeln gerechnet, bis zu 56 Tage am Stück, Mietdauer bis 90 Tage. Gemessen: 313,96 € am günstigsten gegen 1.130,98 € am teuersten Tag.'],
+      ['ja', 'Preisentwicklung',
+        'Jeder Abruf ist ein Messpunkt. Getrennte Linien je Länderseite, Abrufmodus und Uhrzeit, damit ein Wechsel nicht wie eine Preisänderung aussieht.'],
+      ['ja', 'Preiswecker im Hintergrund',
+        'Auf Wunsch trägt sich eine tägliche Aufgabe in die Windows-Aufgabenplanung ein und prüft, auch wenn TRACKER zu ist. Voreinstellung aus, der Befehl steht im Klartext daneben.'],
     ],
   },
   {
@@ -2708,6 +2754,10 @@ const WERKZEUG_STAND = [
       ['ja', 'Abbrechen', 'Die Warteschlange lässt sich mitten im Abruf anhalten.'],
       ['ja', 'Alles bleibt auf diesem Rechner',
         'Der Dienst hört nur auf 127.0.0.1. Ergebnisse liegen im Arbeitsspeicher und verfallen nach einer Stunde.'],
+      ['ja', 'Abruf ohne Cookies',
+        'Zweites Chrome mit eigenem, vor jedem Lauf geleertem Profil. Damit sieht man, was ein Fremder sieht.'],
+      ['ja', 'Excel-Ausgabe',
+        'Selbst geschriebene Arbeitsmappe, ohne fremde Bibliothek: Preise, Schutzpakete und Kalender als eigene Blätter.'],
       ['teils', 'Proxy je Länderseite',
         'Im Unterbau vorhanden, aber ohne Bedienelement, bislang war keiner nötig.'],
       ['nein', 'Andere Vermieter',
@@ -6391,7 +6441,12 @@ let weckerArt = 'wunsch';
 let weckerTakt = null;
 
 function haltWeckerFrisch(an) {
-  if (an && !weckerTakt) weckerTakt = setInterval(ladeWecker, 30000);
+  if (an && !weckerTakt) {
+    weckerTakt = setInterval(ladeWecker, 30000);
+    // Der Stand der geplanten Aufgabe ändert sich nicht von selbst, einmal
+    // beim Öffnen der Ansicht genügt.
+    ladeHintergrund();
+  }
   if (!an && weckerTakt) {
     clearInterval(weckerTakt);
     weckerTakt = null;
@@ -6406,6 +6461,127 @@ async function ladeWecker() {
     weckerListe = [];
   }
   renderWecker();
+}
+
+/* ------------------------------------------------------ Hintergrundprüfung */
+
+/** Stand der geplanten Aufgabe, vom Dienst geholt. */
+let hintergrund = null;
+
+async function ladeHintergrund() {
+  try {
+    hintergrund = await (await fetch('/api/hintergrund')).json();
+  } catch {
+    hintergrund = null;
+  }
+  renderHintergrund();
+}
+
+/**
+ * Der Schalter für die tägliche Prüfung ohne offenes Programm.
+ *
+ * Der vollständige Befehl steht im Klartext daneben, und der Name des
+ * Eintrags auch. Ein Autostart, den man nicht sieht und in der
+ * Aufgabenplanung nicht wiederfindet, ist genau das, was man von fremder
+ * Software nicht haben will.
+ */
+function renderHintergrund() {
+  const ziel = $('#hintergrundBereich');
+  if (!ziel) return;
+  if (!hintergrund) return setChildren(ziel);
+
+  if (!hintergrund.moeglich) {
+    return setChildren(
+      ziel,
+      el('p', { class: 'hgzeile aus' }, el('b', {}, 'Prüfung im Hintergrund: '), hintergrund.grund)
+    );
+  }
+
+  const an = hintergrund.an;
+  setChildren(
+    ziel,
+    el(
+      'div',
+      { class: 'hgkarte' + (an ? ' an' : '') },
+      el(
+        'label',
+        { class: 'hgschalter' },
+        el('input', {
+          type: 'checkbox',
+          checked: an,
+          onchange: async (e) => {
+            const kasten = e.currentTarget;
+            kasten.disabled = true;
+            const uhrzeit = $('#hgUhrzeit')?.value || '09:00';
+            try {
+              const d = await (
+                await fetch('/api/hintergrund', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ an: kasten.checked, uhrzeit }),
+                })
+              ).json();
+              if (!d.ok) flash(d.error || 'Ging nicht.');
+              else
+                flash(
+                  kasten.checked
+                    ? `Eingetragen. TRACKER prüft ab jetzt täglich um ${uhrzeit}, auch wenn es zu ist.`
+                    : 'Der Eintrag ist entfernt. Es läuft nichts mehr im Hintergrund.'
+                );
+            } catch {
+              flash('Der Preisdienst antwortet nicht.');
+            } finally {
+              await ladeHintergrund();
+            }
+          },
+        }),
+        el(
+          'span',
+          {},
+          el('b', {}, 'Täglich prüfen, auch wenn TRACKER zu ist'),
+          el(
+            'span',
+            { class: 'hgunter' },
+            an
+              ? 'Läuft. Meldet sich mit einem Fenster, wenn ein Preis gefallen ist.'
+              : 'Aus. Solange das aus ist, prüft der Wecker nur bei geöffnetem Programm.'
+          )
+        )
+      ),
+      el(
+        'label',
+        { class: 'hguhr' },
+        'um ',
+        el('input', {
+          id: 'hgUhrzeit',
+          type: 'time',
+          value: hintergrund.uhrzeit || '09:00',
+          onchange: async (e) => {
+            if (!an) return;
+            // Schon eingeschaltet? Dann den Eintrag mit der neuen Uhrzeit
+            // überschreiben, statt den Nutzer aus- und wieder einschalten
+            // zu lassen.
+            await fetch('/api/hintergrund', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ an: true, uhrzeit: e.target.value }),
+            }).catch(() => {});
+            flash(`Umgestellt auf ${e.target.value}.`);
+            ladeHintergrund();
+          },
+        })
+      ),
+      // Volle Offenlegung: was genau angelegt wird, und wo man es wiederfindet.
+      el(
+        'p',
+        { class: 'hgbefehl' },
+        an
+          ? `Eintrag „${hintergrund.aufgabe}" in der Windows-Aufgabenplanung: ${hintergrund.befehl}`
+          : `Angelegt würde der Eintrag „${hintergrund.aufgabe}" in der Windows-Aufgabenplanung: ${hintergrund.befehl}`,
+        an && hintergrund.naechste ? el('span', { class: 'hgnaechste' }, `Nächster Lauf: ${hintergrund.naechste}`) : null
+      )
+    )
+  );
 }
 
 function renderWecker() {
