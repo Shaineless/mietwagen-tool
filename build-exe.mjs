@@ -133,6 +133,9 @@ writeFileSync(
       disableExperimentalSEAWarning: true,
       assets: {
         'dist/mietwagen-preistool.html': join(root, 'dist', 'mietwagen-preistool.html'),
+        // Nur wegen der Versionsnummer. Sie muss zur Laufzeit lesbar sein,
+        // damit ein zweiter Start sagen kann, WELCHE Fassung schon laeuft.
+        'package.json': join(root, 'package.json'),
       },
     },
     null,

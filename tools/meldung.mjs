@@ -71,21 +71,33 @@ export function protokollPfad() {
  * zerlegt werden.
  */
 /**
- * Meldungen, die gerade erst gestartet werden.
+ * Offene Meldungsfenster.
  *
  * `spawn` kehrt sofort zurueck, der Prozess selbst entsteht erst danach. Wer
  * unmittelbar hinterher `process.exit()` ruft, beendet sich, bevor das Fenster
  * ueberhaupt existiert, und die Meldung erscheint nie. Genau so verschwand die
  * Weckermeldung in der Einzelrunde fuer die Aufgabenplanung.
+ *
+ * Gewartet wird deshalb nicht mehr auf den Start, sondern auf das ENDE: das
+ * Fenster haengt am Elternprozess (siehe zeigeMeldung), und wer vorher geht,
+ * nimmt es mit.
  */
-const angestossen = [];
+const offeneMeldungen = [];
 
-/** Warten, bis alle angestossenen Meldungsfenster wirklich laufen. */
+/**
+ * Warten, bis der Nutzer die Meldungsfenster weggeklickt hat.
+ *
+ * Mit Deckel: sonst haenge eine vergessene Weckermeldung den geplanten
+ * Aufgabeneintrag auf Dauer im Taskmanager fest. Eine halbe Stunde ist lang
+ * genug, dass niemand sie verpasst, der ueberhaupt am Rechner sitzt.
+ */
+const MELDUNG_DECKEL_MS = 30 * 60 * 1000;
+
 export async function meldungenStehen() {
-  if (!angestossen.length) return;
+  if (!offeneMeldungen.length) return;
   await Promise.race([
-    Promise.all(angestossen.splice(0)),
-    new Promise((r) => setTimeout(r, 4000)),
+    Promise.all(offeneMeldungen.splice(0)),
+    new Promise((r) => setTimeout(r, MELDUNG_DECKEL_MS)),
   ]);
 }
 
@@ -112,17 +124,39 @@ export function zeigeMeldung(text, titel = 'TRACKER') {
     // -EncodedCommand.
     const kodiert = Buffer.from(skript, 'utf16le').toString('base64');
 
+    // OHNE `detached`. Das ist der ganze Unterschied zwischen einem Fenster
+    // und keinem, und es war nachgemessen eine unangenehme Ueberraschung:
+    //
+    //   Mit `detached: true` startet PowerShell zwar, aber `MessageBox::Show`
+    //   kehrt sofort zurueck und der Prozess endet nach rund 120 ms mit Code
+    //   0. Kein Fenster, kein Fehler, keine Ausgabe. Ohne `detached` bleibt
+    //   derselbe Aufruf stehen, bis jemand klickt.
+    //
+    // Dieselbe Sorte Fehler wie damals bei `mshta`: die Meldung verschwindet
+    // einfach, und bemerkt wird es erst, wenn man auf eine Nachricht wartet,
+    // die nie kommt. Der Preis dafuer ist, dass das Fenster am Elternprozess
+    // haengt; deshalb wartet meldungenStehen() jetzt auf das Wegklicken.
     const kind = spawn('powershell', ['-NoProfile', '-EncodedCommand', kodiert], {
-      detached: true,
       stdio: 'ignore',
     });
-    angestossen.push(
+    let gestartet = 0;
+    offeneMeldungen.push(
       new Promise((fertig) => {
         kind.once('spawn', () => {
+          gestartet = Date.now();
           // Ins Protokoll, nicht stillschweigend: eine Meldung, die nicht
-          // erscheint, ist der schlimmste Fehler an dieser Stelle, weil man
-          // auf eine Nachricht wartet, die nie kommt.
+          // erscheint, ist der schlimmste Fehler an dieser Stelle.
           console.log(`  Meldungsfenster gestartet (PID ${kind.pid}): ${titel}`);
+        });
+        kind.once('exit', () => {
+          const stand = Date.now() - gestartet;
+          // Ein Fenster, das der Nutzer wegklickt, steht mindestens ein paar
+          // hundert Millisekunden. Geht es sofort wieder zu, hat es niemand
+          // gesehen, und dann gehoert der Text wenigstens ins Protokoll.
+          if (gestartet && stand < 400) {
+            console.error(`  Meldungsfenster verschwand nach ${stand} ms, niemand hat es gesehen:`);
+            console.error(text);
+          }
           fertig();
         });
         kind.once('error', (e) => {
@@ -132,7 +166,6 @@ export function zeigeMeldung(text, titel = 'TRACKER') {
         });
       })
     );
-    kind.unref();
   } catch (e) {
     console.error(`  Meldungsfenster fehlgeschlagen: ${e.message}`);
     console.error(text);

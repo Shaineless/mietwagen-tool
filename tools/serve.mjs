@@ -89,6 +89,25 @@ const nurWeckerRunde = argumente.includes('--wecker-einmal');
  */
 const IMPORT_TOKEN = randomBytes(9).toString('hex');
 
+/**
+ * Die eigene Versionsnummer, einzige Quelle ist package.json.
+ *
+ * In der EXE liegt sie als eingebetteter Vorrat bei (siehe build-exe.mjs),
+ * aus dem Quellbaum wird die Datei gelesen. Gebraucht wird sie an genau einer
+ * Stelle, und die ist wichtiger, als sie klingt: startet jemand eine neu
+ * heruntergeladene Fassung, waehrend die alte noch laeuft, muss er erfahren,
+ * dass er weiterhin die alte vor sich hat.
+ */
+let VERSION = '';
+async function leseVersion() {
+  try {
+    VERSION = JSON.parse((await leseVorrat('package.json')).toString('utf8')).version || '';
+  } catch {
+    VERSION = '';
+  }
+  return VERSION;
+}
+
 /** Nur diese Dateien darf ein Import ueberschreiben. */
 const IMPORTABLE = new Set(['stations.sixt.txt']);
 
@@ -839,6 +858,8 @@ let schliessTimer = null;
 let jeEinFenster = false;
 const gestartetUm = Date.now();
 const STARTFRIST_MS = 120_000;
+/** Ein neuer Start hat uebernommen: die Fenster sollen sich schliessen. */
+let sollSchliessen = false;
 
 function pruefeObNochWer() {
   if (!istExe) return;
@@ -915,6 +936,10 @@ const server = createServer(async (req, res) => {
     return json(res, 200, {
       ok: true,
       service: 'mwt-preistool',
+      version: VERSION,
+      // Fuer die Uebernahme beim zweiten Doppelklick: laesst sich der laufende
+      // Dienst nicht im Guten beenden, wird er ueber diese Nummer abgeraeumt.
+      pid: process.pid,
       stored: results.size,
       // Ohne Chrome gibt es keinen automatischen Abruf; die Oberflaeche sagt
       // das dann statt es zu versuchen und stillschweigend zu scheitern.
@@ -927,6 +952,35 @@ const server = createServer(async (req, res) => {
   }
 
   // Automatischer Preisabruf anstossen.
+  /**
+   * Platz machen fuer einen neuen Start.
+   *
+   * Wer eine neuere Fassung herunterlaedt und doppelt klickt, waehrend die
+   * alte noch laeuft, sass vorher fest: der zweite Start reichte an die alte
+   * weiter und beendete sich nach zweieinhalb Sekunden. Von aussen sah das
+   * aus, als starte das Programm nicht.
+   *
+   * Zuerst antworten, dann aufraeumen, sonst wartet der neue Start auf eine
+   * Antwort, die nicht mehr kommt. Und den Fenstern Bescheid geben, damit
+   * nicht ein totes Fenster stehenbleibt: sie fragen ohnehin im Sekundentakt
+   * bei /api/lebt nach.
+   *
+   * Die Frist ist ein Notnagel. Schliessen sich die Fenster von selbst, endet
+   * das Programm vorher ueber den gewoehnlichen Weg (pruefeObNochWer).
+   */
+  if (path === '/api/beenden' && req.method === 'POST') {
+    sollSchliessen = true;
+    json(res, 200, { ok: true, pid: process.pid, version: VERSION });
+    // Die Fenster merken es binnen zweieinhalb Sekunden und schliessen sich;
+    // danach endet das Programm ohnehin ueber pruefeObNochWer. Diese Frist
+    // ist nur der Notnagel, falls kein Fenster mehr antwortet.
+    setTimeout(() => {
+      console.log('Ein neuer Start übernimmt, dieser Dienst endet.');
+      beenden(0);
+    }, 4000);
+    return;
+  }
+
   if (path === '/api/fetch' && req.method === 'POST') {
     try {
       const body = JSON.parse(await readBody(req));
@@ -1340,9 +1394,14 @@ const server = createServer(async (req, res) => {
   }
 
   // Die Seite meldet, dass ihr Fenster noch offen ist.
+  //
+  // Und bekommt zurueck, ob sie gehen soll. Das ist der Weg, auf dem ein
+  // neuer Start das alte Fenster schliesst: der Dienst kann das Fenster nicht
+  // selbst zumachen, Chrome reicht es zwischen eigenen Prozessen weiter. Die
+  // Seite darin kann es.
   if (path === '/api/lebt') {
     lebenszeichen(url.searchParams.get('id'));
-    return json(res, 200, { ok: true });
+    return json(res, 200, { ok: true, schliessen: sollSchliessen, version: VERSION });
   }
 
   // ... und dass es zugeht.
@@ -1422,10 +1481,93 @@ async function schonUnserer(p) {
     const r = await fetch(`http://127.0.0.1:${p}/api/health`, {
       signal: AbortSignal.timeout(1200),
     });
-    return r.ok && (await r.json()).service === 'mwt-preistool';
+    if (!r.ok) return null;
+    const d = await r.json();
+    // Der Fund selbst wird zurueckgegeben, nicht bloss ja/nein: der Aufrufer
+    // muss wissen, WELCHE Fassung dort lauscht. Fassungen vor 1.5.4 kennen
+    // das Feld nicht, ein fehlender Wert heisst deshalb "aeltere Fassung".
+    return d.service === 'mwt-preistool' ? { version: d.version || '', pid: d.pid || null } : null;
   } catch {
+    return null;
+  }
+}
+
+/**
+ * Den laufenden Dienst zum Gehen bewegen, damit dieser Start den Port bekommt.
+ *
+ * Zwei Wege, in dieser Reihenfolge:
+ *
+ *   1. Im Guten: `/api/beenden`. Der laufende Dienst schliesst seine Fenster
+ *      und raeumt Chrome und die Proxy-Weiche ordentlich ab.
+ *   2. Mit Gewalt: Fassungen vor 1.5.4 kennen den Endpunkt nicht und liefern
+ *      404. Dann bleibt nur, den Prozess zu beenden. Sein Programmfenster
+ *      bleibt dabei stehen; es haengt sich gleich an den neuen Dienst und
+ *      laedt sich selbst neu, sobald es die andere Fassung bemerkt.
+ *
+ * @returns {Promise<boolean>} true, wenn der Port danach wirklich frei ist.
+ */
+async function raeumePlatz(p, laeuft) {
+  const weg = async () => !(await schonUnserer(p));
+
+  try {
+    const r = await fetch(`http://127.0.0.1:${p}/api/beenden`, {
+      method: 'POST',
+      signal: AbortSignal.timeout(3000),
+    });
+    if (r.ok) {
+      // Grosszuegig: der alte Dienst schliesst erst seine Fenster und beendet
+      // dann Chrome, das dauert einen Moment.
+      for (let i = 0; i < 40; i++) {
+        await new Promise((f) => setTimeout(f, 250));
+        if (await weg()) return true;
+      }
+    }
+  } catch {
+    /* antwortet nicht mehr, dann eben der harte Weg */
+  }
+
+  const pid = laeuft?.pid || (await pidAufPort(p));
+  if (!pid || pid === process.pid) return await weg();
+
+  console.log(`Die laufende Fassung antwortet nicht auf die Bitte zu gehen, Prozess ${pid} wird beendet.`);
+  try {
+    process.kill(pid);
+  } catch (e) {
+    console.log(`  ging nicht: ${e.message}`);
     return false;
   }
+  for (let i = 0; i < 24; i++) {
+    await new Promise((f) => setTimeout(f, 250));
+    if (await weg()) return true;
+  }
+  return false;
+}
+
+/**
+ * Wer lauscht auf diesem Port? Nur noetig fuer den harten Weg oben, wenn der
+ * laufende Dienst seine Prozessnummer noch nicht mitteilt.
+ */
+async function pidAufPort(p) {
+  if (process.platform !== 'win32') return null;
+  try {
+    const { execFile } = await import('node:child_process');
+    const text = await new Promise((fertig, schief) =>
+      execFile('netstat', ['-ano', '-p', 'tcp'], { timeout: 5000 }, (e, aus) =>
+        e ? schief(e) : fertig(aus)
+      )
+    );
+    for (const zeile of text.split('\n')) {
+      // Nur die lauschende Zeile zaehlt, nicht die vielen Verbindungen dorthin.
+      const t = zeile.trim().split(/\s+/);
+      if (t.length < 5 || t[1] !== `127.0.0.1:${p}`) continue;
+      if (!/^(LISTENING|ABH)/i.test(t[3])) continue;
+      const n = Number(t[4]);
+      if (Number.isInteger(n) && n > 0) return n;
+    }
+  } catch {
+    /* dann eben nicht */
+  }
+  return null;
 }
 
 /**
@@ -1489,6 +1631,7 @@ function oeffneProgrammfenster(adresse) {
 
 async function starteDienst() {
   if (istExe) protokolliereNach(datenOrdner);
+  await leseVersion();
 
   // Einzelrunde: laeuft vor allem anderen, damit weder ein Port belegt noch
   // ein Fenster geoeffnet wird.
@@ -1514,17 +1657,31 @@ async function starteDienst() {
   // 127.0.0.1 statt localhost: der Dienst haengt nur an der IPv4-Adresse,
   // waehrend "localhost" unter Windows zuerst als ::1 aufgeloest wird.
   for (let p = port; p < port + 12; p++) {
-    if (await schonUnserer(p)) {
+    const laeuft = await schonUnserer(p);
+    if (laeuft) {
       const adresse = `http://127.0.0.1:${p}/`;
-      console.log(`TRACKER läuft bereits auf ${adresse}`);
-      if (istExe && !stillerStart) {
-        // Nur ein weiteres Fenster dazu, der laufende Dienst bleibt der Chef,
-        // deshalb hier ohne Ende-Kopplung.
+      const fassung = laeuft.version || 'vor 1.5.4';
+      console.log(`TRACKER läuft bereits auf ${adresse} (Fassung ${fassung})`);
+
+      // Der neue Start ist der gemeinte. Vorher reichte er an den alten weiter
+      // und beendete sich nach zweieinhalb Sekunden: von aussen sah das aus,
+      // als starte das Programm nicht, und wer doch ein Fenster sah, hielt die
+      // ALTE Oberflaeche fuer die neue. Wer doppelt klickt, will das laufende
+      // Programm vorn haben, nicht ein zweites daneben.
+      if (!stillerStart && (await raeumePlatz(p, laeuft))) {
+        console.log(`Die laufende Fassung ${fassung} wurde beendet, dieser Start übernimmt.`);
+        // Weiter in derselben Runde: der Port ist jetzt frei, gleich darunter
+        // wird er belegt.
+      } else if (istExe && !stillerStart) {
+        // Der alte Dienst geht nicht. Dann wenigstens sein Fenster nach vorn,
+        // statt den Doppelklick wirkungslos verpuffen zu lassen.
+        console.log('Die laufende Fassung ließ sich nicht beenden, ihr Fenster wird geöffnet.');
         oeffneFenster(adresse, datenOrdner);
         setTimeout(() => process.exit(0), 2500);
         return;
+      } else {
+        process.exit(0);
       }
-      process.exit(0);
     }
 
     if (!(await versucheLauschen(p))) {

@@ -64,6 +64,12 @@ welchem Land man anfragt, ist bei Sixt gleichgültig. Eine Variable weniger,
 2. Doppelklick. Es öffnet sich ein eigenes Programmfenster.
 3. Station suchen, Zeitraum wählen, Länderseiten anhaken, **Preise vergleichen**.
 
+**Eine neue Fassung darf einfach gestartet werden.** Läuft noch eine ältere,
+beendet der neue Start sie und übernimmt: das alte Fenster schließt sich, das
+neue geht auf. Man muss nichts vorher schließen und landet auch nicht
+versehentlich weiter in der alten Oberfläche. Welche Fassung gerade läuft,
+steht unter **Einstellungen**.
+
 Beim ersten Start prüft TRACKER einmal, ob auf deinem Rechner alles durchgeht:
 Schreibrechte, Browser, Verbindung, Cookie-Hinweis und die Trefferliste, mit
 echten Abrufen auf vier Länderseiten. Das dauert ein bis zwei Minuten und

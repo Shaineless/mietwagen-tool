@@ -118,6 +118,8 @@ const service = {
   available: false,
   chrome: false,
   queue: null,
+  /** Fassung des Dienstes, der gerade antwortet. Siehe renderStatus. */
+  version: '',
 };
 const prices = new Map(); // Auftragsschlüssel -> Preisergebnis
 // Spalten des Vergleichs, die schon einmal mit Ergebnis dastanden. Nur wer
@@ -135,6 +137,7 @@ async function checkService() {
       const d = await r.json();
       service.chrome = Boolean(d.chrome);
       service.queue = d.queue || null;
+      service.version = d.version || '';
     service.lage = d.lage || [];
     }
   } catch {
@@ -7316,6 +7319,10 @@ function renderStatus() {
           'Preisdienst auf 127.0.0.1:4173',
           service.available
         ),
+        // Wer eine neue Fassung herunterlädt, während die alte noch läuft,
+        // bekommt weiterhin die alte Oberfläche zu sehen. Ohne diese Zahl ist
+        // das von innen nicht zu erkennen.
+        kennzahl(service.version || '?', 'Fassung, die gerade läuft'),
         kennzahl(
           service.chrome ? 'gefunden' : 'fehlt',
           'Chrome für den Abruf',
@@ -7489,9 +7496,33 @@ function haltAmLeben() {
   // noch offen steht.
   const kennung = Math.random().toString(36).slice(2) + Date.now().toString(36);
 
-  const melde = () => fetch(`/api/lebt?id=${kennung}`, { cache: 'no-store' }).catch(() => {});
+  // Die Antwort trägt zwei Nachrichten zurück, deshalb wird sie gelesen und
+  // nicht bloss abgeschickt:
+  //
+  //   schliessen  Ein neuer Start hat übernommen. Dieses Fenster gehört zum
+  //               alten Dienst und macht zu, sonst stünde nach einem Wechsel
+  //               ein totes Fenster auf dem Schirm.
+  //   version     Läuft dort eine andere Fassung als die, aus der diese Seite
+  //               geladen wurde, ist die Seite veraltet. Das passiert genau
+  //               beim Wechsel: das Fenster hängt sich an den neuen Dienst,
+  //               zeigt aber weiter die alte Oberfläche. Neu laden.
+  let eigeneFassung = null;
+  const melde = async () => {
+    try {
+      const d = await (await fetch(`/api/lebt?id=${kennung}`, { cache: 'no-store' })).json();
+      if (d.schliessen) return window.close();
+      if (d.version) {
+        if (eigeneFassung == null) eigeneFassung = d.version;
+        else if (d.version !== eigeneFassung) location.reload();
+      }
+    } catch {
+      /* Dienst gerade nicht da, der nächste Takt fragt wieder */
+    }
+  };
   melde();
-  setInterval(melde, 15_000);
+  // Alle zweieinhalb Sekunden statt alle fünfzehn: das ist der Takt, in dem
+  // ein Wechsel bemerkt werden muss. Ein Aufruf auf 127.0.0.1 kostet nichts.
+  setInterval(melde, 2500);
 
   // pagehide statt unload: unload verhindert, dass die Seite in den
   // Zwischenspeicher des Browsers darf, und wird in manchen Fällen gar nicht
