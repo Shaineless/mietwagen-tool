@@ -10,7 +10,7 @@
     "BMW SÉRIE 3 TOURING",
     "BMW SERIE 3 TOURING"
    ],
-   "beispielText": "Fullsize Elite Familiar Automático",
+   "beispielText": "Fullsize Elite Break Automatique",
    "zuletzt": "2026-09-03"
   },
   "CDMR": {
@@ -18,7 +18,7 @@
    "modelle": [
     "VW GOLF"
    ],
-   "beispielText": "Compacto Berlina Manual",
+   "beispielText": "Compact Berline Manuelle",
    "zuletzt": "2026-09-03"
   },
   "CFMR": {
@@ -26,7 +26,7 @@
    "modelle": [
     "VW TAIGO"
    ],
-   "beispielText": "Compacto SUV Manual",
+   "beispielText": "Compact SUV Manuelle",
    "zuletzt": "2026-09-03"
   },
   "CTMR": {
@@ -43,7 +43,7 @@
    "modelle": [
     "VW GOLF"
    ],
-   "beispielText": "Compacto Berlina Automático",
+   "beispielText": "Compact Berline Automatique",
    "zuletzt": "2026-09-03"
   },
   "CFAR": {
@@ -51,7 +51,7 @@
    "modelle": [
     "VW TAIGO"
    ],
-   "beispielText": "Compacto SUV Automático",
+   "beispielText": "Compact SUV Automatique",
    "zuletzt": "2026-09-03"
   },
   "CTAR": {
@@ -76,7 +76,7 @@
    "modelle": [
     "VW T-ROC"
    ],
-   "beispielText": "Intermedio SUV Manual",
+   "beispielText": "Intermédiaire SUV Manuelle",
    "zuletzt": "2026-09-03"
   },
   "DDAR": {
@@ -88,7 +88,7 @@
     "BMW SÉRIE 1",
     "BMW SERIE 1"
    ],
-   "beispielText": "Compacto Elite Berlina Automático",
+   "beispielText": "Compact Elite Berline Automatique",
    "zuletzt": "2026-09-03"
   },
   "SFMR": {
@@ -96,7 +96,7 @@
    "modelle": [
     "VW TIGUAN"
    ],
-   "beispielText": "Standard SUV Manual",
+   "beispielText": "Standard SUV Manuelle",
    "zuletzt": "2026-09-03"
   },
   "IFAR": {
@@ -105,7 +105,7 @@
     "VW T-ROC",
     "INTERMEDIATE SUV"
    ],
-   "beispielText": "Intermedio SUV Automático",
+   "beispielText": "Intermédiaire SUV Automatique",
    "zuletzt": "2026-09-03"
   },
   "IVAV": {
@@ -122,7 +122,7 @@
     "AUDI Q2",
     "COMPACT ELITE SUV"
    ],
-   "beispielText": "Compacto Elite SUV Automático",
+   "beispielText": "Compact Elite SUV Automatique",
    "zuletzt": "2026-09-03"
   },
   "PFAV": {
@@ -131,7 +131,7 @@
     "VW TAYRON",
     "PREMIUM SUV"
    ],
-   "beispielText": "Premium SUV Automático",
+   "beispielText": "Premium SUV Automatique",
    "zuletzt": "2026-09-03"
   },
   "JDAR": {
@@ -141,7 +141,7 @@
     "AUDI A3 SEDAN",
     "AUDI A3 BERLINA"
    ],
-   "beispielText": "Intermedio Elite Berlina Automático",
+   "beispielText": "Intermédiaire Elite Berline Automatique",
    "zuletzt": "2026-09-03"
   },
   "SFAR": {
@@ -150,7 +150,7 @@
     "VW TIGUAN",
     "STANDARD SUV"
    ],
-   "beispielText": "Standard SUV Automático",
+   "beispielText": "Standard SUV Automatique",
    "zuletzt": "2026-09-03"
   },
   "DVAR": {
@@ -162,7 +162,7 @@
     "BMW SERIE 2 ACTIVE TOURER",
     "BMW 2 SERIE ACTIVE TOURER"
    ],
-   "beispielText": "Compacto Elite Van Automático",
+   "beispielText": "Compact Elite Monospace Automatique",
    "zuletzt": "2026-09-03"
   },
   "GDAR": {
@@ -174,7 +174,7 @@
     "BMW SÉRIE 3",
     "BMW SERIE 3"
    ],
-   "beispielText": "Fullsize Elite Berlina Automático",
+   "beispielText": "Fullsize Elite Berline Automatique",
    "zuletzt": "2026-09-03"
   },
   "UDAR": {
@@ -185,7 +185,7 @@
     "MERCEDES-BENZ CLASSE E",
     "MERCEDES-BENZ CLASE E"
    ],
-   "beispielText": "Premium Elite Berlina Automático",
+   "beispielText": "Premium Elite Berline Automatique",
    "zuletzt": "2026-09-03"
   },
   "GFAR": {
@@ -194,7 +194,7 @@
     "BMW X2",
     "FULLSIZE ELITE SUV"
    ],
-   "beispielText": "Fullsize Elite SUV Automático",
+   "beispielText": "Fullsize Elite SUV Automatique",
    "zuletzt": "2026-09-03"
   },
   "UFAR": {
@@ -202,7 +202,7 @@
    "modelle": [
     "BMW X3"
    ],
-   "beispielText": "Premium Elite SUV Automático",
+   "beispielText": "Premium Elite SUV Automatique",
    "zuletzt": "2026-09-03"
   },
   "UWAR": {
@@ -210,7 +210,7 @@
    "modelle": [
     "AUDI A6 AVANT"
    ],
-   "beispielText": "Premium Elite Familiar Automático",
+   "beispielText": "Premium Elite Break Automatique",
    "zuletzt": "2026-09-03"
   },
   "GEAR": {
@@ -223,7 +223,7 @@
     "BMW 4 SERIE COUPÉ",
     "BMW 4 SERIES COUPE"
    ],
-   "beispielText": "Fullsize Elite Coupé Automático",
+   "beispielText": "Fullsize Elite Coupé Automatique",
    "zuletzt": "2026-09-03"
   },
   "DDSR": {
@@ -231,7 +231,7 @@
    "modelle": [
     "BMW M135"
    ],
-   "beispielText": "Compatta Elite Berlina Automatico",
+   "beispielText": "Compact Elite Berline Automatique",
    "zuletzt": "2026-09-03"
   },
   "JDSR": {
@@ -240,7 +240,7 @@
     "BMW M235 GRAN COUPÉ",
     "BMW M235 GRAN COUPE"
    ],
-   "beispielText": "Intermedia Elite Berlina Automatico",
+   "beispielText": "Intermédiaire Elite Berline Automatique",
    "zuletzt": "2026-09-03"
   },
   "GFSR": {
@@ -257,7 +257,7 @@
    "modelle": [
     "BMW M340 TOURING"
    ],
-   "beispielText": "Fullsize Elite Station wagon Automatico",
+   "beispielText": "Fullsize Elite Break Automatique",
    "zuletzt": "2026-09-03"
   },
   "SVAR": {
@@ -273,7 +273,7 @@
    "modelle": [
     "BMW X3 M50"
    ],
-   "beispielText": "Premium Elite SUV Automatico",
+   "beispielText": "Premium Elite SUV Automatique",
    "zuletzt": "2026-09-03"
   },
   "GLSR": {
@@ -292,7 +292,7 @@
     "BMW 7ER XDRIVE",
     "BMW 7 SERIE XDRIVE"
    ],
-   "beispielText": "Special Berlina Automatico",
+   "beispielText": "Extraordinaire Berline Automatique",
    "zuletzt": "2026-09-03"
   },
   "WFSR": {
@@ -328,7 +328,7 @@
     "MERCEDES-BENZ CLASE S LARGA",
     "MERCEDES-BENZ CLASSE S LUNGO"
    ],
-   "beispielText": "Special Berlina Automatico",
+   "beispielText": "Extraordinaire Berline Automatique",
    "zuletzt": "2026-09-03"
   },
   "WFLP": {
@@ -401,7 +401,7 @@
    "modelle": [
     "SEAT IBIZA"
    ],
-   "beispielText": "Económico Berlina Manual",
+   "beispielText": "Citadine Berline Manuelle",
    "zuletzt": "2026-09-03"
   },
   "EDAR": {
@@ -409,7 +409,7 @@
    "modelle": [
     "SEAT IBIZA"
    ],
-   "beispielText": "Económico Berlina Automático",
+   "beispielText": "Citadine Berline Automatique",
    "zuletzt": "2026-09-03"
   },
   "EFMR": {
@@ -417,7 +417,7 @@
    "modelle": [
     "VW T-CROSS"
    ],
-   "beispielText": "Económico SUV Manual",
+   "beispielText": "Citadine SUV Manuelle",
    "zuletzt": "2026-09-03"
   },
   "IFAE": {
@@ -433,7 +433,7 @@
    "modelle": [
     "VW T-CROSS"
    ],
-   "beispielText": "Económico SUV Automático",
+   "beispielText": "Citadine SUV Automatique",
    "zuletzt": "2026-09-03"
   },
   "WFDR": {
@@ -441,7 +441,7 @@
    "modelle": [
     "BMW X5 XDRIVE"
    ],
-   "beispielText": "Lujo Elite SUV Automático",
+   "beispielText": "Classe luxe Elite SUV Automatique",
    "zuletzt": "2026-09-03"
   },
   "UVAR": {
@@ -453,7 +453,7 @@
     "MERCEDES-BENZ CLASE V LUNGO",
     "MERCEDES-BENZ V-CLASS LONG"
    ],
-   "beispielText": "Premium Elite Van Automatico",
+   "beispielText": "Premium Elite Monospace Automatique",
    "zuletzt": "2026-09-03"
   },
   "JTLP": {
@@ -480,7 +480,7 @@
     "VW GOLF ESTATE",
     "VW GOLF STATION WAGON"
    ],
-   "beispielText": "Compacto Familiar Manual",
+   "beispielText": "Compact Break Manuelle",
    "zuletzt": "2026-09-03"
   },
   "CWAR": {
@@ -491,7 +491,7 @@
     "VW GOLF ESTATE",
     "VW GOLF STATION WAGON"
    ],
-   "beispielText": "Compacto Familiar Automático",
+   "beispielText": "Compact Break Automatique",
    "zuletzt": "2026-09-03"
   },
   "UTAR": {
@@ -521,7 +521,7 @@
    "modelle": [
     "MERCEDES-BENZ VITO TOURER"
    ],
-   "beispielText": "Lujo Elite Van Automático",
+   "beispielText": "Classe luxe Elite Monospace Automatique",
    "zuletzt": "2026-09-03"
   },
   "JESR": {
@@ -537,7 +537,7 @@
    "modelle": [
     "NISSAN PRIMASTAR"
    ],
-   "beispielText": "Lujo Van Manual",
+   "beispielText": "Classe luxe Monospace Manuelle",
    "zuletzt": "2026-09-03"
   },
   "LVAR": {
@@ -545,7 +545,7 @@
    "modelle": [
     "NISSAN PRIMASTAR"
    ],
-   "beispielText": "Lujo Van Automático",
+   "beispielText": "Classe luxe Monospace Automatique",
    "zuletzt": "2026-09-03"
   },
   "DFAE": {
@@ -920,7 +920,7 @@
     "SKODA OCTAVIA ESTATE",
     "SKODA OCTAVIA WAGON"
    ],
-   "beispielText": "Intermedio Familiar Automático",
+   "beispielText": "Intermédiaire Break Automatique",
    "zuletzt": "2026-09-03"
   },
   "SWAR": {
@@ -930,7 +930,7 @@
     "VW PASSAT SW",
     "VW PASSAT ESTATE"
    ],
-   "beispielText": "Standard Familiar Automático",
+   "beispielText": "Standard Break Automatique",
    "zuletzt": "2026-09-03"
   },
   "UWLR": {
@@ -970,7 +970,7 @@
    "modelle": [
     "FORD TOURNEO CUSTOM"
    ],
-   "beispielText": "Premium Van Manual",
+   "beispielText": "Premium Monospace Manuelle",
    "zuletzt": "2026-09-03"
   },
   "PVAR": {
@@ -978,7 +978,7 @@
    "modelle": [
     "FORD TOURNEO CUSTOM"
    ],
-   "beispielText": "Premium Van Automático",
+   "beispielText": "Premium Monospace Automatique",
    "zuletzt": "2026-09-03"
   },
   "JDAE": {

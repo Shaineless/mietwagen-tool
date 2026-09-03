@@ -1196,9 +1196,14 @@ async function ladeKurveReise(g) {
       punkte,
       klassen: [...new Set(punkte.map((e) => e.k))].sort(),
       hosts: [...new Set(punkte.map((e) => e.h))].sort(),
+      // Uhrzeitpaare wie in der Übersicht. Altdaten ohne Uhrzeit wurden
+      // damals um 10:00 gemessen, und genau das steht dann da.
+      zeiten: [
+        ...new Set(punkte.map((e) => `${e.z || '10:00'}|${e.zr || e.z || '10:00'}`)),
+      ].sort(),
     };
   } catch {
-    kurveReise = { schluessel, punkte: [], klassen: [], hosts: [], fehler: true };
+    kurveReise = { schluessel, punkte: [], klassen: [], hosts: [], zeiten: [], fehler: true };
   }
   return kurveReise;
 }
@@ -3287,7 +3292,17 @@ function renderHintergrund() {
 }
 
 function renderWecker() {
-  const g = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
+  const roh = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
+  // Die Übersicht kommt schlank, also ohne die Listen der Länderseiten und
+  // Uhrzeiten. Die stehen in den Messpunkten der gewählten Reise, die für das
+  // Diagramm ohnehin geladen werden. Ohne diese Zusammenführung lief das
+  // Weckerformular in ein "undefined.map".
+  const g =
+    roh && kurveReise?.schluessel === kurveGruppe
+      ? { ...roh, hosts: kurveReise.hosts, zeiten: kurveReise.zeiten, klassen: kurveReise.klassen }
+      : roh && Array.isArray(roh.hosts)
+        ? roh
+        : null;
 
   // Das Formular wird gleich neu gebaut. Weil die Liste im Takt nachlädt,
   // träfe das mitten in eine Eingabe: der halb getippte Betrag wäre weg und
