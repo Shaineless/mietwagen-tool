@@ -503,6 +503,86 @@ button.mini { padding: 6px 14px; font-size: 12.5px; }
 .sname { flex: 1; font-size: 14px; }
 .iata { font-size: 11px; font-weight: 620; letter-spacing: .04em; color: var(--accent); }
 
+/* --- Reiseliste der Preisentwicklung -------------------------------------
+   Dieselbe Bauart wie die Stationsauswahl darueber: Suchfeld, scrollende
+   Trefferliste, ausgewaehlte Zeile hervorgehoben. Bis 1.4.0 stand hier ein
+   nacktes Auswahlfeld mit 280 Eintraegen, in dem man nicht suchen konnte. */
+.premium-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--hairline2);
+  border-radius: var(--r-klein);
+  background: var(--flaeche);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+.premium-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+.kurvefilter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.kurvefilter input { margin: 0; }
+
+.kurvetreffer {
+  margin-top: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  border-radius: var(--r-klein);
+  background: var(--flaeche2);
+}
+.kurvereise {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  box-shadow: inset 0 -1px 0 var(--hairline2);
+}
+.kurvereise:last-child { box-shadow: none; }
+.kurvereise:hover { background: var(--hairline2); opacity: 1; }
+.kurvereise.aktiv { background: var(--accent-weich); }
+.kurvereise .kreise { display: block; font-size: 14px; font-weight: 500; }
+.kurvereise .kmeta {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--leise);
+  font-variant-numeric: tabular-nums;
+}
+.kurvereise.aktiv .kreise { color: var(--accent); }
+.kurvetreffer .empty { padding: 16px; margin: 0; }
+
+.kurvespeicher {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: var(--leise);
+  font-variant-numeric: tabular-nums;
+}
+.linkknopf {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.linkknopf:disabled { color: var(--leise); cursor: progress; text-decoration: none; }
+
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   display: inline-flex;
@@ -4320,15 +4400,55 @@ let kurveGruppe = null;
 let kurveKlasse = null;
 let kurveGruppen = [];
 let kurveBildAnfrage = 0;
+/** Wie viel der Verlauf belegt, für die Zeile über der Liste. */
+let kurveGroesse = null;
+/** Suchbegriff und Filter der Reiseliste. */
+let kurveNadel = '';
+let kurveNurLaufend = false;
+/**
+ * Die Messpunkte der GEWÄHLTEN Reise, einmal geholt.
+ *
+ * Vorher wurde bei jedem Klassenwechsel neu abgefragt, obwohl sich die Reise
+ * nicht geändert hat. Jetzt kommen alle Klassen einer Reise in einem Zug, und
+ * das Umschalten ist nur noch ein Filter im Speicher.
+ */
+let kurveReise = null;
 
 async function ladeKurve() {
   try {
-    const d = await (await fetch('/api/verlauf/uebersicht')).json();
+    // Schlank: ohne die vollen Klassen-, Host- und Uhrzeitlisten. Die machten
+    // zwei Drittel der Antwort aus und werden erst gebraucht, wenn eine Reise
+    // gewählt ist.
+    const d = await (await fetch('/api/verlauf/uebersicht?schlank=1')).json();
     kurveGruppen = d.gruppen || [];
+    kurveGroesse = d.groesse || null;
   } catch {
     kurveGruppen = [];
+    kurveGroesse = null;
   }
   renderKurve();
+}
+
+/** Die Messpunkte der gewählten Reise holen, samt Klassen- und Hostliste. */
+async function ladeKurveReise(g) {
+  const schluessel = `${g.station}|${g.von}|${g.bis}`;
+  if (kurveReise?.schluessel === schluessel) return kurveReise;
+  const p = new URLSearchParams({ station: g.station, von: g.von, bis: g.bis });
+  try {
+    const d = await (await fetch(`/api/verlauf?${p}`)).json();
+    const punkte = (d.punkte || [])
+      .filter((e) => Number.isFinite(e.p) && Number.isFinite(e.t))
+      .sort((a, b) => a.t - b.t);
+    kurveReise = {
+      schluessel,
+      punkte,
+      klassen: [...new Set(punkte.map((e) => e.k))].sort(),
+      hosts: [...new Set(punkte.map((e) => e.h))].sort(),
+    };
+  } catch {
+    kurveReise = { schluessel, punkte: [], klassen: [], hosts: [], fehler: true };
+  }
+  return kurveReise;
 }
 
 /**
@@ -4476,21 +4596,18 @@ async function renderKurveBild() {
   $('#kurveBild').setAttribute('aria-busy', 'true');
   setChildren($('#kurveBild'), el('p', { class: 'empty trend-empty' }, 'Dein Preisverlauf wird geladen …'));
   $('#kurveNote').textContent = '';
-  const p = new URLSearchParams({ station: g.station, von: g.von, bis: g.bis, acriss: klasse });
-  let punkte;
-  try {
-    const r = await fetch(`/api/verlauf?${p}`);
-    if (!r.ok) throw new Error('Verlauf nicht verfügbar');
-    const d = await r.json();
-    punkte = (d.punkte || []).filter((e) => Number.isFinite(e.p) && Number.isFinite(e.t)).sort((a, b) => a.t - b.t);
-  } catch {
-    if (anfrage !== kurveBildAnfrage) return;
-    $('#kurveBild').setAttribute('aria-busy', 'false');
+
+  // Die Punkte der Reise liegen schon vor, geholt beim Umschalten der Reise.
+  // Ein Klassenwechsel ist damit ein Filter im Speicher statt einer Abfrage.
+  const reise = await ladeKurveReise(g);
+  if (anfrage !== kurveBildAnfrage) return;
+  $('#kurveBild').setAttribute('aria-busy', 'false');
+
+  if (reise.fehler) {
     setChildren($('#kurveBild'), el('p', { class: 'empty trend-empty' }, 'Der Preisverlauf ist gerade nicht erreichbar. Öffne diese Ansicht erneut, um es noch einmal zu versuchen.'));
     return;
   }
-  if (anfrage !== kurveBildAnfrage) return;
-  $('#kurveBild').setAttribute('aria-busy', 'false');
+  const punkte = reise.punkte.filter((e) => e.k === klasse);
 
   // Unterschiedliche Währungen erhalten jeweils eine eigene Skala und Kennzahlen.
   const nachWaehrung = new Map();
@@ -4592,45 +4709,234 @@ function renderKurve() {
   }
 
   if (!kurveGruppen.some((g) => `${g.station}|${g.von}|${g.bis}` === kurveGruppe)) {
-    const erste = kurveGruppen[0];
+    const erste = kurveGefiltert()[0] || kurveGruppen[0];
     kurveGruppe = `${erste.station}|${erste.von}|${erste.bis}`;
     kurveKlasse = null;
+    kurveReise = null;
   }
+
+  renderKurveListe();
+  renderKurveDetail();
+}
+
+/**
+ * Die Reisen, die dem Suchbegriff und dem Filter entsprechen.
+ *
+ * Gesucht wird über denselben Weg wie in der Stationsauswahl: `fold` zieht
+ * Umlaute und Akzente glatt, `score` bewertet gestaffelt von "genauer Code"
+ * bis "Teilfolge". Gesucht wird über den Stationsnamen und über die Daten,
+ * damit "köln" und "10.10." beide zum Ziel führen.
+ */
+function kurveGefiltert() {
+  const heute = new Date().toISOString().slice(0, 10);
+  let liste = kurveGruppen;
+  if (kurveNurLaufend) liste = liste.filter((g) => g.bis >= heute);
+
+  const nadel = kurveNadel.trim();
+  if (!nadel) return liste;
+
+  let bewertet = liste
+    .map((g) => {
+      const name = stationByCode(g.station)?.name || `Station ${g.station}`;
+      const text = `${name} ${pretty(g.von)} ${pretty(g.bis)} ${g.von} ${g.bis}`;
+      return { g, punkte: score(text, '', nadel) };
+    })
+    .filter((x) => x.punkte >= 0);
+
+  // Dieselbe Regel wie in der Stationssuche: gibt es echte Treffer, fliegen
+  // die schwachen raus. `score` vergibt 100 schon dafür, dass die Buchstaben
+  // irgendwo in dieser Reihenfolge vorkommen; ohne diese Regel stünden bei
+  // "köln" auch Reisen, die nichts damit zu tun haben.
+  const bestes = Math.max(0, ...bewertet.map((x) => x.punkte));
+  if (bestes >= 500) bewertet = bewertet.filter((x) => x.punkte >= 500);
+
+  bewertet.sort((a, b) => b.punkte - a.punkte || b.g.zuletzt - a.g.zuletzt);
+  return bewertet.map((x) => x.g);
+}
+
+function renderKurveListe() {
+  const treffer = kurveGefiltert();
+  const heute = new Date().toISOString().slice(0, 10);
+  const laufend = kurveGruppen.filter((g) => g.bis >= heute).length;
+
+  // Die Scrollposition retten: die Liste wird beim Tippen neu gebaut, und ohne
+  // das springt sie bei jedem Zeichen an den Anfang.
+  const alteListe = $('#kurveTreffer');
+  const scroll = alteListe ? alteListe.scrollTop : 0;
 
   setChildren(
     $('#kurveWahl'),
-    el('select', { id: 'kurveSuche', name: 'reise', class: 'premium-select', onchange: (e) => {
-      kurveGruppe = e.target.value;
-      kurveKlasse = null;
-      renderKurve();
-      $('#kurveSuche').focus({ preventScroll: true });
-    } }, ...kurveGruppen.map((g) => {
-      const schluessel = `${g.station}|${g.von}|${g.bis}`;
-      const station = stationByCode(g.station);
-      return el(
-        'option',
-        {
-          value: schluessel,
-          selected: schluessel === kurveGruppe,
+    el('input', {
+      id: 'kurveSuche',
+      type: 'search',
+      class: 'premium-input',
+      placeholder: 'Station oder Datum, z. B. köln',
+      value: kurveNadel,
+      autocomplete: 'off',
+      oninput: (e) => {
+        kurveNadel = e.target.value;
+        renderKurveListe();
+        $('#kurveSuche').focus({ preventScroll: true });
+      },
+    }),
+    el(
+      'label',
+      { class: 'kurvefilter' },
+      el('input', {
+        type: 'checkbox',
+        checked: kurveNurLaufend,
+        onchange: (e) => {
+          kurveNurLaufend = e.target.checked;
+          renderKurveListe();
         },
-        `${station?.name || g.station} · ${pretty(g.von)} – ${pretty(g.bis)}`
-      );
-    }))
+      }),
+      // Vergangene Reisen bleiben erreichbar, sie sind ja gemessen. Sie stehen
+      // nur nicht mehr im Weg, wenn man die nächste Reise sucht.
+      `nur laufende Reisen (${laufend} von ${kurveGruppen.length})`
+    ),
+    el(
+      'div',
+      { id: 'kurveTreffer', class: 'kurvetreffer', role: 'listbox' },
+      ...(treffer.length
+        ? treffer.slice(0, 80).map((g) => {
+            const schluessel = `${g.station}|${g.von}|${g.bis}`;
+            const gewaehlt = schluessel === kurveGruppe;
+            return el(
+              'button',
+              {
+                type: 'button',
+                class: 'kurvereise' + (gewaehlt ? ' aktiv' : ''),
+                role: 'option',
+                'aria-selected': gewaehlt ? 'true' : 'false',
+                onclick: () => {
+                  if (schluessel === kurveGruppe) return;
+                  kurveGruppe = schluessel;
+                  kurveKlasse = null;
+                  kurveReise = null;
+                  renderKurveListe();
+                  renderKurveDetail();
+                },
+              },
+              el('span', { class: 'kreise' }, stationByCode(g.station)?.name || `Station ${g.station}`),
+              el(
+                'span',
+                { class: 'kmeta' },
+                `${pretty(g.von)} – ${pretty(g.bis)} · ${g.klassenAnzahl ?? g.klassen?.length ?? 0} Klassen · ${g.punkte} Messpunkte`
+              )
+            );
+          })
+        : [el('p', { class: 'empty' }, 'Keine Reise gefunden.')])
+    ),
+    treffer.length > 80
+      ? el('p', { class: 'tabnote' }, `${treffer.length} Treffer, die ersten 80 werden gezeigt. Tippe genauer.`)
+      : null,
+    kurveGroesse ? kurveSpeicherzeile() : null
   );
 
+  if (alteListe) $('#kurveTreffer').scrollTop = scroll;
+
+  $('#kurveAnzahl').textContent =
+    kurveNadel.trim() || kurveNurLaufend
+      ? `${treffer.length} von ${kurveGruppen.length} Reisen`
+      : `${kurveGruppen.length} gespeicherte Reisen`;
+}
+
+/**
+ * Wie viel der Verlauf belegt, und der Weg, ihn auszudünnen.
+ *
+ * Steht sichtbar unter der Liste, weil diese Datei sonst unbemerkt wächst.
+ * Gelöscht wird nie von selbst: erst wird gezählt und gefragt, dann erst
+ * geschrieben. Die Messpunkte sind mühsam gesammelt und kommen nicht wieder.
+ */
+function kurveSpeicherzeile() {
+  const mb = (kurveGroesse.bytes / 1024 / 1024).toFixed(1).replace('.', ',');
+  return el(
+    'p',
+    { class: 'kurvespeicher' },
+    `${kurveGroesse.punkte.toLocaleString('de-DE')} Messpunkte · ${mb} MB`,
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'linkknopf',
+        onclick: async (e) => {
+          const knopf = e.currentTarget;
+          knopf.disabled = true;
+          try {
+            const frage = await (
+              await fetch('/api/verlauf/ausduennen', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ vorTagen: 30 }),
+              })
+            ).json();
+            if (!frage.ok) return flash(frage.error || 'Ging nicht.');
+            if (!frage.entfernt) {
+              return flash('Es gibt nichts auszudünnen. Alle Punkte sind jünger als 30 Tage oder einzigartig.');
+            }
+            const ja = confirm(
+              `${frage.entfernt.toLocaleString('de-DE')} Messpunkte entfernen?\n\n` +
+                `Betroffen sind nur Punkte, die älter als 30 Tage sind und von denen es am selben Tag ` +
+                `für dieselbe Reihe mehrere gibt. Je Tag bleibt der erste stehen, die Kurve behält ihre Form.\n\n` +
+                `Danach: ${frage.nachher.toLocaleString('de-DE')} statt ${frage.vorher.toLocaleString('de-DE')} Punkte.\n\n` +
+                `Das lässt sich nicht rückgängig machen.`
+            );
+            if (!ja) return;
+            const erg = await (
+              await fetch('/api/verlauf/ausduennen', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ vorTagen: 30, bestaetigt: true }),
+              })
+            ).json();
+            flash(
+              erg.ok
+                ? `${erg.entfernt.toLocaleString('de-DE')} Punkte entfernt, ${erg.nachher.toLocaleString('de-DE')} bleiben.`
+                : erg.error || 'Ging nicht.'
+            );
+            kurveReise = null;
+            await ladeKurve();
+          } catch {
+            flash('Der Preisdienst antwortet nicht.');
+          } finally {
+            knopf.disabled = false;
+          }
+        },
+      },
+      'ausdünnen'
+    )
+  );
+}
+
+async function renderKurveDetail() {
   const g = kurveGruppen.find((x) => `${x.station}|${x.von}|${x.bis}` === kurveGruppe);
   if (!g) return;
 
-  if (!g.klassen.includes(kurveKlasse)) kurveKlasse = g.klassen[0] || null;
+  setChildren($('#kurveKontext'),
+    el('span', { class: 'feature-symbol', 'aria-hidden': 'true', html: '<svg class="icon"><use href="#i-chart"/></svg>' }),
+    el('p', { class: 'eyebrow' }, 'DEINE REISE IM FOKUS'),
+    el('h3', {}, stationByCode(g.station)?.name || `Station ${g.station}`),
+    el('p', {}, `${pretty(g.von)} – ${pretty(g.bis)} · ${daysBetween(g.von, g.bis)} Tage`),
+    el('div', { class: 'trend-context-meta' },
+      el('span', {}, `${g.hostsAnzahl ?? g.hosts?.length ?? 0} Länderseite${(g.hostsAnzahl ?? g.hosts?.length) === 1 ? '' : 'n'}`),
+      el('span', {}, `${g.klassenAnzahl ?? g.klassen?.length ?? 0} Fahrzeugklasse${(g.klassenAnzahl ?? g.klassen?.length) === 1 ? '' : 'n'}`))
+  );
 
-  $('#kurveKlassen').hidden = false;
+  const reise = await ladeKurveReise(g);
+  // Zwischendurch umgeschaltet? Dann gehört diese Antwort nicht mehr hierher.
+  if (`${g.station}|${g.von}|${g.bis}` !== kurveGruppe) return;
+
+  if (!reise.klassen.includes(kurveKlasse)) kurveKlasse = reise.klassen[0] || null;
+
+  $('#kurveKlassen').hidden = !reise.klassen.length;
   setChildren(
     $('#kurveKlassenPillen'),
     el('select', { id: 'kurveKlasseWahl', name: 'fahrzeugklasse', class: 'premium-select', onchange: (e) => {
       kurveKlasse = e.target.value;
-      renderKurve();
+      // Nur das Diagramm, nicht die Reiseliste: die hat sich nicht geändert.
+      renderKurveBild();
       $('#kurveKlasseWahl').focus({ preventScroll: true });
-    } }, ...g.klassen.map((k) =>
+    } }, ...reise.klassen.map((k) =>
       el(
         'option',
         {
@@ -4640,14 +4946,6 @@ function renderKurve() {
         `${k}, ${decodeAcriss(k)?.label || 'Fahrzeugklasse'}`
       )
     ))
-  );
-
-  setChildren($('#kurveKontext'),
-    el('span', { class: 'feature-symbol', 'aria-hidden': 'true', html: '<svg class="icon"><use href="#i-chart"/></svg>' }),
-    el('p', { class: 'eyebrow' }, 'DEINE REISE IM FOKUS'),
-    el('h3', {}, stationByCode(g.station)?.name || `Station ${g.station}`),
-    el('p', {}, `${pretty(g.von)} – ${pretty(g.bis)} · ${daysBetween(g.von, g.bis)} Tage`),
-    el('div', { class: 'trend-context-meta' }, el('span', {}, `${g.hosts.length} Länderseite${g.hosts.length === 1 ? '' : 'n'}`), el('span', {}, `${g.klassen.length} Fahrzeugklasse${g.klassen.length === 1 ? '' : 'n'}`))
   );
 
   renderKurveBild();
