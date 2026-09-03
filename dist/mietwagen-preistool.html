@@ -181,10 +181,22 @@ button.text-button { padding: 12px 0; background: transparent; color: var(--acce
 .mgo .icon { width: 17px; height: 17px; }
 .mode.ghostmode .mgo { color: var(--muted); }
 .fuss { font-size: .6875rem; color: var(--leise); margin: 18px 2px 0; }
-.home-utility { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 23px; padding-bottom: 23px; border-bottom: 1px solid var(--hairline); }
-.utility-links { display: flex; gap: 28px; flex-wrap: wrap; }
-button.utility-link { background: transparent; padding: 8px 0; display: flex; align-items: center; gap: 9px; font-size: .75rem; color: var(--muted); }
-.utility-link .icon { width: 17px; height: 17px; }
+/* Zweite Kachelzeile: Einstellungen und Station anschreiben. Zwei Spalten
+   statt drei, und flacher, damit sie sichtbar sind, ohne den drei Hauptwegen
+   darueber den Rang abzulaufen. */
+.modes.werkzeuge { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; }
+.mode.flach { padding: 20px 24px; }
+.mode.flach .mtitle { font-size: 1rem; }
+.mode.flach .mdesc { margin-top: 5px; }
+
+/* Einleitung unter einer Bildschirmueberschrift. */
+.screen-lead {
+  max-width: 62ch;
+  margin: -4px 0 22px;
+  font-size: .8125rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
 
 /* Navigation für alle Ansichten; Glas ist eine optionale Verfeinerung. */
 .app-header { margin-inline: -32px; padding-inline: 32px; background: #fafafa; border-bottom: 1px solid rgba(29,29,31,.07); }
@@ -1674,12 +1686,14 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
   .visual-caption { right: 20px; font-size: .5625rem; }
   .section-heading { margin-top: 32px; }
   .section-heading > span { display: none; }
-  .modes { grid-template-columns: 1fr; gap: 12px; }
+  /* Beide Raster, auch das der Werkzeugkacheln. Ohne den zweiten Wähler
+     bliebe die Werkzeugzeile zweispaltig: ".modes.werkzeuge" ist
+     spezifischer als ".modes" und gewinnt sonst auch hier. */
+  .modes, .modes.werkzeuge { grid-template-columns: 1fr; gap: 12px; }
   .mode { display: grid; grid-template-columns: 32px 1fr; column-gap: 18px; padding: 23px; }
   .mode-icon { grid-row: 1 / 4; margin: 0; }
   .mdesc { margin-bottom: 14px; }
   .mgo { grid-column: 2; }
-  .home-utility { align-items: flex-start; flex-direction: column; gap: 12px; }
   .card { padding: 25px; }
   .workspace-heading { margin-top: 32px; }
   .screen:not(#start):not(#work) { padding-top: 30px; }
@@ -1954,6 +1968,7 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
       <button type="button" class="nav-link" data-mode="markets" data-nav="work">Preisvergleich</button>
       <button type="button" class="nav-link" data-mode="kalender" data-nav="kalender">Kalender</button>
       <button type="button" class="nav-link" data-mode="kurve" data-nav="kurve">Preisentwicklung</button>
+    <button type="button" class="nav-link" data-mode="status" data-nav="status">Einstellungen</button>
     </nav>
     <span class="local-badge"><span></span> Lokal auf deinem Gerät</span>
   </div>
@@ -2060,11 +2075,22 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
     </button>
   </div>
 
-  <div class="home-utility">
-    <div class="utility-links">
-      <button type="button" class="utility-link" data-mode="mail"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg> Station anschreiben <span aria-hidden="true">›</span></button>
-      <button type="button" class="utility-link" data-mode="status"><svg class="icon" aria-hidden="true"><use href="#i-status"/></svg> Systemstatus <span aria-hidden="true">›</span></button>
-    </div>
+  <!-- Bis 1.5.0 standen diese beiden als kleine Textzeilen ganz unten. Damit
+       fand niemand die Proxys, und dass man Stationen anschreiben kann, wusste
+       auch keiner. Jetzt Kacheln wie alles andere, nur flacher. -->
+  <div class="modes werkzeuge">
+    <button type="button" class="mode flach" data-mode="status">
+      <span class="mode-icon"><svg class="icon" aria-hidden="true"><use href="#i-status"/></svg></span>
+      <span class="mtitle">Einstellungen und Status.</span>
+      <span class="mdesc">Proxys je Länderseite samt Verbrauch, Selbsttest, Kennzahlen dieses Rechners.</span>
+      <span class="mgo">Einstellungen <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+    </button>
+    <button type="button" class="mode flach" data-mode="mail">
+      <span class="mode-icon"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg></span>
+      <span class="mtitle">Direkt bei der Station fragen.</span>
+      <span class="mdesc">E-Mail-Adressen der gewählten Stationen sammeln und ins BCC-Feld übernehmen.</span>
+      <span class="mgo">Station anschreiben <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+    </button>
   </div>
 
   <p class="fuss" id="startFuss"></p>
@@ -2074,8 +2100,13 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
 <section id="statusScreen" class="screen" hidden>
   <div class="bar">
     <button type="button" class="back">← Zurück</button>
-    <h1>Was geht gerade</h1>
+    <h1>Einstellungen und Status</h1>
   </div>
+  <p class="screen-lead">
+    Hier liegt, was man selten braucht und dann sofort finden muss: die
+    <b>Proxys je Länderseite</b> samt Verbrauch, der Selbsttest für einen
+    fremden Rechner, und die Zahlen dieser Installation.
+  </p>
   <section class="card" id="proxyKarte">
     <h3>Proxys je Länderseite</h3>
     <p class="note">

@@ -429,8 +429,9 @@ Gigabyte abgerechnet, das ist Kostenkontrolle und nicht Statistik.
   `STATION`, `KEINE_LISTE`, `NETZ`, `ZEIT`) mit Klartext und Rat im Tooltip. Ist
   der Durchlauf durch und fehlt trotzdem etwas, fasst die Oberfläche einmal von
   selbst nach.
-- **Systemstatus** („Was geht gerade?") mit Selbsttest, Zahlen dieses Rechners
-  und dem Schalter für die Begrüßung.
+- **Einstellungen und Status** als eigener Eintrag in der Navigation: Proxys je
+  Länderseite samt Verbrauch, Selbsttest, die Zahlen dieses Rechners und der
+  Schalter für die Begrüßung.
 
 ---
 

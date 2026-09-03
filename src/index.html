@@ -32,6 +32,7 @@
       <button type="button" class="nav-link" data-mode="markets" data-nav="work">Preisvergleich</button>
       <button type="button" class="nav-link" data-mode="kalender" data-nav="kalender">Kalender</button>
       <button type="button" class="nav-link" data-mode="kurve" data-nav="kurve">Preisentwicklung</button>
+    <button type="button" class="nav-link" data-mode="status" data-nav="status">Einstellungen</button>
     </nav>
     <span class="local-badge"><span></span> Lokal auf deinem Gerät</span>
   </div>
@@ -138,11 +139,22 @@
     </button>
   </div>
 
-  <div class="home-utility">
-    <div class="utility-links">
-      <button type="button" class="utility-link" data-mode="mail"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg> Station anschreiben <span aria-hidden="true">›</span></button>
-      <button type="button" class="utility-link" data-mode="status"><svg class="icon" aria-hidden="true"><use href="#i-status"/></svg> Systemstatus <span aria-hidden="true">›</span></button>
-    </div>
+  <!-- Bis 1.5.0 standen diese beiden als kleine Textzeilen ganz unten. Damit
+       fand niemand die Proxys, und dass man Stationen anschreiben kann, wusste
+       auch keiner. Jetzt Kacheln wie alles andere, nur flacher. -->
+  <div class="modes werkzeuge">
+    <button type="button" class="mode flach" data-mode="status">
+      <span class="mode-icon"><svg class="icon" aria-hidden="true"><use href="#i-status"/></svg></span>
+      <span class="mtitle">Einstellungen und Status.</span>
+      <span class="mdesc">Proxys je Länderseite samt Verbrauch, Selbsttest, Kennzahlen dieses Rechners.</span>
+      <span class="mgo">Einstellungen <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+    </button>
+    <button type="button" class="mode flach" data-mode="mail">
+      <span class="mode-icon"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg></span>
+      <span class="mtitle">Direkt bei der Station fragen.</span>
+      <span class="mdesc">E-Mail-Adressen der gewählten Stationen sammeln und ins BCC-Feld übernehmen.</span>
+      <span class="mgo">Station anschreiben <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+    </button>
   </div>
 
   <p class="fuss" id="startFuss"></p>
@@ -152,8 +164,13 @@
 <section id="statusScreen" class="screen" hidden>
   <div class="bar">
     <button type="button" class="back">← Zurück</button>
-    <h1>Was geht gerade</h1>
+    <h1>Einstellungen und Status</h1>
   </div>
+  <p class="screen-lead">
+    Hier liegt, was man selten braucht und dann sofort finden muss: die
+    <b>Proxys je Länderseite</b> samt Verbrauch, der Selbsttest für einen
+    fremden Rechner, und die Zahlen dieser Installation.
+  </p>
   <section class="card" id="proxyKarte">
     <h3>Proxys je Länderseite</h3>
     <p class="note">
