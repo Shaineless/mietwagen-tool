@@ -89,16 +89,26 @@ Write-Host "              $([math]::Round($exeInfo.Length/1MB,1)) MB"
 
 # --- 3. Commits hochschieben ------------------------------------------------
 
-# Erst den Index auffrischen. Der Bau schreibt die erzeugten Dateien mit
-# Zeilenumbruechen, die von der Auscheck-Fassung abweichen; inhaltlich ist
-# keine Zeile anders, aber Git merkt sich Groesse und Zeitstempel und meldet
-# sie danach als geaendert. Ohne diese Zeile bricht die Veroeffentlichung mit
-# "ungespeicherte Aenderungen" ab, obwohl es keine gibt. Genau so passiert
-# beim Herausgeben der 1.3.9.
-git update-index --refresh 2>&1 | Out-Null
+# Auf INHALT pruefen, nicht auf Zeitstempel.
+#
+# "git status" meldet eine Datei schon als geaendert, wenn sich Groesse oder
+# Zeitstempel unterscheiden. Der Bau schreibt die erzeugten Dateien mit
+# Zeilenumbruechen, die von der ausgecheckten Fassung abweichen; inhaltlich ist
+# dann keine Zeile anders, "git diff" ist leer, und trotzdem stand da
+# "ungespeicherte Aenderungen". Beim Herausgeben der 1.3.9 brach es genau
+# daran ab, und ein "git update-index --refresh" hat es nicht behoben.
+#
+# "git diff --quiet" vergleicht den Inhalt und rechnet die Zeilenenden dabei
+# um. Genau das ist die Frage, die hier zaehlt.
+$ErrorActionPreference = 'Continue'
+git diff --quiet 2>&1 | Out-Null
+$unversioniert = ($LASTEXITCODE -ne 0)
+git diff --cached --quiet 2>&1 | Out-Null
+$vorgemerkt = ($LASTEXITCODE -ne 0)
+$neueDateien = @(git ls-files --others --exclude-standard)
+$ErrorActionPreference = 'Stop'
 
-$offen = git status --porcelain
-if ($offen) {
+if ($unversioniert -or $vorgemerkt -or $neueDateien.Count) {
   Schlecht "Es liegen ungespeicherte Aenderungen vor:"
   git status --short
   Write-Host "`n  Erst committen, dann veroeffentlichen. Abgebrochen." -ForegroundColor Yellow
