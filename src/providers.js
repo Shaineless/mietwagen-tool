@@ -177,14 +177,32 @@ function planned(id, label, homepage, why) {
   };
 }
 
-const avis = planned(
-  'avis',
-  'Avis',
-  'https://www.avis.de/',
-  'Sendet die Suche per POST an secure.avis.de. Die Feldnamen sind bekannt ' +
-    '(hire-location, return-location, pickupDateTime, returnDateTime, awdcode), ' +
-    'das erwartete Datumsformat noch nicht.'
-);
+const avis = {
+  id: 'avis',
+  label: 'Avis',
+  status: 'ready',
+  method: 'GET',
+  theme: THEMES.avis,
+  markets: [{ code: 'de', host: 'secure.avis.de', label: 'Deutschland', cur: 'EUR' }],
+  homepage: 'https://www.avis.de/',
+  capabilities: { station: true, date: true, time: true, oneWay: true, vehicleClass: false, prepaid: true },
+  notes: [
+    'Suche ist ein GET auf secure.avis.de/mietwagensuche, Datum als TT/MM/JJJJ, Zeit als 1000. ' +
+      'Preise und ACRISS stehen als Attribute an jeder Fahrzeugkarte. Geprüft an CGN, 11/2026.',
+    'Ein Kaltstart ohne Vorlauf kann an CloudFront scheitern. Viele schnelle Anfragen sperren ' +
+      'die IP für Stunden, auch fürs normale Surfen.',
+  ],
+  build(q, market, station, returnStation) {
+    const p = new URLSearchParams({
+      vehicleCategory: 'car', fleet: 'car', 'hire-country': 'DE',
+      'hire-location': station.code, 'return-location': (returnStation || station).code,
+      'date-from': q.pickupDate.split('-').reverse().join('/'), 'time-from': q.pickupTime.replace(':', ''),
+      'date-to': q.returnDate.split('-').reverse().join('/'), 'time-to': q.returnTime.replace(':', ''),
+      rentalType: 'leisure_check',
+    });
+    return { url: `https://secure.avis.de/mietwagensuche?${p}` };
+  },
+};
 
 const europcar = {
   id: 'europcar',

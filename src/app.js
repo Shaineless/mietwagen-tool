@@ -1905,10 +1905,10 @@ function regStationen(land = state.region.land) {
  * Pfund, bliebe nur ein Vergleich über zwei Währungen, und den gibt es in
  * diesem Programm bewusst nicht. Dann fragt die Suche nur Sixt.
  */
-const EUROPCAR_STATIONEN = STATIONS.filter((s) => s.provider === 'europcar');
+const WEITERE_STATIONEN = STATIONS.filter((s) => s.provider !== PROVIDER);
 function regAlle() {
   const markt = providerById(PROVIDER).markets.find((m) => m.host === state.region.host);
-  return markt?.cur === 'EUR' ? ALLE_STATIONEN.concat(EUROPCAR_STATIONEN) : ALLE_STATIONEN;
+  return markt?.cur === 'EUR' ? ALLE_STATIONEN.concat(WEITERE_STATIONEN) : ALLE_STATIONEN;
 }
 
 /** Welche Bundesländer stecken überhaupt in den Daten, und mit wie vielen? */
@@ -2092,12 +2092,17 @@ function renderRegionFormular() {
 
   const alle = regStationen();
   const n = alle.length;
-  const nEc = alle.filter((s) => s.provider === 'europcar').length;
+  const weitere = alle.filter((s) => s.provider !== PROVIDER);
+  const nEc = weitere.length;
+  // "26 bei Europcar, 9 bei Avis"
+  const jeAnbieter = [...new Set(weitere.map((s) => s.provider))]
+    .map((p) => `${weitere.filter((s) => s.provider === p).length} bei ${providerById(p).label}`)
+    .join(', ');
   $('#regLandHinweis').textContent = n
-    ? `${n} Stationen, alle werden abgefragt` + (nEc ? `, davon ${nEc} von Europcar.` : '.')
+    ? `${n} Stationen, alle werden abgefragt` + (nEc ? `: ${n - nEc} bei Sixt, ${jeAnbieter}.` : '.')
     : 'Für dieses Bundesland liegen keine Ortsdaten vor.';
   $('#regKosten').textContent = n
-    ? `${n - nEc} Abrufe auf ${r.host}` + (nEc ? ` und ${nEc} bei Europcar` : '') +
+    ? `${n - nEc} Abrufe auf ${r.host}` + (nEc ? ` und ${jeAnbieter}` : '') +
       `, rund ${Math.max(1, Math.round((n * 2.5) / 4 / 6) * 6)} Sekunden. ` +
       'Die Länderseite gilt nur für Sixt.' +
       (r.host && !nEc && providerById(PROVIDER).markets.find((m) => m.host === r.host)?.cur !== 'EUR'

@@ -131,15 +131,15 @@ for (const s of stations) {
 }
 
 /**
- * Europcar: eine Datei mit allem, weil sie ganz aus einem Erntelauf stammt
- * (tools/ernte-europcar.mjs) und nie von Hand ergaenzt wird.
+ * Weitere Anbieter: je eine Datei mit allem, weil sie ganz aus einem
+ * Erntelauf stammt (tools/ernte-*.mjs) und nie von Hand ergaenzt wird.
  */
-function parseEuropcar(file) {
+function parseAnbieter(file, provider) {
   let text;
   try {
     text = readFileSync(file, 'utf8');
   } catch {
-    console.warn('  ! keine Europcar-Stationen gefunden, Europcar bleibt aus');
+    console.warn(`  ! keine Stationen für ${provider} gefunden, der Anbieter bleibt aus`);
     return [];
   }
   const out = [];
@@ -148,15 +148,16 @@ function parseEuropcar(file) {
     if (!s || s.startsWith('#')) continue;
     const [id, plz, land, lat, lon, art, ...name] = s.split('|');
     out.push({
-      code: id, country: 'DE', iata: '', name: name.join('|'), provider: 'europcar',
+      code: id, country: 'DE', iata: '', name: name.join('|'), provider,
       ...(art === 'flughafen' ? { flughafen: true } : {}),
       bl: land, plz, bg: Number(lat), lg: Number(lon),
     });
   }
   return out;
 }
-const europcarStationen = parseEuropcar(src('data/stations.europcar.txt'));
-console.log(`  ${europcarStationen.length} Europcar-Stationen in Deutschland`);
+const europcarStationen = parseAnbieter(src('data/stations.europcar.txt'), 'europcar');
+const avisStationen = parseAnbieter(src('data/stations.avis.txt'), 'avis');
+console.log(`  ${europcarStationen.length} Europcar- und ${avisStationen.length} Avis-Stationen in Deutschland`);
 
 const flughaefen = stations.filter((s) => s.flughafen).length;
 console.log(
@@ -213,7 +214,7 @@ console.log(
 const stationsModule =
   '// Automatisch erzeugt von build.mjs aus src/data/*.txt, nicht direkt bearbeiten.\n' +
   'export const STATIONS = ' +
-  JSON.stringify(stations.concat(europcarStationen)) +
+  JSON.stringify(stations.concat(europcarStationen, avisStationen)) +
   ';\n' +
   'export const UMRISS = ' +
   JSON.stringify(umriss) +

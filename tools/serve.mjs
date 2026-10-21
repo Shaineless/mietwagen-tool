@@ -17,6 +17,7 @@ import { join, extname, normalize } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { quoteSixt } from './scrape/sixt.mjs';
 import { quoteEuropcar } from './scrape/europcar.mjs';
+import { quoteAvis } from './scrape/avis.mjs';
 import { quoteSchutz, waehleSchutzpaket, kasseLebt } from './scrape/sixt-schutz.mjs';
 import { findBrowser, closeBrowser, frischesProfil } from './browser.mjs';
 import * as buchung from './buchung.mjs';
@@ -241,7 +242,7 @@ function setzeParallelZurueck() {
   besteDauer = null;
 }
 
-const ABRUF = { sixt: quoteSixt, europcar: quoteEuropcar };
+const ABRUF = { sixt: quoteSixt, europcar: quoteEuropcar, avis: quoteAvis };
 const SCHUTZ_ABRUF = { sixt: quoteSchutz };
 
 /**

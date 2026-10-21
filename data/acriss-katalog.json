@@ -17,7 +17,8 @@
   "CDMR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-golf-5d-grey-2024.png",
    "modelle": [
-    "VW GOLF"
+    "VW GOLF",
+    "Seat Leon"
    ],
    "beispielText": "Kompaktklasse Limousine Manuell",
    "zuletzt": "2026-10-21"
@@ -43,7 +44,8 @@
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-golf-5d-grey-2024.png",
    "modelle": [
     "VW GOLF",
-    "VW T-CROSS"
+    "VW T-CROSS",
+    "Cupra Leon"
    ],
    "beispielText": "Kompaktklasse Limousine Automatik",
    "zuletzt": "2026-10-21"
@@ -52,7 +54,8 @@
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-taigo-suv-white-2022.png",
    "modelle": [
     "VW TAIGO",
-    "VW T-ROC"
+    "VW T-ROC",
+    "Seat Arona"
    ],
    "beispielText": "Kompaktklasse SUV Automatik",
    "zuletzt": "2026-10-21"
@@ -108,7 +111,8 @@
    "modelle": [
     "VW T-ROC",
     "INTERMEDIATE SUV",
-    "SKODA KAROQ"
+    "SKODA KAROQ",
+    "Seat Ateca"
    ],
    "beispielText": "Mittelklasse SUV Automatik",
    "zuletzt": "2026-10-21"
@@ -480,14 +484,15 @@
    "zuletzt": "2026-10-21"
   },
   "CWMR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/24423_GWY_L.png",
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Toyota/Corolla/SW/toyota_26corollatshevcoltnwg12bfr_sideview.png",
    "modelle": [
     "VW GOLF SW",
     "VW GOLF VARIANT",
     "VW GOLF ESTATE",
-    "VW GOLF STATION WAGON"
+    "VW GOLF STATION WAGON",
+    "Toyota Corolla SW"
    ],
-   "beispielText": "Compact",
+   "beispielText": "Fahrzeuggruppe SM",
    "zuletzt": "2026-10-21"
   },
   "CWAR": {
@@ -939,7 +944,8 @@
     "VW PASSAT VARIANT",
     "VW PASSAT SW",
     "VW PASSAT ESTATE",
-    "SKODA SUPERB COMBI"
+    "SKODA SUPERB COMBI",
+    "Skoda Octavia Combi"
    ],
    "beispielText": "Standardklasse Kombi Automatik",
    "zuletzt": "2026-10-21"
@@ -987,7 +993,8 @@
   "PVAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/ford-tourneo-custom-van-silver-2025.png",
    "modelle": [
-    "FORD TOURNEO CUSTOM"
+    "FORD TOURNEO CUSTOM",
+    "Mercedes-Benz Vito"
    ],
    "beispielText": "Premiumklasse Van Automatik",
    "zuletzt": "2026-10-21"
@@ -1065,11 +1072,12 @@
    "zuletzt": "2026-10-21"
   },
   "ECMR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/60832_GWY_L.png",
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Seat/Ibiza/seat_26ibizafrhb5fbfr_sideview.png",
    "modelle": [
-    "VW POLO"
+    "VW POLO",
+    "Seat Ibiza"
    ],
-   "beispielText": "Economy",
+   "beispielText": "Fahrzeuggruppe SC",
    "zuletzt": "2026-10-21"
   },
   "CCMR": {
@@ -1089,19 +1097,21 @@
    "zuletzt": "2026-10-21"
   },
   "CXMR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/21384_GWY_L.png",
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/VW/Golf/volkswagen_26golfstylehb8ffr_sideview.png",
    "modelle": [
-    "VW GOLF NAVI"
+    "VW GOLF NAVI",
+    "Volkswagen Golf inkl. GPS"
    ],
-   "beispielText": "Compact",
+   "beispielText": "Fahrzeuggruppe SO",
    "zuletzt": "2026-10-21"
   },
   "IDMR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/34685_GWY_L.png",
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Citroen/C5X/citroen_25c5xmhevmaxhb1bfr_sideview.png",
    "modelle": [
-    "NISSAN QASHQAI"
+    "NISSAN QASHQAI",
+    "Citroen C5X"
    ],
-   "beispielText": "Intermediate",
+   "beispielText": "Fahrzeuggruppe MA",
    "zuletzt": "2026-10-21"
   },
   "IDAR": {
@@ -1182,6 +1192,62 @@
     "RENAULT MASTER DREISEITENKIPPER"
    ],
    "beispielText": "Lieferwagen/LKW",
+   "zuletzt": "2026-10-21"
+  },
+  "CDAE": {
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Skoda/Elroq/skoda_25elroqevclever85su1fr_sideview.png",
+   "modelle": [
+    "Skoda Elroq Electric"
+   ],
+   "beispielText": "Fahrzeuggruppe EG",
+   "zuletzt": "2026-10-21"
+  },
+  "FDAR": {
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/BMW/3/bmw_25330ephevftndeseriesd7fefr_sideview.png",
+   "modelle": [
+    "BMW 3 Series"
+   ],
+   "beispielText": "Fahrzeuggruppe LA",
+   "zuletzt": "2026-10-21"
+  },
+  "FWAR": {
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Volvo/V60/volvo_26v60phevplust6awdwg2rbfr_sideview.png",
+   "modelle": [
+    "Volvo V60"
+   ],
+   "beispielText": "Fahrzeuggruppe LI",
+   "zuletzt": "2026-10-21"
+  },
+  "PDAR": {
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Mercedes-Benz/E-Class/mercedes_24e220damglinesd6b_sideview.png",
+   "modelle": [
+    "Mercedes-Benz E-Klasse Inkl. GPS"
+   ],
+   "beispielText": "Fahrzeuggruppe LL",
+   "zuletzt": "2026-10-21"
+  },
+  "GVAR": {
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/VW/Multivan/volkswagen_24multivanphevstylevp7bfr_sideview.png",
+   "modelle": [
+    "Volkswagen Multivan"
+   ],
+   "beispielText": "Fahrzeuggruppe LC",
+   "zuletzt": "2026-10-21"
+  },
+  "PEAR": {
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/BMW/4/Coupe/bmw_26420ifinitionmsportcp2rfr_sideview.png",
+   "modelle": [
+    "BMW 4 Series"
+   ],
+   "beispielText": "Fahrzeuggruppe PK",
+   "zuletzt": "2026-10-21"
+  },
+  "PTAR": {
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/BMW/4/Cabrio/bmw_25420ifinitionmsportcv2re_sideview.png",
+   "modelle": [
+    "BMW 4 Series Convertible"
+   ],
+   "beispielText": "Fahrzeuggruppe PL",
    "zuletzt": "2026-10-21"
   }
  },
@@ -10903,6 +10969,44 @@
    "UFBR": "2026-10-21",
    "SVMR": "2026-10-21",
    "WFBR": "2026-10-21"
+  },
+  "avis|BEM|secure.avis.de": {
+   "ECMR": "2026-10-21",
+   "CDMR": "2026-10-21",
+   "CDAR": "2026-10-21",
+   "CXMR": "2026-10-21",
+   "CFAR": "2026-10-21",
+   "IDMR": "2026-10-21",
+   "IFAR": "2026-10-21",
+   "CDAE": "2026-10-21",
+   "CWMR": "2026-10-21",
+   "FDAR": "2026-10-21",
+   "SWAR": "2026-10-21",
+   "FWAR": "2026-10-21",
+   "PDAR": "2026-10-21",
+   "PVAR": "2026-10-21",
+   "GVAR": "2026-10-21",
+   "PEAR": "2026-10-21",
+   "PTAR": "2026-10-21"
+  },
+  "avis|BRE|secure.avis.de": {
+   "ECMR": "2026-10-21",
+   "CDMR": "2026-10-21",
+   "CDAR": "2026-10-21",
+   "CWMR": "2026-10-21",
+   "CXMR": "2026-10-21",
+   "CDAE": "2026-10-21",
+   "CFAR": "2026-10-21",
+   "IDMR": "2026-10-21",
+   "IFAR": "2026-10-21",
+   "SWAR": "2026-10-21",
+   "FDAR": "2026-10-21",
+   "FWAR": "2026-10-21",
+   "PDAR": "2026-10-21",
+   "PVAR": "2026-10-21",
+   "GVAR": "2026-10-21",
+   "PEAR": "2026-10-21",
+   "PTAR": "2026-10-21"
   }
  }
 }
