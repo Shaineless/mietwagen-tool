@@ -1,0 +1,232 @@
+# Europcar-PKW-Stationen in Deutschland.
+# Format: id|plz|bundesland|breite|laenge|art|name
+# Geerntet: 2026-10-21 mit tools/ernte-europcar.mjs
+# Bundesland aus Koordinate und Landesumriss. Datei wird im Ganzen ersetzt.
+AAHC01|52070|nordrhein-westfalen|50.7887|6.1161||Aachen
+ZCBC01|63739|bayern|49.9797|9.129||Aschaffenburg
+AGBC02|86165|bayern|48.3699|10.9324||Augsburg
+AGBT01|86169|bayern|48.424|10.9323|flughafen|Augsburg Flughafen
+EMEE03|26603|niedersachsen|53.4659|7.4868||Aurich
+BQMC03|61348|hessen|50.228|8.6053||Bad Homburg
+BPEC01|53604|nordrhein-westfalen|50.6428|7.2309||Bad Honnef
+QMZS01|55543|rheinland-pfalz|49.8495|7.8949||Bad Kreuznach Planig
+ZCCC01|76532|baden-wuerttemberg|48.782|8.1876||Baden-Baden
+BPJC01|72336|baden-wuerttemberg|48.2534|8.8571||Balingen
+BPZC01|02625|sachsen|51.1796|14.3944||Bautzen
+BYUC01|95448|bayern|49.9471|11.5857||Bayreuth
+ZCGW02|51469|nordrhein-westfalen|50.9841|7.105||Bergisch Gladbach
+ZCHC02|59192|nordrhein-westfalen|51.6265|7.6574||Bergkamen
+BERE02|12489|berlin|52.4295|13.5311||Berlin Adlershof
+BERC02|10178|berlin|52.5232|13.4122||Berlin Alexanderplatz
+BERT01|12529|brandenburg|52.364|13.5083|flughafen|Berlin Brandenburg Flughafen
+BERC01|10787|berlin|52.5048|13.342||Berlin City West
+BERL01|10557|berlin|52.5259|13.3688||Berlin Hauptbahnhof
+BERE03|12627|berlin|52.5377|13.603||Berlin Hellersdorf
+BERE01|10365|berlin|52.5258|13.5||Berlin Lichtenberg
+BERN01|13405|berlin|52.5621|13.3303||Berlin Reinickendorf
+BERW04|13597|berlin|52.5355|13.1952||Berlin Spandau
+BERL02|13597|berlin|52.5356|13.1955||Berlin Spandau Bahnhof
+BERC03|12167|berlin|52.4538|13.3286||Berlin Steglitz
+BERN03|16321|brandenburg|52.6646|13.5791||Bernau
+BFEC01|33609|nordrhein-westfalen|52.0335|8.5583||Bielefeld
+BBJC01|54634|rheinland-pfalz|49.9635|6.5223||Bitburg
+GEZC01|44793|nordrhein-westfalen|51.48|7.2065||Bochum
+GFHS01|53177|nordrhein-westfalen|50.6771|7.1688||Bonn Bad Godesberg
+CGNS04|53177|nordrhein-westfalen|50.678|7.1682||Bonn Bad Godesberg ab 01.12.26
+GFHN01|53119|nordrhein-westfalen|50.7421|7.0774||Bonn Nordstadt
+BXPC01|46242|nordrhein-westfalen|51.5084|6.9345||Bottrop
+BWET01|38108|niedersachsen|52.3218|10.5599|flughafen|Braunschweig Flughafen
+BWEL01|38102|niedersachsen|52.2511|10.5356||Braunschweig Hauptbahnhof
+BWEN02|38112|niedersachsen|52.297|10.5148||Braunschweig Nord VW FS
+BWEC01|38102|niedersachsen|52.253|10.5372||Braunschweig Stadt
+BRET01|28199|bremen|53.0527|8.7861|flughafen|Bremen Flughafen
+BREL01|28195|bremen|53.0834|8.8076||Bremen Hauptbahnhof
+BREN25|28199|bremen|53.0582|8.7935||Bremen Neustadt
+BREC01|28195|bremen|53.0831|8.8079||Bremen Stadt
+FKBN02|76646|baden-wuerttemberg|49.1331|8.5724||Bruchsal
+CBUC02|03050|brandenburg|51.7385|14.3351||Cottbus
+QEIC01|74564|baden-wuerttemberg|49.1401|10.0262||Crailsheim
+BREW03|27751|niedersachsen|53.0322|8.655||Delmenhorst
+ZSUC03|06844|sachsen-anhalt|51.8352|12.2359||Dessau
+DTMC01|44149|nordrhein-westfalen|51.52|7.4194||Dortmund Dorstfeld
+DTMN01|44145|nordrhein-westfalen|51.5413|7.4576||Dortmund Eving
+DTMT01|44319|nordrhein-westfalen|51.5185|7.6145|flughafen|Dortmund Flughafen
+DTMN25|44143|nordrhein-westfalen|51.5239|7.5154||Dortmund Wambel 
+DRST01|01109|sachsen|51.125|13.7669|flughafen|Dresden Flughafen
+DRSL01|01069|sachsen|51.0384|13.7357||Dresden Hauptbahnhof
+DRSN03|01109|sachsen|51.1242|13.7672||Dresden Klotzsche Treffpunkt
+DRSN25|01239|sachsen|51.0055|13.7878||Dresden Lockwitz 
+DRSC02|01069|sachsen|51.0383|13.7362||Dresden Stadt
+DRSC03|01069|sachsen|51.0447|13.7558||Dresden VW Gläserne Manufaktur (Nur Rückgabe)
+DUIC02|47051|nordrhein-westfalen|51.4348|6.7731||Duisburg
+DUSN01|40468|nordrhein-westfalen|51.2802|6.7798||Düsseldorf Derendorf
+DUST01|40474|nordrhein-westfalen|51.279|6.7658|flughafen|Düsseldorf Flughafen
+DUSL01|40210|nordrhein-westfalen|51.2203|6.7913||Düsseldorf Hauptbahnhof
+DUSC01|40210|nordrhein-westfalen|51.2205|6.7899||Düsseldorf Stadt
+EBXC02|16225|brandenburg|52.8368|13.8201||Eberswalde
+EIBC02|99817|thueringen|50.9761|10.3291||Eisenach
+MUCE05|85435|bayern|48.312|11.8882||Erding
+ERFC01|99099|thueringen|50.975|11.0619||Erfurt
+DUSW04|41812|nordrhein-westfalen|51.069|6.3021||Erkelenz
+ERLC01|91052|bayern|49.5864|11.0038||Erlangen
+ESSC01|45141|nordrhein-westfalen|51.4635|7.0168||Essen Frillendorf
+ESSS01|45219|nordrhein-westfalen|51.3789|6.9382||Essen Kettwig
+FKBS02|76275|baden-wuerttemberg|48.9394|8.4107||Ettlingen
+ZEDC02|53879|nordrhein-westfalen|50.6527|6.7905||Euskirchen
+FLFC01|24941|schleswig-holstein|54.7716|9.4237||Flensburg
+FRAW01|60486|hessen|50.121|8.6211||Frankfurt Bockenheim
+FRAT01|60549|hessen|50.0507|8.5687|flughafen|Frankfurt Flughafen Terminal 1
+FRAT03|60549|hessen|50.0413|8.58|flughafen|Frankfurt Flughafen Terminal 3
+FRAL01|60329|hessen|50.1073|8.6646||Frankfurt Hauptbahnhof
+FRAE02|60314|hessen|50.1231|8.7419||Frankfurt Ostend
+QFBC01|79115|baden-wuerttemberg|47.9807|7.8244||Freiburg
+QFBL01|79098|baden-wuerttemberg|47.9962|7.8404||Freiburg Hauptbahnhof
+QFLE01|83395|bayern|47.8409|12.9828||Freilassing
+FRAN05|61169|hessen|50.3308|8.751||Friedberg
+FDHT02|88046|baden-wuerttemberg|47.6518|9.4771|flughafen|Friedrichshafen Flughafen
+FDHC02|88045|baden-wuerttemberg|47.6545|9.4718||Friedrichshafen Stadt
+FUHC01|90765|bayern|49.4862|11.007||Fürth
+ZESS01|73312|baden-wuerttemberg|48.6105|9.8421||Geislingen
+ZEUC01|37081|niedersachsen|51.5345|9.9224||Göttingen 
+ZGWC01|17489|mecklenburg-vorpommern|54.0721|13.386||Greifswald
+GMJC01|51645|nordrhein-westfalen|51.0102|7.5716||Gummersbach
+GUTC01|33330|nordrhein-westfalen|51.9142|8.3805||Gütersloh
+ZHZC01|06112|sachsen-anhalt|51.4774|12.0043||Halle Saale
+HAMN25|22761|hamburg|53.5667|9.9183||Hamburg Bahrenfeld 
+HAME05|21033|hamburg|53.4899|10.2037||Hamburg Bergedorf ab dem 01.11.26
+HAMT01|22335|hamburg|53.6309|10.006|flughafen|Hamburg Flughafen
+HAMS01|21073|hamburg|53.4642|9.9795||Hamburg Harburg
+HAMX01|20099|hamburg|53.5551|10.0103||Hamburg Hauptbahnhof
+HAMC01|20099|hamburg|53.5552|10.0102||Hamburg St. Georg
+HAMC03|22041|hamburg|53.5721|10.06||Hamburg Wandsbek
+ZNFC02|63450|hessen|50.1208|8.926||Hanau
+HAJT01|30855|niedersachsen|52.4594|9.7004|flughafen|Hannover Flughafen
+HAJL01|30159|niedersachsen|52.3767|9.7414||Hannover Hauptbahnhof
+HAJN01|30165|niedersachsen|52.4044|9.7348||Hannover Vahrenwald
+HDBC01|69115|baden-wuerttemberg|49.4078|8.6725||Heidelberg
+QULW02|89520|baden-wuerttemberg|48.6909|10.1602||Heidenheim
+HLEC01|74080|baden-wuerttemberg|49.1486|9.199||Heilbronn
+QBON04|44628|nordrhein-westfalen|51.5495|7.2389||Herne
+HOZC01|37603|niedersachsen|51.8358|9.4623||Holzminden
+ZQWN01|66424|saarland|49.3406|7.3458||Homburg
+OBBC01|55743|rheinland-pfalz|49.7102|7.3604||Idar Oberstein
+ZNQC10|85057|bayern|48.782|11.4138||Ingolstadt Audi Forum (Nur Rückgabe)
+ZNQC01|85051|bayern|48.7517|11.4321||Ingolstadt Monikaviertel
+ZJSC04|07745|thueringen|50.8968|11.5817||Jena
+KLTC01|67663|rheinland-pfalz|49.4406|7.7427||Kaiserslautern
+FKBC01|76227|baden-wuerttemberg|48.997|8.444||Karlsruhe
+FKBT01|77836|baden-wuerttemberg|48.7793|8.0701|flughafen|Karlsruhe Baden-Baden Flughafen
+KSFC01|34123|hessen|51.3106|9.5151||Kassel
+QLHC01|65451|hessen|50.0512|8.5423||Kelsterbach
+FMMS01|87437|bayern|47.7367|10.3275||Kempten
+KELC01|24113|schleswig-holstein|54.3054|10.1293||Kiel
+ZEBS06|73230|baden-wuerttemberg|48.6507|9.4335||Kirchheim unter Teck
+ZQPW02|47533|nordrhein-westfalen|51.7997|6.1365||Kleve
+ZNVC01|56070|rheinland-pfalz|50.3797|7.5807||Koblenz 
+CGNN01|50739|nordrhein-westfalen|50.9812|6.9182||Köln Bilderstöckchen
+CGNT03|51147|nordrhein-westfalen|50.8796|7.1209|flughafen|Köln Bonn Flughafen
+CGNE01|50679|nordrhein-westfalen|50.9389|6.9789||Köln Deutz Messe
+CGNW02|50825|nordrhein-westfalen|50.9459|6.9006||Köln Ehrenfeld
+CGNL01|50667|nordrhein-westfalen|50.9431|6.9582||Köln Hauptbahnhof
+CGNE04|51067|nordrhein-westfalen|50.9723|7.0526||Köln Holweide
+CGNS01|50968|nordrhein-westfalen|50.9144|6.9618||Köln Zollstock
+QKZC01|78467|baden-wuerttemberg|47.6728|9.1613||Konstanz
+QKFC03|47799|nordrhein-westfalen|51.3361|6.5756||Krefeld
+ZPVC02|74653|baden-wuerttemberg|49.2845|9.6847||Künzelsau
+KLTS04|76829|rheinland-pfalz|49.1954|8.1613||Landau
+QLGN01|84032|bayern|48.5507|12.139||Landshut St. Wolfgang
+NUEE03|91207|bayern|49.5014|11.2905||Lauf an der Pegnitz
+LEJT01|04435|sachsen|51.4208|12.2231|flughafen|Leipzig Halle Flughafen
+LEJX02|04103|sachsen|51.345|12.3848||Leipzig Hauptbahnhof
+LEJC01|04179|sachsen|51.3261|12.3023||Leipzig Lindenau
+LEJC02|04103|sachsen|51.3452|12.3844||Leipzig Stadt
+LLJC02|32657|nordrhein-westfalen|52.0286|8.8834||Lemgo
+ZPQN02|49809|niedersachsen|52.5305|7.3441||Lingen
+ZOBC01|59557|nordrhein-westfalen|51.6726|8.3767||Lippstadt
+QFBS02|79540|baden-wuerttemberg|47.602|7.6515||Lörrach
+ZOCC01|58507|nordrhein-westfalen|51.2274|7.6467||Lüdenscheid
+LLBC01|71634|baden-wuerttemberg|48.9022|9.1914||Ludwigsburg
+LWFC01|67059|rheinland-pfalz|49.4844|8.4307||Ludwigshafen
+MQGC01|39124|sachsen-anhalt|52.1635|11.6347||Magdeburg
+QMZC01|55120|hessen|50.0216|8.2413||Mainz
+MHGL01|68161|baden-wuerttemberg|49.478|8.473||Mannheim Hauptbahnhof
+MHGC01|68309|baden-wuerttemberg|49.5067|8.5057||Mannheim Käfertal
+MHGC02|68199|baden-wuerttemberg|49.4598|8.4913||Mannheim Neckarau
+ZOIC01|35039|hessen|50.8273|8.7699||Marburg
+FMMT01|87766|bayern|47.9898|10.2325|flughafen|Memmingen Flughafen
+ERGC01|06217|sachsen-anhalt|51.3473|11.9789||Merseburg
+ZOMC03|32423|nordrhein-westfalen|52.3101|8.9704||Minden
+DUSW03|41065|nordrhein-westfalen|51.1923|6.4461||Mönchengladbach
+ZNVN01|56410|rheinland-pfalz|50.4413|7.8299||Montabaur
+ZOON01|45468|nordrhein-westfalen|51.4287|6.8907||Mülheim an der Ruhr
+MUCT01|85356|bayern|48.3537|11.7851|flughafen|München Flughafen
+MUCX01|80335|bayern|48.1436|11.5576||München Hauptbahnhof
+MUCC01|80335|bayern|48.1435|11.5573||München Maxvorstadt
+MUCN01|80807|bayern|48.1902|11.5838||München Milbertshofen
+OBFW01|81241|bayern|48.1493|11.4551||München Pasing
+OBFS01|81379|bayern|48.1|11.5311||München Sendling
+MUCE02|81825|bayern|48.1209|11.6644||München Trudering
+MSRC01|48153|nordrhein-westfalen|51.94|7.6276||Münster
+ZNJN10|74172|baden-wuerttemberg|49.194|9.2211||Neckarsulm Audi Forum (Nur Rückgabe)
+NEBC01|17033|mecklenburg-vorpommern|53.5611|13.2652||Neubrandenburg
+DUSW07|41462|nordrhein-westfalen|51.2071|6.6766||Neuss
+ZOVC02|22850|schleswig-holstein|53.6825|9.9996||Norderstedt
+HAMN09|22850|schleswig-holstein|53.6828|9.9994||NORDERSTEDT NEW FROM 01 01 2027
+NUET01|90411|bayern|49.4935|11.079|flughafen|Nürnberg Flughafen
+NUES01|90461|bayern|49.4296|11.0822||Nürnberg Gartenstadt
+NUEW01|90431|bayern|49.4317|11.0297||Nürnberg Grossreuth
+NUEL01|90443|bayern|49.4467|11.0813||Nürnberg Hauptbahnhof
+ZOZC01|63069|hessen|50.085|8.7455||Offenbach am Main
+LHAN01|77652|baden-wuerttemberg|48.4825|7.9481||Offenburg
+OENC01|26122|niedersachsen|53.1439|8.2187||Oldenburg
+ZPDX01|26122|niedersachsen|53.1435|8.2203||OLDENBURG OLDENBURG RAILWAY DEL
+FMOE01|49084|niedersachsen|52.268|8.1003||Osnabrück
+PADC02|33102|nordrhein-westfalen|51.7266|8.7306||Paderborn
+ZPFC03|94032|bayern|48.5721|13.4312||Passau
+UPFC01|75179|baden-wuerttemberg|48.9043|8.6581||Pforzheim
+ZPIC02|66955|rheinland-pfalz|49.1891|7.6205||Pirmasens
+PLJC01|08527|sachsen|50.4902|12.1262||Plauen
+XXPC02|14467|brandenburg|52.3937|13.0599||Potsdam
+ZSKS11|17291|brandenburg|53.3305|13.8914||Prenzlau
+RMSC01|66877|rheinland-pfalz|49.4392|7.5547||Ramstein
+RTJC01|40878|nordrhein-westfalen|51.2979|6.8352||Ratingen
+ZPMC01|93053|bayern|49.0003|12.1241||Regensburg
+RULC01|72766|baden-wuerttemberg|48.5017|9.2165||Reutlingen
+RSQC01|83026|bayern|47.8478|12.1196||Rosenheim
+RSOC01|18057|mecklenburg-vorpommern|54.0923|12.1213||Rostock
+RLGT01|18299|mecklenburg-vorpommern|53.8881|12.2559|flughafen|Rostock Flughafen
+RLGP01|18119|mecklenburg-vorpommern|54.1749|12.0928||Rostock Kreuzfahrtterminal Warnemünde
+SCNT01|66131|saarland|49.2177|7.1086|flughafen|Saarbrücken Flughafen
+SCNC01|66121|saarland|49.2269|7.0216||Saarbrücken Stadt
+ZPUC02|38229|niedersachsen|52.1615|10.3538||Salzgitter
+ZPYC02|53757|nordrhein-westfalen|50.7884|7.1842||Sankt Augustin
+QULE01|73529|baden-wuerttemberg|48.7933|9.7746||Schwäbisch Gmünd
+ZPWC03|97424|bayern|50.0367|10.2104||Schweinfurt
+SGEC01|57072|nordrhein-westfalen|50.8808|8.0272||Siegen
+QKZN03|72488|baden-wuerttemberg|48.0884|9.2078||Sigmaringen
+SGYC01|78224|baden-wuerttemberg|47.7544|8.8551||Singen
+ZIOC01|42653|nordrhein-westfalen|51.1818|7.0808||Solingen
+ZOPN02|66606|saarland|49.4748|7.1771||St. Wendel
+STRT01|70629|baden-wuerttemberg|48.6916|9.1928|flughafen|Stuttgart Flughafen
+STRL01|70173|baden-wuerttemberg|48.7858|9.1815||Stuttgart Hauptbahnhof
+STRC03|70173|baden-wuerttemberg|48.7824|9.1783||Stuttgart Stadt
+STRW01|70563|baden-wuerttemberg|48.733|9.0877||Stuttgart Vaihingen
+STRN01|70435|baden-wuerttemberg|48.8246|9.1726||Stuttgart Zuffenhausen
+GWTT03|25980|schleswig-holstein|54.9153|8.327|flughafen|Sylt Flughafen
+GWTC03|25980|schleswig-holstein|54.9075|8.3113||Sylt Westerland 
+SPMS01|54295|rheinland-pfalz|49.7596|6.6576||Trier
+TFGC01|72070|baden-wuerttemberg|48.5234|9.03||Tübingen
+ZQAE01|88662|baden-wuerttemberg|47.7758|9.1884||Überlingen
+QULC01|89081|baden-wuerttemberg|48.4004|9.9561||Ulm
+MUCN05|85716|bayern|48.2819|11.5722||Unterschleissheim
+ZQLC01|78052|baden-wuerttemberg|48.0775|8.4936||Villingen-Schwenningen
+ZQPC02|46483|nordrhein-westfalen|51.6635|6.6102||Wesel
+GINW02|35576|hessen|50.5597|8.4848||Wetzlar
+UWEC01|65189|hessen|50.0679|8.2501||Wiesbaden
+WVNC03|26386|niedersachsen|53.5718|8.1168||Wilhelmshaven
+ZQUC02|38440|niedersachsen|52.432|10.7979||Wolfsburg Autostadt (Nur Rückgabe)
+ZQUC01|38446|niedersachsen|52.427|10.8015||Wolfsburg Stadt
+UWPC05|42285|nordrhein-westfalen|51.2771|7.1818||Wuppertal
+WUEC01|97076|bayern|49.794|9.9925||Würzburg 
+WUEL01|97070|bayern|49.8009|9.9371||Würzburg Hauptbahnhof
+ZWIC01|08056|sachsen|50.7083|12.5022||Zwickau

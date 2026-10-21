@@ -1893,15 +1893,28 @@ const BUNDESLAND_NAME = {
  * Zeilen ohne Preis und sahen aus wie ein Fehler des Programms.
  */
 function regStationen(land = state.region.land) {
-  return ALLE_STATIONEN.filter((s) => s.bl === land && !s.lkw).sort((a, b) =>
+  return regAlle().filter((s) => s.bl === land && !s.lkw).sort((a, b) =>
     a.name.localeCompare(b.name, 'de')
   );
+}
+
+/**
+ * Sixt und die übrigen angebundenen Anbieter, gemeinsam in einer Rangliste.
+ *
+ * Europcar rechnet in Euro. Steht oben eine Sixt-Seite in Franken oder
+ * Pfund, bliebe nur ein Vergleich über zwei Währungen, und den gibt es in
+ * diesem Programm bewusst nicht. Dann fragt die Suche nur Sixt.
+ */
+const EUROPCAR_STATIONEN = STATIONS.filter((s) => s.provider === 'europcar');
+function regAlle() {
+  const markt = providerById(PROVIDER).markets.find((m) => m.host === state.region.host);
+  return markt?.cur === 'EUR' ? ALLE_STATIONEN.concat(EUROPCAR_STATIONEN) : ALLE_STATIONEN;
 }
 
 /** Welche Bundesländer stecken überhaupt in den Daten, und mit wie vielen? */
 function regLaender() {
   const zaehler = new Map();
-  for (const s of ALLE_STATIONEN) if (s.bl && !s.lkw) zaehler.set(s.bl, (zaehler.get(s.bl) || 0) + 1);
+  for (const s of regAlle()) if (s.bl && !s.lkw) zaehler.set(s.bl, (zaehler.get(s.bl) || 0) + 1);
   return [...zaehler]
     .map(([id, n]) => ({ id, n, name: BUNDESLAND_NAME[id] || id }))
     .sort((a, b) => a.name.localeCompare(b.name, 'de'));
@@ -1932,10 +1945,13 @@ function regJobs() {
       pickupTime: r.zeit,
       returnTime: r.zeit,
     };
+    // Die Länderseite oben gilt nur für Sixt; jeder andere Anbieter hat genau eine.
+    const anbieter = providerById(station.provider);
+    const host = station.provider === PROVIDER ? r.host : anbieter.markets[0].host;
     return {
-      key: jobKey(r.host, station.code, v, null, false),
-      provider: PROVIDER,
-      host: r.host,
+      key: jobKey(host, station.code, v, null, false),
+      provider: station.provider,
+      host,
       stationCode: station.code,
       pickupDate: r.start,
       returnDate: bis,
@@ -1967,7 +1983,7 @@ function regPreis(job) {
   }
   if (klasse) {
     const t = angebote.find((o) => o.acriss === klasse);
-    if (t?.total != null) return { geladen: true, preis: t.total, modell: t.model, acriss: klasse };
+    if (t?.total != null) return { geladen: true, preis: t.total, modell: t.model, acriss: klasse, km: t.kmInklusive };
     return { geladen: true, preis: null, grund: 'Klasse hier nicht im Angebot' };
   }
   const passend = angebote.filter((o) => o.total != null && regPasst(o));
@@ -1978,7 +1994,7 @@ function regPreis(job) {
     .reduce((a, b) => (b.total < a.total ? b : a), { total: Infinity });
   return billigstes.total === Infinity
     ? { geladen: true, preis: null, grund: 'kein Betrag lesbar' }
-    : { geladen: true, preis: billigstes.total, modell: billigstes.model, acriss: billigstes.acriss };
+    : { geladen: true, preis: billigstes.total, modell: billigstes.model, acriss: billigstes.acriss, km: billigstes.kmInklusive };
 }
 
 /**
@@ -2043,7 +2059,8 @@ function renderRegionFormular() {
   const laender = regLaender();
 
   const landWahl = $('#regLand');
-  if (landWahl.options.length !== laender.length) {
+  // Neu bauen, wenn sich Anzahl ODER Zahlen ändern: mit der Währung fällt Europcar weg.
+  if ([...landWahl.options].map((o) => o.textContent).join() !== laender.map((l) => `${l.name} (${l.n})`).join()) {
     setChildren(landWahl, ...laender.map((l) => el('option', { value: l.id }, `${l.name} (${l.n})`)));
   }
   landWahl.value = r.land;
@@ -2073,13 +2090,19 @@ function renderRegionFormular() {
   if (document.activeElement !== $('#regFahrzeug')) $('#regFahrzeug').value = r.fahrzeug || '';
   $('#regZeit').value = r.zeit;
 
-  const n = regStationen().length;
+  const alle = regStationen();
+  const n = alle.length;
+  const nEc = alle.filter((s) => s.provider === 'europcar').length;
   $('#regLandHinweis').textContent = n
-    ? `${n} Stationen, alle werden abgefragt.`
+    ? `${n} Stationen, alle werden abgefragt` + (nEc ? `, davon ${nEc} von Europcar.` : '.')
     : 'Für dieses Bundesland liegen keine Ortsdaten vor.';
   $('#regKosten').textContent = n
-    ? `${n} Abrufe auf ${r.host}, rund ${Math.max(1, Math.round((n * 2.5) / 4 / 6) * 6)} Sekunden. ` +
-      'Nur diese eine Länderseite: die Frage lautet, welche Station günstig ist, nicht welches Land.'
+    ? `${n - nEc} Abrufe auf ${r.host}` + (nEc ? ` und ${nEc} bei Europcar` : '') +
+      `, rund ${Math.max(1, Math.round((n * 2.5) / 4 / 6) * 6)} Sekunden. ` +
+      'Die Länderseite gilt nur für Sixt.' +
+      (r.host && !nEc && providerById(PROVIDER).markets.find((m) => m.host === r.host)?.cur !== 'EUR'
+        ? ' Europcar fällt bei dieser Währung weg, verglichen wird nie über zwei Währungen.'
+        : '')
     : '';
 
   $('#regStarten').disabled = !n || regLaeuft;
@@ -2250,9 +2273,12 @@ function renderRegionErgebnis() {
     },
     el('span', { class: 'regrang' }, rang ? String(rang) : '–'),
     el('span', { class: 'regname' },
-      el('strong', {}, r.station.name),
+      el('strong', {},
+        el('span', { class: 'reganbieter', style: `--anb: ${providerById(r.station.provider).theme.accent}` },
+          providerById(r.station.provider).label),
+        r.station.name),
       el('span', {}, r.preis != null
-        ? `${r.modell || r.acriss || ''}${r.acriss ? ` · ${r.acriss}` : ''}`
+        ? `${r.modell || r.acriss || ''}${r.acriss ? ` · ${r.acriss}` : ''}${r.km ? ` · nur ${r.km.toLocaleString('de-DE')} km frei` : ''}`
         : (r.geladen ? r.grund || 'kein Preis' : 'wird abgefragt …'))),
     el('span', { class: 'regpreis' }, r.preis != null ? kalBetrag(r.preis, cur) : '–'));
   }));
@@ -3106,7 +3132,7 @@ function kalPreis(job) {
       .reduce((a, b) => (b.total < a.total ? b : a), { total: Infinity });
     return billigstes.total === Infinity
       ? { geladen: true, preis: null }
-      : { geladen: true, preis: billigstes.total, modell: billigstes.model, acriss: billigstes.acriss };
+      : { geladen: true, preis: billigstes.total, modell: billigstes.model, acriss: billigstes.acriss, km: billigstes.kmInklusive };
   }
 
   // Die Aufzeichnung kennt keine Uhrzeit: sie haelt Datum, Dauer und Klasse

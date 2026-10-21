@@ -130,6 +130,34 @@ for (const s of stations) {
   if (o.lkw) s.lkw = true;
 }
 
+/**
+ * Europcar: eine Datei mit allem, weil sie ganz aus einem Erntelauf stammt
+ * (tools/ernte-europcar.mjs) und nie von Hand ergaenzt wird.
+ */
+function parseEuropcar(file) {
+  let text;
+  try {
+    text = readFileSync(file, 'utf8');
+  } catch {
+    console.warn('  ! keine Europcar-Stationen gefunden, Europcar bleibt aus');
+    return [];
+  }
+  const out = [];
+  for (const line of text.split(/\r?\n/)) {
+    const s = line.trim();
+    if (!s || s.startsWith('#')) continue;
+    const [id, plz, land, lat, lon, art, ...name] = s.split('|');
+    out.push({
+      code: id, country: 'DE', iata: '', name: name.join('|'), provider: 'europcar',
+      ...(art === 'flughafen' ? { flughafen: true } : {}),
+      bl: land, plz, bg: Number(lat), lg: Number(lon),
+    });
+  }
+  return out;
+}
+const europcarStationen = parseEuropcar(src('data/stations.europcar.txt'));
+console.log(`  ${europcarStationen.length} Europcar-Stationen in Deutschland`);
+
 const flughaefen = stations.filter((s) => s.flughafen).length;
 console.log(
   `  ${stations.length} Sixt-Stationen (${flughaefen} Flughafen, ${stations.length - flughaefen} übrige)`
@@ -185,7 +213,7 @@ console.log(
 const stationsModule =
   '// Automatisch erzeugt von build.mjs aus src/data/*.txt, nicht direkt bearbeiten.\n' +
   'export const STATIONS = ' +
-  JSON.stringify(stations) +
+  JSON.stringify(stations.concat(europcarStationen)) +
   ';\n' +
   'export const UMRISS = ' +
   JSON.stringify(umriss) +

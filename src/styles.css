@@ -2417,3 +2417,5 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
 .regfzbild { display: flex; align-items: center; gap: 12px; margin-top: 10px; font-size: .75rem; color: var(--muted); }
 .regfzbild[hidden] { display: none; }
 .regfzbild img { width: 120px; height: 68px; object-fit: contain; }
+/* Anbieter vor dem Stationsnamen, in seiner Farbe. */
+.reganbieter { display: inline-block; margin-right: 7px; padding: 1px 6px; border-radius: 5px; font-size: .625rem; font-weight: 600; letter-spacing: .02em; color: var(--anb); background: color-mix(in srgb, var(--anb) 12%, transparent); vertical-align: 2px; }

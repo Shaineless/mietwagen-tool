@@ -186,13 +186,28 @@ const avis = planned(
     'das erwartete Datumsformat noch nicht.'
 );
 
-const europcar = planned(
-  'europcar',
-  'Europcar',
-  'https://www.europcar.de/',
-  'Suchmaske ist vollständig JS-gesteuert, kein GET-Formular. Das Link-Format ' +
-    'muss aus einer echten Suche abgeleitet werden.'
-);
+const europcar = {
+  id: 'europcar',
+  label: 'Europcar',
+  status: 'ready',
+  method: 'GET',
+  theme: THEMES.europcar,
+  // Nur die deutsche Seite: die Stationsliste ist deutsch, und verglichen
+  // wird anbieteruebergreifend, nicht ueber Europcars Laenderseiten.
+  markets: [{ code: 'de', host: 'www.europcar.de', label: 'Deutschland', cur: 'EUR' }],
+  homepage: 'https://www.europcar.de/',
+  capabilities: { station: true, date: true, time: true, oneWay: true, vehicleClass: false, prepaid: true },
+  notes: [
+    'Preise kommen als JSON von Europcars eigener Angebotsschnittstelle, abgefragt ' +
+      'aus einer geöffneten europcar.de-Seite. Geprüft an Köln Hbf, 11/2026.',
+    'Verglichen wird der günstigste Tarif, meist Vorauszahlung. Kilometer sind oft ' +
+      'begrenzt (Köln, 3 Tage: 1.200 km), das steht am Angebot dabei.',
+  ],
+  // Die Suchmaske laesst sich nicht vorbelegen; der Link fuehrt zur Startseite.
+  build() {
+    return { url: 'https://www.europcar.de/de-de' };
+  },
+};
 
 const hertz = planned('hertz', 'Hertz', 'https://www.hertz.de/', 'Noch nicht untersucht.');
 const enterprise = planned(
