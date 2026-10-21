@@ -2006,7 +2006,36 @@ function regPasst(o) {
   // Der Filter gilt nur im Reiter "Finde dein Auto".
   const such = state.mode === 'auto' ? (state.region.fahrzeug || '').trim().toLowerCase() : '';
   if (!such) return true;
-  return (o.acriss || '').toLowerCase() === such || (o.model || '').toLowerCase().includes(such);
+  const code = (o.acriss || '').toLowerCase();
+  // Großgeschrieben und höchstens vier Zeichen heißt Code: "CD" findet CDMR und CDAR.
+  const istCode = /^[A-Z]{1,4}$/.test(state.region.fahrzeug.trim());
+  return (istCode ? code.startsWith(such) : code === such) || (o.model || '').toLowerCase().includes(such);
+}
+
+/** Vorschläge fürs Fahrzeugfeld: jeder Code und jedes Modell, das gerade angeboten wird. */
+function renderRegionVorschlaege(d) {
+  const gesehen = new Map();
+  for (const j of d.jobs) {
+    for (const o of prices.get(j.key)?.offers || []) {
+      if (o.acriss && !gesehen.has(o.acriss)) gesehen.set(o.acriss, o.model || '');
+    }
+  }
+  // Bild zum Eingegebenen, damit man bei "CDMR" sieht, welches Auto das ist.
+  const treffer = state.region.fahrzeug.trim()
+    ? d.jobs.flatMap((j) => prices.get(j.key)?.offers || []).find((o) => o.image && regPasst(o))
+    : null;
+  const vorschau = $('#regFahrzeugBild');
+  vorschau.hidden = !treffer;
+  if (treffer) {
+    setChildren(vorschau,
+      el('img', { src: treffer.image, alt: treffer.model || treffer.acriss }),
+      el('span', {}, `${treffer.model || ''} · ${treffer.acriss} · oder ähnlich`));
+  }
+
+  const modelle = new Set([...gesehen.values()].filter(Boolean));
+  setChildren($('#regFahrzeugListe'),
+    ...[...gesehen].sort().map(([k, m]) => el('option', { value: k }, m ? `${k} · ${m}` : k)),
+    ...[...modelle].sort().map((m) => el('option', { value: m })));
 }
 
 function renderRegionFormular() {
@@ -2202,6 +2231,7 @@ function renderRegionErgebnis() {
   );
 
   renderRegionFzWahl(d, cur);
+  renderRegionVorschlaege(d);
 
   setChildren($('#regListe'), ...reihen.map((r, i) => {
     const frisch = r.preis != null && !regGezeigt.has(r.station.code);

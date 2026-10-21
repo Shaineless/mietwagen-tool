@@ -257,8 +257,10 @@
     <div class="kgrid">
       <div class="field nur-auto">
         <label class="flabel" for="regFahrzeug">Suchen Sie Ihr Fahrzeug</label>
-        <input type="search" id="regFahrzeug" placeholder="z. B. Golf, BMW 3er oder CDMR" autocomplete="off">
-        <p class="hint">Modell oder ACRISS-Code. Gezeigt wird je Station nur dieses Fahrzeug.</p>
+        <input type="search" id="regFahrzeug" list="regFahrzeugListe" placeholder="z. B. Golf, BMW 3er, CDMR oder CD" autocomplete="off">
+        <datalist id="regFahrzeugListe"></datalist>
+        <div class="regfzbild" id="regFahrzeugBild" hidden></div>
+        <p class="hint">Modell oder ACRISS-Code, auch angefangen: „CD“ findet CDMR und CDAR. Nach der ersten Suche schlägt das Feld vor, was angeboten wird.</p>
       </div>
       <div class="field">
         <label class="flabel" for="regLand">Bundesland</label>

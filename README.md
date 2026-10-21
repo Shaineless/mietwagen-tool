@@ -36,7 +36,7 @@ keine Anmeldung, keine Daten nach draußen.
 
 ## Was TRACKER beantwortet
 
-Fünf Fragen, die ein Vergleichsportal nicht beantwortet, jede mit einer
+Sechs Fragen, die ein Vergleichsportal nicht beantwortet, jede mit einer
 gemessenen Antwort aus diesem Programm:
 
 | Frage | Gemessen |
@@ -45,6 +45,7 @@ gemessenen Antwort aus diesem Programm:
 | **An welchem Tag ist es billiger?** | Frankfurt, gleiche Klasse, 3 Tage: **313,96 €** am 18.09. gegen **1.130,98 €** am 15.09. |
 | **Zu welcher Uhrzeit ist es billiger?** | Köln, gleicher Tag, gleiche Klasse: **67,97 €** um 12:30 gegen **106,99 €** um 13:30 |
 | **An welcher Station ist es billiger?** | Köln-Gremberghoven gegen Bonn Bad Godesberg, gleiche Reise: bei **37 von 37** Klassen günstiger, im Mittel **57,36 € (49,2 %)** |
+| **Wo im Bundesland gibt es mein Auto am günstigsten?** | VW Golf, NRW, 3 Tage, 64 Stationen: **148,98 €** in Siegburg/Bonn Hbf gegen **345,98 €** an der teuersten, **132 %** mehr |
 | **Ändert meine Herkunft den Preis?** | Französische und spanische Anschlüsse gegen den Abruf aus Deutschland: **34 von 34** Klassen identisch. **Nein.** |
 
 Alle Zahlen stammen aus echten Abrufen, nicht aus einem Beispiel. Die mittleren
@@ -459,6 +460,8 @@ Gigabyte abgerechnet, das ist Kostenkontrolle und nicht Statistik.
 
 ### 13 · Günstigste Station im Bundesland
 
+<img src="docs/bilder/12-Guenstigste-Station.png" alt="Günstigste Station: Rangliste und Karte für Nordrhein-Westfalen">
+
 Eigener Reiter: ein Bundesland, ein Termin, **alle PKW-Stationen** darin.
 Sixts eigene Regionsansicht kennt für Nordrhein-Westfalen 59 Standorte, es
 sind aber 67. Die Liste stammt deshalb aus eigenen Ortsdaten, nicht aus Sixts
@@ -471,14 +474,21 @@ Preisvergleich mit den Gewinnern.
 
 Derselbe Lauf, andere Frage: **wo im Bundesland gibt es genau mein Auto am
 günstigsten?** Ins Feld „Suchen Sie Ihr Fahrzeug" kommt ein Modell (`Golf`,
-`BMW 3er`) oder ein ACRISS-Code (`CDMR`). Rangliste und Karte zeigen je Station
-nur dieses Fahrzeug, Stationen ohne es stehen unten. Das Feld filtert schon
-beim Tippen und kostet keinen neuen Abruf, denn jede Station liefert ohnehin
-alle Klassen mit.
+`BMW 3er`) oder ein ACRISS-Code (`CDMR`), auch angefangen: `CD` findet CDMR und
+CDAR. Nach der ersten Suche schlägt das Feld jeden angebotenen Code mit Modell
+vor, und **unter dem Feld steht das Bild des Autos**, damit man bei einem Code
+weiß, was man vor sich hat. Rangliste und Karte zeigen je Station nur dieses
+Fahrzeug, Stationen ohne es stehen unten. Das Feld filtert schon beim Tippen
+und kostet keinen neuen Abruf, denn jede Station liefert ohnehin alle Klassen
+mit.
 
-Gemessen in Bremen, 3 Tage: ohne Filter liegt Vegesack vorn, mit einem Seat
-Ibiza. Wer einen Golf will, fährt in Bremerhaven am günstigsten, 179,96 €
-gegen 264,95 € am Flughafen.
+<img src="docs/bilder/13-Finde-dein-Auto.png" alt="Finde dein Auto: Suchfeld mit Golf und Fahrzeugbild">
+
+Gemessen in Nordrhein-Westfalen, 3 Tage, 64 Stationen: ohne Filter gewinnt
+Siegburg/Bonn Hbf mit einem Seat Ibiza für 131,98 €. Für einen Golf ist es
+dieselbe Station, 148,98 €, die teuerste verlangt 345,98 €. In Bremen dagegen
+dreht der Filter das Ergebnis: ohne ihn liegt Vegesack vorn, mit einem Ibiza;
+der günstigste Golf steht in Bremerhaven.
 
 ---
 
@@ -581,15 +591,17 @@ Oberfläche auch ohne Server direkt von der Festplatte.
 
 | Datei | Wofür |
 | --- | --- |
-| `index.html` | Grundgerüst aller Bildschirme: Start, Preisvergleich, Kalender, Preisentwicklung, Schutz, Verlauf, Systemstatus, Begrüßung |
+| `index.html` | Grundgerüst aller Bildschirme: Start, Preisvergleich, Kalender, Günstigste Station und Finde dein Auto, Preisentwicklung, Schutz, Verlauf, Systemstatus, Begrüßung |
 | `styles.css` | Die gesamte Darstellung. Ein heller, ruhiger Entwurf mit Farbtokens |
-| `app.js` | Das Herzstück: Zustand, Auftragsbau, Tabellen, Kalender, Preiswecker, Stationsvergleich, alle Bildschirme |
+| `app.js` | Das Herzstück: Zustand, Auftragsbau, Tabellen, Kalender, Preiswecker, Stationsvergleich, Bundeslandsuche mit Karte, alle Bildschirme |
 | `xlsx.js` | Schreibt Excel-Mappen. ZIP und XML von Hand, ohne Fremdbibliothek |
 | `providers.js` | Anbieter-Adapter: URL-Bau je Länderseite, Währung, Status (auch „gestört") |
 | `offer-classes.js` | ACRISS-Decoder, inklusive der drei Buchstaben, die Sixt zusätzlich verwendet |
 | `offer-parse.js` | Wertet die Angebotskacheln aus. Einzige Quelle, der Build verteilt sie an Erweiterung und Dienst |
 | `places.js` | Ortsebene, vorbereitet für den Vergleich mehrerer Anbieter |
 | `data/stations.sixt.txt` | Die Stationsliste als schlichte Textdatei, von Hand erweiterbar |
+| `data/stationen-ort.txt` | Ort jeder deutschen Station: Postleitzahl, Bundesland, Koordinate. Grundlage der Bundeslandsuche |
+| `data/umriss-deutschland.txt` | Umrisse der 16 Bundesländer und 20 Städte für die Karte, ohne Kartendienst |
 | `stations.js` | Vom Build erzeugt, nicht bearbeiten |
 | `bilder/` | Wortmarke und das Fahrzeugmotiv der Startseite |
 
