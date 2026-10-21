@@ -1,0 +1,126 @@
+# Avis-PKW-Stationen in Deutschland.
+# Format: id|plz|bundesland|breite|laenge|art|name
+# Geerntet: 2026-10-21 mit tools/ernte-avis.mjs
+# Bundesland aus Koordinate und Landesumriss. Datei wird im Ganzen ersetzt.
+U04|52070|nordrhein-westfalen|50.794722|6.11||Aachen
+EF9|86165|bayern|48.381667|10.943333||Augsburg
+B1K|55543|rheinland-pfalz|49.848611|7.893333||Bad Kreuznach
+BN6|76534|baden-wuerttemberg|48.749444|8.254722||Baden-Baden
+EI0|02625|sachsen|51.173611|14.429167||Bautzen Bahnhof
+EP0|02625|sachsen|51.173056|14.471389||Bautzen Ost
+EO4|02625|sachsen|51.181111|14.429167||Bautzen Wendischer Graben
+EI7|95448|bayern|49.931389|11.596389||Bayreuth
+KE5|59192|nordrhein-westfalen|51.616389|7.660556||Bergkamen
+E0L|10369|berlin|52.539167|13.470833||Berlin – Weißensee
+BB0|10787|berlin|52.505|13.338889||Berlin City West Europa-Center
+JF1|12681|berlin|52.534444|13.518889||Berlin Marzahn
+RJ5|10117|berlin|52.511111|13.390556||Berlin Mitte
+H9G|10557|berlin|52.529722|13.368611||Berlin nähe Hauptbahnhof
+SPAC1|13587|berlin|52.551389|13.209444||Berlin spandau
+GH7|12167|berlin|52.453333|13.330556||Berlin Steglitz
+E5H|33609|nordrhein-westfalen|52.035833|8.553333||Bielefeld
+BUM|44793|nordrhein-westfalen|51.480556|7.208611||Bochum
+BO8|53111|nordrhein-westfalen|50.741389|7.101111||Bonn Zentrum
+G5B|38112|niedersachsen|52.308889|10.508611||Braunschweig Rühme
+BEM|28211|bremen|53.051944|8.787778||Bremen Center
+BS2|76646|baden-wuerttemberg|49.127222|8.585833||Bruchsal
+EO8|03050|brandenburg|51.720556|14.346389||Cottbus
+DTU|44145|nordrhein-westfalen|51.538889|7.456389||Dortmund Fredenbaum
+RD7|01067|sachsen|51.058333|13.723333||Dresden Zentrum
+DSB|47057|nordrhein-westfalen|51.420833|6.784167||Duisburg
+DU1|40212|nordrhein-westfalen|51.222222|6.7825||Düsseldorf Zentrum
+X5N|16244|brandenburg|52.869167|13.775||Eberswalde
+EQ7|99099|thueringen|50.973333|11.053889||Erfurt
+EU9|91058|bayern|49.589167|11.0025||Erlangen
+ES8|45127|nordrhein-westfalen|51.456667|7.0175||Essen Zentrum
+I1S|73734|baden-wuerttemberg|48.736667|9.298056||Esslingen
+E4Y|24937|schleswig-holstein|54.779444|9.438056||Flensburg
+FKB|77836|baden-wuerttemberg|48.778889|8.089167|flughafen|Flughafen Baden-Baden Karlsruhe
+BER|12529|brandenburg|52.363889|13.508333|flughafen|Flughafen Berlin Brandenburg, Terminal 1 und 2
+BRE|28199|bremen|53.051944|8.786944|flughafen|Flughafen Bremen
+DTM|44319|nordrhein-westfalen|51.515|7.613611|flughafen|Flughafen Dortmund
+DUS|40474|nordrhein-westfalen|51.279722|6.768056|flughafen|Flughafen Düsseldorf
+FRA|60549|hessen|50.050556|8.570278|flughafen|Flughafen Frankfurt am Main Terminal 1
+FRAT3|60549|hessen|50.030833|8.590556|flughafen|Flughafen Frankfurt am Main Terminal 3
+HAM|22335|hamburg|53.631111|10.005833|flughafen|Flughafen Hamburg
+HAJ|30855|niedersachsen|52.459444|9.695833|flughafen|Flughafen Hannover-Langenhagen
+CGN|51147|nordrhein-westfalen|50.879167|7.121111|flughafen|Flughafen Köln/Bonn
+W8D|87766|bayern|47.990278|10.231944|flughafen|Flughafen Memmingen
+MUC|85356|bayern|48.353611|11.786111|flughafen|Flughafen München
+NUE|90411|bayern|49.494167|11.076111|flughafen|Flughafen Nürnberg
+STR|70629|baden-wuerttemberg|48.690278|9.193056|flughafen|Flughafen Stuttgart
+JH6|54634|rheinland-pfalz|49.942222|6.534444||Flugplatz Bitburg
+XB6|79111|baden-wuerttemberg|47.988611|7.800278||Freiburg
+V6L|61169|hessen|50.321667|8.741944||Friedberg
+X6I|35394|hessen|50.565|8.705||Giessen
+H1E|06112|sachsen-anhalt|51.478333|11.995278||Halle (Saale)
+UO6|22761|hamburg|53.565833|9.922222||Hamburg Altona
+HAZ|20148|hamburg|53.562778|9.99||Hamburg Dammtor Bahnhof
+E4V|22089|hamburg|53.573611|10.058611||Hamburg-Wandsbek
+HJI|30179|niedersachsen|52.420556|9.737778||Hannover Zentrum
+FJ3|21079|hamburg|53.465833|9.988611||Harburg, Hamburg
+HDB|69126|baden-wuerttemberg|49.365556|8.683056||Heidelberg Stadtzentrum
+F0O|89520|baden-wuerttemberg|48.716944|10.155833||Heidenheim
+F0Y|74076|baden-wuerttemberg|49.158889|9.215833||Heilbronn
+WZ1|66424|saarland|49.290833|7.318889||Homburg
+YO3|02977|sachsen|51.446389|14.241389||Hoyerswerda
+IG1|85055|bayern|48.776111|11.459722||Ingolstadt
+F5O|07745|thueringen|50.913889|11.575556||Jena Lichtenhain
+R2R|67663|rheinland-pfalz|49.438611|7.7125||Kaiserslautern
+EO0|01917|sachsen|51.274722|14.105833||Kamenz
+KRH|76131|baden-wuerttemberg|49.004722|8.416389||Karlsruhe Zentrum
+ZS6|34123|hessen|51.310833|9.514444||Kassel
+F6D|87437|bayern|47.753611|10.323056||Kempten
+SD7|24103|schleswig-holstein|54.321667|10.140556||Kiel
+PM3|56070|rheinland-pfalz|50.377778|7.585278||Koblenz
+XB1|83059|bayern|47.849444|12.079722||Kolbermoor
+CG3|50829|nordrhein-westfalen|50.9825|6.886667||Köln Ossendorf
+Z99|51105|nordrhein-westfalen|50.923056|6.997222||Köln Poll
+LD9|76829|rheinland-pfalz|49.203333|8.115556||Landau
+SU6|84034|bayern|48.540278|12.141389||Landshut
+ZD5|04103|sachsen|51.344444|12.392778||Leipzig Zentrum
+UE6|59557|nordrhein-westfalen|51.663333|8.341389||Lippstadt
+L3H|79539|baden-wuerttemberg|47.619167|7.653056||Lörrach
+LDW|71636|baden-wuerttemberg|48.8875|9.152778||Ludwigsburg
+NG1|39104|sachsen-anhalt|52.128889|11.628056||Magdeburg Zentrum
+MHM|68309|baden-wuerttemberg|49.508611|8.501389||Mannheim
+UY1|35041|hessen|50.837778|8.771944||Marburg
+C90|87766|bayern|47.990278|10.231944||Memmingen
+H8E|32427|nordrhein-westfalen|52.278889|8.903056||Minden
+K9W|45478|nordrhein-westfalen|51.440278|6.831667||Mülheim
+MC6|81925|bayern|48.147778|11.625278||München Bogenhausen
+YW0|80469|bayern|48.134444|11.578056||München City
+GM0|81249|bayern|48.139167|11.412222||München Freiham
+MK8|80335|bayern|48.142778|11.556667||München Hauptbahnhof
+MC4|80995|bayern|48.187778|11.533333||München Milbertshofen
+MC3|81671|bayern|48.125556|11.605556||München Ostbahnhof
+E0Y|81379|bayern|48.094444|11.508889||München Süd
+M05|48163|nordrhein-westfalen|51.938056|7.604722||Münster West
+FI0|89231|bayern|48.388056|10.016389||Neu-Ulm
+U7N|22848|schleswig-holstein|53.681389|9.988889||Norderstedt Hamburg
+NU1|90431|bayern|49.434722|11.0375||Nürnberg West
+EM9|77652|baden-wuerttemberg|48.481944|7.946667||Offenburg
+OG2|49074|niedersachsen|52.268611|8.048889||Osnabrück
+P4G|94034|bayern|48.586667|13.400833||Passau
+PZM|75172|baden-wuerttemberg|48.891944|8.684722||Pforzheim
+P3D|14482|brandenburg|52.375|13.128333||Potsdam
+OF5|17291|brandenburg|53.308611|13.838889||Prenzlau
+R9G|93059|bayern|49.029722|12.126111||Regensburg
+I1Y|72766|baden-wuerttemberg|48.505|9.221944||Reutlingen
+R9L|65428|hessen|49.993056|8.386944||Rüsselsheim
+WIE|66121|saarland|49.229722|7.006944||Saarbrücken Stadtzentrum
+FJ4|97424|bayern|50.036667|10.209722||Schweinfurt
+OE2|18437|mecklenburg-vorpommern|54.298056|13.06||Stralsund
+I1Z|70567|baden-wuerttemberg|48.711944|9.166389||Stuttgart Möhringen
+SG3|70182|baden-wuerttemberg|48.773056|9.186111||Stuttgart Zentrum
+TGE|54292|rheinland-pfalz|49.768333|6.658889||Trier
+YR3|85716|bayern|48.284444|11.568889||Unterschleißheim
+FJ1|78056|baden-wuerttemberg|48.063889|8.545556||Villingen-Schwenningen
+Y5T|22880|schleswig-holstein|53.583056|9.732778||Wedel Hamburg
+FO7|99423|thueringen|50.981111|11.3125||Weimar
+BT4|65201|hessen|50.043611|8.205833||Wiesbaden Schierstein
+G8E|38446|niedersachsen|52.426944|10.808333||Wolfsburg Zentrum
+WPP|42285|nordrhein-westfalen|51.269722|7.156111||Wuppertal
+FQ0|97076|bayern|49.800278|9.996389||Würzburg
+ZO1|15806|brandenburg|52.252778|13.448611||Zossen
+FV7|08056|sachsen|50.710556|12.474167||Zwickau
