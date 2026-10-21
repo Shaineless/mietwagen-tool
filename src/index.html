@@ -31,6 +31,8 @@
       <button type="button" class="nav-link back" data-nav="start" aria-current="page">Übersicht</button>
       <button type="button" class="nav-link" data-mode="markets" data-nav="work">Preisvergleich</button>
       <button type="button" class="nav-link" data-mode="kalender" data-nav="kalender">Kalender</button>
+      <button type="button" class="nav-link" data-mode="region" data-nav="region">Günstigste Station</button>
+      <button type="button" class="nav-link" data-mode="auto" data-nav="auto">Finde dein Auto</button>
       <button type="button" class="nav-link" data-mode="kurve" data-nav="kurve">Preisentwicklung</button>
     <button type="button" class="nav-link" data-mode="status" data-nav="status">Einstellungen</button>
     </nav>
@@ -240,6 +242,75 @@
 </section>
 
 <!-- ===================================================== Monatsübersicht -->
+<section id="regionScreen" class="screen" hidden>
+  <div class="bar calendar-page-heading">
+    <div>
+      <p class="eyebrow" id="regEyebrow">GÜNSTIGSTE STATION</p>
+      <h1 id="regH1">Ein Bundesland. Alle Stationen.</h1>
+      <p id="regUnter">Sixt zeigt dir je Region nur einen Teil seiner Stationen. Hier sind alle.</p>
+    </div>
+    <button type="button" class="back">← Übersicht</button>
+  </div>
+
+  <section class="card" aria-labelledby="regTitel">
+    <h2 id="regTitel">Deine Suche</h2>
+    <div class="kgrid">
+      <div class="field nur-auto">
+        <label class="flabel" for="regFahrzeug">Suchen Sie Ihr Fahrzeug</label>
+        <input type="search" id="regFahrzeug" placeholder="z. B. Golf, BMW 3er oder CDMR" autocomplete="off">
+        <p class="hint">Modell oder ACRISS-Code. Gezeigt wird je Station nur dieses Fahrzeug.</p>
+      </div>
+      <div class="field">
+        <label class="flabel" for="regLand">Bundesland</label>
+        <select id="regLand"></select>
+        <p class="hint" id="regLandHinweis"></p>
+      </div>
+      <div class="field">
+        <label class="flabel" for="regHost">Länderseite</label>
+        <select id="regHost"></select>
+      </div>
+      <div class="field">
+        <label class="flabel" for="regStart">Abholung</label>
+        <input type="date" id="regStart">
+      </div>
+      <div class="field">
+        <label class="flabel" for="regDauer">Mietdauer</label>
+        <select id="regDauer"></select>
+      </div>
+      <div class="field">
+        <label class="flabel" for="regZeit">Uhrzeit</label>
+        <input type="time" id="regZeit" step="1800">
+      </div>
+    </div>
+
+    <p class="fhinweis" id="regKosten"></p>
+    <div class="frow" style="margin-top:14px">
+      <button type="button" class="btn" id="regStarten">Stationen durchsuchen</button>
+      <button type="button" class="btn ghost" id="regAbbrechen" hidden>Abbrechen</button>
+    </div>
+
+    <div class="fortschritt" id="regFortschritt" hidden>
+      <div class="fbalken"><div class="ffuellung" id="regFuellung"></div></div>
+      <p class="ftext" id="regText"></p>
+      <div id="regLageBox"></div>
+    </div>
+  </section>
+
+  <section class="card" id="regErgebnis" hidden aria-labelledby="regErgTitel">
+    <h2 id="regErgTitel">Ergebnis</h2>
+    <div class="calendar-insights" id="regKennzahlen"></div>
+    <div class="region-fzwahl" id="regFzWahl" hidden></div>
+    <div class="region-layout">
+      <div class="region-liste" id="regListe"></div>
+      <div class="region-karte">
+        <div id="regKarte"></div>
+        <div class="region-fahrzeuge" id="regFahrzeuge" hidden></div>
+      </div>
+    </div>
+    <p class="tabnote" id="regBilanz"></p>
+  </section>
+</section>
+
 <section id="kalenderScreen" class="screen" hidden>
   <div class="bar calendar-page-heading">
     <div><p class="eyebrow">DEIN PREISKALENDER</p><h1>Gutes Timing. Besserer Preis.</h1><p>Entdecke den passenden Abholtag für deinen Mietwagen.</p></div>

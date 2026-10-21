@@ -457,6 +457,29 @@ Gigabyte abgerechnet, das ist Kostenkontrolle und nicht Statistik.
   Länderseite samt Verbrauch, Selbsttest, die Zahlen dieses Rechners und der
   Schalter für die Begrüßung.
 
+### 13 · Günstigste Station im Bundesland
+
+Eigener Reiter: ein Bundesland, ein Termin, **alle PKW-Stationen** darin.
+Sixts eigene Regionsansicht kennt für Nordrhein-Westfalen 59 Standorte, es
+sind aber 67. Die Liste stammt deshalb aus eigenen Ortsdaten, nicht aus Sixts
+Suchmaske. Ergebnis als Rangliste und als Karte, die vom ganzen Land in das
+Bundesland hineinfährt. Gefragt wird bewusst nur **eine** Länderseite, ein
+Abruf je Station. Welche Länderseite danach am günstigsten ist, klärt der
+Preisvergleich mit den Gewinnern.
+
+### 14 · Finde dein Auto
+
+Derselbe Lauf, andere Frage: **wo im Bundesland gibt es genau mein Auto am
+günstigsten?** Ins Feld „Suchen Sie Ihr Fahrzeug" kommt ein Modell (`Golf`,
+`BMW 3er`) oder ein ACRISS-Code (`CDMR`). Rangliste und Karte zeigen je Station
+nur dieses Fahrzeug, Stationen ohne es stehen unten. Das Feld filtert schon
+beim Tippen und kostet keinen neuen Abruf, denn jede Station liefert ohnehin
+alle Klassen mit.
+
+Gemessen in Bremen, 3 Tage: ohne Filter liegt Vegesack vorn, mit einem Seat
+Ibiza. Wer einen Golf will, fährt in Bremerhaven am günstigsten, 179,96 €
+gegen 264,95 € am Flughafen.
+
 ---
 
 ## Was es nicht kann

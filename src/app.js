@@ -1,5 +1,5 @@
 import { PROVIDERS, providerById } from './providers.js';
-import { STATIONS } from './stations.js';
+import { STATIONS, UMRISS } from './stations.js';
 import { classify, classOrder, decodeAcriss } from './offer-classes.js';
 
 /* =========================================================== Zustand */
@@ -59,6 +59,17 @@ const defaults = () => {
       /** Stationen für den Mehrstationslauf, eigener Bereich, eigene Liste. */
       stationen: [],
     },
+    /** Die Suche „günstigste Station in einem Bundesland". */
+    region: {
+      land: 'nordrhein-westfalen',
+      host: 'www.sixt.de',
+      start: iso(new Date(Date.now() + 14 * 86400000)),
+      dauer: 3,
+      zeit: '10:00',
+      klasse: '',
+      /** Freitext: Modell ("Golf") oder ACRISS-Code ("CDMR"). */
+      fahrzeug: '',
+    },
   };
 };
 
@@ -88,7 +99,12 @@ function load() {
     // wuerde einen alten kalender-Block ohne neue Felder uebernehmen und
     // damit undefined-Werte einschleppen.
     const grund = defaults();
-    const merged = { ...grund, ...saved, kalender: { ...grund.kalender, ...(saved.kalender || {}) } };
+    const merged = {
+      ...grund,
+      ...saved,
+      kalender: { ...grund.kalender, ...(saved.kalender || {}) },
+      region: { ...grund.region, ...(saved.region || {}) },
+    };
     // Eine Länderseite, die inzwischen als gestört gilt, kann noch im
     // gespeicherten Zustand stehen, sonst liefe jeder Abruf sehenden Auges
     // in einen Fehlschlag.
@@ -198,6 +214,10 @@ async function pollErgebnisse() {
 
   const offen = [
     ...[...aktuelleJobs(), ...schutzJobs()].map((j) => j.key),
+    // Die Bundeslandsuche steht in keiner der beiden Listen. Ohne sie hier
+    // waeren ihre Ergebnisse nach einem Neuladen weg: der Dienst haette sie
+    // noch, die Oberflaeche fragte nur nie danach.
+    ...(state.mode === 'region' || state.mode === 'auto' ? (regJobs()?.jobs || []).map((j) => j.key) : []),
     ...extraSchluessel,
   ].filter((k) => k && !prices.has(k) && !schutz.has(k));
 
@@ -229,7 +249,12 @@ async function pollErgebnisse() {
         // Frueher wurde bei jedem Takt die ganze Tabelle verworfen und neu
         // gebaut, 52 Zeilen, alle 2,5 Sekunden. Das sah man als Flackern,
         // Scrollposition und Hover gingen dabei jedes Mal verloren.
-        if (schutzAcriss) renderSchutz();
+        // Die Bundeslandsuche zeichnet waehrend eines Laufs selbst mit. Hier
+        // geht es um den anderen Fall: Programm neu geladen, die Messungen
+        // liegen beim Dienst noch, und ohne diese Zeile blieben sie
+        // unsichtbar, obwohl sie laengst da sind.
+        if (state.mode === 'region' || state.mode === 'auto') { if (!regLaeuft) { pruefeRegionKlasse(); renderRegionErgebnis(); } }
+        else if (schutzAcriss) renderSchutz();
         else renderResults();
       }
     } catch {
@@ -663,6 +688,7 @@ function showScreen(name) {
   $('#verlaufScreen').hidden = name !== 'verlauf';
   $('#kurveScreen').hidden = name !== 'kurve';
   $('#kalenderScreen').hidden = name !== 'kalender';
+  $('#regionScreen').hidden = name !== 'region';
   $('#willkommen').hidden = name !== 'willkommen';
   document.body.dataset.screen = name;
   // Der Takt läuft nur, wo die Liste auch zu sehen ist.
@@ -1813,6 +1839,796 @@ function zaehleHoch(feld, { jetzt, form, schluessel }) {
     else feld.textContent = form(jetzt);
   };
   requestAnimationFrame(schritt);
+}
+
+/* ======================================================= Günstigste Station
+ *
+ * Eine Frage, die Sixt selbst nur halb beantwortet: Wo im Bundesland ist es
+ * am billigsten? Sixts Regionsansicht kennt fuer Nordrhein-Westfalen 59
+ * Standorte, sein Verzeichnis 62; tatsaechlich sind es 67. Siegburg fehlt in
+ * beiden. Deshalb kommt die Stationsliste hier aus den eigenen Daten
+ * (src/data/stationen-ort.txt, geerntet ueber Sixts Sitemap) und nicht aus
+ * dem, was die Suchmaske gerade anzeigt.
+ */
+
+let regLaeuft = false;
+let regAbbruch = false;
+/** Stationscode, auf den die Karte gerade gezoomt ist. */
+let regGezoomt = null;
+/**
+ * Welchen Ausschnitt die Karte zeigt: 'land' oder 'bundesland'.
+ *
+ * Beginnt bei Deutschland. Erst wenn ein Lauf startet, faehrt sie in das
+ * Bundesland hinein, und man sieht dabei, wo es liegt. Faengt sie schon
+ * hineingezoomt an, fehlt genau diese Einordnung.
+ */
+let regKartenSicht = 'land';
+/** Stationen, deren Preis schon einmal auf dem Schirm stand. Wie kalGezeigt. */
+let regGezeigt = new Set();
+
+const BUNDESLAND_NAME = {
+  'baden-wuerttemberg': 'Baden-Württemberg',
+  bayern: 'Bayern',
+  berlin: 'Berlin',
+  brandenburg: 'Brandenburg',
+  bremen: 'Bremen',
+  hamburg: 'Hamburg',
+  hessen: 'Hessen',
+  'mecklenburg-vorpommern': 'Mecklenburg-Vorpommern',
+  niedersachsen: 'Niedersachsen',
+  'nordrhein-westfalen': 'Nordrhein-Westfalen',
+  'rheinland-pfalz': 'Rheinland-Pfalz',
+  saarland: 'Saarland',
+  sachsen: 'Sachsen',
+  'sachsen-anhalt': 'Sachsen-Anhalt',
+  'schleswig-holstein': 'Schleswig-Holstein',
+  thueringen: 'Thüringen',
+};
+
+/**
+ * Alle PKW-Stationen eines Bundeslandes, nach Namen sortiert.
+ *
+ * Ohne Nutzfahrzeugstationen: "Köln Truck Center" und die vierzehn anderen
+ * vermieten Lastwagen und Transporter. In der Rangliste standen sie als
+ * Zeilen ohne Preis und sahen aus wie ein Fehler des Programms.
+ */
+function regStationen(land = state.region.land) {
+  return ALLE_STATIONEN.filter((s) => s.bl === land && !s.lkw).sort((a, b) =>
+    a.name.localeCompare(b.name, 'de')
+  );
+}
+
+/** Welche Bundesländer stecken überhaupt in den Daten, und mit wie vielen? */
+function regLaender() {
+  const zaehler = new Map();
+  for (const s of ALLE_STATIONEN) if (s.bl && !s.lkw) zaehler.set(s.bl, (zaehler.get(s.bl) || 0) + 1);
+  return [...zaehler]
+    .map(([id, n]) => ({ id, n, name: BUNDESLAND_NAME[id] || id }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'de'));
+}
+
+/**
+ * Ein Auftrag je Station, eine Länderseite, ein Termin.
+ *
+ * Bewusst nur EINE Länderseite: die Frage lautet "welche Station", nicht
+ * "welche Landesseite". 67 Stationen mal 29 Seiten waeren 1943 Abrufe fuer
+ * eine Frage, die 67 beantworten. Welche Seite am guenstigsten ist, klaert
+ * danach der Preisvergleich, mit den drei bis fuenf Gewinnern.
+ */
+function regJobs() {
+  const r = state.region;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(r.start)) return null;
+  const markt = providerById(PROVIDER).markets.find((m) => m.host === r.host);
+  if (!markt) return null;
+  const stationen = regStationen();
+  if (!stationen.length) return null;
+
+  const bis = addDays(r.start, r.dauer);
+  const jobs = stationen.map((station) => {
+    const v = {
+      pickupDate: r.start,
+      returnDate: bis,
+      duration: r.dauer,
+      pickupTime: r.zeit,
+      returnTime: r.zeit,
+    };
+    return {
+      key: jobKey(r.host, station.code, v, null, false),
+      provider: PROVIDER,
+      host: r.host,
+      stationCode: station.code,
+      pickupDate: r.start,
+      returnDate: bis,
+      pickupTime: r.zeit,
+      returnTime: r.zeit,
+      currency: markt.cur,
+      station,
+    };
+  });
+  return { jobs, stationen, markt, bis };
+}
+
+/**
+ * Preis einer Station: die gewählte Klasse, sonst die günstigste.
+ *
+ * Aufgebaut wie kalPreis, damit es nur eine Denkweise gibt. Der Unterschied
+ * ist die fehlende Aufzeichnung: der Kalender darf auf gespeicherte Messungen
+ * zurueckgreifen, weil er denselben Tag oft schon einmal gesehen hat. Hier
+ * geht es um 67 Stationen an EINEM Tag, da gibt es nichts Gespeichertes.
+ */
+function regPreis(job) {
+  const klasse = state.region.klasse;
+  const r = prices.get(job.key);
+  if (!r) return { geladen: false, preis: null, grund: null };
+
+  const angebote = r.offers || [];
+  if (!angebote.length) {
+    return { geladen: true, preis: null, grund: r.error || r.note || 'kein Angebot' };
+  }
+  if (klasse) {
+    const t = angebote.find((o) => o.acriss === klasse);
+    if (t?.total != null) return { geladen: true, preis: t.total, modell: t.model, acriss: klasse };
+    return { geladen: true, preis: null, grund: 'Klasse hier nicht im Angebot' };
+  }
+  const passend = angebote.filter((o) => o.total != null && regPasst(o));
+  if (!passend.length && state.mode === 'auto' && (state.region.fahrzeug || '').trim()) {
+    return { geladen: true, preis: null, grund: 'Fahrzeug hier nicht im Angebot' };
+  }
+  const billigstes = passend
+    .reduce((a, b) => (b.total < a.total ? b : a), { total: Infinity });
+  return billigstes.total === Infinity
+    ? { geladen: true, preis: null, grund: 'kein Betrag lesbar' }
+    : { geladen: true, preis: billigstes.total, modell: billigstes.model, acriss: billigstes.acriss };
+}
+
+/**
+ * Zwei Reiter, ein Bildschirm: "Günstigste Station" und "Finde dein Auto"
+ * fragen dieselben Stationen ab. Der zweite stellt nur das Fahrzeug nach vorn.
+ */
+function oeffneRegion() {
+  const auto = state.mode === 'auto';
+  showScreen('region');
+  $('#regionScreen').dataset.art = auto ? 'auto' : 'station';
+  $('#regEyebrow').textContent = auto ? 'FINDE DEIN AUTO' : 'GÜNSTIGSTE STATION';
+  $('#regH1').textContent = auto ? 'Ein Auto. Alle Stationen.' : 'Ein Bundesland. Alle Stationen.';
+  $('#regUnter').textContent = auto
+    ? 'Gib dein Wunschauto ein. Gesucht wird an jeder Station im Bundesland, nur nach diesem Fahrzeug.'
+    : 'Sixt zeigt dir je Region nur einen Teil seiner Stationen. Hier sind alle.';
+  // showScreen markiert nach Bildschirm; beide Reiter teilen sich aber einen.
+  document.querySelectorAll('[data-nav="region"], [data-nav="auto"]').forEach((b) =>
+    b.dataset.nav === (auto ? 'auto' : 'region') ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
+  renderRegionFormular();
+  renderRegionErgebnis();
+}
+
+/** Passt ein Angebot zum eingegebenen Fahrzeug? Leer heisst: jedes. */
+function regPasst(o) {
+  // Der Filter gilt nur im Reiter "Finde dein Auto".
+  const such = state.mode === 'auto' ? (state.region.fahrzeug || '').trim().toLowerCase() : '';
+  if (!such) return true;
+  return (o.acriss || '').toLowerCase() === such || (o.model || '').toLowerCase().includes(such);
+}
+
+function renderRegionFormular() {
+  const r = state.region;
+  const laender = regLaender();
+
+  const landWahl = $('#regLand');
+  if (landWahl.options.length !== laender.length) {
+    setChildren(landWahl, ...laender.map((l) => el('option', { value: l.id }, `${l.name} (${l.n})`)));
+  }
+  landWahl.value = r.land;
+
+  const hostWahl = $('#regHost');
+  if (!hostWahl.options.length) {
+    setChildren(
+      hostWahl,
+      ...providerById(PROVIDER)
+        .markets.filter((m) => !m.gestoert)
+        .map((m) => el('option', { value: m.host }, `${m.label} (${m.cur})`))
+    );
+  }
+  hostWahl.value = r.host;
+
+  const dauerWahl = $('#regDauer');
+  if (!dauerWahl.options.length) {
+    setChildren(
+      dauerWahl,
+      ...[1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 28].map((n) =>
+        el('option', { value: String(n) }, `${n} ${n === 1 ? 'Tag' : 'Tage'}`)
+      )
+    );
+  }
+  dauerWahl.value = String(r.dauer);
+  $('#regStart').value = r.start;
+  if (document.activeElement !== $('#regFahrzeug')) $('#regFahrzeug').value = r.fahrzeug || '';
+  $('#regZeit').value = r.zeit;
+
+  const n = regStationen().length;
+  $('#regLandHinweis').textContent = n
+    ? `${n} Stationen, alle werden abgefragt.`
+    : 'Für dieses Bundesland liegen keine Ortsdaten vor.';
+  $('#regKosten').textContent = n
+    ? `${n} Abrufe auf ${r.host}, rund ${Math.max(1, Math.round((n * 2.5) / 4 / 6) * 6)} Sekunden. ` +
+      'Nur diese eine Länderseite: die Frage lautet, welche Station günstig ist, nicht welches Land.'
+    : '';
+
+  $('#regStarten').disabled = !n || regLaeuft;
+  $('#regStarten').textContent = regLaeuft ? 'Stationen werden abgefragt …' : 'Stationen durchsuchen';
+  $('#regAbbrechen').hidden = !regLaeuft;
+}
+
+/**
+ * Steht die gewählte Klasse im neuen Ergebnis überhaupt noch?
+ *
+ * Wer in Bremen einen Golf gewaehlt hat und dann auf Thueringen umschaltet,
+ * bekaeme sonst eine leere Tafel und keinen Hinweis, warum. Dann lieber
+ * ehrlich zurueck auf "guenstigste je Station".
+ */
+function pruefeRegionKlasse() {
+  if (!state.region.klasse) return;
+  const d = regJobs();
+  if (!d) return;
+  for (const j of d.jobs) {
+    for (const o of prices.get(j.key)?.offers || []) {
+      if (o.acriss === state.region.klasse) return;
+    }
+  }
+  state.region.klasse = '';
+}
+
+async function starteRegion() {
+  const d = regJobs();
+  if (!d || regLaeuft) return;
+
+  regLaeuft = true;
+  regAbbruch = false;
+  regGezeigt = new Set();
+  regGezoomt = null;
+  for (const j of d.jobs) extraSchluessel.add(j.key);
+  renderRegionFormular();
+
+  // Erst Deutschland zeigen, dann hineinfahren. Eine Bildfolge, damit der
+  // Uebergang wirklich laeuft: setzt man beides im selben Zug, sieht der
+  // Browser nur den Endzustand und es gibt keine Bewegung.
+  regKartenSicht = 'land';
+  renderRegionErgebnis();
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      if (!regGezoomt) {
+        regKartenSicht = 'bundesland';
+        renderRegionErgebnis();
+      }
+    }, 420);
+  });
+
+  try {
+    const offen = d.jobs.filter((j) => !prices.has(j.key));
+    if (!offen.length) {
+      flash('Für diese Suche liegen schon alle Preise vor.');
+      renderRegionErgebnis();
+      return;
+    }
+
+    await sendeJobs(
+      offen.map((j) => ({
+        key: j.key,
+        provider: j.provider,
+        host: j.host,
+        stationCode: j.stationCode,
+        pickupDate: j.pickupDate,
+        returnDate: j.returnDate,
+        pickupTime: j.pickupTime,
+        returnTime: j.returnTime,
+        currency: j.currency,
+      })),
+      $('#regStarten')
+    );
+
+    // Mitzeichnen statt am Ende alles auf einmal: bei 67 Stationen dauert der
+    // Lauf Minuten, und die ersten Treffer sind sofort brauchbar.
+    for (let i = 0; i < 500; i++) {
+      await new Promise((r) => setTimeout(r, 2500));
+      if (regAbbruch) break;
+      await pollErgebnisse();
+      renderRegionFortschritt(d.jobs);
+      renderRegionErgebnis();
+      const q = service.queue;
+      if (q && !q.laufend && !q.offen) break;
+    }
+  } finally {
+    regLaeuft = false;
+    $('#regFortschritt').hidden = true;
+    pruefeRegionKlasse();
+    renderRegionFormular();
+    renderRegionErgebnis();
+  }
+}
+
+function renderRegionFortschritt(jobs) {
+  const mitPreis = jobs.filter((j) => regPreis(j).preis != null).length;
+  const geladen = jobs.filter((j) => prices.has(j.key)).length;
+  $('#regFortschritt').hidden = !regLaeuft;
+  $('#regFuellung').style.transform = `scaleX(${jobs.length ? geladen / jobs.length : 0})`;
+  $('#regText').textContent =
+    `${geladen} von ${jobs.length} Stationen abgefragt` +
+    (mitPreis < geladen ? ` · ${mitPreis} mit Preis` : '');
+  renderLage(regLaeuft);
+}
+
+function renderRegionErgebnis() {
+  const d = regJobs();
+  if (!d) return;
+  const reihen = d.jobs
+    .map((j) => ({ job: j, station: j.station, ...regPreis(j) }))
+    .sort((a, b) => {
+      if (a.preis == null && b.preis == null) return a.station.name.localeCompare(b.station.name, 'de');
+      if (a.preis == null) return 1;
+      if (b.preis == null) return -1;
+      return a.preis - b.preis;
+    });
+
+  const mitPreis = reihen.filter((r) => r.preis != null);
+  // Sichtbar, sobald ein Bundesland gewaehlt ist, nicht erst nach der Suche.
+  // Man soll vorher sehen, WELCHE Stationen abgefragt werden und wo sie
+  // liegen; ein Lauf ueber vierundsechzig Stationen dauert fuenf Minuten, und
+  // die faengt niemand gern blind an.
+  $('#regErgebnis').hidden = !reihen.length;
+  if (!reihen.length) return;
+
+  const cur = d.markt.cur;
+  const guenstigste = mitPreis[0];
+  const teuerste = mitPreis[mitPreis.length - 1];
+
+  setChildren(
+    $('#regKennzahlen'),
+    el('div', { class: 'calendar-insight' },
+      el('span', { class: 'calendar-insight-label' }, 'Günstigste Station'),
+      el('strong', { class: 'calendar-insight-value' }, guenstigste ? kalBetrag(guenstigste.preis, cur) : '–'),
+      el('span', { class: 'calendar-insight-note' }, guenstigste ? guenstigste.station.name : 'Noch kein Preis')),
+    el('div', { class: 'calendar-insight' },
+      el('span', { class: 'calendar-insight-label' }, 'Unterschied'),
+      el('strong', { class: 'calendar-insight-value' },
+        mitPreis.length > 1 ? kalBetrag(teuerste.preis - guenstigste.preis, cur) : '–'),
+      el('span', { class: 'calendar-insight-note' },
+        mitPreis.length > 1
+          ? `Zwischen günstigster und teuerster Station, ${Math.round(((teuerste.preis / guenstigste.preis) - 1) * 100)} % mehr`
+          : 'Sobald zwei Stationen einen Preis haben')),
+    el('div', { class: 'calendar-insight' },
+      el('span', { class: 'calendar-insight-label' }, 'Stationen mit Preis'),
+      el('strong', { class: 'calendar-insight-value' }, `${mitPreis.length} / ${reihen.length}`),
+      el('span', { class: 'calendar-insight-note' },
+        `${BUNDESLAND_NAME[state.region.land]} · ${state.region.dauer} ${state.region.dauer === 1 ? 'Tag' : 'Tage'} · ${cur}`))
+  );
+
+  renderRegionFzWahl(d, cur);
+
+  setChildren($('#regListe'), ...reihen.map((r, i) => {
+    const frisch = r.preis != null && !regGezeigt.has(r.station.code);
+    if (r.preis != null) regGezeigt.add(r.station.code);
+    const rang = r.preis != null ? mitPreis.indexOf(r) + 1 : null;
+    return el('button', {
+      type: 'button',
+      class: 'regzeile' + (rang === 1 ? ' beste' : '') + (r.preis == null ? ' nichts' : '') +
+        (frisch ? ' frisch' : '') + (regGezoomt === r.station.code ? ' gewaehlt' : ''),
+      style: frisch ? `--nr: ${Math.min(i, 11)}` : null,
+      'data-code': r.station.code,
+      onclick: () => {
+        regGezoomt = regGezoomt === r.station.code ? null : r.station.code;
+        renderRegionErgebnis();
+      },
+    },
+    el('span', { class: 'regrang' }, rang ? String(rang) : '–'),
+    el('span', { class: 'regname' },
+      el('strong', {}, r.station.name),
+      el('span', {}, r.preis != null
+        ? `${r.modell || r.acriss || ''}${r.acriss ? ` · ${r.acriss}` : ''}`
+        : (r.geladen ? r.grund || 'kein Preis' : 'wird abgefragt …'))),
+    el('span', { class: 'regpreis' }, r.preis != null ? kalBetrag(r.preis, cur) : '–'));
+  }));
+
+  zeichneRegionKarte(reihen, cur);
+
+  const geladen = reihen.filter((r) => r.geladen);
+  const ohne = reihen.filter((r) => r.geladen && r.preis == null).length;
+  const offen = reihen.filter((r) => !r.geladen).length;
+  if (!geladen.length) {
+    $('#regBilanz').textContent =
+      `${reihen.length} Stationen in ${BUNDESLAND_NAME[state.region.land]}, ` +
+      'noch nicht abgefragt. Nutzfahrzeugstationen sind nicht dabei, sie vermieten keine Personenwagen.';
+    return;
+  }
+  // Ohne gewaehlte Klasse steht hier je Station ihr billigstes Angebot, und
+  // das kann an der einen ein Kleinwagen sein und an der anderen ein Golf.
+  // Als Rangliste ist das dann irrefuehrend, und das muss dabeistehen: die
+  // Klassenauswahl daneben kostet keinen neuen Abruf, sie ist die Antwort.
+  const gemischt =
+    !state.region.klasse && new Set(mitPreis.map((r) => r.acriss).filter(Boolean)).size > 1;
+  $('#regBilanz').textContent =
+    `${reihen.length} Stationen in ${BUNDESLAND_NAME[state.region.land]} abgefragt, ` +
+    `${mitPreis.length} mit Preis` +
+    (ohne ? `, ${ohne} ohne Angebot` : '') +
+    (offen ? `, ${offen} noch offen` : '') +
+    '. Sixts eigene Regionsansicht führt nicht alle davon.' +
+    (gemischt
+      ? ' Achtung: verglichen wird hier je Station ihr billigstes Angebot, und das ist nicht überall dieselbe Klasse. ' +
+        'Für einen sauberen Vergleich oben ein Fahrzeug anklicken.'
+      : '');
+}
+
+/**
+ * Die Karte.
+ *
+ * Keine Kachelkarte, kein Kartendienst: die Koordinaten reichen. Gezeichnet
+ * wird ein eigenes SVG, die Stationen als Punkte, der Preis als Groesse und
+ * Farbe. Das haelt das Programm bei sich, ohne Netzzugriff und ohne fremdes
+ * Nachladen, und es zoomt sauber, weil alles Vektor ist.
+ */
+function zeichneRegionKarte(reihen, cur) {
+  const mitOrt = reihen.filter((r) => Number.isFinite(r.station.bg) && Number.isFinite(r.station.lg));
+  if (!mitOrt.length) return setChildren($('#regKarte'));
+
+  const B = 520, H = 560, RAND = 26;
+
+  // Der Bildausschnitt umfasst IMMER ganz Deutschland und aendert sich nie.
+  // Nur so ist das Hineinzoomen eine reine Verschiebung, die der Browser auf
+  // der Grafikkarte erledigt, statt bei jedem Schritt neu zu rechnen.
+  const rahmen = (liste, mindest) => {
+    let nord = -90, sued = 90, ost = -180, west = 180;
+    for (const s of liste) {
+      nord = Math.max(nord, s.bg); sued = Math.min(sued, s.bg);
+      ost = Math.max(ost, s.lg); west = Math.min(west, s.lg);
+    }
+    const mb = (nord + sued) / 2, ml = (ost + west) / 2;
+    return { mb, ml, h: Math.max(nord - sued, mindest), b: Math.max(ost - west, mindest * 1.4) };
+  };
+
+  // Der Ausschnitt richtet sich nach den GRENZEN, nicht nach den Stationen:
+  // sonst schnitte die Karte an der Kueste und in den Alpen ab, wo es keine
+  // Sixt-Station gibt, und Deutschland saehe verstuemmelt aus.
+  const eckpunkte = [];
+  for (const l of UMRISS.laender) {
+    for (const ring of l.r) {
+      for (let i = 0; i < ring.length; i += 2) eckpunkte.push({ lg: ring[i], bg: ring[i + 1] });
+    }
+  }
+  const land = eckpunkte.length
+    ? rahmen(eckpunkte, 1)
+    : rahmen(ALLE_STATIONEN.filter((s) => s.bl && Number.isFinite(s.bg)), 1);
+  const kx = Math.cos((land.mb * Math.PI) / 180);
+  const massstab = Math.min((B - 2 * RAND) / (land.b * kx), (H - 2 * RAND) / land.h);
+  const px = (lg) => B / 2 + (lg - land.ml) * kx * massstab;
+  const py = (bg) => H / 2 - (bg - land.mb) * massstab;
+
+  const svg = (tag, attrs, ...kinder) => {
+    const n = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [k, v] of Object.entries(attrs)) if (v != null) n.setAttribute(k, v);
+    for (const kind of kinder.flat()) if (kind) n.append(kind);
+    return n;
+  };
+
+  /* --- Drei Zoomstufen ---------------------------------------------------
+   *
+   * Deutschland, Bundesland, Station. Der Weg dazwischen ist die eigentliche
+   * Anschauung: erst sieht man das ganze Land und wo das Bundesland darin
+   * liegt, dann faehrt die Karte hinein. Springt sie sofort auf das
+   * Bundesland, fehlt genau diese Einordnung.
+   *
+   * Bewegt wird nur ein transform auf einer Gruppe. Der Browser erledigt das
+   * auf der Grafikkarte, ohne das SVG neu zu rechnen, auch bei 342 Punkten.
+   */
+  const gewaehlt = mitOrt.find((r) => r.station.code === regGezoomt);
+  const bl = rahmen(mitOrt.map((r) => r.station), 0.25);
+  const blNoetig = Math.max((bl.b * kx * massstab) / (B - 2 * RAND), (bl.h * massstab) / (H - 2 * RAND));
+  const blZoom = Math.min(Math.max(1 / Math.max(blNoetig, 0.06), 1), 9);
+
+  let zoom, zx, zy;
+  if (gewaehlt) {
+    zoom = Math.min(blZoom * 2.4, 14);
+    zx = px(gewaehlt.station.lg);
+    zy = py(gewaehlt.station.bg);
+  } else if (regKartenSicht === 'land') {
+    zoom = 1;
+    zx = B / 2;
+    zy = H / 2;
+  } else {
+    zoom = blZoom;
+    zx = px(bl.ml);
+    zy = py(bl.mb);
+  }
+
+  const preise = mitOrt.filter((r) => r.preis != null).map((r) => r.preis);
+  const min = preise.length ? Math.min(...preise) : 0;
+  const max = preise.length ? Math.max(...preise) : 0;
+
+  // Die Landkarte: sechzehn Flaechen, das gewaehlte Bundesland hervorgehoben.
+  // Die Grenzlinien behalten ihre Staerke beim Zoomen (non-scaling-stroke),
+  // sonst wuerden sie beim Hineinfahren zu fetten Baendern.
+  const gewaehltesLand = state.region.land;
+  const flaechen = UMRISS.laender.map((l) => {
+    const d = l.r
+      .map((ring) => {
+        let s = '';
+        for (let i = 0; i < ring.length; i += 2) {
+          s += `${i ? 'L' : 'M'}${px(ring[i]).toFixed(1)} ${py(ring[i + 1]).toFixed(1)}`;
+        }
+        return s + 'Z';
+      })
+      .join(' ');
+    return svg('path', {
+      d,
+      class: 'regland' + (l.id === gewaehltesLand ? ' an' : ''),
+      'vector-effect': 'non-scaling-stroke',
+    });
+  });
+
+  // Grosse Staedte zur Orientierung, aber erst wenn man nah genug ist. Ueber
+  // ganz Deutschland waeren zwanzig Namen nur Gewusel.
+  const staedte = zoom >= 2
+    ? UMRISS.staedte.map((s) => svg('text', {
+        x: px(s.lg).toFixed(1), y: py(s.bg).toFixed(1),
+        class: 'regstadt', 'text-anchor': 'middle',
+        style: `font-size:${(9 / zoom).toFixed(2)}px`,
+      }, document.createTextNode(s.n)))
+    : [];
+
+  const punkte = mitOrt.map((r) => {
+    const anteil = max > min && r.preis != null ? (r.preis - min) / (max - min) : 0;
+    const ist = r.station.code === regGezoomt;
+    const rang = r.preis != null && r.preis === min;
+    return svg('g', {
+      class: 'regpunkt' + (rang ? ' beste' : '') + (ist ? ' gewaehlt' : '') + (r.preis == null ? ' nichts' : ''),
+      role: 'button', tabindex: '0',
+      // Damit die Punkte nicht wild uebereinander liegen: der guenstigste
+      // gehoert nach oben, danach die mit Preis, ganz unten die ohne.
+      style: `--gr: ${(1 - anteil).toFixed(3)}`,
+      'aria-label': `${r.station.name}, ${r.preis != null ? kalBetrag(r.preis, cur) : 'kein Preis'}`,
+      onclick: () => {
+        regGezoomt = regGezoomt === r.station.code ? null : r.station.code;
+        renderRegionErgebnis();
+      },
+      onkeydown: (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        regGezoomt = regGezoomt === r.station.code ? null : r.station.code;
+        renderRegionErgebnis();
+      },
+    },
+      // Zwei Kreise: der weisse darunter setzt den Punkt von der Landfarbe
+      // ab, ohne dass eine Linie beim Zoomen mitwaechst.
+      svg('circle', {
+        class: 'reghof',
+        cx: px(r.station.lg).toFixed(1), cy: py(r.station.bg).toFixed(1),
+        r: (((r.preis == null ? 3 : 4.5 + (1 - anteil) * 4.5) + 1.6) / zoom).toFixed(2),
+      }),
+      svg('circle', {
+        cx: px(r.station.lg).toFixed(1), cy: py(r.station.bg).toFixed(1),
+        r: ((r.preis == null ? 3 : 4.5 + (1 - anteil) * 4.5) / zoom).toFixed(2),
+      }),
+      svg('title', {}, document.createTextNode(
+        `${r.station.name}\n${r.preis != null ? kalBetrag(r.preis, cur) : r.grund || 'noch offen'}`
+      ))
+    );
+  });
+
+  const beschriftung = gewaehlt
+    ? svg('text', {
+        x: px(gewaehlt.station.lg).toFixed(1),
+        y: (py(gewaehlt.station.bg) - 11 / zoom).toFixed(1),
+        class: 'regmarke',
+        'text-anchor': 'middle',
+        style: `font-size:${(11 / zoom).toFixed(2)}px`,
+      }, document.createTextNode(gewaehlt.station.name))
+    : null;
+
+  /* Kein SVG-Schatten mehr.
+   *
+   * Ein feDropShadow sitzt INNERHALB der Zoomgruppe und wird deshalb
+   * mitskaliert: bei neunfachem Zoom wurden aus 2,5 Pixeln Unschaerfe
+   * zweiundzwanzig, und oben links stand ein weisser Schleier. Nachgemessen
+   * und zweimal vergeblich am Wirkungsbereich geschraubt.
+   *
+   * Die Tiefe kommt jetzt von aussen: der Kartenrahmen wirft den Schatten
+   * (siehe styles.css), und die Laender bekommen eine feine dunkle Kante.
+   * Das bleibt bei jedem Massstab gleich, weil es nicht mitzoomt.
+   */
+
+  /* --- Das Bild wiederverwenden, nicht neu bauen ------------------------
+   *
+   * Ein Uebergang braucht ein Element, das seinen Wert AENDERT. Wurde die
+   * Karte bei jedem Zeichnen neu erzeugt, gab es das nie: das neue Element
+   * kam schon mit dem Endwert zur Welt, und der Zoom sprang, statt zu
+   * laufen. Gemessen: null laufende Uebergaenge.
+   *
+   * Deshalb bleiben <svg> und die Zoomgruppe stehen. Getauscht wird nur ihr
+   * Inhalt, und der transform-Wert wird gesetzt. Erst dann greift die Feder.
+   */
+  let bild = $('#regKarte .regkarte-svg');
+  let gruppe;
+  if (!bild) {
+    gruppe = svg('g', { class: 'regkarte-inhalt' });
+    bild = svg('svg', {
+      viewBox: `0 0 ${B} ${H}`, class: 'regkarte-svg', role: 'img',
+    }, gruppe);
+  } else {
+    gruppe = bild.querySelector('.regkarte-inhalt');
+  }
+  bild.setAttribute('aria-label', `Karte der Stationen in ${BUNDESLAND_NAME[state.region.land]}`);
+  setChildren(gruppe, flaechen, staedte, punkte, beschriftung);
+  gruppe.setAttribute(
+    'transform',
+    `translate(${(B / 2 - zx * zoom).toFixed(1)} ${(H / 2 - zy * zoom).toFixed(1)}) scale(${zoom})`
+  );
+
+  // Auch die Huelle bleibt stehen. Ein Element, das aus dem Dokument geloest
+  // und wieder eingehaengt wird, verliert seinen laufenden Uebergang; damit
+  // waere der Zoom trotz allem wieder ein Sprung.
+  let huelle = $('#regKarte .regkarte-rahmen');
+  if (!huelle) {
+    huelle = el('div', { class: 'regkarte-rahmen' });
+    huelle.append(bild);
+    huelle.append(el('div', { class: 'regkarte-titel' }));
+    huelle.append(el('div', { class: 'regkarte-legende', hidden: true }));
+    setChildren($('#regKarte'), huelle, el('div', { class: 'regkarte-fuss' }));
+  }
+
+  setChildren(huelle.querySelector('.regkarte-titel'),
+    el('strong', {}, BUNDESLAND_NAME[state.region.land]),
+    el('span', {}, `${mitOrt.length} Stationen`));
+
+  // Ohne Legende bleibt die Punktgroesse eine Behauptung. Sie steht nur da,
+  // wenn es auch Preise gibt, die sie erklaeren koennten.
+  const legende = huelle.querySelector('.regkarte-legende');
+  legende.hidden = !(preise.length > 1 && max > min);
+  if (!legende.hidden) {
+    setChildren(legende,
+      el('span', { class: 'regleg gross' }), el('span', {}, kalBetrag(min, cur)),
+      el('span', { class: 'regleg klein' }), el('span', {}, kalBetrag(max, cur)));
+  }
+
+  const stufe = gewaehlt ? 'station' : regKartenSicht;
+  setChildren($('#regKarte .regkarte-fuss'),
+    el('div', { class: 'regstufen', role: 'group', 'aria-label': 'Kartenausschnitt' },
+      el('button', {
+        type: 'button', class: 'regstufe' + (stufe === 'land' ? ' an' : ''),
+        onclick: () => { regGezoomt = null; regKartenSicht = 'land'; renderRegionErgebnis(); },
+      }, 'Deutschland'),
+      el('button', {
+        type: 'button', class: 'regstufe' + (stufe === 'bundesland' ? ' an' : ''),
+        onclick: () => { regGezoomt = null; regKartenSicht = 'bundesland'; renderRegionErgebnis(); },
+      }, BUNDESLAND_NAME[state.region.land]),
+      gewaehlt ? el('button', { type: 'button', class: 'regstufe an' }, gewaehlt.station.name) : null),
+    el('p', { class: 'fhinweis' },
+      gewaehlt
+        ? 'Noch einmal anklicken fährt wieder heraus.'
+        : 'Punktgröße nach Preis, groß heißt günstig. Eine Station anklicken zoomt hin.'));
+
+  renderRegionFahrzeuge(gewaehlt, cur);
+}
+
+/**
+ * Die Fahrzeugauswahl über der Rangliste.
+ *
+ * Vorher steckte das in einem Klappfeld ganz oben im Formular, wo es vor der
+ * ersten Suche leer und ausgegraut war. Niemand fand es. Jetzt steht es dort,
+ * wo es gebraucht wird, mit Bild und dem billigsten Preis im Bundesland.
+ *
+ * Und noch einmal, weil es der springende Punkt ist: das Umschalten kostet
+ * KEINEN neuen Abruf. Ein Abruf je Station bringt alle Klassen mit, sie lagen
+ * nur ungenutzt herum.
+ */
+function renderRegionFzWahl(d, cur) {
+  const kasten = $('#regFzWahl');
+
+  // Je Klasse das billigste Angebot im ganzen Bundesland.
+  const klassen = new Map();
+  for (const j of d.jobs) {
+    for (const o of prices.get(j.key)?.offers || []) {
+      if (!o.acriss || o.total == null || !regPasst(o)) continue;
+      const bisher = klassen.get(o.acriss);
+      if (!bisher || o.total < bisher.preis) {
+        klassen.set(o.acriss, { preis: o.total, modell: o.model, bild: o.image, waehrung: o.currency });
+      }
+    }
+  }
+  if (!klassen.size) {
+    kasten.hidden = true;
+    return setChildren(kasten);
+  }
+  kasten.hidden = false;
+
+  const sortiert = [...klassen].sort((a, b) => a[1].preis - b[1].preis);
+  const waehlen = (k) => {
+    state.region.klasse = k;
+    persist();
+    regGezeigt = new Set();
+    renderRegionErgebnis();
+  };
+
+  setChildren(kasten,
+    el('p', { class: 'fhinweis' },
+      `${sortiert.length} Fahrzeuge im ganzen Bundesland. Eines auswählen vergleicht alle Stationen ` +
+      'für genau dieses Fahrzeug. Kostet keinen neuen Abruf.'),
+    el('div', { class: 'regfzwahl-leiste' },
+      el('button', {
+        type: 'button', class: 'regfzkarte' + (state.region.klasse ? '' : ' an'),
+        onclick: () => waehlen(''),
+      },
+      el('span', { class: 'regfzkarte-bild leer' }),
+      el('strong', {}, 'Günstigstes'),
+      el('span', {}, 'je Station')),
+      ...sortiert.map(([k, v], i) => el('button', {
+        type: 'button',
+        class: 'regfzkarte' + (state.region.klasse === k ? ' an' : ''),
+        style: `--nr: ${Math.min(i, 14)}`,
+        title: `${v.modell || k} · ${k}`,
+        onclick: () => waehlen(k),
+      },
+      v.bild
+        ? el('img', { src: v.bild, alt: '', loading: 'lazy', class: 'regfzkarte-bild' })
+        : el('span', { class: 'regfzkarte-bild leer' }),
+      el('strong', {}, v.modell || k),
+      el('span', {}, `${k} · ab ${kalBetrag(v.preis, v.waehrung || cur)}`))))
+  );
+}
+
+/**
+ * Alle Fahrzeuge einer Station.
+ *
+ * Kostet keinen einzigen zusaetzlichen Abruf: ein Abruf je Station bringt
+ * rund fuenfundzwanzig Angebote mit, und bisher wurde davon nur das
+ * billigste gezeigt. Der Rest lag ungenutzt herum.
+ */
+function renderRegionFahrzeuge(gewaehlt, cur) {
+  const kasten = $('#regFahrzeuge');
+  if (!gewaehlt) {
+    kasten.hidden = true;
+    return setChildren(kasten);
+  }
+
+  const rec = prices.get(gewaehlt.job.key);
+  const angebote = (rec?.offers || [])
+    .filter((o) => o.total != null)
+    .sort((a, b) => a.total - b.total);
+
+  kasten.hidden = false;
+  // Klasse ab und wieder dran: die Karte soll beim Wechsel der Station neu
+  // aufblenden, nicht bloss ihren Inhalt austauschen.
+  kasten.classList.remove('offen');
+  void kasten.offsetWidth;
+  kasten.classList.add('offen');
+
+  setChildren(kasten,
+    el('div', { class: 'regfz-kopf' },
+      el('div', {},
+        el('p', { class: 'eyebrow' }, 'ALLE FAHRZEUGE DIESER STATION'),
+        el('h3', {}, gewaehlt.station.name),
+        el('p', { class: 'fhinweis' },
+          `${angebote.length} Angebote · ${kalDatum(state.region.start)} · ` +
+          `${state.region.dauer} ${state.region.dauer === 1 ? 'Tag' : 'Tage'}`)),
+      el('button', {
+        type: 'button', class: 'btn ghost klein',
+        onclick: () => { regGezoomt = null; renderRegionErgebnis(); },
+      }, 'Schließen')),
+    angebote.length
+      ? el('div', { class: 'regfz-liste' },
+          ...angebote.map((o, i) => el('div', {
+            class: 'regfz' + (i === 0 ? ' beste' : ''),
+            style: `--nr: ${Math.min(i, 14)}`,
+          },
+          o.image
+            ? el('img', { src: o.image, alt: '', loading: 'lazy', class: 'regfz-bild' })
+            : el('span', { class: 'regfz-bild leer' }),
+          el('span', { class: 'regfz-text' },
+            el('strong', {}, o.model || o.acriss || 'Fahrzeug'),
+            el('span', {}, `${o.acriss || '–'}${o.category ? ` · ${o.category}` : ''}`)),
+          el('span', { class: 'regfz-preis' },
+            el('strong', {}, kalBetrag(o.total, o.currency || cur)),
+            // money statt kalBetrag: kalBetrag geht ueber Intl.NumberFormat
+            // und wirft bei leerer Waehrung. Hier steht die Waehrung schon
+            // eine Zeile darueber, sie zweimal zu nennen waere Rauschen.
+            o.perDay != null ? el('span', {}, `${money(o.perDay, '')}/Tag`) : null))))
+      : el('p', { class: 'empty' }, gewaehlt.grund || 'Für diese Station liegt kein Angebot vor.'));
 }
 
 /** Die aktuelle Einstellung als Auftragsliste. */
@@ -7568,6 +8384,8 @@ function init() {
         ladeWecker();
       } else if (state.mode === 'kalender') {
         oeffneKalender();
+      } else if (state.mode === 'region' || state.mode === 'auto') {
+        oeffneRegion();
       } else {
         showScreen('work');
         update();
@@ -7576,6 +8394,46 @@ function init() {
       }
     })
   );
+
+  /* --- Günstigste Station --- */
+  for (const [id, feld, wandeln] of [
+    ['#regLand', 'land', String],
+    ['#regHost', 'host', String],
+    ['#regStart', 'start', String],
+    ['#regDauer', 'dauer', Number],
+    ['#regZeit', 'zeit', String],
+  ]) {
+    $(id).addEventListener('change', (e) => {
+      state.region[feld] = wandeln(e.target.value);
+      persist();
+      // Andere Suche, andere Tafel: die Bewegung darf wieder von vorn.
+      regGezeigt = new Set();
+      regGezoomt = null;
+      renderRegionFormular();
+      renderRegionErgebnis();
+    });
+  }
+  // Das Fahrzeug wird nicht hier gewaehlt, sondern in der Bilderleiste ueber
+  // der Rangliste (renderRegionFzWahl). Ein Klappfeld im Formular gab es
+  // vorher auch, es war vor der ersten Suche leer und stand an einer Stelle,
+  // an der es niemand suchte. Zwei Bedienelemente fuer dieselbe Sache, von
+  // denen eines hinterherhinkte, sind schlechter als eines.
+  // Das Fahrzeugfeld filtert beim Tippen. Kein neuer Abruf: jede Station
+  // bringt ohnehin alle Klassen mit.
+  $('#regFahrzeug').addEventListener('input', (e) => {
+    state.region.fahrzeug = e.target.value;
+    state.region.klasse = '';
+    persist();
+    regGezeigt = new Set();
+    renderRegionErgebnis();
+  });
+  $('#regStarten').addEventListener('click', () => starteRegion());
+  $('#regAbbrechen').addEventListener('click', () => {
+    regAbbruch = true;
+    // Derselbe Weg wie im Kalender: die Warteschlange beim Dienst leeren.
+    // Was schon abgefragt wurde, bleibt stehen.
+    abbrechen();
+  });
 
   document.querySelectorAll('.back').forEach((b) =>
     b.addEventListener('click', () => {
@@ -7942,6 +8800,8 @@ function init() {
     ladeWecker();
   } else if (state.mode === 'kalender') {
     oeffneKalender();
+  } else if (state.mode === 'region' || state.mode === 'auto') {
+    oeffneRegion();
   } else if (state.mode) {
     showScreen('work');
     update();

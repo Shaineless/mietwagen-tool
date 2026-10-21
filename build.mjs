@@ -33,6 +33,7 @@ const src = (f) => join(root, 'src', f);
 const FLUGHAFEN_RE =
   /(flughafen|airport|a[eé]roport|aeropuerto|aeroporto|luchthaven|lufthavn|lentoasema|havaliman|repülőtér|letiště|lotnisko)/i;
 
+
 function parseStations(file, providerId) {
   const lines = readFileSync(file, 'utf8').split(/\r?\n/);
   const out = [];
@@ -66,23 +67,128 @@ function parseStations(file, providerId) {
       // Nur bei Flughafenstationen gesetzt, spart in der erzeugten Datei
       // 1500 Mal `false`.
       ...(FLUGHAFEN_RE.test(name) ? { flughafen: true } : {}),
+
     });
   });
 
   return out;
 }
 
+/**
+ * Ort je Station: Postleitzahl, Bundesland, Koordinate.
+ *
+ * Bewusst eine zweite Datei statt neuer Spalten in stations.sixt.txt. Die
+ * Stationsliste ist gewachsen und wird von Hand ergaenzt; sie soll schmal
+ * bleiben. Die Ortsdaten stammen dagegen aus einem Erntelauf und werden im
+ * Ganzen ersetzt, wenn er wieder laeuft.
+ *
+ * Fehlt die Datei, entfaellt nur die Bundeslandsuche. Alles andere laeuft.
+ */
+function parseOrte(file) {
+  let text;
+  try {
+    text = readFileSync(file, 'utf8');
+  } catch {
+    console.warn('  ! keine Ortsdaten gefunden, die Bundeslandsuche bleibt leer');
+    return new Map();
+  }
+  const out = new Map();
+  for (const line of text.split(/\r?\n/)) {
+    const s = line.trim();
+    if (!s || s.startsWith('#')) continue;
+    const [id, plz, land, lat, lon, art] = s.split('|');
+    if (!id || !land) continue;
+    out.set(id.trim(), {
+      plz: plz.trim(),
+      land: land.trim(),
+      lat: Number(lat),
+      lon: Number(lon),
+      lkw: (art || '').trim() === 'lkw',
+    });
+  }
+  return out;
+}
+
 console.log('Stationen einlesen …');
 const stations = parseStations(src('data/stations.sixt.txt'), 'sixt');
+const orte = parseOrte(src('data/stationen-ort.txt'));
+
+let mitOrt = 0;
+for (const s of stations) {
+  const o = orte.get(s.code);
+  if (!o) continue;
+  mitOrt++;
+  // Kurze Schluessel, die Datei traegt sie 342 Mal: land, plz, Breite, Laenge.
+  s.bl = o.land;
+  s.plz = o.plz;
+  s.bg = o.lat;
+  s.lg = o.lon;
+  // Nutzfahrzeugstation? Das steht in der Ortsdatei, geerntet aus dem Titel
+  // der Sixt-Stationsseite. Am NAMEN erkannt ging es schief: "Bremen
+  // Habenhausen" traegt kein "Truck" im Namen, ist aber eines, und stand
+  // deshalb als Zeile ohne Preis in der Rangliste.
+  if (o.lkw) s.lkw = true;
+}
+
 const flughaefen = stations.filter((s) => s.flughafen).length;
 console.log(
   `  ${stations.length} Sixt-Stationen (${flughaefen} Flughafen, ${stations.length - flughaefen} übrige)`
+);
+const laender = new Set(stations.filter((s) => s.bl).map((s) => s.bl));
+const lkw = stations.filter((s) => s.lkw && s.bl).length;
+console.log(`  ${mitOrt} davon mit Ort und Bundesland (${laender.size} Bundesländer)`);
+console.log(`  ${lkw} deutsche Nutzfahrzeugstationen, nicht in der PKW-Suche`);
+
+/* --------------------------------------------- Umrisse: txt -> Punktlisten */
+
+/**
+ * Bundeslandgrenzen und Städte für die Karte.
+ *
+ * Wird die Datei nicht gefunden, zeichnet die Karte nur die Stationen. Das
+ * ist haesslicher, aber es laeuft; ein fehlender Umriss soll das Programm
+ * nicht anhalten.
+ */
+function parseUmriss(file) {
+  let text;
+  try {
+    text = readFileSync(file, 'utf8');
+  } catch {
+    console.warn('  ! keine Umrissdaten gefunden, die Karte zeigt nur Punkte');
+    return { laender: [], staedte: [] };
+  }
+  const raus = { laender: [], staedte: [] };
+  for (const line of text.split(/\r?\n/)) {
+    const s = line.trim();
+    if (!s || s.startsWith('#')) continue;
+    const [art, name, rest] = s.split('|');
+    if (art === 'L') {
+      raus.laender.push({
+        id: name,
+        // Ein Ring ist eine flache Zahlenfolge: laenge, breite, laenge, ...
+        // Flach statt Paare, das spart in der erzeugten Datei ein Drittel.
+        r: rest.split(';').map((ring) => ring.split(' ').flatMap((p) => p.split(',').map(Number))),
+      });
+    } else if (art === 'S') {
+      const [bg, lg] = rest.split(',').map(Number);
+      raus.staedte.push({ n: name, bg, lg });
+    }
+  }
+  return raus;
+}
+
+const umriss = parseUmriss(src('data/umriss-deutschland.txt'));
+const stuetzpunkte = umriss.laender.reduce((n, l) => n + l.r.reduce((m, r) => m + r.length / 2, 0), 0);
+console.log(
+  `  Karte: ${umriss.laender.length} Umrisse mit ${stuetzpunkte} Stützpunkten, ${umriss.staedte.length} Städte`
 );
 
 const stationsModule =
   '// Automatisch erzeugt von build.mjs aus src/data/*.txt, nicht direkt bearbeiten.\n' +
   'export const STATIONS = ' +
   JSON.stringify(stations) +
+  ';\n' +
+  'export const UMRISS = ' +
+  JSON.stringify(umriss) +
   ';\n';
 
 writeFileSync(src('stations.js'), stationsModule);

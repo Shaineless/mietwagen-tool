@@ -44,7 +44,7 @@
 [hidden] { display: none !important; }
 ::selection { background: #cce3ff; color: var(--ink); }
 
-html { background: var(--bg); }
+html { background: var(--bg); scrollbar-gutter: stable; }
 
 body {
   margin: 0;
@@ -200,7 +200,7 @@ button.brand { display: inline-flex; align-items: center; gap: 9px; color: var(-
 .brand-period { color: var(--accent); }
 .app-nav { display: flex; align-items: center; gap: 5px; }
 button.nav-link { padding: 9px 14px; background: transparent; color: var(--muted); font-size: .75rem; font-weight: 450; border-radius: 9px; white-space: nowrap; }
-button.nav-link[aria-current=page] { background: #eaeaee; color: var(--ink); font-weight: 570; }
+button.nav-link[aria-current=page] { background: #eaeaee; color: var(--ink); -webkit-text-stroke: .35px currentColor; }
 .local-badge { display: flex; align-items: center; gap: 7px; font-size: .625rem; white-space: nowrap; color: var(--muted); }
 .local-badge > span { width: 5px; height: 5px; background: #468959; border-radius: 50%; }
 .workspace-heading { max-width: 1180px; margin: 43px auto 28px; }
@@ -1212,6 +1212,279 @@ td.best { background: var(--success-bg); }
 td.best .betrag { color: var(--success); font-weight: 640; }
 td.leer { color: var(--leise); }
 
+/* ==================================================== Günstigste Station */
+
+.region-layout { display: grid; grid-template-columns: minmax(0, 1fr) 520px; gap: 24px; align-items: start; }
+.region-liste { display: flex; flex-direction: column; gap: 6px; max-height: 620px; overflow-y: auto; padding-right: 4px; }
+
+.regzeile {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--flaeche);
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  transition:
+    background var(--t-klein) ease,
+    border-color var(--t-klein) ease,
+    box-shadow var(--t-klein) var(--raus),
+    transform var(--t-klein) var(--raus);
+}
+.regrang { color: var(--muted); font-size: .8125rem; font-weight: 560; text-align: center; }
+.regname { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.regname strong { font-size: .9375rem; font-weight: 560; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.regname span { font-size: .75rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.regpreis { font-size: 1rem; font-weight: 610; letter-spacing: -.03em; }
+
+.regzeile.beste { background: #f0f6ff; border-color: #c7dcf7; }
+.regzeile.beste .regpreis, .regzeile.beste .regrang { color: var(--accent); }
+.regzeile.nichts { opacity: .62; }
+.regzeile.nichts .regpreis { color: var(--leise); font-weight: 400; }
+.regzeile.gewaehlt { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+
+@media (hover: hover) and (pointer: fine) {
+  .regzeile:hover { background: #edf3fb; border-color: #cfdcec; transform: translateY(-1px); }
+}
+
+/* Dieselbe Bewegung wie im Kalender: eine Station legt sich hin, sobald ihr
+   Preis ankommt. Bei siebenundsechzig Stationen dauert der Lauf Minuten, und
+   ohne das saehe man nur eine Liste, die sich irgendwann geaendert hat. */
+.regzeile.frisch { animation: zelleEin var(--t-ansicht) var(--raus) backwards; animation-delay: calc(var(--nr, 0) * 30ms); }
+
+.region-karte { position: sticky; top: 84px; }
+
+/* Der Rahmen traegt Hintergrund und Ecken, nicht das SVG selbst: so koennen
+   Titel und Legende darueber liegen, ohne mitzuzoomen. */
+.regkarte-rahmen {
+  position: relative;
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  overflow: hidden;
+  /* Ein Hauch Wasserfarbe statt Grau. Die Karte soll nach Landkarte
+     aussehen, nicht nach Diagrammflaeche. */
+  background: linear-gradient(170deg, #f4f7fb 0%, #eef2f8 100%);
+  /* Die Tiefe sitzt hier, am Rahmen, nicht im SVG. Ein Schatten im SVG
+     laege innerhalb der Zoomgruppe und wuerde mitskaliert. */
+  box-shadow: 0 1px 2px rgba(27, 42, 68, .05), 0 8px 24px -14px rgba(27, 42, 68, .22);
+}
+.regkarte-svg { display: block; width: 100%; height: auto; }
+
+.regkarte-titel {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  pointer-events: none;
+}
+.regkarte-titel strong { font-size: .9375rem; font-weight: 610; letter-spacing: -.02em; color: var(--ink); }
+.regkarte-titel span { font-size: .6875rem; color: var(--muted); }
+
+/* Ein schwebender Streifen ueber der Karte, kein aufgesetzter Kasten: leicht
+   durchscheinend mit Unschaerfe dahinter, damit die Karte durchklingt. Der
+   Text steht dafuer etwas kraeftiger, sonst verliert er auf wechselndem
+   Untergrund an Lesbarkeit. */
+.regkarte-legende {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 980px;
+  background: rgba(255, 255, 255, .62);
+  backdrop-filter: blur(12px) saturate(150%);
+  box-shadow: 0 1px 3px rgba(27, 42, 68, .1);
+  font-size: .625rem;
+  font-weight: 520;
+  letter-spacing: .01em;
+  color: var(--ink2);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.regleg { display: inline-block; border-radius: 50%; background: var(--accent); opacity: .6; }
+.regleg.gross { width: 11px; height: 11px; }
+.regleg.klein { width: 6px; height: 6px; margin-left: 4px; }
+/* Der Zoom laeuft ueber transform auf der Gruppe: eine Bewegung, die der
+   Browser auf der Grafikkarte macht, ohne das SVG neu zu berechnen.
+ *
+ * Die Kurve ist eine ausgerechnete Feder, keine Bezierkurve aus dem Gefuehl.
+ * Vorher stand hier --rein-raus, ein starkes ease-in-out: das FAENGT langsam
+ * AN, und genau der Anfang ist der Moment, in dem man hinsieht. Es wirkte
+ * traege.
+ *
+ * Jetzt Apples Wert fuer das Verschieben eines Objekts: kritisch gedaempft
+ * (Daempfung 1,0, kein Ueberschwingen) mit Response 0,4 Sekunden. Die Formel
+ * dahinter ist x(t) = 1 - (1 + w t) e^(-w t) mit w = 2 pi / 0,4; die Punkte
+ * unten sind achtzehn Abtastwerte davon. Kein Ueberschwingen mit Absicht:
+ * eine Karte, die ueber ihr Ziel hinausfaehrt und zurueckwippt, waere
+ * Spielerei an einer Stelle, an der man etwas ablesen will. */
+.regkarte-inhalt {
+  transition: transform .62s
+    linear(0 0%, 0.1029 5.6%, 0.2944 11.1%, 0.4825 16.7%, 0.6366 22.2%,
+           0.7523 27.8%, 0.8347 33.3%, 0.8915 38.9%, 0.9297 44.4%, 0.9549 50%,
+           0.9713 55.6%, 0.9819 61.1%, 0.9887 66.7%, 0.9929 72.2%, 0.9956 77.8%,
+           0.9973 83.3%, 0.9983 88.9%, 0.999 94.4%, 1 100%);
+  will-change: transform;
+}
+/* Die Landkarte. Umrisse aus gemeinfreien Grenzdaten, fest im Programm; es
+   wird nichts nachgeladen und nichts nach aussen gemeldet. */
+.regland {
+  fill: #dfe4ec;
+  stroke: #f4f7fb;
+  stroke-width: 1.1;
+  stroke-linejoin: round;
+  pointer-events: none;
+  transition: fill var(--t-ansicht) ease;
+  /* Statt eines Schattens: eine feine dunkle Kante, die beim Zoomen ihre
+     Staerke behaelt. Sie gibt der Landmasse eine Kontur, ohne mitzuwachsen. */
+  paint-order: stroke fill;
+}
+/* Das gewaehlte Land hebt sich ab, ohne zu schreien: eine Nuance heller und
+   ins Blaue gezogen, dazu eine sichtbare Kante. */
+.regland.an { fill: #ccdcf2; stroke: #fff; stroke-width: 1.6; }
+.regstadt { fill: #7b8698; pointer-events: none; letter-spacing: .02em; font-weight: 500; }
+
+.regpunkt { cursor: pointer; }
+/* Der weisse Hof setzt den Punkt von der Landfarbe ab. Ein eigener Kreis
+   statt einer Linie: eine Linie muesste beim Zoomen gegengerechnet werden. */
+.reghof { fill: #fff; opacity: .9; }
+.regpunkt circle:not(.reghof) {
+  fill: var(--accent);
+  /* Guenstig ist kraeftig, teuer blasser. --gr kommt aus app.js. */
+  opacity: calc(.45 + var(--gr, .5) * .5);
+  transition: opacity var(--t-klein) ease, fill var(--t-klein) ease;
+}
+.regpunkt.beste circle:not(.reghof) { fill: var(--success); opacity: 1; }
+.regpunkt.beste .reghof { opacity: 1; }
+.regpunkt.nichts circle:not(.reghof) { fill: #a7aeb9; opacity: .5; }
+.regpunkt.nichts .reghof { opacity: .55; }
+.regpunkt.gewaehlt circle:not(.reghof) { fill: var(--accent); opacity: 1; }
+.regpunkt.gewaehlt .reghof { fill: var(--ink); opacity: 1; }
+.regpunkt:focus-visible { outline: none; }
+.regpunkt:focus-visible .reghof { fill: var(--ink); opacity: 1; }
+/* Rueckmeldung beim DRUECKEN, nicht erst beim Loslassen. Der Zoom braucht
+   eine halbe Sekunde; ohne dieses Zeichen wirkt der Klick in der Zwischenzeit
+   wie verschluckt. */
+.regpunkt:active .reghof { fill: var(--ink); opacity: 1; }
+.regpunkt:active circle:not(.reghof) { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .regpunkt:hover circle:not(.reghof) { opacity: 1; }
+  .regpunkt:hover .reghof { opacity: 1; }
+}
+.regmarke { fill: var(--ink); font-weight: 560; paint-order: stroke; stroke: var(--flaeche2); stroke-width: 3px; }
+
+.regkarte-fuss { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.regstufen { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.regstufe {
+  padding: 5px 11px;
+  border: 1px solid var(--hairline);
+  border-radius: 980px;
+  background: var(--flaeche);
+  color: var(--muted);
+  font-size: .75rem;
+  font-weight: 520;
+  transition: background var(--t-klein) ease, color var(--t-klein) ease, border-color var(--t-klein) ease;
+}
+.regstufe.an { background: var(--accent-weich); border-color: transparent; color: var(--accent); }
+@media (hover: hover) and (pointer: fine) {
+  .regstufe:hover:not(.an) { background: var(--flaeche2); color: var(--ink); }
+}
+
+/* --- Fahrzeugauswahl ueber der Rangliste --- */
+
+.region-fzwahl { margin: 4px 0 18px; }
+.region-fzwahl .fhinweis { margin: 0 0 10px; }
+/* Waagerecht scrollbar statt umbrechend: bei vierundsechzig Klassen wuerde
+   ein Raster den halben Bildschirm fuellen, bevor man die Rangliste sieht. */
+.regfzwahl-leiste { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; }
+.regfzkarte {
+  flex: 0 0 auto;
+  width: 124px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--flaeche);
+  text-align: left;
+  animation: fzZeile var(--t-klein) var(--raus) backwards;
+  animation-delay: calc(var(--nr, 0) * 22ms);
+  transition: background var(--t-klein) ease, border-color var(--t-klein) ease, transform var(--t-klein) var(--raus);
+}
+.regfzkarte-bild { width: 100%; height: 46px; object-fit: contain; margin-bottom: 2px; }
+.regfzkarte-bild.leer { display: block; border-radius: 8px; background: var(--flaeche2); }
+.regfzkarte strong { font-size: .75rem; font-weight: 560; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.regfzkarte span:not(.regfzkarte-bild) { font-size: .625rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.regfzkarte.an { border-color: var(--accent); background: var(--accent-weich); }
+.regfzkarte.an strong, .regfzkarte.an span:not(.regfzkarte-bild) { color: var(--accent); }
+@media (hover: hover) and (pointer: fine) {
+  .regfzkarte:hover:not(.an) { background: var(--flaeche2); transform: translateY(-2px); }
+}
+
+/* --- Alle Fahrzeuge der gewaehlten Station --- */
+
+.region-fahrzeuge {
+  margin-top: 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  background: var(--flaeche);
+  padding: 18px 18px 8px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+/* Der Kasten faehrt auf, wenn eine Station gewaehlt wird. Nur einmal je
+   Wechsel: die Klasse setzt app.js neu, siehe renderRegionFahrzeuge. */
+/* Der Kasten kommt nicht als Deckkraft daher, sondern als Flaeche, die sich
+   bildet: Massstab und Unschaerfe laufen mit. So liest es sich, als traete
+   etwas ein, statt dass etwas eingeblendet wird. */
+.region-fahrzeuge.offen { animation: fzAuf .34s var(--raus) backwards; }
+@keyframes fzAuf {
+  from { opacity: 0; transform: translateY(10px) scale(.985); filter: blur(6px); }
+  60% { filter: blur(0); }
+}
+.regfz-kopf { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+.regfz-kopf h3 { margin: 4px 0 4px; font-size: 1.0625rem; letter-spacing: -.025em; }
+.regfz-kopf .eyebrow { margin: 0; font-size: .5625rem; }
+.regfz-liste { display: flex; flex-direction: column; gap: 4px; }
+.regfz {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  animation: fzZeile var(--t-klein) var(--raus) backwards;
+  animation-delay: calc(var(--nr, 0) * 26ms);
+}
+@keyframes fzZeile {
+  from { opacity: 0; transform: translateY(5px); }
+}
+.regfz.beste { background: var(--accent-weich); }
+.regfz-bild { width: 62px; height: 40px; object-fit: contain; }
+.regfz-bild.leer { display: block; border-radius: 6px; background: var(--flaeche2); }
+.regfz-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.regfz-text strong { font-size: .8125rem; font-weight: 560; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.regfz-text span { font-size: .6875rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.regfz-preis { text-align: right; font-variant-numeric: tabular-nums; }
+.regfz-preis strong { display: block; font-size: .875rem; font-weight: 610; letter-spacing: -.02em; }
+.regfz-preis span { display: block; font-size: .6875rem; color: var(--muted); }
+.regfz.beste .regfz-preis strong { color: var(--accent); }
+
+@media (max-width: 1100px) {
+  .region-layout { grid-template-columns: minmax(0, 1fr); }
+  .region-karte { position: static; }
+}
+
 /* ---------------------------------------------------------- Eintrudeln
  *
  * Eine Laenderseite braucht zehn bis vierzig Sekunden. Ist sie da, faellt
@@ -1488,7 +1761,13 @@ tr.mietzeile .betrag { color: var(--ink2); font-weight: 500; }
      immer noch, welcher Tag und welche Spalte gerade hereingekommen ist, und
      genau dafuer ist es da. Auch die Staffelung faellt weg, damit nichts
      mehr wandert. */
-  .ktag.frisch, .ktag.frisch .kpreis, .calendar-selection.gewechselt > *,
+  .regzeile:hover { transform: none; }
+  /* Der Kartenzoom springt statt zu gleiten, das Ziel bleibt dasselbe. */
+  .regkarte-inhalt { transition: none; }
+  .region-fahrzeuge.offen, .regfz, .regfzkarte { animation-name: nurAuf; animation-duration: .18s; animation-delay: 0s; }
+  .regfzkarte:hover:not(.an) { transform: none; }
+
+  .ktag.frisch, .ktag.frisch .kpreis, .calendar-selection.gewechselt > *, .regzeile.frisch,
   table.vergleich td.frisch, table.vergleich thead th.frisch, table.vergleich td.frisch .betrag {
     animation-name: nurAuf;
     animation-duration: .18s;
@@ -1504,6 +1783,9 @@ tr.mietzeile .betrag { color: var(--ink2); font-weight: 500; }
   /* Weiche Kanten sind selbst schon eine Transparenzwirkung, hier lieber
      die eindeutige Linie. */
   table.vergleich thead th { box-shadow: inset 0 -1px 0 var(--hairline); }
+  /* Der Legendenstreifen wird undurchsichtig, statt die Karte durchscheinen
+     zu lassen. Lesbarkeit vor Wirkung. */
+  .regkarte-legende { background: #fff; backdrop-filter: none; border: 1px solid var(--hairline); }
   .oben {
     background: var(--bg);
     backdrop-filter: none;
@@ -1843,8 +2125,9 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
 .footer-heading .icon { width: 15px; height: 15px; }
 
 /* Kleinere Fenster: Inhalt bleibt lesbar, die Navigation kann seitlich rollen. */
+/* Sieben Reiter brauchen die Breite; sonst ragt das Abzeichen heraus und die Seite rollt seitlich. */
+@media (max-width: 1180px) { .local-badge { display: none; } }
 @media (max-width: 1000px) {
-  .local-badge { display: none; }
   .showcase-copy { padding-left: 30px; }
   .country-at { right: 7%; }
   .kurz { column-gap: 7px; }
@@ -2128,3 +2411,6 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
   .weckerform > button { width: 100%; }
   .weckerform input[type=number] { font-size: 1rem; }
 }
+
+/* Fahrzeugfeld nur im Reiter "Finde dein Auto". */
+#regionScreen:not([data-art=auto]) .nur-auto { display: none; }
