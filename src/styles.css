@@ -2419,3 +2419,13 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
 .regfzbild img { width: 120px; height: 68px; object-fit: contain; }
 /* Anbieter vor dem Stationsnamen, in seiner Farbe. */
 .reganbieter { display: inline-block; margin-right: 7px; padding: 1px 6px; border-radius: 5px; font-size: .625rem; font-weight: 600; letter-spacing: .02em; color: var(--anb); background: color-mix(in srgb, var(--anb) 12%, transparent); vertical-align: 2px; }
+/* Finde dein Auto: Schalter und Monatstafel. */
+.regschalter { display: flex; flex-wrap: wrap; gap: 6px 14px; padding-top: 8px; font-size: .8125rem; }
+.regschalter label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+#regionScreen[data-suche=monat] .nur-termin, #regionScreen:not([data-suche=monat]) .nur-monat { display: none; }
+.regmonat-rahmen { overflow-x: auto; margin-top: 18px; }
+.regmonat { border-collapse: collapse; font-size: .6875rem; font-variant-numeric: tabular-nums; }
+.regmonat th, .regmonat td { padding: 6px 7px; border-bottom: 1px solid var(--line, #eceef2); text-align: center; white-space: nowrap; }
+.regmonat tbody th { text-align: left; font-weight: 500; position: sticky; left: 0; background: var(--card, #fff); }
+.regmonat td.nichts, .regmonat td.offen { color: var(--muted); }
+.regmonat td.beste { background: #e7f4ea; color: #1d6b34; font-weight: 650; border-radius: 6px; }

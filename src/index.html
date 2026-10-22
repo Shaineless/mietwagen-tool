@@ -260,7 +260,19 @@
         <input type="search" id="regFahrzeug" list="regFahrzeugListe" placeholder="z. B. Golf, BMW 3er, CDMR oder CD" autocomplete="off">
         <datalist id="regFahrzeugListe"></datalist>
         <div class="regfzbild" id="regFahrzeugBild" hidden></div>
-        <p class="hint">Modell oder ACRISS-Code, auch angefangen: „CD“ findet CDMR und CDAR. Nach der ersten Suche schlägt das Feld vor, was angeboten wird.</p>
+        <p class="hint">Modell oder ACRISS-Code, auch angefangen: „CD“ findet CDMR und CDAR. Die Liste schlägt jede Klasse vor, die TRACKER bei Sixt schon gesehen hat.</p>
+      </div>
+      <div class="field nur-auto">
+        <span class="flabel" id="regArtLabel">Suchart</span>
+        <div class="regschalter" role="radiogroup" aria-labelledby="regArtLabel">
+          <label><input type="radio" name="regArt" value="termin"> Ein Termin</label>
+          <label><input type="radio" name="regArt" value="monat"> Ganzer Monat</label>
+        </div>
+        <p class="hint">Ganzer Monat: erst alle Stationen an drei Werktagen, dann die 5 günstigsten an jedem Tag des Monats.</p>
+      </div>
+      <div class="field">
+        <span class="flabel" id="regAnbieterLabel">Anbieter</span>
+        <div class="regschalter" id="regAnbieter" role="group" aria-labelledby="regAnbieterLabel"></div>
       </div>
       <div class="field">
         <label class="flabel" for="regLand">Bundesland</label>
@@ -271,13 +283,21 @@
         <label class="flabel" for="regHost">Länderseite</label>
         <select id="regHost"></select>
       </div>
-      <div class="field">
+      <div class="field nur-termin">
         <label class="flabel" for="regStart">Abholung</label>
         <input type="date" id="regStart">
       </div>
-      <div class="field">
+      <div class="field nur-termin">
         <label class="flabel" for="regDauer">Mietdauer</label>
         <select id="regDauer"></select>
+      </div>
+      <div class="field nur-monat">
+        <label class="flabel" for="regMonat">Monat</label>
+        <input type="month" id="regMonat">
+      </div>
+      <div class="field nur-monat">
+        <span class="flabel" id="regDauernLabel">Mietdauern</span>
+        <div class="regschalter" id="regDauern" role="group" aria-labelledby="regDauernLabel"></div>
       </div>
       <div class="field">
         <label class="flabel" for="regZeit">Uhrzeit</label>
@@ -310,6 +330,15 @@
       </div>
     </div>
     <p class="tabnote" id="regBilanz"></p>
+  </section>
+
+  <section class="card" id="regMonatErgebnis" hidden aria-labelledby="regMonatTitel">
+    <h2 id="regMonatTitel">Der ganze Monat</h2>
+    <div class="calendar-insights" id="regMonatKennzahlen"></div>
+    <div class="regmonat-rahmen" tabindex="0" role="region" aria-label="Preise je Station und Tag">
+      <table class="regmonat" id="regMonatTafel"></table>
+    </div>
+    <p class="tabnote" id="regMonatBilanz"></p>
   </section>
 </section>
 

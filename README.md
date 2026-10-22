@@ -490,6 +490,42 @@ dieselbe Station, 148,98 €, die teuerste verlangt 345,98 €. In Bremen dagege
 dreht der Filter das Ergebnis: ohne ihn liegt Vegesack vorn, mit einem Ibiza;
 der günstigste Golf steht in Bremerhaven.
 
+**Ganzer Monat.** Statt eines Termins einen Monat und eine oder mehrere
+Mietdauern wählen. Ein Fahrzeug ist nicht an jedem Tag zu haben, und genau
+das findet die Suche heraus, in zwei Stufen, damit aus einem Monat keine
+zwölftausend Abrufe werden:
+
+1. Alle Stationen an drei Werktagen (Anfang, Mitte, Ende des Monats): wo
+   gibt es das Auto überhaupt?
+2. Die fünf günstigsten davon an jedem Tag des Monats mit jeder gewählten
+   Mietdauer.
+
+Ergebnis ist eine Tafel Station × Tag und der günstigste Termin, gemessen am
+Preis je Miettag. Die Abrufzahl steht vor dem Start im Formular. Gemessen in
+Bremen, CDMR, November, 2 Tage: an keiner Station vor dem 23. buchbar, danach
+zwischen 82,97 € (Vegesack, Sa. 28.11.) und 250 € (24.11.).
+
+### 15 · Mehrere Anbieter: Sixt, Europcar, Avis
+
+Die Bundeslandsuche und Finde dein Auto fragen neben Sixt auch **Europcar**
+(257 Stationen in Deutschland) und **Avis** (122) ab, in einer gemeinsamen
+Rangliste. Welche Anbieter mitmachen, lässt sich ankreuzen. Verglichen wird
+über den ACRISS-Code, den alle drei verwenden: ein CDMR ist überall dieselbe
+Klasse.
+
+- **Kilometer stehen dabei.** Europcar gibt oft nur begrenzte Kilometer
+  (Köln, 3 Tage: 1.200 km), Sixt und Avis unbegrenzte. Ein günstigerer Preis
+  mit Grenze steht deshalb nicht kommentarlos vorn.
+- **Der günstigste Tarif zählt**, bei Europcar und Avis meist die
+  Vorauszahlung.
+- **Nur in Euro.** Steht oben eine Sixt-Seite in Franken oder Pfund, fallen
+  die anderen Anbieter weg, verglichen wird nie über zwei Währungen.
+- **Vorsicht bei Avis:** viele schnelle Anfragen sperren dort die eigene IP
+  für Stunden, auch fürs normale Surfen.
+
+Gemessen in Bremen, CDMR, 3 Tage: Sixt Bremerhaven 178,96 €, Avis Bremen
+Center 195,65 €, Europcar Bremen Neustadt 251,40 € mit 1.200 km frei.
+
 ---
 
 ## Was es nicht kann

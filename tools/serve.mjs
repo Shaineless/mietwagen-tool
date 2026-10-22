@@ -37,7 +37,7 @@ import {
   wechsleProxy,
   setzeLagemelder,
 } from './proxy.mjs';
-import { merkeAngebote, bekannteKlassen, katalogStand } from './katalog.mjs';
+import { merkeAngebote, bekannteKlassen, katalogStand, ladeKatalog } from './katalog.mjs';
 import { istExe, quellWurzel, datenOrdner, leseVorrat } from './pfade.mjs';
 import { oeffneFenster } from './fenster.mjs';
 import { protokolliereNach, protokollPfad, zeigeMeldung, meldungenStehen } from './meldung.mjs';
@@ -1073,7 +1073,9 @@ const server = createServer(async (req, res) => {
     const station = url.searchParams.get('station') || '';
     const hosts = (url.searchParams.get('hosts') || '').split(',').filter(Boolean);
     try {
-      const klassen = await bekannteKlassen(provider, station, hosts);
+      // Ohne Station: alles, was je gesehen wurde. Das fuellt die Klassenwahl
+      // von "Finde dein Auto", bevor dort die erste Suche lief.
+      const klassen = station ? await bekannteKlassen(provider, station, hosts) : (await ladeKatalog()).klassen;
       return json(res, 200, { ok: true, klassen });
     } catch (e) {
       return json(res, 200, { ok: false, klassen: {}, error: String(e.message).slice(0, 120) });

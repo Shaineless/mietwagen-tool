@@ -2426,6 +2426,16 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
 .regfzbild img { width: 120px; height: 68px; object-fit: contain; }
 /* Anbieter vor dem Stationsnamen, in seiner Farbe. */
 .reganbieter { display: inline-block; margin-right: 7px; padding: 1px 6px; border-radius: 5px; font-size: .625rem; font-weight: 600; letter-spacing: .02em; color: var(--anb); background: color-mix(in srgb, var(--anb) 12%, transparent); vertical-align: 2px; }
+/* Finde dein Auto: Schalter und Monatstafel. */
+.regschalter { display: flex; flex-wrap: wrap; gap: 6px 14px; padding-top: 8px; font-size: .8125rem; }
+.regschalter label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+#regionScreen[data-suche=monat] .nur-termin, #regionScreen:not([data-suche=monat]) .nur-monat { display: none; }
+.regmonat-rahmen { overflow-x: auto; margin-top: 18px; }
+.regmonat { border-collapse: collapse; font-size: .6875rem; font-variant-numeric: tabular-nums; }
+.regmonat th, .regmonat td { padding: 6px 7px; border-bottom: 1px solid var(--line, #eceef2); text-align: center; white-space: nowrap; }
+.regmonat tbody th { text-align: left; font-weight: 500; position: sticky; left: 0; background: var(--card, #fff); }
+.regmonat td.nichts, .regmonat td.offen { color: var(--muted); }
+.regmonat td.beste { background: #e7f4ea; color: #1d6b34; font-weight: 650; border-radius: 6px; }
 </style>
 
 <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -2681,7 +2691,19 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
         <input type="search" id="regFahrzeug" list="regFahrzeugListe" placeholder="z. B. Golf, BMW 3er, CDMR oder CD" autocomplete="off">
         <datalist id="regFahrzeugListe"></datalist>
         <div class="regfzbild" id="regFahrzeugBild" hidden></div>
-        <p class="hint">Modell oder ACRISS-Code, auch angefangen: „CD“ findet CDMR und CDAR. Nach der ersten Suche schlägt das Feld vor, was angeboten wird.</p>
+        <p class="hint">Modell oder ACRISS-Code, auch angefangen: „CD“ findet CDMR und CDAR. Die Liste schlägt jede Klasse vor, die TRACKER bei Sixt schon gesehen hat.</p>
+      </div>
+      <div class="field nur-auto">
+        <span class="flabel" id="regArtLabel">Suchart</span>
+        <div class="regschalter" role="radiogroup" aria-labelledby="regArtLabel">
+          <label><input type="radio" name="regArt" value="termin"> Ein Termin</label>
+          <label><input type="radio" name="regArt" value="monat"> Ganzer Monat</label>
+        </div>
+        <p class="hint">Ganzer Monat: erst alle Stationen an drei Werktagen, dann die 5 günstigsten an jedem Tag des Monats.</p>
+      </div>
+      <div class="field">
+        <span class="flabel" id="regAnbieterLabel">Anbieter</span>
+        <div class="regschalter" id="regAnbieter" role="group" aria-labelledby="regAnbieterLabel"></div>
       </div>
       <div class="field">
         <label class="flabel" for="regLand">Bundesland</label>
@@ -2692,13 +2714,21 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
         <label class="flabel" for="regHost">Länderseite</label>
         <select id="regHost"></select>
       </div>
-      <div class="field">
+      <div class="field nur-termin">
         <label class="flabel" for="regStart">Abholung</label>
         <input type="date" id="regStart">
       </div>
-      <div class="field">
+      <div class="field nur-termin">
         <label class="flabel" for="regDauer">Mietdauer</label>
         <select id="regDauer"></select>
+      </div>
+      <div class="field nur-monat">
+        <label class="flabel" for="regMonat">Monat</label>
+        <input type="month" id="regMonat">
+      </div>
+      <div class="field nur-monat">
+        <span class="flabel" id="regDauernLabel">Mietdauern</span>
+        <div class="regschalter" id="regDauern" role="group" aria-labelledby="regDauernLabel"></div>
       </div>
       <div class="field">
         <label class="flabel" for="regZeit">Uhrzeit</label>
@@ -2731,6 +2761,15 @@ footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--hairli
       </div>
     </div>
     <p class="tabnote" id="regBilanz"></p>
+  </section>
+
+  <section class="card" id="regMonatErgebnis" hidden aria-labelledby="regMonatTitel">
+    <h2 id="regMonatTitel">Der ganze Monat</h2>
+    <div class="calendar-insights" id="regMonatKennzahlen"></div>
+    <div class="regmonat-rahmen" tabindex="0" role="region" aria-label="Preise je Station und Tag">
+      <table class="regmonat" id="regMonatTafel"></table>
+    </div>
+    <p class="tabnote" id="regMonatBilanz"></p>
   </section>
 </section>
 
@@ -4169,6 +4208,12 @@ const defaults = () => {
       klasse: '',
       /** Freitext: Modell ("Golf") oder ACRISS-Code ("CDMR"). */
       fahrzeug: '',
+      /** Welche Anbieter abgefragt werden. */
+      anbieter: ['sixt', 'europcar', 'avis'],
+      /** "Finde dein Auto": ein Termin oder der ganze Monat. */
+      art: 'termin',
+      monat: iso(new Date(Date.now() + 14 * 86400000)).slice(0, 7),
+      dauern: [1, 2, 3],
     },
   };
 };
@@ -6008,7 +6053,44 @@ function regStationen(land = state.region.land) {
 const WEITERE_STATIONEN = STATIONS.filter((s) => s.provider !== PROVIDER);
 function regAlle() {
   const markt = providerById(PROVIDER).markets.find((m) => m.host === state.region.host);
-  return markt?.cur === 'EUR' ? ALLE_STATIONEN.concat(WEITERE_STATIONEN) : ALLE_STATIONEN;
+  const alle = markt?.cur === 'EUR' ? ALLE_STATIONEN.concat(WEITERE_STATIONEN) : ALLE_STATIONEN;
+  const an = state.region.anbieter || [PROVIDER];
+  return alle.filter((s) => an.includes(s.provider));
+}
+
+/** Anbieter, die in der Bundeslandsuche mitmachen können. */
+const REG_ANBIETER = [PROVIDER, ...new Set(WEITERE_STATIONEN.map((s) => s.provider))];
+
+/** Monatssuche nur im Reiter "Finde dein Auto". */
+const regMonatsSuche = () => state.mode === 'auto' && state.region.art === 'monat';
+
+/** Wie viele Stationen die zweite Stufe der Monatssuche durchgeht. */
+const REG_MONAT_TOP = 5;
+
+/** Tage des gewählten Monats ab morgen, als ISO-Daten. */
+function regMonatsTage() {
+  const [j, m] = (state.region.monat || '').split('-').map(Number);
+  if (!j || !m) return [];
+  const morgen = iso(new Date(Date.now() + 86400000));
+  const tage = [];
+  for (let d = 1; d <= 31; d++) {
+    const t = iso(new Date(Date.UTC(j, m - 1, d, 12)));
+    if (t.slice(0, 7) !== state.region.monat) break;
+    if (t >= morgen) tage.push(t);
+  }
+  return tage;
+}
+
+/** Sixts Klassenkatalog: alles, was TRACKER je gesehen hat. Füllt die Vorschläge vor der ersten Suche. */
+let regKatalog = {};
+async function ladeRegKatalog() {
+  if (Object.keys(regKatalog).length) return;
+  try {
+    const d = await (await fetch(`/api/katalog?provider=${PROVIDER}`)).json();
+    if (d.ok) regKatalog = d.klassen || {};
+  } catch {
+    /* ohne Katalog schlägt das Feld erst nach der Suche vor */
+  }
 }
 
 /** Welche Bundesländer stecken überhaupt in den Daten, und mit wie vielen? */
@@ -6037,31 +6119,177 @@ function regJobs() {
   if (!stationen.length) return null;
 
   const bis = addDays(r.start, r.dauer);
-  const jobs = stationen.map((station) => {
-    const v = {
-      pickupDate: r.start,
-      returnDate: bis,
-      duration: r.dauer,
-      pickupTime: r.zeit,
-      returnTime: r.zeit,
-    };
-    // Die Länderseite oben gilt nur für Sixt; jeder andere Anbieter hat genau eine.
-    const anbieter = providerById(station.provider);
-    const host = station.provider === PROVIDER ? r.host : anbieter.markets[0].host;
-    return {
-      key: jobKey(host, station.code, v, null, false),
-      provider: station.provider,
-      host,
-      stationCode: station.code,
-      pickupDate: r.start,
-      returnDate: bis,
-      pickupTime: r.zeit,
-      returnTime: r.zeit,
-      currency: markt.cur,
-      station,
-    };
-  });
+  const jobs = stationen.map((station) => regJob(station, r.start, r.dauer, markt));
   return { jobs, stationen, markt, bis };
+}
+
+/** Ein Abruf: eine Station, ein Abholtag, eine Mietdauer. */
+function regJob(station, start, dauer, markt) {
+  const r = state.region;
+  const bis = addDays(start, dauer);
+  const v = { pickupDate: start, returnDate: bis, duration: dauer, pickupTime: r.zeit, returnTime: r.zeit };
+  // Die Länderseite oben gilt nur für Sixt; jeder andere Anbieter hat genau eine.
+  const host = station.provider === PROVIDER ? r.host : providerById(station.provider).markets[0].host;
+  return {
+    key: jobKey(host, station.code, v, null, false),
+    provider: station.provider,
+    host,
+    stationCode: station.code,
+    pickupDate: start,
+    returnDate: bis,
+    pickupTime: r.zeit,
+    returnTime: r.zeit,
+    currency: markt.cur,
+    station,
+    dauer,
+  };
+}
+
+/* ================================================== Finde dein Auto: Monat
+ *
+ * Zwei Stufen, damit aus einem Monat keine zwölftausend Abrufe werden:
+ *   1. alle Stationen an drei Werktagen: wo gibt es das Auto überhaupt, wo
+ *      ist es günstig?
+ *   2. die fünf günstigsten davon an jedem Tag des Monats mit jeder
+ *      gewählten Mietdauer.
+ * Eine Station, die das Auto an keinem Stichtag hat, fällt in Stufe 1
+ * heraus, auch wenn sie es an einem anderen Tag hätte. Das steht unter der
+ * Tafel dabei.
+ */
+let regMonat = null; // { stationen, tage, dauern, jobs }
+
+async function starteMonat() {
+  const r = state.region;
+  const tage = regMonatsTage();
+  if (regLaeuft || !tage.length || !(r.dauern || []).length || !r.fahrzeug.trim()) return;
+
+  const d = regJobs();
+  if (!d) return;
+  regMonat = null;
+  regLaeuft = true;
+  regAbbruch = false;
+  renderRegionFormular();
+  renderMonat();
+  try {
+    // Stufe 1: drei Werktage über den Monat verteilt. Ein einzelner Stichtag
+    // war zu wackelig: am 01.11.2026 (Sonntag) bot in Bremen keine Station
+    // einen CDMR an, obwohl alle fünf Autos hatten.
+    const stichtage = regStichtage(tage);
+    const stufe1 = [];
+    for (const s of d.stationen) for (const t of stichtage) stufe1.push(regJob(s, t, r.dauern[0], d.markt));
+    await regLauf(stufe1, () => renderRegionFortschritt(stufe1));
+    if (regAbbruch) return;
+
+    const bestJeStation = new Map();
+    for (const j of stufe1) {
+      const p = regPreis(j).preis;
+      if (p != null && !(bestJeStation.get(j.station) <= p)) bestJeStation.set(j.station, p);
+    }
+    const stationen = [...bestJeStation].sort((a, b) => a[1] - b[1]).slice(0, REG_MONAT_TOP).map(([s]) => s);
+    if (!stationen.length) {
+      flash('Keine Station bietet dieses Fahrzeug an den Stichtagen an. Anderes Fahrzeug oder anderen Monat versuchen.');
+      return;
+    }
+
+    // Stufe 2: die Besten an jedem Tag mit jeder Dauer.
+    const jobs = [];
+    for (const s of stationen) for (const dauer of r.dauern) for (const t of tage) jobs.push(regJob(s, t, dauer, d.markt));
+    regMonat = { stationen, tage, dauern: [...r.dauern], jobs, cur: d.markt.cur };
+    renderMonat();
+    await regLauf(jobs, () => { renderRegionFortschritt(jobs); renderMonat(); });
+  } finally {
+    regLaeuft = false;
+    $('#regFortschritt').hidden = true;
+    renderRegionFormular();
+    renderMonat();
+  }
+}
+
+/** Bis zu drei Werktage (Di–Do bevorzugt) am Anfang, in der Mitte und am Ende. */
+function regStichtage(tage) {
+  const werktag = (t) => [2, 3, 4].includes(new Date(t + 'T12:00:00').getDay());
+  const raus = new Set();
+  for (const anteil of [0, 0.5, 1]) {
+    const mitte = Math.round(anteil * (tage.length - 1));
+    const nah = [...tage].sort((a, b) => Math.abs(tage.indexOf(a) - mitte) - Math.abs(tage.indexOf(b) - mitte));
+    raus.add(nah.find(werktag) || nah[0]);
+  }
+  return [...raus].sort();
+}
+
+/** Abrufe schicken und mitzeichnen, bis die Warteschlange leer ist. */
+async function regLauf(jobs, zeichne) {
+  for (const j of jobs) extraSchluessel.add(j.key);
+  const offen = jobs.filter((j) => !prices.has(j.key));
+  if (!offen.length) return zeichne();
+  await sendeJobs(offen.map(({ station, dauer, ...rest }) => rest), $('#regStarten'));
+  for (let i = 0; i < 2000; i++) {
+    await new Promise((res) => setTimeout(res, 3000));
+    if (regAbbruch) break;
+    await pollErgebnisse();
+    zeichne();
+    const q = service.queue;
+    if (q && !q.laufend && !q.offen) break;
+  }
+}
+
+/** Die Tafel: je Station und Mietdauer eine Zeile, je Tag eine Spalte. */
+function renderMonat() {
+  const box = $('#regMonatErgebnis');
+  box.hidden = !regMonatsSuche() || !regMonat;
+  if (box.hidden) return;
+  const { stationen, tage, dauern, jobs, cur } = regMonat;
+  const zelle = new Map(jobs.map((j) => [`${j.station.code}|${j.dauer}|${j.pickupDate}`, j]));
+
+  // Verglichen wird je Tag Miete, sonst gewönne immer die kürzeste Dauer.
+  const alle = jobs.map((j) => ({ j, ...regPreis(j) })).filter((x) => x.preis != null)
+    .map((x) => ({ ...x, proTag: x.preis / x.j.dauer }));
+  const beste = alle.reduce((a, b) => (!a || b.proTag < a.proTag ? b : a), null);
+  const geladen = jobs.filter((j) => prices.has(j.key)).length;
+  const verfuegbar = new Set(alle.map((x) => x.j.pickupDate));
+
+  setChildren($('#regMonatKennzahlen'),
+    el('div', { class: 'calendar-insight' },
+      el('span', { class: 'calendar-insight-label' }, 'Günstigster Termin'),
+      el('strong', { class: 'calendar-insight-value' }, beste ? kalBetrag(beste.preis, cur) : '–'),
+      el('span', { class: 'calendar-insight-note' }, beste
+        ? `${providerById(beste.j.station.provider).label} ${beste.j.station.name} · ${kalDatum(beste.j.pickupDate)} · ` +
+          `${beste.j.dauer} ${beste.j.dauer === 1 ? 'Tag' : 'Tage'} · ${kalBetrag(beste.proTag, cur)} je Tag`
+        : 'Noch kein Preis')),
+    el('div', { class: 'calendar-insight' },
+      el('span', { class: 'calendar-insight-label' }, 'Tage mit Angebot'),
+      el('strong', { class: 'calendar-insight-value' }, `${verfuegbar.size} / ${tage.length}`),
+      el('span', { class: 'calendar-insight-note' }, 'An mindestens einer der Stationen buchbar')),
+    el('div', { class: 'calendar-insight' },
+      el('span', { class: 'calendar-insight-label' }, 'Abgefragt'),
+      el('strong', { class: 'calendar-insight-value' }, `${geladen} / ${jobs.length}`),
+      el('span', { class: 'calendar-insight-note' }, `${stationen.length} Stationen · ${dauern.join(', ')} Tage Miete`)));
+
+  const kopf = el('tr', {}, el('th', { scope: 'col' }, 'Station · Dauer'),
+    ...tage.map((t) => el('th', { scope: 'col' }, t.slice(8, 10) + '.')));
+  const zeilen = [];
+  for (const s of stationen) {
+    for (const dauer of dauern) {
+      zeilen.push(el('tr', {},
+        el('th', { scope: 'row' },
+          el('span', { class: 'reganbieter', style: `--anb: ${providerById(s.provider).theme.accent}` }, providerById(s.provider).label),
+          `${s.name} · ${dauer} ${dauer === 1 ? 'Tag' : 'Tage'}`),
+        ...tage.map((t) => {
+          const j = zelle.get(`${s.code}|${dauer}|${t}`);
+          const p = j ? regPreis(j) : null;
+          const ist = beste && j === beste.j;
+          return el('td', {
+            class: (ist ? 'beste ' : '') + (p?.preis != null ? 'preis' : p?.geladen ? 'nichts' : 'offen'),
+            title: p?.preis != null ? `${kalDatum(t)}: ${kalBetrag(p.preis, cur)}, ${p.modell || ''}` : p?.grund || 'noch offen',
+          }, p?.preis != null ? Math.round(p.preis).toLocaleString('de-DE') : p?.geladen ? '–' : '·');
+        })));
+    }
+  }
+  setChildren($('#regMonatTafel'), el('thead', {}, kopf), el('tbody', {}, ...zeilen));
+  $('#regMonatBilanz').textContent =
+    `Gesamtpreise in ${cur}. Der günstigste Termin ist nach Preis je Miettag gewählt. ` +
+    '„–“ heißt: an diesem Tag mit dieser Dauer nicht im Angebot. ' +
+    'Die Stationen stammen aus Stufe 1 an drei Werktagen; eine Station, die das Auto nur an anderen Tagen hat, fehlt hier.';
 }
 
 /**
@@ -6115,6 +6343,8 @@ function oeffneRegion() {
     b.dataset.nav === (auto ? 'auto' : 'region') ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   renderRegionFormular();
   renderRegionErgebnis();
+  renderMonat();
+  ladeRegKatalog().then(() => renderRegionErgebnis());
 }
 
 /** Passt ein Angebot zum eingegebenen Fahrzeug? Leer heisst: jedes. */
@@ -6136,9 +6366,18 @@ function renderRegionVorschlaege(d) {
       if (o.acriss && !gesehen.has(o.acriss)) gesehen.set(o.acriss, o.model || '');
     }
   }
+  if ((state.region.anbieter || []).includes(PROVIDER)) {
+    for (const [k, v] of Object.entries(regKatalog)) {
+      if (!gesehen.has(k)) gesehen.set(k, v?.modelle?.[0] || v?.beispielText || '');
+    }
+  }
   // Bild zum Eingegebenen, damit man bei "CDMR" sieht, welches Auto das ist.
+  // Vor der ersten Suche kommt es aus dem Katalog.
+  const ausKatalog = Object.entries(regKatalog)
+    .map(([k, v]) => ({ acriss: k, model: v?.modelle?.[0] || '', image: v?.bild }))
+    .find((o) => o.image && regPasst(o));
   const treffer = state.region.fahrzeug.trim()
-    ? d.jobs.flatMap((j) => prices.get(j.key)?.offers || []).find((o) => o.image && regPasst(o))
+    ? d.jobs.flatMap((j) => prices.get(j.key)?.offers || []).find((o) => o.image && regPasst(o)) || ausKatalog
     : null;
   const vorschau = $('#regFahrzeugBild');
   vorschau.hidden = !treffer;
@@ -6210,8 +6449,62 @@ function renderRegionFormular() {
         : '')
     : '';
 
-  $('#regStarten').disabled = !n || regLaeuft;
-  $('#regStarten').textContent = regLaeuft ? 'Stationen werden abgefragt …' : 'Stationen durchsuchen';
+  // Anbieter zum An- und Abwählen. Mindestens einer bleibt immer an.
+  setChildren($('#regAnbieter'), ...REG_ANBIETER.map((p) =>
+    el('label', {},
+      el('input', {
+        type: 'checkbox', value: p, checked: (r.anbieter || []).includes(p) ? '' : null,
+        disabled: (r.anbieter || []).length === 1 && r.anbieter[0] === p ? '' : null,
+        onchange: (e) => {
+          const an = new Set(r.anbieter || []);
+          e.target.checked ? an.add(p) : an.delete(p);
+          r.anbieter = REG_ANBIETER.filter((x) => an.has(x));
+          persist();
+          regGezeigt = new Set();
+          renderRegionFormular();
+          renderRegionErgebnis();
+        },
+      }),
+      ' ' + providerById(p).label)));
+
+  // Termin oder Monat. Im Reiter "Günstigste Station" gibt es nur den Termin.
+  const monat = regMonatsSuche();
+  $('#regionScreen').dataset.suche = monat ? 'monat' : 'termin';
+  for (const radio of document.querySelectorAll('input[name=regArt]')) radio.checked = radio.value === (r.art || 'termin');
+  $('#regMonat').value = r.monat || '';
+  $('#regMonat').min = iso(new Date()).slice(0, 7);
+  setChildren($('#regDauern'), ...[1, 2, 3, 4, 5, 7].map((t) =>
+    el('label', {},
+      el('input', {
+        type: 'checkbox', value: String(t), checked: (r.dauern || []).includes(t) ? '' : null,
+        onchange: (e) => {
+          const d = new Set(r.dauern || []);
+          e.target.checked ? d.add(t) : d.delete(t);
+          r.dauern = [...d].sort((a, b) => a - b);
+          persist();
+          renderRegionFormular();
+        },
+      }),
+      ` ${t} ${t === 1 ? 'Tag' : 'Tage'}`)));
+
+  if (monat) {
+    // Die ehrliche Rechnung vorher, nicht hinterher.
+    const tage = regMonatsTage().length;
+    const stufe2 = Math.min(REG_MONAT_TOP, n) * tage * (r.dauern || []).length;
+    const fehlt = !r.fahrzeug.trim() ? 'Erst oben ein Fahrzeug eingeben.'
+      : !tage ? 'Dieser Monat liegt schon hinter uns.'
+      : !(r.dauern || []).length ? 'Mindestens eine Mietdauer ankreuzen.' : '';
+    $('#regKosten').textContent = fehlt ||
+      `Stufe 1: ${n * regStichtage(regMonatsTage()).length} Abrufe, alle Stationen an ${regStichtage(regMonatsTage()).length} Werktagen · ` +
+      `Stufe 2: die ${Math.min(REG_MONAT_TOP, n)} günstigsten Stationen an ${tage} Tagen mit ` +
+      `${(r.dauern || []).length} ${(r.dauern || []).length === 1 ? 'Mietdauer' : 'Mietdauern'}, ${stufe2} Abrufe. Zusammen ${n * regStichtage(regMonatsTage()).length + stufe2}, ` +
+      `rund ${Math.max(1, Math.round(((n * regStichtage(regMonatsTage()).length + stufe2) * 2.5) / 4 / 60))} Minuten.`;
+    $('#regStarten').disabled = !n || regLaeuft || Boolean(fehlt);
+    $('#regStarten').textContent = regLaeuft ? 'Monat wird durchsucht …' : 'Monat durchsuchen';
+  } else {
+    $('#regStarten').disabled = !n || regLaeuft;
+    $('#regStarten').textContent = regLaeuft ? 'Stationen werden abgefragt …' : 'Stationen durchsuchen';
+  }
   $('#regAbbrechen').hidden = !regLaeuft;
 }
 
@@ -6308,7 +6601,7 @@ function renderRegionFortschritt(jobs) {
   $('#regFortschritt').hidden = !regLaeuft;
   $('#regFuellung').style.transform = `scaleX(${jobs.length ? geladen / jobs.length : 0})`;
   $('#regText').textContent =
-    `${geladen} von ${jobs.length} Stationen abgefragt` +
+    `${geladen} von ${jobs.length} ${regMonatsSuche() ? 'Abrufen' : 'Stationen'} abgefragt` +
     (mitPreis < geladen ? ` · ${mitPreis} mit Preis` : '');
   renderLage(regLaeuft);
 }
@@ -12587,8 +12880,22 @@ function init() {
     persist();
     regGezeigt = new Set();
     renderRegionErgebnis();
+    if (regMonatsSuche()) renderRegionFormular();
   });
-  $('#regStarten').addEventListener('click', () => starteRegion());
+  for (const radio of document.querySelectorAll('input[name=regArt]')) {
+    radio.addEventListener('change', () => {
+      state.region.art = radio.value;
+      persist();
+      renderRegionFormular();
+      renderMonat();
+    });
+  }
+  $('#regMonat').addEventListener('change', (e) => {
+    state.region.monat = e.target.value;
+    persist();
+    renderRegionFormular();
+  });
+  $('#regStarten').addEventListener('click', () => (regMonatsSuche() ? starteMonat() : starteRegion()));
   $('#regAbbrechen').addEventListener('click', () => {
     regAbbruch = true;
     // Derselbe Weg wie im Kalender: die Warteschlange beim Dienst leeren.
