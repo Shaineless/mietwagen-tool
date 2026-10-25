@@ -58,6 +58,21 @@ test('lesePreisAusText: der 1025,85-Fehler der spanischen Seite', () => {
   assert.notEqual(lesePreisAusText('Total: 1025,85€'), 25.85);
 });
 
+test('lesePreisAusText: Schweizer Kasse ohne Leerzeichen nach CHF', () => {
+  // Echter Block von sixt.ch, 10/2026. Mit \b um "CHF" kam hier null heraus.
+  assert.equal(lesePreisAusText('Gesamt:\nCHF566.15\nCHF566.15\nSie sparen: CHF 87.3'), 566.15);
+  // Die Grenze schuetzt weiter vor Codes mitten im Wort.
+  assert.equal(lesePreisAusText('elektryczny 12,50'), null);
+});
+
+test('lesePreisAusText: schmales Leerzeichen als Tausendertrenner (Schweden)', () => {
+  // Aus "7 200,09 kr" wurde 200,09, weil das Muster das Zeichen nicht kannte.
+  assert.equal(lesePreisAusText('Total:\n7 200,09 kr\n7 200,09kr'), 7200.09);
+  assert.equal(lesePreisAusText('Total:\n7 200,09 kr'), 7200.09);
+  assert.equal(lesePreisAusText('Całkowity:\n2625,45 zł'), 2625.45);
+  assert.equal(lesePreisAusText('Teljes:\n232\u00a0393,13 Ft'), 232393.13);
+});
+
 test('lesePreisAusText: mit Tausendertrenner', () => {
   assert.equal(lesePreisAusText('Gesamt: 1.084,66 €'), 1084.66);
 });

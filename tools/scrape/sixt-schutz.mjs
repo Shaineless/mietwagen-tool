@@ -141,8 +141,14 @@ export function liesGesamtpreis(page) {
   return Promise.race([
     page
       .evaluate(() => {
+        // Die Beschriftung je Sprache. Polen schreibt seit 10/2026 "Całkowity:"
+        // statt "Total:", und alle polnischen Gesamtpreise kamen leer zurueck.
         const marke = [...document.querySelectorAll('*')].find(
-          (e) => e.children.length === 0 && /Gesamt:|Total:|Totale:|Total :/i.test(e.textContent)
+          (e) =>
+            e.children.length === 0 &&
+            /(Gesamt|Total|Totale|Totalt|Totaal|Całkowity|Razem|Celkem|Celkom|Összesen|Teljes|Ukupno|Skupaj|Σύνολο|Toplam|Yhteensä|I alt|Kokku|Kopā|Iš viso|Samtals|Итого|Общо)\s*:/i.test(
+              e.textContent
+            )
         );
         return marke?.closest('div,section,aside')?.innerText || '';
       })
@@ -162,12 +168,20 @@ export function liesGesamtpreis(page) {
  * "TRY" ohne Grenze und mit /i traf mitten in polnischen Woertern wie
  * "elektryczny", "kr" traefe in "Kreditkarte". Derselbe Fehler ist an der
  * Kachel-Auswertung schon einmal passiert und steht dort dokumentiert.
+ *
+ * Statt \b steht "kein Buchstabe davor und dahinter": die Schweizer Kasse
+ * schreibt seit 10/2026 "CHF566.15" ohne Leerzeichen, und zwischen F und 5
+ * gibt es keine Wortgrenze. Alle Schweizer Gesamtpreise kamen leer zurueck.
  */
 const KASSE_WAEHRUNG_RE =
-  /[€£$]|zł|Kč|лв|₺|\b(?:CHF|SEK|NOK|DKK|PLN|CZK|HUF|TRY|RON|BGN|EUR|GBP|USD|Ft|kr)\b/i;
+  /[€£$]|zł|Kč|лв|₺|(?<![a-z])(?:CHF|SEK|NOK|DKK|PLN|CZK|HUF|TRY|RON|BGN|EUR|GBP|USD|Ft|kr)(?![a-z])/i;
 
 /**
  * Ein Betrag, mit oder ohne Tausendertrenner.
+ *
+ * Die Leerzeichen stehen als \u-Codes da: als echte Zeichen sind sie beim
+ * Speichern einmal zu gewoehnlichen Leerzeichen geworden, und Schweden las
+ * aus "7 200,09 kr" (mit schmalem Leerzeichen) den Wert 200,09.
  *
  * Als Trenner gelten Punkt, Komma, Apostroph und die schmalen Leerzeichen.
  * Ein gewoehnliches Leerzeichen ebenfalls, denn Frankreich, Schweden, Norwegen,
@@ -181,7 +195,7 @@ const KASSE_WAEHRUNG_RE =
  * an den Anfang der naechsten Zeile und las 94411,94. Deshalb wird oben
  * zeilenweise zerlegt und hier nur innerhalb einer Zeile gesucht.
  */
-const KASSE_BETRAG_RE = /\d{1,3}(?:[.,    '’′]\d{3})+[.,]\d{2}|\d+[.,]\d{2}/;
+const KASSE_BETRAG_RE = /\d{1,3}(?:[.,\u0020\u00a0\u2009\u202f'’′]\d{3})+[.,]\d{2}|\d+[.,]\d{2}/;
 
 /**
  * Den Gesamtpreis aus dem Textblock der Kasse lesen.
@@ -207,7 +221,7 @@ export function lesePreisAusText(text) {
     if (!m) continue;
     // Trennzeichen weg, dann entscheidet das LETZTE Punkt oder Komma ueber die
     // Nachkommastellen.
-    const roh = m[0].replace(/[    '’′]/g, '');
+    const roh = m[0].replace(/[\u0020\u00a0\u2009\u202f'’′]/g, '');
     const sep = Math.max(roh.lastIndexOf('.'), roh.lastIndexOf(','));
     if (sep < 0) continue;
     const wert = Number(roh.slice(0, sep).replace(/[.,]/g, '') + '.' + roh.slice(sep + 1));
