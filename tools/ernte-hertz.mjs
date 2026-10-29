@@ -20,8 +20,15 @@ if (!r.ok) throw new Error(`Hertz-Stationsliste: Antwort ${r.status}`);
 const liste = (await r.json()).data?.model || [];
 
 const stationen = liste
-  // Nur buchbare PKW-Stationen; die Lkw-Standorte vermieten keine Personenwagen.
-  .filter((s) => s.bookable && !s.heavy_trucks && s.extendedOAGCode && s.countryCode === 'DE')
+  // Nur klassische, buchbare PKW-Stationen. Weg damit:
+  //   hod "M"          Hertz 24/7, die Selbstbedienungspunkte bei IKEA und
+  //                    Baumaerkten (200 von 320); die Buchungsseite kennt sie
+  //                    nicht, Bremen ROLLER kam als "nichts im Angebot" zurueck
+  //   served_by "Y"    Partnerpunkte, die eine andere Station bedient
+  //   heavy_trucks     Lkw-Standorte
+  //   "BWFP" im Namen  nur fuer Firmenkunden, es gibt dafuer kein Feld
+  .filter((s) => s.bookable && !s.heavy_trucks && s.hod !== 'M' && s.served_by !== 'Y' && !/BWFP/i.test(s.locationName))
+  .filter((s) => s.extendedOAGCode && s.countryCode === 'DE')
   .map((s) => ({
     id: s.extendedOAGCode.trim(),
     plz: (s.zip || '').trim(),

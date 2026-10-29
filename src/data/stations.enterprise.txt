@@ -1,0 +1,203 @@
+# Enterprise-PKW-Stationen in Deutschland.
+# Format: id|plz|bundesland|breite|laenge|art|name
+# Geerntet: 2026-10-29 mit tools/ernte-enterprise.mjs
+# Bundesland aus Koordinate und Landesumriss. Datei wird im Ganzen ersetzt.
+1049073|52070|nordrhein-westfalen|50.78603|6.11242||Aachen
+1057734|73430|baden-wuerttemberg|48.84589|10.09526||Aalen
+1009851|63739|bayern|49.979802|9.134641||Aschaffenburg
+1057748|86167|bayern|48.391392|10.934074||Augsburg
+1057666|85560|bayern|48.0952|11.9652||Autohaus Ebersberg
+1052395|36251|hessen|50.8751|9.7024||Bad Hersfeld
+1015713|61348|hessen|50.2212|8.6144||Bad Homburg
+1052765|44137|nordrhein-westfalen|51.5168|7.4622||Bahnhof Dortmund
+1057654|96052|bayern|49.913946|10.908182||Bamberg
+1057800|10365|berlin|52.526|13.4993||Berlin Lichtenberg
+1057805|13405|berlin|52.562316|13.327924||Berlin Reinickendorf
+1057807|10787|berlin|52.505035|13.340397||Berlin Zoo, Kurfürstendamm
+1057844|12107|berlin|52.4406|13.39096||Berlin-Mariendorf
+1057804|13086|berlin|52.552128|13.439778||Berlin-Pankow
+1057846|13581|berlin|52.528507|13.19149||Berlin-Spandau
+1057802|10117|berlin|52.509037|13.38993||Berlin-Stadtzentrum
+1057843|12205|berlin|52.426777|13.303998||Berlin-Zehlendorf
+1057639|88400|baden-wuerttemberg|48.0935|9.7936||Biberach
+1057759|33609|nordrhein-westfalen|52.034977|8.549777||Bielefeld
+1049112|46395|nordrhein-westfalen|51.8347|6.6143||Bocholt
+1049075|44809|nordrhein-westfalen|51.500494|7.211681||Bochum
+1057751|88046|baden-wuerttemberg|47.6728|9.5229|flughafen|Bodensee-Airport Friedrichshafen
+1049085|53227|nordrhein-westfalen|50.7344|7.1335||Bonn Beuel
+1049084|53113|nordrhein-westfalen|50.719416|7.122111||Bonn-Süd
+1057785|38114|niedersachsen|52.283801|10.519184||Braunschweig
+1057834|28217|bremen|53.083225|8.787703||Bremen Überseestadt
+1057824|28207|bremen|53.06916|8.86812||Bremen-Hemelingen
+1057826|27570|niedersachsen|53.545369|8.59182||Bremerhaven
+1057801|29221|niedersachsen|52.609902|10.099654||Celle
+1057854|09119|sachsen|50.819879|12.894183||Chemnitz
+1057685|85356|bayern|48.3959|11.7711||Christl & Schowalter GmbH
+1057653|96450|bayern|50.2435|10.9709||Coburg
+1057839|03048|brandenburg|51.749097|14.327998||Cottbus
+1014771|64293|hessen|49.88951|8.63705||Darmstadt
+1057873|06847|sachsen-anhalt|51.8305|12.2257||Dessau
+1049077|44141|nordrhein-westfalen|51.50675|7.47524||Dortmund
+1057852|01067|sachsen|51.061455|13.713149||Dresden City Center
+1057848|01277|sachsen|51.026719|13.785503||Dresden/Reick, Sachsengarage
+1049080|47051|nordrhein-westfalen|51.429987|6.772774||Duisburg Hauptbahnhof
+1054541|40210|nordrhein-westfalen|51.2214|6.7921||Düsseldorf Bahnhof
+1049059|40470|nordrhein-westfalen|51.25295|6.80122||Düsseldorf Mörsenbroich
+1049061|40233|nordrhein-westfalen|51.2201|6.8166||Düsseldorf, Automeile
+1057836|26721|niedersachsen|53.3863|7.2085||Emden
+1057864|99099|thueringen|50.9741|11.0593||Erfurt
+1057695|91058|bayern|49.5794|10.9897||Erlangen
+1057717|78224|baden-wuerttemberg|47.7531|8.8483||Ernst - Konig Singen
+1057715|79331|baden-wuerttemberg|48.135|7.813||ernst + könig
+1057718|79539|baden-wuerttemberg|47.62331|7.65693||ernst + könig Lörrach
+1046249|65760|hessen|50.1351|8.5709||Eschborn
+1049078|45128|nordrhein-westfalen|51.44578|7.00427||Essen
+1052978|45355|nordrhein-westfalen|51.4725|6.9477||Essen-Borbeck
+1049144|53879|nordrhein-westfalen|50.6553|6.7978||Euskirchen
+1057825|24941|schleswig-holstein|54.7716|9.4243||Flensburg
+1057851|12529|brandenburg|52.364353|13.509903|flughafen|Flughafen Berlin Brandenburg
+1057829|28199|bremen|53.054495|8.785673|flughafen|Flughafen Bremen
+1057850|01109|sachsen|51.124699|13.767923|flughafen|Flughafen Dresden
+1049063|40474|nordrhein-westfalen|51.279786|6.769596|flughafen|Flughafen Düsseldorf
+1021832|60549|hessen|50.050585|8.566942|flughafen|Flughafen Frankfurt
+1055714|55483|rheinland-pfalz|49.94642|7.270451|flughafen|Flughafen Hahn
+1057774|22335|hamburg|53.62923|10.007929|flughafen|Flughafen Hamburg
+1057799|30855|niedersachsen|52.459887|9.697395|flughafen|Flughafen Hannover
+1049066|51147|nordrhein-westfalen|50.879742|7.119625|flughafen|Flughafen Köln/Bonn
+1057861|04435|sachsen|51.422|12.2219|flughafen|Flughafen Leipzig-Halle
+1057821|23562|schleswig-holstein|53.8053|10.7106|flughafen|Flughafen Lübeck
+1057644|87766|bayern|47.988722|10.231162|flughafen|Flughafen Memmingen
+1057745|85356|bayern|48.353776|11.786124|flughafen|Flughafen München
+1057688|90411|bayern|49.494279|11.076955|flughafen|Flughafen Nürnberg
+1057723|70629|baden-wuerttemberg|48.69012|9.18924|flughafen|Flughafen Stuttgart
+1052750|47652|nordrhein-westfalen|51.5994|6.1508|flughafen|Flughafen Weeze
+1053457|60329|hessen|50.1051|8.6629||Frankfurt Bahnhof
+1053081|60313|hessen|50.114582|8.69227||Frankfurt Stadtzentrum – Zeil
+1007880|60326|hessen|50.1022|8.6348||Frankfurt-Gallus
+1057712|79111|baden-wuerttemberg|47.98604|7.80208||Freiburg
+1057699|69469|baden-wuerttemberg|49.5577|8.6598||Freudenberg Employees only
+1057752|88046|baden-wuerttemberg|47.6728|9.5229||Friedrichshafen, Bodensee
+1049083|45881|nordrhein-westfalen|51.5381|7.0795||Gelsenkirchen
+1057833|07548|thueringen|50.8608|12.0765||Gera
+1009945|35394|hessen|50.57127|8.68869||Gießen
+1057738|73037|baden-wuerttemberg|48.6987|9.6529||Göppingen
+1057787|38640|niedersachsen|51.913|10.4159||Goslar
+1057842|99867|thueringen|50.9458|10.7353||Gotha AHG
+1057790|37073|niedersachsen|51.539651|9.933693||Göttingen
+1057691|92655|bayern|49.7064|11.9413||Grafenwöhr
+1049068|51643|nordrhein-westfalen|51.0068|7.572||Gummersbach
+1057762|33330|nordrhein-westfalen|51.9172|8.3933||Gütersloh
+1049079|58089|nordrhein-westfalen|51.38839|7.44368||Hagen
+1057863|06112|sachsen-anhalt|51.4793|11.9912||Halle (Saale)
+1057780|22525|hamburg|53.571607|9.925278||Hamburg Altona
+1057769|20097|hamburg|53.5466|10.0157||Hamburg Amsinckstraße
+1057778|21079|hamburg|53.456608|10.008706||Hamburg Harburg
+1057784|22453|hamburg|53.60386|9.98545||Hamburg-Eppendorf
+1057781|20537|hamburg|53.550237|10.052649||Hamburg-Hammerbrook
+1057786|22047|hamburg|53.58889|10.09819||Hamburg, Wandsbek
+1057765|59067|nordrhein-westfalen|51.6654|7.7872||Hamm
+1057809|30165|niedersachsen|52.3999|9.736346||Hannover Zentrum
+1057806|30659|niedersachsen|52.4153|9.8262||Hannover, Bothfeld
+1057808|30880|niedersachsen|52.317484|9.78928||Hannover, Messezentrum
+1057698|69115|baden-wuerttemberg|49.39924|8.67781||Heidelberg
+1057736|74076|baden-wuerttemberg|49.1649|9.2194||Heilbronn
+1056645|52525|nordrhein-westfalen|51.0681|6.1123||Heinsberg
+1057803|31135|niedersachsen|52.165088|9.967614||Hildesheim
+1057658|95030|bayern|50.3234|11.8969||Hof
+1060106|85579|bayern|48.0794|11.6152||Infineon Only-Neubiberg
+1060105|59581|nordrhein-westfalen|51.4882|8.3261||Infineon Warstein Company Only
+1057680|85053|bayern|48.754053|11.448939||Ingolstadt
+1057859|07743|thueringen|50.92843|11.59318||Jena
+1057702|67663|rheinland-pfalz|49.4402|7.74055||Kaiserslautern
+1057711|76227|baden-wuerttemberg|48.99541|8.45009||Karlsruhe
+1057788|34125|hessen|51.3199|9.5082||Kassel
+1057827|24114|schleswig-holstein|54.314771|10.132946||Kiel
+1013776|56070|rheinland-pfalz|50.37767|7.58262||Koblenz
+1049074|50739|nordrhein-westfalen|50.982|6.92||Köln Bilderstöckchen
+1049072|50933|nordrhein-westfalen|50.946039|6.887701||Köln Ehrenfeld
+1050672|50668|nordrhein-westfalen|50.9437|6.9607||Köln Hauptbahnhof
+1055711|50679|nordrhein-westfalen|50.9429|6.9821||Köln Hotel Dorint
+1049065|51063|nordrhein-westfalen|50.9797|7.0018||Köln Mülheim Ost
+1049098|51145|nordrhein-westfalen|50.8978|7.0757||Köln Porz Fleischhauer
+1049071|50969|nordrhein-westfalen|50.90425|6.94382||Köln Zollstock
+1049086|47805|nordrhein-westfalen|51.317457|6.580702||Krefeld
+1057640|86899|bayern|48.0641|10.8654||Landsberg am Lech
+1057686|84030|bayern|48.5506|12.1399||Landshut
+1057875|04109|sachsen|51.345897|12.380841||Leipzig Hauptbahnhof
+1057869|04179|sachsen|51.3468|12.3079||Leipzig West
+1057865|04317|sachsen|51.33053|12.39689||Leipzig Zentrum
+1049064|51373|nordrhein-westfalen|51.0518|7.0028||Leverkusen
+1016164|65549|hessen|50.40124|8.06303||Limburg
+1057815|23560|schleswig-holstein|53.8454|10.6639||Lübeck-Süd
+1049069|58513|nordrhein-westfalen|51.2344|7.6649||Lüdenscheid
+1057735|71636|baden-wuerttemberg|48.8901|9.1693||Ludwigsburg
+1057703|67063|rheinland-pfalz|49.488508|8.403832||Ludwigshafen
+1057810|21339|niedersachsen|53.259697|10.408532||Lüneburg
+1057872|39128|sachsen-anhalt|52.157738|11.625124||Magdeburg
+1043410|55122|rheinland-pfalz|50.00001|8.2575||Mainz Bahnhof
+1012155|55120|rheinland-pfalz|50.0271|8.2214||Mainz-Mombach
+1057697|68309|baden-wuerttemberg|49.49806|8.50878||Mannheim, Käfertal
+1057749|87700|bayern|47.9797|10.1813||Memmingen
+1057791|32427|nordrhein-westfalen|52.2959|8.9034||Minden
+1049058|41066|nordrhein-westfalen|51.22114|6.48062||Mönchengladbach
+1055702|45468|nordrhein-westfalen|51.4287|6.8877||Mülheim an der Ruhr - Bahnhof
+1057668|80335|bayern|48.1415|11.5608||München Hauptbahnhof
+1057664|80687|bayern|48.143325|11.498924||München Laim
+1057663|80807|bayern|48.189029|11.570855||München Milbertshofen
+1057662|81379|bayern|48.09898|11.52343||München Obersendling
+1057665|81825|bayern|48.12538|11.6519||München Trudering
+1057760|48153|nordrhein-westfalen|51.942025|7.623465||Münster
+1055541|63263|hessen|50.0476|8.6848||Neu-Isenburg
+1057823|24536|schleswig-holstein|54.0854|9.9863||Neumünster
+1057705|66538|saarland|49.3511|7.2086||Neunkirchen
+1049062|41464|nordrhein-westfalen|51.183453|6.678636||Neuss
+1057768|22851|schleswig-holstein|53.6849|10.022||Norderstedt
+1057638|86159|bayern|48.3537|10.8831||Nur für Mitarbeiter der Renk GmbH
+1057767|59302|nordrhein-westfalen|51.8305|8.1363||Nur für Mitarbeiter von GEA Oelde
+1057694|90482|bayern|49.4556|11.1204||Nürnberg Ost
+1057693|90431|bayern|49.44728|11.04628||Nürnberg West
+1049076|46049|nordrhein-westfalen|51.4824|6.8616||Oberhausen
+1008053|63071|hessen|50.08505|8.7724||Offenbach
+1057713|77652|baden-wuerttemberg|48.47612|7.9394||Offenburg
+1057828|26125|niedersachsen|53.17365|8.22939||Oldenburg
+1057758|49074|niedersachsen|52.2781|8.0497||Osnabrück
+1057661|85521|bayern|48.06178|11.66306||Ottobrunn
+1057761|33102|nordrhein-westfalen|51.713551|8.740047||Paderborn
+1057683|94032|bayern|48.5724|13.4323||Passau
+1057710|75179|baden-wuerttemberg|48.90441|8.65565||Pforzheim
+1057847|14482|brandenburg|52.3755|13.1122||Potsdam
+1057701|66877|rheinland-pfalz|49.4398|7.55528||Ramstein
+1057681|93059|bayern|49.0266|12.1164||Regensburg
+1057708|72762|baden-wuerttemberg|48.49213|9.20033||Reutlingen
+1057673|81671|bayern|48.1277|11.6121||Rohde & Schwarz, nur Mitarbeiter
+1057679|83026|bayern|47.8529|12.10128||Rosenheim
+1057822|18057|mecklenburg-vorpommern|54.093813|12.116032||Rostock
+1057637|66121|saarland|49.227946|7.017578||Saarbrücken
+1057845|01159|sachsen|51.033811|13.701957||Sachsengarage, Dresden/Löbtau
+1057739|74523|baden-wuerttemberg|49.10603|9.717||Schwäbisch Hall
+1057650|97421|bayern|50.04914|10.20646||Schweinfurt
+1057813|19057|mecklenburg-vorpommern|53.6435|11.3509||Schwerin
+1016570|57076|nordrhein-westfalen|50.90245|8.02317||Siegen
+1057709|71063|baden-wuerttemberg|48.70476|8.99817||Sindelfingen
+1056152|42719|nordrhein-westfalen|51.1863|7.0505||Solingen
+1057704|54529|rheinland-pfalz|49.9797|6.685||Spangdahlem
+1057726|70173|baden-wuerttemberg|48.7854|9.1806||Stuttgart Bahnhof
+1057721|70329|baden-wuerttemberg|48.7603|9.2539||Stuttgart Hedelfingen
+1057729|70173|baden-wuerttemberg|48.7829|9.18013||Stuttgart Zentrum
+1057722|70565|baden-wuerttemberg|48.725855|9.123582||Stuttgart, Vaihingen
+1057737|70435|baden-wuerttemberg|48.825801|9.168762||Stuttgart, Zuffenhausen
+1056337|82166|bayern|48.1188|11.4294|flughafen|Testort - NICHT VERWENDEN
+1057636|54292|rheinland-pfalz|49.7709|6.6644||Trier
+1060084|71254|baden-wuerttemberg|48.819|9.0696||Trumpf Only-HQ Ditzingen
+1057750|89077|baden-wuerttemberg|48.396535|9.961509||Ulm
+1057838|49377|niedersachsen|52.7309|8.2616||Vechta
+1057714|78054|baden-wuerttemberg|48.0626|8.5159||Villingen-Schwenningen
+1057692|92249|bayern|49.62494|11.78266||Vilseck
+1056060|35576|hessen|50.5705|8.4985||Wetzlar
+1009341|65201|rheinland-pfalz|50.0445|8.203||Wiesbaden Zentrum
+1057675|82515|bayern|47.9007|11.4287||Wolfratshausen
+1057792|38446|niedersachsen|52.4291|10.8051||Wolfsburg
+1057707|67547|rheinland-pfalz|49.61855|8.34974||Worms
+1049081|42283|nordrhein-westfalen|51.26533|7.1851||Wuppertal
+1057652|97076|bayern|49.79388|10.001832||Würzburg, Nürnberger Str.
+1057857|08060|sachsen|50.720289|12.47172||Zwickau

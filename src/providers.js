@@ -227,13 +227,48 @@ const europcar = {
   },
 };
 
-const hertz = planned('hertz', 'Hertz', 'https://www.hertz.de/', 'Noch nicht untersucht.');
-const enterprise = planned(
-  'enterprise',
-  'Enterprise',
-  'https://www.enterprise.de/',
-  'Noch nicht untersucht.'
-);
+const hertz = {
+  id: 'hertz',
+  label: 'Hertz',
+  status: 'ready',
+  method: 'GET',
+  theme: THEMES.hertz,
+  markets: [{ code: 'de', host: 'www.hertz.de', label: 'Deutschland', cur: 'EUR' }],
+  homepage: 'https://www.hertz.de/',
+  capabilities: { station: true, date: true, time: true, oneWay: true, vehicleClass: false, prepaid: true },
+  notes: [
+    'Die neue Buchungsseite /de/de/book/vehicles nimmt alle Reiseparameter im Link und holt ' +
+      'die Fahrzeuge selbst als JSON von api.hertz.io. Geprüft an FRAT50, 10/2026.',
+    'Stationskennung ist der erweiterte OAG-Code (FRAT50, CGNX92). Alle 300 deutschen ' +
+      'Stationen kommen aus einer einzigen Anfrage, nicht aus einer Ernte.',
+  ],
+  build(q, market, station, returnStation) {
+    const p = new URLSearchParams({
+      pid: station.code, did: (returnStation || station).code,
+      pdate: `${q.pickupDate}T${q.pickupTime}:00`, ddate: `${q.returnDate}T${q.returnTime}:00`,
+      pCountryCode: 'DE', age: '27', travelType: 'LEISURE',
+    });
+    return { url: `https://www.hertz.de/de/de/book/vehicles?${p}` };
+  },
+};
+const enterprise = {
+  id: 'enterprise',
+  label: 'Enterprise',
+  status: 'ready',
+  method: 'GET',
+  theme: THEMES.enterprise,
+  markets: [{ code: 'de', host: 'www.enterprise.de', label: 'Deutschland', cur: 'EUR' }],
+  homepage: 'https://www.enterprise.de/',
+  capabilities: { station: true, date: true, time: true, oneWay: true, vehicleClass: false, prepaid: true },
+  notes: [
+    'Die Suche ist ein POST an Enterprise’ eigene Schnittstelle, gestellt aus einer geöffneten ' +
+      'enterprise.de-Seite. Alle Klassen mit Preisen kommen in einer Antwort. Geprüft an Köln Hbf, 10/2026.',
+    'Die Maske lässt sich nicht per Link vorbelegen; der Link führt zur Startseite.',
+  ],
+  build() {
+    return { url: 'https://www.enterprise.de/de/home.html' };
+  },
+};
 const carvia = planned('carvia', 'Carvia', 'https://www.carvia.de/', 'Noch nicht untersucht.');
 const arndt = planned(
   'arndt',

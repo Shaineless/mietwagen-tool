@@ -18,6 +18,8 @@ import { randomBytes } from 'node:crypto';
 import { quoteSixt } from './scrape/sixt.mjs';
 import { quoteEuropcar } from './scrape/europcar.mjs';
 import { quoteAvis } from './scrape/avis.mjs';
+import { quoteHertz } from './scrape/hertz.mjs';
+import { quoteEnterprise } from './scrape/enterprise.mjs';
 import { quoteSchutz, waehleSchutzpaket, kasseLebt } from './scrape/sixt-schutz.mjs';
 import { findBrowser, closeBrowser, frischesProfil } from './browser.mjs';
 import * as buchung from './buchung.mjs';
@@ -242,7 +244,7 @@ function setzeParallelZurueck() {
   besteDauer = null;
 }
 
-const ABRUF = { sixt: quoteSixt, europcar: quoteEuropcar, avis: quoteAvis };
+const ABRUF = { sixt: quoteSixt, europcar: quoteEuropcar, avis: quoteAvis, hertz: quoteHertz, enterprise: quoteEnterprise };
 const SCHUTZ_ABRUF = { sixt: quoteSchutz };
 
 /**
@@ -272,9 +274,9 @@ async function hostErlaubt(host) {
     // dem gebauten Bundle, in dem dieselben Zeilen stehen.
     if (!erlaubteHosts.size) {
       const roh = (await leseVorrat('dist/mietwagen-preistool.html'))?.toString('utf8') || '';
-      for (const t of roh.matchAll(/host:\s*"([^"]+\.sixt\.[^"]+|[^"]*sixt\.com[^"]*)"/g)) {
-        erlaubteHosts.add(t[1]);
-      }
+      // Alle Anbieter, nicht nur Sixt: seit 1.7 stehen auch Europcar, Avis,
+      // Hertz und Enterprise im Register.
+      for (const t of roh.matchAll(/host:\s*"([^"]+)"/g)) erlaubteHosts.add(t[1]);
       for (const t of roh.matchAll(/host:\s*'([^']+)'/g)) erlaubteHosts.add(t[1]);
     }
   }

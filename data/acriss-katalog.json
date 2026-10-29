@@ -12,24 +12,26 @@
     "VOLVO V60"
    ],
    "beispielText": "Oberklasse Elite Kombi Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "CDMR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-golf-5d-grey-2024.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/CDMR.doi.320.high.imageSmallSideProfileNodePath.png/1780933795701.png",
    "modelle": [
     "VW GOLF",
-    "Seat Leon"
+    "Seat Leon",
+    "Volkswagen Golf"
    ],
-   "beispielText": "Kompaktklasse Limousine Manuell",
-   "zuletzt": "2026-10-25"
+   "beispielText": "Kompaktklasse",
+   "zuletzt": "2026-10-29"
   },
   "CFMR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-taigo-suv-white-2022.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/SUVS/CFMR.doi.320.high.imageSmallSideProfileNodePath.png/1653320941280.png",
    "modelle": [
-    "VW TAIGO"
+    "VW TAIGO",
+    "Seat Arona"
    ],
-   "beispielText": "Kompaktklasse SUV Manuell",
-   "zuletzt": "2026-10-25"
+   "beispielText": "Kompaktklasse-SUV",
+   "zuletzt": "2026-10-29"
   },
   "CTMR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-t-roc-convertible-white-open-2023.png",
@@ -38,27 +40,28 @@
     "VW T-ROC CABRIO"
    ],
    "beispielText": "Kompaktklasse Cabrio Manuell",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "CDAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-golf-5d-grey-2024.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/CDAR.doi.320.high.imageSmallSideProfileNodePath.png/1780933795701.png",
    "modelle": [
     "VW GOLF",
     "VW T-CROSS",
-    "Cupra Leon"
+    "Cupra Leon",
+    "Volkswagen Golf"
    ],
-   "beispielText": "Kompaktklasse Limousine Automatik",
-   "zuletzt": "2026-10-25"
+   "beispielText": "Kompaktklasse Automatik",
+   "zuletzt": "2026-10-29"
   },
   "CFAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-taigo-suv-white-2022.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/SUVS/CFAR.doi.320.high.imageSmallSideProfileNodePath.png/1653320941280.png",
    "modelle": [
     "VW TAIGO",
     "VW T-ROC",
     "Seat Arona"
    ],
-   "beispielText": "Kompaktklasse SUV Automatik",
-   "zuletzt": "2026-10-25"
+   "beispielText": "Kompaktklasse-SUV Automatik",
+   "zuletzt": "2026-10-29"
   },
   "CTAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-t-roc-convertible-white-open-2023.png",
@@ -67,7 +70,7 @@
     "VW T-ROC CABRIO"
    ],
    "beispielText": "Kompaktklasse Cabrio Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "IVMV": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-touran-van-grey-2021.png",
@@ -78,13 +81,14 @@
    "zuletzt": "2026-09-06"
   },
   "IFMR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-t-roc-suv-black-2026.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/SUVS/IFMR.doi.320.high.imageSmallSideProfileNodePath.png/1746778900635.png",
    "modelle": [
     "VW T-ROC",
-    "SEAT ATECA"
+    "SEAT ATECA",
+    "Nissan Qashqai"
    ],
-   "beispielText": "Mittelklasse SUV Manuell",
-   "zuletzt": "2026-10-25"
+   "beispielText": "Mittelklasse-SUV",
+   "zuletzt": "2026-10-29"
   },
   "DDAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-1-hatch-4d-black-2025.png",
@@ -93,29 +97,33 @@
     "BMW 1 SERIES",
     "BMW 1 SERIE",
     "BMW SÉRIE 1",
-    "BMW SERIE 1"
+    "BMW SERIE 1",
+    "Cupra Leon"
    ],
    "beispielText": "Kompaktklasse Elite Limousine Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "SFMR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-tiguan-suv-black-2024.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/SUVS/SFMR.doi.320.high.imageSmallSideProfileNodePath.png/1766577651133.png",
    "modelle": [
-    "VW TIGUAN"
+    "VW TIGUAN",
+    "Ford Kuga"
    ],
-   "beispielText": "Standardklasse SUV Manuell",
-   "zuletzt": "2026-10-25"
+   "beispielText": "Standardklasse-SUV",
+   "zuletzt": "2026-10-29"
   },
   "IFAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-t-roc-suv-black-2026.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/SUVS/IFAR.doi.320.high.imageSmallSideProfileNodePath.png/1746778900635.png",
    "modelle": [
     "VW T-ROC",
     "INTERMEDIATE SUV",
     "SKODA KAROQ",
-    "Seat Ateca"
+    "Seat Ateca",
+    "BYD Seal U",
+    "Nissan Qashqai"
    ],
-   "beispielText": "Mittelklasse SUV Automatik",
-   "zuletzt": "2026-10-25"
+   "beispielText": "Mittelklasse-SUV Automatik",
+   "zuletzt": "2026-10-29"
   },
   "IVAV": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-touran-van-grey-2021.png",
@@ -132,7 +140,7 @@
     "COMPACT ELITE SUV"
    ],
    "beispielText": "Kompaktklasse Elite SUV Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "PFAV": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-tayron-suv-grey-2025.png",
@@ -141,7 +149,7 @@
     "PREMIUM SUV"
    ],
    "beispielText": "Premiumklasse SUV Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "JDAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/audi-a3-4d-sedan-black-2026.png",
@@ -151,16 +159,17 @@
     "AUDI A3 BERLINA"
    ],
    "beispielText": "Mittelklasse Elite Limousine Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "SFAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-tiguan-suv-black-2024.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/SUVS/SFAR.doi.320.high.imageSmallSideProfileNodePath.png/1766577651133.png",
    "modelle": [
     "VW TIGUAN",
-    "STANDARD SUV"
+    "STANDARD SUV",
+    "Ford Kuga"
    ],
-   "beispielText": "Standardklasse SUV Automatik",
-   "zuletzt": "2026-10-25"
+   "beispielText": "Standardklasse-SUV Automatik",
+   "zuletzt": "2026-10-29"
   },
   "DVAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-2-active-tourer-van-4d-black-2022-JV.png",
@@ -172,7 +181,7 @@
     "BMW 2 SERIE ACTIVE TOURER"
    ],
    "beispielText": "Kompaktklasse Elite Van Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "GDAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-3-sedan-4d-white-2023-JV.png",
@@ -185,7 +194,7 @@
     "AUDI A5 LIMOUSINE"
    ],
    "beispielText": "Oberklasse Elite Limousine Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "UDAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-e-class-4d-silver-2024.png",
@@ -196,7 +205,7 @@
     "MERCEDES-BENZ CLASE E"
    ],
    "beispielText": "Premiumklasse Elite Limousine Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "GFAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x2-suv-4d-white-2024.png",
@@ -205,7 +214,7 @@
     "FULLSIZE ELITE SUV"
    ],
    "beispielText": "Oberklasse Elite SUV Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "UFAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x3-suv-silver-2025.png",
@@ -213,7 +222,7 @@
     "BMW X3"
    ],
    "beispielText": "Premiumklasse Elite SUV Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "UWAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/audi-a6-avant-stw-silver-2026.png",
@@ -222,7 +231,7 @@
     "MERCEDES-BENZ E-KLASSE T-MODELL"
    ],
    "beispielText": "Premiumklasse Elite Kombi Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "GEAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-4-2d-coupe-grey-2021.png",
@@ -235,7 +244,7 @@
     "BMW 4 SERIES COUPE"
    ],
    "beispielText": "Oberklasse Elite Coupé Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "DDSR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m135-hatch-4d-blue-2025.png",
@@ -243,7 +252,7 @@
     "BMW M135"
    ],
    "beispielText": "Kompaktklasse Elite Limousine Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "JDSR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m235i-grancoupe-4d-blue-2023.png",
@@ -252,7 +261,7 @@
     "BMW M235 GRAN COUPE"
    ],
    "beispielText": "Mittelklasse Elite Limousine Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "GFSR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x2-m35-suv-4d-blue-2024.png",
@@ -269,15 +278,16 @@
     "BMW M340 TOURING"
    ],
    "beispielText": "Oberklasse Elite Kombi Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "SVAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-caddy-maxi-silver-2021.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/PEOPLE-CARRIERS/SVAR.doi.320.high.imageSmallSideProfileNodePath.png/1653321062699.png",
    "modelle": [
-    "VW CADDY MAXI"
+    "VW CADDY MAXI",
+    "Ford S-Max"
    ],
-   "beispielText": "Standardklasse Van Automatik",
-   "zuletzt": "2026-10-25"
+   "beispielText": "Personentransporter Automatik",
+   "zuletzt": "2026-10-29"
   },
   "UFSR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x3-m50-suv-black-2025.png",
@@ -285,7 +295,7 @@
     "BMW X3 M50"
    ],
    "beispielText": "Premiumklasse Elite SUV Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "GLSR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m440i-grancoupe-4d-grey-2023.png",
@@ -304,7 +314,7 @@
     "BMW 7 SERIE XDRIVE"
    ],
    "beispielText": "Spezialklasse Limousine Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "WFSR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x5-m60-suv-grey-2025.png",
@@ -405,7 +415,7 @@
     "MYSTERY CAR"
    ],
    "beispielText": "Kompaktklasse Glücksauto Manuell",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "EDMR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/seat-ibiza-hatch-4d-grey-2021-JV.png",
@@ -413,15 +423,16 @@
     "SEAT IBIZA"
    ],
    "beispielText": "Kleinwagen Limousine Manuell",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "EDAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/seat-ibiza-hatch-4d-grey-2021-JV.png",
    "modelle": [
-    "SEAT IBIZA"
+    "SEAT IBIZA",
+    "Seat Ibiza"
    ],
    "beispielText": "Kleinwagen Limousine Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "EFMR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-t-cross-5d-suv-white-2024.png",
@@ -429,7 +440,7 @@
     "VW T-CROSS"
    ],
    "beispielText": "Kleinwagen SUV Manuell",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "IFAE": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/opel-frontera-suv-white-2024.png",
@@ -445,7 +456,7 @@
     "VW T-CROSS"
    ],
    "beispielText": "Kleinwagen SUV Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "WFDR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x5-suv-black-2024.png",
@@ -453,7 +464,7 @@
     "BMW X5 XDRIVE"
    ],
    "beispielText": "Luxusklasse Elite SUV Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "UVAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-v-class-long-van-blue-2020.png",
@@ -484,28 +495,30 @@
    "zuletzt": "2026-10-25"
   },
   "CWMR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/24423_GWY_L.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/CWMR.doi.320.high.imageSmallSideProfileNodePath.png/1792406615730.png",
    "modelle": [
     "VW GOLF SW",
     "VW GOLF VARIANT",
     "VW GOLF ESTATE",
     "VW GOLF STATION WAGON",
-    "Toyota Corolla SW"
+    "Toyota Corolla SW",
+    "Volkswagen Golf"
    ],
-   "beispielText": "Compact",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Kompaktklasse-Kombi",
+   "zuletzt": "2026-10-29"
   },
   "CWAR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/64150_GWY_L.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/CWAR.doi.320.high.imageSmallSideProfileNodePath.png/1792406615730.png",
    "modelle": [
     "VW GOLF SW",
     "VW GOLF VARIANT",
     "VW GOLF ESTATE",
     "VW GOLF STATION WAGON",
-    "SEAT LEON ST"
+    "SEAT LEON ST",
+    "Volkswagen Golf"
    ],
-   "beispielText": "Compact",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Kompaktklasse-Kombi Automatik",
+   "zuletzt": "2026-10-29"
   },
   "UTAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-cle-2d-white-open-2024.png",
@@ -546,20 +559,22 @@
    "zuletzt": "2026-10-25"
   },
   "LVMR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/nissan-primastar-van-white-2022.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/PEOPLE-CARRIERS/LVMR.doi.320.high.imageSmallSideProfileNodePath.png/1762964187262.png",
    "modelle": [
-    "NISSAN PRIMASTAR"
+    "NISSAN PRIMASTAR",
+    "Ford Tourneo"
    ],
-   "beispielText": "Luxusklasse Van Manuell",
-   "zuletzt": "2026-10-25"
+   "beispielText": "9-Sitzer-Minivan",
+   "zuletzt": "2026-10-29"
   },
   "LVAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/nissan-primastar-van-black-2022.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/PEOPLE-CARRIERS/LVAR.doi.320.high.imageSmallSideProfileNodePath.png/1762964187262.png",
    "modelle": [
-    "NISSAN PRIMASTAR"
+    "NISSAN PRIMASTAR",
+    "Ford Tourneo"
    ],
-   "beispielText": "Luxusklasse Van Automatik",
-   "zuletzt": "2026-10-25"
+   "beispielText": "9-Sitzer-Kleinbus Automatik",
+   "zuletzt": "2026-10-29"
   },
   "DFAE": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/volvo-ex30-suv-white-2024.png",
@@ -594,12 +609,13 @@
    "zuletzt": "2026-10-24"
   },
   "SFAH": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-tiguan-suv-black-2024.png",
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Volvo/XC40/volvo_26xc40mhevplussu1ffr_sideview.png",
    "modelle": [
-    "VW TIGUAN"
+    "VW TIGUAN",
+    "Volvo XC40 Hybrid"
    ],
-   "beispielText": "Standardklasse SUV Automatik",
-   "zuletzt": "2026-09-02"
+   "beispielText": "Fahrzeuggruppe MJ",
+   "zuletzt": "2026-10-29"
   },
   "GWAH": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/audi-a5-avant-stw-black-2025.png",
@@ -698,7 +714,7 @@
     "HYUNDAI I30"
    ],
    "beispielText": "Compact",
-   "zuletzt": "2026-10-22"
+   "zuletzt": "2026-10-29"
   },
   "SCAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-jetta-4d-silber-2019.png",
@@ -745,21 +761,23 @@
    "zuletzt": "2026-09-01"
   },
   "JFAR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/43234_GWY_L.png",
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/default.png",
    "modelle": [
     "INTERMEDIATE ELITE SUV",
-    "AUDI Q3"
+    "AUDI Q3",
+    "Cupra Formentor"
    ],
-   "beispielText": "Intermediate Elite",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Fahrzeuggruppe MH",
+   "zuletzt": "2026-10-29"
   },
   "RFAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-x3-suv-blue-2025-US.png",
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Cupra/Terramar/cupra_25terramarphevvsu1bfr_sideview.png",
    "modelle": [
-    "STANDARD ELITE SUV"
+    "STANDARD ELITE SUV",
+    "Cupra Terramar"
    ],
-   "beispielText": "BMW X3",
-   "zuletzt": "2026-09-01"
+   "beispielText": "Fahrzeuggruppe MK",
+   "zuletzt": "2026-10-29"
   },
   "UCAR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-5-4d-black-2024-US.png",
@@ -839,7 +857,7 @@
     "BMW M440 COUPÉ"
    ],
    "beispielText": "Oberklasse Elite Coupé Automatik",
-   "zuletzt": "2026-10-25"
+   "zuletzt": "2026-10-29"
   },
   "FFAV": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/chevrolet-tahoe-suv-white-2025.png",
@@ -905,7 +923,7 @@
     "BMW M440 CABRIO"
    ],
    "beispielText": "Oberklasse Elite Cabrio Automatik",
-   "zuletzt": "2026-10-22"
+   "zuletzt": "2026-10-29"
   },
   "FELR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/chevrolet-corvette-coupe-grey-2026.png",
@@ -929,26 +947,29 @@
    "zuletzt": "2026-09-01"
   },
   "IWAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/skoda-octavia-combi-stw-black-2025.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/IWAR.doi.320.high.imageSmallSideProfileNodePath.png/1747898686757.png",
    "modelle": [
     "SKODA OCTAVIA COMBI",
     "SKODA OCTAVIA ESTATE",
-    "SKODA OCTAVIA WAGON"
+    "SKODA OCTAVIA WAGON",
+    "BYD Seal 6 Touring",
+    "Skoda Octavia Combi"
    ],
-   "beispielText": "Mittelklasse Kombi Automatik",
-   "zuletzt": "2026-10-25"
+   "beispielText": "Mittelklasse-Kombi Automatik",
+   "zuletzt": "2026-10-29"
   },
   "SWAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/vw-passat-stw-silver-2024.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/SWAR.doi.320.high.imageSmallSideProfileNodePath.png/1721296327885.png",
    "modelle": [
     "VW PASSAT VARIANT",
     "VW PASSAT SW",
     "VW PASSAT ESTATE",
     "SKODA SUPERB COMBI",
-    "Skoda Octavia Combi"
+    "Skoda Octavia Combi",
+    "Volkswagen Passat"
    ],
-   "beispielText": "Standardklasse Kombi Automatik",
-   "zuletzt": "2026-10-25"
+   "beispielText": "Standardklasse-Kombi Automatik",
+   "zuletzt": "2026-10-29"
   },
   "UWLR": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/bmw-m5-touring-stw-black-2026.png",
@@ -991,13 +1012,13 @@
    "zuletzt": "2026-10-25"
   },
   "PVAR": {
-   "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/ford-tourneo-custom-van-silver-2025.png",
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Mercedes-Benz/Vito-Tourer/mercedesbenz_25vitotourerl3pro9pvp3fbfr_sideview.png",
    "modelle": [
     "FORD TOURNEO CUSTOM",
     "Mercedes-Benz Vito"
    ],
-   "beispielText": "Premiumklasse Van Automatik",
-   "zuletzt": "2026-10-25"
+   "beispielText": "Fahrzeuggruppe LJ",
+   "zuletzt": "2026-10-29"
   },
   "JDAE": {
    "bild": "https://www.sixt.com/fileadmin2/files/global/sideview/user_upload/fleet/png/752x500/mb-cla-4d-sedan-white-2026.png",
@@ -1069,16 +1090,18 @@
     "HYUNDAI I10"
    ],
    "beispielText": "Mini",
-   "zuletzt": "2026-10-22"
+   "zuletzt": "2026-10-29"
   },
   "ECMR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/60832_GWY_L.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/ECMR.doi.320.high.imageSmallSideProfileNodePath.png/1769182595430.png",
    "modelle": [
     "VW POLO",
-    "Seat Ibiza"
+    "Seat Ibiza",
+    "OPEL CORSA",
+    "Opel Corsa"
    ],
-   "beispielText": "Economy",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Kleinwagen",
+   "zuletzt": "2026-10-29"
   },
   "CCMR": {
    "bild": "https://static.europcar.com/carvisuals/270x180/53557_GWY_L.png",
@@ -1086,7 +1109,7 @@
     "SKODA KAMIQ"
    ],
    "beispielText": "Compact",
-   "zuletzt": "2026-10-22"
+   "zuletzt": "2026-10-29"
   },
   "EXMR": {
    "bild": "https://static.europcar.com/carvisuals/270x180/5089_GWY_L.png",
@@ -1094,41 +1117,45 @@
     "VW POLO NAVI"
    ],
    "beispielText": "Economy",
-   "zuletzt": "2026-10-22"
+   "zuletzt": "2026-10-29"
   },
   "CXMR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/21384_GWY_L.png",
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/VW/Golf/volkswagen_26golfstylehb8ffr_sideview.png",
    "modelle": [
     "VW GOLF NAVI",
     "Volkswagen Golf inkl. GPS"
    ],
-   "beispielText": "Compact",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Fahrzeuggruppe SO",
+   "zuletzt": "2026-10-29"
   },
   "IDMR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/34685_GWY_L.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/IDMR.doi.320.high.imageSmallSideProfileNodePath.png/1747898652723.png",
    "modelle": [
     "NISSAN QASHQAI",
-    "Citroen C5X"
+    "Citroen C5X",
+    "Skoda Octavia"
    ],
-   "beispielText": "Intermediate",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Mittelklasse",
+   "zuletzt": "2026-10-29"
   },
   "IDAR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/63725_GWY_L.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/IDAR.doi.320.high.imageSmallSideProfileNodePath.png/1747898652723.png",
    "modelle": [
-    "PEUGEOT 408"
+    "PEUGEOT 408",
+    "OPEL GRANDLAND",
+    "Skoda Octavia"
    ],
-   "beispielText": "Intermediate",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Mittelklasse Automatik",
+   "zuletzt": "2026-10-29"
   },
   "DCAR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/62925_GWY_L.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/DCAR.doi.320.high.imageSmallSideProfileNodePath.png/1762442527696.png",
    "modelle": [
-    "AUDI A3 SPORTBACK"
+    "AUDI A3 SPORTBACK",
+    "BMW 1er"
    ],
-   "beispielText": "Compact Elite",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Kompaktklasse Elite Automatik",
+   "zuletzt": "2026-10-29"
   },
   "GDAC": {
    "bild": "https://static.europcar.com/carvisuals/270x180/51317_GWY_L.png",
@@ -1136,23 +1163,26 @@
     "POLESTAR 2"
    ],
    "beispielText": "Fullsize Elite",
-   "zuletzt": "2026-10-22"
+   "zuletzt": "2026-10-29"
   },
   "IWMR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/64220_GWY_L.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/IWMR.doi.320.high.imageSmallSideProfileNodePath.png/1747898686757.png",
    "modelle": [
-    "SKODA OCTAVIA COMBI"
+    "SKODA OCTAVIA COMBI",
+    "Skoda Octavia Combi"
    ],
-   "beispielText": "Intermediate",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Mittelklasse-Kombi",
+   "zuletzt": "2026-10-29"
   },
   "FFAR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/66846_GWY_L.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/SUVS/FFAR.doi.320.high.imageSmallSideProfileNodePath.png/1792406972248.png",
    "modelle": [
-    "VW TAYRON"
+    "VW TAYRON",
+    "Volkswagen Tayron",
+    "Volvo XC60"
    ],
-   "beispielText": "Fullsize",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Großer SUV",
+   "zuletzt": "2026-10-29"
   },
   "UDAC": {
    "bild": "https://static.europcar.com/carvisuals/270x180/63176_GWY_L.png",
@@ -1160,7 +1190,7 @@
     "POLESTAR 4"
    ],
    "beispielText": "Premium Elite",
-   "zuletzt": "2026-10-22"
+   "zuletzt": "2026-10-29"
   },
   "UFBR": {
    "bild": "https://static.europcar.com/carvisuals/270x180/62911_GWY_L.png",
@@ -1168,15 +1198,16 @@
     "AUDI Q5"
    ],
    "beispielText": "Premium Elite",
-   "zuletzt": "2026-10-22"
+   "zuletzt": "2026-10-29"
   },
   "SVMR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/60989_GWY_L.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/PEOPLE-CARRIERS/SVMR.doi.320.high.imageSmallSideProfileNodePath.png/1653321062699.png",
    "modelle": [
-    "FORD TOURNEO-CUSTOM"
+    "FORD TOURNEO-CUSTOM",
+    "Ford S-Max"
    ],
-   "beispielText": "Standard",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Standardklasse-Minivan",
+   "zuletzt": "2026-10-29"
   },
   "WFBR": {
    "bild": "https://static.europcar.com/carvisuals/270x180/66101_GWY_L.png",
@@ -1184,7 +1215,7 @@
     "BMW X5"
    ],
    "beispielText": "Luxus Elite",
-   "zuletzt": "2026-10-22"
+   "zuletzt": "2026-10-29"
   },
   "TMPK": {
    "bild": "https://static.europcar.com/carvisuals/270x180/59991_GWY_L.png",
@@ -1192,7 +1223,7 @@
     "RENAULT MASTER DREISEITENKIPPER"
    ],
    "beispielText": "Lieferwagen/LKW",
-   "zuletzt": "2026-10-22"
+   "zuletzt": "2026-10-29"
   },
   "CDAE": {
    "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Skoda/Elroq/skoda_25elroqevclever85su1fr_sideview.png",
@@ -1203,28 +1234,32 @@
    "zuletzt": "2026-10-22"
   },
   "FDAR": {
-   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/BMW/3/bmw_25330ephevftndeseriesd7fefr_sideview.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/FDAR.doi.320.high.imageSmallSideProfileNodePath.png/1766577413180.png",
    "modelle": [
-    "BMW 3 Series"
+    "BMW 3 Series",
+    "BMW 3er"
    ],
-   "beispielText": "Fahrzeuggruppe LA",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Oberklasse Automatik",
+   "zuletzt": "2026-10-29"
   },
   "FWAR": {
-   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Volvo/V60/volvo_26v60phevplust6awdwg2rbfr_sideview.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/FWAR.doi.320.high.imageSmallSideProfileNodePath.png/1792406781360.png",
    "modelle": [
-    "Volvo V60"
+    "Volvo V60",
+    "Skoda Superb SW",
+    "BMW 3er"
    ],
-   "beispielText": "Fahrzeuggruppe LI",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Oberklasse-Kombi Automatik",
+   "zuletzt": "2026-10-29"
   },
   "PDAR": {
-   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Mercedes-Benz/E-Class/mercedes_24e220damglinesd6b_sideview.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/PDAR.doi.320.high.imageSmallSideProfileNodePath.png/1792406691413.png",
    "modelle": [
-    "Mercedes-Benz E-Klasse Inkl. GPS"
+    "Mercedes-Benz E-Klasse Inkl. GPS",
+    "Audi A6"
    ],
-   "beispielText": "Fahrzeuggruppe LL",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Premiumklasse Automatik",
+   "zuletzt": "2026-10-29"
   },
   "GVAR": {
    "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/VW/Multivan/volkswagen_24multivanphevstylevp7bfr_sideview.png",
@@ -1232,7 +1267,7 @@
     "Volkswagen Multivan"
    ],
    "beispielText": "Fahrzeuggruppe LC",
-   "zuletzt": "2026-10-22"
+   "zuletzt": "2026-10-29"
   },
   "PEAR": {
    "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/BMW/4/Coupe/bmw_26420ifinitionmsportcp2rfr_sideview.png",
@@ -1240,7 +1275,7 @@
     "BMW 4 Series"
    ],
    "beispielText": "Fahrzeuggruppe PK",
-   "zuletzt": "2026-10-22"
+   "zuletzt": "2026-10-29"
   },
   "PTAR": {
    "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/BMW/4/Cabrio/bmw_25420ifinitionmsportcv2re_sideview.png",
@@ -1248,15 +1283,16 @@
     "BMW 4 Series Convertible"
    ],
    "beispielText": "Fahrzeuggruppe PL",
-   "zuletzt": "2026-10-21"
+   "zuletzt": "2026-10-29"
   },
   "SWMR": {
-   "bild": "https://static.europcar.com/carvisuals/270x180/41816_GWY_L.png",
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/SWMR.doi.320.high.imageSmallSideProfileNodePath.png/1721296327885.png",
    "modelle": [
-    "VW PASSAT VARIANT"
+    "VW PASSAT VARIANT",
+    "Volkswagen Passat"
    ],
-   "beispielText": "Standard",
-   "zuletzt": "2026-10-22"
+   "beispielText": "Standardklasse-Kombi",
+   "zuletzt": "2026-10-29"
   },
   "GWMM": {
    "bild": "https://static.europcar.com/carvisuals/270x180/63718_GWY_L.png",
@@ -1345,6 +1381,215 @@
    ],
    "beispielText": "Fahrzeuggruppe LM",
    "zuletzt": "2026-10-22"
+  },
+  "MDMR": {
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Toyota/Aygo/toyota_22aygoxxlimitedsu1b_sideview.png",
+   "modelle": [
+    "Toyota Aygo"
+   ],
+   "beispielText": "Fahrzeuggruppe SA",
+   "zuletzt": "2026-10-29"
+  },
+  "DWAR": {
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Cupra/Leon/SW/cupra_24leonswesprtalpnsu1bfr_sideview.png",
+   "modelle": [
+    "Cupra Leon SW"
+   ],
+   "beispielText": "Fahrzeuggruppe SN",
+   "zuletzt": "2026-10-29"
+  },
+  "IGAR": {
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Nissan/Qashqai/nissan_25qashqaihevndesignsu3fbfr_sideview.png",
+   "modelle": [
+    "Nissan Qashqai AT"
+   ],
+   "beispielText": "Fahrzeuggruppe MD",
+   "zuletzt": "2026-10-29"
+  },
+  "PWAR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/PWAR.doi.320.high.imageSmallSideProfileNodePath.png/1792406754008.png",
+   "modelle": [
+    "Volvo V60",
+    "Audi A6"
+   ],
+   "beispielText": "Premiumklasse-Kombi Automatik",
+   "zuletzt": "2026-10-29"
+  },
+  "LWAR": {
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/fleet/Mercedes-Benz/E-Class-Estate/mercedes_24e200luxurylinewg6b_sideview.png",
+   "modelle": [
+    "Mercedes-Benz E-Klasse T-Modell"
+   ],
+   "beispielText": "Fahrzeuggruppe LN",
+   "zuletzt": "2026-10-29"
+  },
+  "DTAR": {
+   "bild": "https://avisassets.abgemea.com/.imaging/gridView_vehicleSearch_small/dam/avis/default.png",
+   "modelle": [
+    "Mini Cooper Cabrio"
+   ],
+   "beispielText": "Fahrzeuggruppe PC",
+   "zuletzt": "2026-10-29"
+  },
+  "IVMR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/PEOPLE-CARRIERS/IVMR.doi.320.high.imageSmallSideProfileNodePath.png/1746719077201.png",
+   "modelle": [
+    "Volkswagen Touran"
+   ],
+   "beispielText": "7-Sitzer-SUV",
+   "zuletzt": "2026-10-29"
+  },
+  "MBMR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/MBMR.doi.320.high.imageSmallSideProfileNodePath.png/1792406903258.png",
+   "modelle": [
+    "Toyota Aygo"
+   ],
+   "beispielText": "Kleinstwagen",
+   "zuletzt": "2026-10-29"
+  },
+  "XXMR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/XXMR.doi.320.high.imageSmallSideProfileNodePath.png/1584374504033.png",
+   "modelle": [
+    "Mystery Car"
+   ],
+   "beispielText": "Mystery Car",
+   "zuletzt": "2026-10-29"
+  },
+  "MBAR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/MBAR.doi.320.high.imageSmallSideProfileNodePath.png/1792406903258.png",
+   "modelle": [
+    "Toyota Aygo"
+   ],
+   "beispielText": "Kleinstwagen Automatik",
+   "zuletzt": "2026-10-29"
+  },
+  "ECAR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/ECAR.doi.320.high.imageSmallSideProfileNodePath.png/1769182595430.png",
+   "modelle": [
+    "Opel Corsa"
+   ],
+   "beispielText": "Kleinwagen Automatik",
+   "zuletzt": "2026-10-29"
+  },
+  "SDMR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/SDMR.doi.320.high.imageSmallSideProfileNodePath.png/1653321021421.png",
+   "modelle": [
+    "Volkswagen Passat"
+   ],
+   "beispielText": "Standardklasse",
+   "zuletzt": "2026-10-29"
+  },
+  "SDAR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/SDAR.doi.320.high.imageSmallSideProfileNodePath.png/1653321021421.png",
+   "modelle": [
+    "Volkswagen Passat"
+   ],
+   "beispielText": "Standardklasse Automatik",
+   "zuletzt": "2026-10-29"
+  },
+  "FFMR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/SUVS/FFMR.doi.320.high.imageSmallSideProfileNodePath.png/1792406972248.png",
+   "modelle": [
+    "Volvo XC60"
+   ],
+   "beispielText": "Großer SUV",
+   "zuletzt": "2026-10-29"
+  },
+  "DCMR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/DCMR.doi.320.high.imageSmallSideProfileNodePath.png/1762442527696.png",
+   "modelle": [
+    "BMW 1er"
+   ],
+   "beispielText": "Kompaktklasse Elite",
+   "zuletzt": "2026-10-29"
+  },
+  "FDMR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/FDMR.doi.320.high.imageSmallSideProfileNodePath.png/1766577413180.png",
+   "modelle": [
+    "BMW 3er"
+   ],
+   "beispielText": "Oberklasse",
+   "zuletzt": "2026-10-29"
+  },
+  "PDMR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/PDMR.doi.320.high.imageSmallSideProfileNodePath.png/1792406691413.png",
+   "modelle": [
+    "Audi A6"
+   ],
+   "beispielText": "Premiumklasse",
+   "zuletzt": "2026-10-29"
+  },
+  "FWMR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/FWMR.doi.320.high.imageSmallSideProfileNodePath.png/1792406781360.png",
+   "modelle": [
+    "BMW 3er"
+   ],
+   "beispielText": "Oberklasse-Kombi",
+   "zuletzt": "2026-10-29"
+  },
+  "PWMR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/CARS/PWMR.doi.320.high.imageSmallSideProfileNodePath.png/1792406754008.png",
+   "modelle": [
+    "Audi A6"
+   ],
+   "beispielText": "Premiumklasse Kombi",
+   "zuletzt": "2026-10-29"
+  },
+  "PFAR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/SUVS/PFAR.doi.320.high.imageSmallSideProfileNodePath.png/1718882212952.png",
+   "modelle": [
+    "Volkswagen Touareg"
+   ],
+   "beispielText": "Premiumklasse-SUV Automatik",
+   "zuletzt": "2026-10-29"
+  },
+  "FKMN": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/VANS/FKMN.doi.320.high.imageSmallSideProfileNodePath.png/1723742528418.png",
+   "modelle": [
+    "Fiat Ducato"
+   ],
+   "beispielText": "Großer Transporter",
+   "zuletzt": "2026-10-29"
+  },
+  "OKMN": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/VANS/OKMN.doi.320.high.imageSmallSideProfileNodePath.png/1723742859752.png",
+   "modelle": [
+    "Mercedes Sprinter mit langem Radstand"
+   ],
+   "beispielText": "Extragroßer Transporter",
+   "zuletzt": "2026-10-29"
+  },
+  "LKMD": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/VANS/LKMD.doi.320.high.imageSmallSideProfileNodePath.png/1723742555271.png",
+   "modelle": [
+    "Mercedes Sprinter "
+   ],
+   "beispielText": "Transporter mit Kofferaufbau",
+   "zuletzt": "2026-10-29"
+  },
+  "IVAR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/PEOPLE-CARRIERS/IVAR.doi.320.high.imageSmallSideProfileNodePath.png/1746719042269.png",
+   "modelle": [
+    "Volkswagen Touran"
+   ],
+   "beispielText": "SUV für 7 Personen Automatik",
+   "zuletzt": "2026-10-29"
+  },
+  "FVMR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/PEOPLE-CARRIERS/FVMR.doi.320.high.imageSmallSideProfileNodePath.png/1727106441147.png",
+   "modelle": [
+    "Ford Galaxy"
+   ],
+   "beispielText": "7-Sitzer-Minivan",
+   "zuletzt": "2026-10-29"
+  },
+  "FVAR": {
+   "bild": "https://assets.gcs.ehi.com/content/enterprise_cros/data/vehicle/bookingCountries/DE/PEOPLE-CARRIERS/FVAR.doi.320.high.imageSmallSideProfileNodePath.png/1727106441147.png",
+   "modelle": [
+    "Ford Galaxy"
+   ],
+   "beispielText": "SUV für 7 Personen Automatik",
+   "zuletzt": "2026-10-29"
   }
  },
  "gesehen": {
@@ -9225,184 +9470,184 @@
    "WVAR": "2026-10-21"
   },
   "sixt|26|www.sixt.de": {
-   "EDMR": "2026-10-22",
-   "EDAR": "2026-10-22",
-   "EFMR": "2026-10-22",
-   "CDMR": "2026-10-22",
-   "CZMR": "2026-10-22",
-   "EFAR": "2026-10-22",
-   "CFMR": "2026-10-22",
-   "CTMR": "2026-10-22",
-   "CDAR": "2026-10-22",
+   "EDMR": "2026-10-29",
+   "EDAR": "2026-10-29",
+   "EFMR": "2026-10-29",
+   "CDMR": "2026-10-29",
+   "CZMR": "2026-10-29",
+   "EFAR": "2026-10-29",
+   "CFMR": "2026-10-29",
+   "CTMR": "2026-10-29",
+   "CDAR": "2026-10-29",
    "CWMR": "2026-09-04",
-   "CTAR": "2026-10-22",
-   "CFAR": "2026-10-22",
+   "CTAR": "2026-10-29",
+   "CFAR": "2026-10-29",
    "CWAR": "2026-09-04",
-   "IFMR": "2026-10-22",
-   "DDAR": "2026-10-22",
-   "IWAR": "2026-10-22",
-   "SFMR": "2026-10-22",
-   "IFAR": "2026-10-22",
-   "DFAR": "2026-10-22",
-   "JDAR": "2026-10-22",
-   "SFAR": "2026-10-22",
-   "DVAR": "2026-10-22",
-   "SWAR": "2026-10-22",
-   "GFAR": "2026-10-22",
-   "GDAR": "2026-10-22",
-   "GWAR": "2026-10-22",
-   "GEAR": "2026-10-22",
-   "UDAR": "2026-10-22",
-   "DDSR": "2026-10-22",
-   "UWAR": "2026-10-22",
-   "UFAR": "2026-10-22",
-   "JDSR": "2026-10-22",
-   "PFAV": "2026-10-22",
+   "IFMR": "2026-10-29",
+   "DDAR": "2026-10-29",
+   "IWAR": "2026-10-29",
+   "SFMR": "2026-10-29",
+   "IFAR": "2026-10-29",
+   "DFAR": "2026-10-29",
+   "JDAR": "2026-10-29",
+   "SFAR": "2026-10-29",
+   "DVAR": "2026-10-29",
+   "SWAR": "2026-10-29",
+   "GFAR": "2026-10-29",
+   "GDAR": "2026-10-29",
+   "GWAR": "2026-10-29",
+   "GEAR": "2026-10-29",
+   "UDAR": "2026-10-29",
+   "DDSR": "2026-10-29",
+   "UWAR": "2026-10-29",
+   "UFAR": "2026-10-29",
+   "JDSR": "2026-10-29",
+   "PFAV": "2026-10-29",
    "UTAR": "2026-09-04",
-   "GWSR": "2026-10-22",
+   "GWSR": "2026-10-29",
    "PVMR": "2026-10-22",
    "LVMR": "2026-10-22",
    "PVAR": "2026-10-22",
-   "WFDR": "2026-10-22",
-   "UFSR": "2026-10-22",
+   "WFDR": "2026-10-29",
+   "UFSR": "2026-10-29",
    "LVAR": "2026-10-22",
-   "XDDR": "2026-10-22",
+   "XDDR": "2026-10-29",
    "XDSR": "2026-10-22",
    "IVMV": "2026-09-04",
    "IVAV": "2026-09-04",
-   "GTSR": "2026-10-21",
+   "GTSR": "2026-10-29",
    "GFSR": "2026-10-22",
-   "GESR": "2026-10-22"
+   "GESR": "2026-10-29"
   },
   "sixt|95|www.sixt.de": {
-   "EDMR": "2026-10-22",
-   "EDAR": "2026-10-22",
-   "EFMR": "2026-10-22",
-   "CDMR": "2026-10-22",
-   "CZMR": "2026-10-22",
-   "EFAR": "2026-10-22",
-   "CFMR": "2026-10-22",
-   "CDAR": "2026-10-22",
+   "EDMR": "2026-10-29",
+   "EDAR": "2026-10-29",
+   "EFMR": "2026-10-29",
+   "CDMR": "2026-10-29",
+   "CZMR": "2026-10-29",
+   "EFAR": "2026-10-29",
+   "CFMR": "2026-10-29",
+   "CDAR": "2026-10-29",
    "CWMR": "2026-09-04",
-   "CTMR": "2026-10-22",
-   "CFAR": "2026-10-22",
+   "CTMR": "2026-10-29",
+   "CFAR": "2026-10-29",
    "CWAR": "2026-09-04",
-   "IFMR": "2026-10-22",
-   "CTAR": "2026-10-22",
-   "DDAR": "2026-10-22",
-   "IWAR": "2026-10-22",
-   "SFMR": "2026-10-22",
-   "IFAR": "2026-10-22",
-   "DFAR": "2026-10-22",
-   "JDAR": "2026-10-22",
-   "SFAR": "2026-10-22",
-   "DVAR": "2026-10-22",
-   "SWAR": "2026-10-22",
-   "GFAR": "2026-10-22",
-   "GDAR": "2026-10-22",
-   "GWAR": "2026-10-22",
-   "GEAR": "2026-10-22",
-   "UDAR": "2026-10-22",
-   "UWAR": "2026-10-22",
-   "UFAR": "2026-10-22",
-   "DDSR": "2026-10-22",
-   "JDSR": "2026-10-22",
+   "IFMR": "2026-10-29",
+   "CTAR": "2026-10-29",
+   "DDAR": "2026-10-29",
+   "IWAR": "2026-10-29",
+   "SFMR": "2026-10-29",
+   "IFAR": "2026-10-29",
+   "DFAR": "2026-10-29",
+   "JDAR": "2026-10-29",
+   "SFAR": "2026-10-29",
+   "DVAR": "2026-10-29",
+   "SWAR": "2026-10-29",
+   "GFAR": "2026-10-29",
+   "GDAR": "2026-10-29",
+   "GWAR": "2026-10-29",
+   "GEAR": "2026-10-29",
+   "UDAR": "2026-10-29",
+   "UWAR": "2026-10-29",
+   "UFAR": "2026-10-29",
+   "DDSR": "2026-10-29",
+   "JDSR": "2026-10-29",
    "UTAR": "2026-10-22",
-   "PFAV": "2026-10-22",
+   "PFAV": "2026-10-29",
    "GWSR": "2026-10-22",
    "PVMR": "2026-10-22",
    "LVMR": "2026-10-22",
-   "WFDR": "2026-10-22",
+   "WFDR": "2026-10-29",
    "PVAR": "2026-10-22",
    "LVAR": "2026-10-22",
    "UFSR": "2026-10-22",
-   "XDDR": "2026-10-22",
+   "XDDR": "2026-10-29",
    "XDSR": "2026-10-22",
-   "GESR": "2026-10-22"
+   "GESR": "2026-10-29"
   },
   "sixt|5979|www.sixt.de": {
-   "EDMR": "2026-10-22",
-   "EDAR": "2026-10-22",
-   "EFMR": "2026-10-22",
-   "CDMR": "2026-10-22",
-   "CZMR": "2026-10-22",
-   "EFAR": "2026-10-22",
-   "CTMR": "2026-10-22",
-   "CFMR": "2026-10-22",
-   "CDAR": "2026-10-22",
+   "EDMR": "2026-10-29",
+   "EDAR": "2026-10-29",
+   "EFMR": "2026-10-29",
+   "CDMR": "2026-10-29",
+   "CZMR": "2026-10-29",
+   "EFAR": "2026-10-29",
+   "CTMR": "2026-10-29",
+   "CFMR": "2026-10-29",
+   "CDAR": "2026-10-29",
    "CWMR": "2026-09-04",
-   "CFAR": "2026-10-22",
-   "CTAR": "2026-10-22",
+   "CFAR": "2026-10-29",
+   "CTAR": "2026-10-29",
    "CWAR": "2026-09-04",
-   "IFMR": "2026-10-22",
-   "DDAR": "2026-10-22",
-   "IWAR": "2026-10-22",
-   "SFMR": "2026-10-22",
-   "IFAR": "2026-10-22",
-   "DFAR": "2026-10-22",
-   "JDAR": "2026-10-22",
-   "SFAR": "2026-10-22",
-   "DVAR": "2026-10-22",
-   "SWAR": "2026-10-22",
-   "GFAR": "2026-10-22",
-   "GDAR": "2026-10-22",
-   "GWAR": "2026-10-22",
-   "GEAR": "2026-10-22",
-   "UDAR": "2026-10-22",
-   "DDSR": "2026-10-22",
-   "UFAR": "2026-10-22",
-   "UWAR": "2026-10-22",
-   "JDSR": "2026-10-22",
-   "PFAV": "2026-10-22",
+   "IFMR": "2026-10-29",
+   "DDAR": "2026-10-29",
+   "IWAR": "2026-10-29",
+   "SFMR": "2026-10-29",
+   "IFAR": "2026-10-29",
+   "DFAR": "2026-10-29",
+   "JDAR": "2026-10-29",
+   "SFAR": "2026-10-29",
+   "DVAR": "2026-10-29",
+   "SWAR": "2026-10-29",
+   "GFAR": "2026-10-29",
+   "GDAR": "2026-10-29",
+   "GWAR": "2026-10-29",
+   "GEAR": "2026-10-29",
+   "UDAR": "2026-10-29",
+   "DDSR": "2026-10-29",
+   "UFAR": "2026-10-29",
+   "UWAR": "2026-10-29",
+   "JDSR": "2026-10-29",
+   "PFAV": "2026-10-29",
    "UTAR": "2026-10-22",
    "GWSR": "2026-10-22",
    "PVMR": "2026-10-22",
    "LVMR": "2026-10-22",
    "PVAR": "2026-10-22",
-   "WFDR": "2026-10-22",
+   "WFDR": "2026-10-29",
    "LVAR": "2026-10-22",
    "UFSR": "2026-10-22",
-   "XDDR": "2026-10-22",
+   "XDDR": "2026-10-29",
    "XDSR": "2026-10-22",
-   "GESR": "2026-10-22"
+   "GESR": "2026-10-29"
   },
   "sixt|42464|www.sixt.de": {
-   "EDMR": "2026-10-22",
-   "EDAR": "2026-10-22",
-   "EFMR": "2026-10-22",
-   "CDMR": "2026-10-22",
-   "CZMR": "2026-10-22",
-   "EFAR": "2026-10-22",
-   "CFMR": "2026-10-22",
-   "CTMR": "2026-10-22",
-   "CDAR": "2026-10-22",
+   "EDMR": "2026-10-29",
+   "EDAR": "2026-10-29",
+   "EFMR": "2026-10-29",
+   "CDMR": "2026-10-29",
+   "CZMR": "2026-10-29",
+   "EFAR": "2026-10-29",
+   "CFMR": "2026-10-29",
+   "CTMR": "2026-10-29",
+   "CDAR": "2026-10-29",
    "CWMR": "2026-09-04",
-   "CFAR": "2026-10-22",
-   "CTAR": "2026-10-22",
+   "CFAR": "2026-10-29",
+   "CTAR": "2026-10-29",
    "CWAR": "2026-09-04",
-   "IFMR": "2026-10-22",
-   "DDAR": "2026-10-22",
-   "IWAR": "2026-10-22",
-   "SFMR": "2026-10-22",
-   "IFAR": "2026-10-22",
-   "DFAR": "2026-10-22",
-   "JDAR": "2026-10-22",
-   "SFAR": "2026-10-22",
-   "DVAR": "2026-10-22",
-   "SWAR": "2026-10-22",
-   "GFAR": "2026-10-22",
-   "GDAR": "2026-10-22",
-   "GWAR": "2026-10-22",
-   "GEAR": "2026-10-22",
-   "UDAR": "2026-10-22",
-   "UWAR": "2026-10-22",
-   "UFAR": "2026-10-22",
+   "IFMR": "2026-10-29",
+   "DDAR": "2026-10-29",
+   "IWAR": "2026-10-29",
+   "SFMR": "2026-10-29",
+   "IFAR": "2026-10-29",
+   "DFAR": "2026-10-29",
+   "JDAR": "2026-10-29",
+   "SFAR": "2026-10-29",
+   "DVAR": "2026-10-29",
+   "SWAR": "2026-10-29",
+   "GFAR": "2026-10-29",
+   "GDAR": "2026-10-29",
+   "GWAR": "2026-10-29",
+   "GEAR": "2026-10-29",
+   "UDAR": "2026-10-29",
+   "UWAR": "2026-10-29",
+   "UFAR": "2026-10-29",
    "UTAR": "2026-10-22",
    "PFAV": "2026-10-22",
    "PVMR": "2026-10-22",
    "LVMR": "2026-10-22",
    "PVAR": "2026-10-22",
-   "WFDR": "2026-10-22",
+   "WFDR": "2026-10-29",
    "LVAR": "2026-10-22",
    "IVMV": "2026-09-04",
    "IVAV": "2026-09-04"
@@ -10950,174 +11195,200 @@
    "XDSR": "2026-10-07"
   },
   "europcar|BRET01|www.europcar.de": {
-   "MCMR": "2026-10-21",
-   "ECMR": "2026-10-21",
-   "CCMR": "2026-10-21",
-   "EXMR": "2026-10-21",
-   "CDMR": "2026-10-21",
-   "CCAR": "2026-10-21",
-   "CDAR": "2026-10-21",
-   "CXMR": "2026-10-21",
-   "CWMR": "2026-10-21",
-   "CFAR": "2026-10-21",
-   "IDMR": "2026-10-21",
-   "IFMR": "2026-10-21",
-   "IDAR": "2026-10-21",
-   "DCAR": "2026-10-21",
-   "IFAR": "2026-10-21",
-   "GDAC": "2026-10-21",
-   "JDAR": "2026-10-21",
-   "CWAR": "2026-10-21",
-   "GDAR": "2026-10-21",
-   "IWMR": "2026-10-21",
-   "IWAR": "2026-10-21",
-   "GWAR": "2026-10-21",
-   "JFAR": "2026-10-21",
-   "SWAR": "2026-10-21",
-   "SFAR": "2026-10-21",
-   "FFAR": "2026-10-21",
-   "UDAC": "2026-10-21",
-   "UWAR": "2026-10-21",
-   "UFBR": "2026-10-21",
-   "SVMR": "2026-10-21",
-   "WFBR": "2026-10-21"
+   "MCMR": "2026-10-29",
+   "ECMR": "2026-10-29",
+   "CCMR": "2026-10-29",
+   "EXMR": "2026-10-29",
+   "CDMR": "2026-10-29",
+   "CCAR": "2026-10-29",
+   "CDAR": "2026-10-29",
+   "CXMR": "2026-10-29",
+   "CWMR": "2026-10-29",
+   "CFAR": "2026-10-29",
+   "IDMR": "2026-10-29",
+   "IFMR": "2026-10-29",
+   "IDAR": "2026-10-29",
+   "DCAR": "2026-10-29",
+   "IFAR": "2026-10-29",
+   "GDAC": "2026-10-29",
+   "JDAR": "2026-10-29",
+   "CWAR": "2026-10-29",
+   "GDAR": "2026-10-29",
+   "IWMR": "2026-10-29",
+   "IWAR": "2026-10-29",
+   "GWAR": "2026-10-29",
+   "JFAR": "2026-10-29",
+   "SWAR": "2026-10-29",
+   "SFAR": "2026-10-29",
+   "FFAR": "2026-10-29",
+   "UDAC": "2026-10-29",
+   "UWAR": "2026-10-29",
+   "UFBR": "2026-10-29",
+   "SVMR": "2026-10-29",
+   "WFBR": "2026-10-29"
   },
   "europcar|BREL01|www.europcar.de": {
-   "MCMR": "2026-10-21",
-   "ECMR": "2026-10-21",
-   "CCMR": "2026-10-21",
-   "EXMR": "2026-10-21",
-   "CDMR": "2026-10-21",
-   "CCAR": "2026-10-21",
-   "CDAR": "2026-10-21",
-   "CXMR": "2026-10-21",
-   "CWMR": "2026-10-21",
-   "CFAR": "2026-10-21",
-   "IDMR": "2026-10-21",
-   "IFMR": "2026-10-21",
-   "IDAR": "2026-10-21",
-   "DCAR": "2026-10-21",
-   "IFAR": "2026-10-21",
-   "GDAC": "2026-10-21",
-   "CWAR": "2026-10-21",
-   "JDAR": "2026-10-21",
-   "GDAR": "2026-10-21",
-   "IWMR": "2026-10-21",
-   "IWAR": "2026-10-21",
-   "GWAR": "2026-10-21",
-   "JFAR": "2026-10-21",
-   "SWAR": "2026-10-21",
-   "SFAR": "2026-10-21",
-   "FFAR": "2026-10-21",
-   "UDAC": "2026-10-21",
-   "UWAR": "2026-10-21",
-   "UFBR": "2026-10-21",
-   "SVMR": "2026-10-21"
+   "MCMR": "2026-10-29",
+   "ECMR": "2026-10-29",
+   "CCMR": "2026-10-29",
+   "EXMR": "2026-10-29",
+   "CDMR": "2026-10-29",
+   "CCAR": "2026-10-29",
+   "CDAR": "2026-10-29",
+   "CXMR": "2026-10-29",
+   "CWMR": "2026-10-29",
+   "CFAR": "2026-10-29",
+   "IDMR": "2026-10-29",
+   "IFMR": "2026-10-29",
+   "IDAR": "2026-10-29",
+   "DCAR": "2026-10-29",
+   "IFAR": "2026-10-29",
+   "GDAC": "2026-10-29",
+   "CWAR": "2026-10-29",
+   "JDAR": "2026-10-29",
+   "GDAR": "2026-10-29",
+   "IWMR": "2026-10-29",
+   "IWAR": "2026-10-29",
+   "GWAR": "2026-10-29",
+   "JFAR": "2026-10-29",
+   "SWAR": "2026-10-29",
+   "SFAR": "2026-10-29",
+   "FFAR": "2026-10-29",
+   "UDAC": "2026-10-29",
+   "UWAR": "2026-10-29",
+   "UFBR": "2026-10-29",
+   "SVMR": "2026-10-29"
   },
   "europcar|BREN25|www.europcar.de": {
-   "MCMR": "2026-10-21",
-   "ECMR": "2026-10-21",
-   "CCMR": "2026-10-21",
-   "EXMR": "2026-10-21",
-   "CDMR": "2026-10-21",
-   "CCAR": "2026-10-21",
-   "CDAR": "2026-10-21",
-   "CXMR": "2026-10-21",
-   "CWMR": "2026-10-21",
-   "CFAR": "2026-10-21",
-   "IDMR": "2026-10-21",
-   "IFMR": "2026-10-21",
-   "IDAR": "2026-10-21",
-   "DCAR": "2026-10-21",
-   "IFAR": "2026-10-21",
-   "GDAC": "2026-10-21",
-   "CWAR": "2026-10-21",
-   "JDAR": "2026-10-21",
-   "GDAR": "2026-10-21",
-   "IWMR": "2026-10-21",
-   "IWAR": "2026-10-21",
-   "GWAR": "2026-10-21",
-   "JFAR": "2026-10-21",
-   "SWAR": "2026-10-21",
-   "SFAR": "2026-10-21",
-   "FFAR": "2026-10-21",
-   "UDAC": "2026-10-21",
-   "UWAR": "2026-10-21",
-   "UFBR": "2026-10-21",
-   "SVMR": "2026-10-21",
-   "WFBR": "2026-10-21",
-   "TMPK": "2026-10-21"
+   "MCMR": "2026-10-29",
+   "ECMR": "2026-10-29",
+   "CCMR": "2026-10-29",
+   "EXMR": "2026-10-29",
+   "CDMR": "2026-10-29",
+   "CCAR": "2026-10-29",
+   "CDAR": "2026-10-29",
+   "CXMR": "2026-10-29",
+   "CWMR": "2026-10-29",
+   "CFAR": "2026-10-29",
+   "IDMR": "2026-10-29",
+   "IFMR": "2026-10-29",
+   "IDAR": "2026-10-29",
+   "DCAR": "2026-10-29",
+   "IFAR": "2026-10-29",
+   "GDAC": "2026-10-29",
+   "CWAR": "2026-10-29",
+   "JDAR": "2026-10-29",
+   "GDAR": "2026-10-29",
+   "IWMR": "2026-10-29",
+   "IWAR": "2026-10-29",
+   "GWAR": "2026-10-29",
+   "JFAR": "2026-10-29",
+   "SWAR": "2026-10-29",
+   "SFAR": "2026-10-29",
+   "FFAR": "2026-10-29",
+   "UDAC": "2026-10-29",
+   "UWAR": "2026-10-29",
+   "UFBR": "2026-10-29",
+   "SVMR": "2026-10-29",
+   "WFBR": "2026-10-29",
+   "TMPK": "2026-10-29"
   },
   "europcar|BREC01|www.europcar.de": {
-   "MCMR": "2026-10-21",
-   "ECMR": "2026-10-21",
-   "CCMR": "2026-10-21",
-   "EXMR": "2026-10-21",
-   "CDMR": "2026-10-21",
-   "CCAR": "2026-10-21",
-   "CDAR": "2026-10-21",
-   "CXMR": "2026-10-21",
-   "CWMR": "2026-10-21",
-   "CFAR": "2026-10-21",
-   "IDMR": "2026-10-21",
-   "IFMR": "2026-10-21",
-   "IDAR": "2026-10-21",
-   "DCAR": "2026-10-21",
-   "IFAR": "2026-10-21",
-   "GDAC": "2026-10-21",
-   "CWAR": "2026-10-21",
-   "JDAR": "2026-10-21",
-   "GDAR": "2026-10-21",
-   "IWMR": "2026-10-21",
-   "IWAR": "2026-10-21",
-   "GWAR": "2026-10-21",
-   "JFAR": "2026-10-21",
-   "SWAR": "2026-10-21",
-   "SFAR": "2026-10-21",
-   "FFAR": "2026-10-21",
-   "UDAC": "2026-10-21",
-   "UWAR": "2026-10-21",
-   "UFBR": "2026-10-21",
-   "SVMR": "2026-10-21",
-   "WFBR": "2026-10-21"
+   "MCMR": "2026-10-29",
+   "ECMR": "2026-10-29",
+   "CCMR": "2026-10-29",
+   "EXMR": "2026-10-29",
+   "CDMR": "2026-10-29",
+   "CCAR": "2026-10-29",
+   "CDAR": "2026-10-29",
+   "CXMR": "2026-10-29",
+   "CWMR": "2026-10-29",
+   "CFAR": "2026-10-29",
+   "IDMR": "2026-10-29",
+   "IFMR": "2026-10-29",
+   "IDAR": "2026-10-29",
+   "DCAR": "2026-10-29",
+   "IFAR": "2026-10-29",
+   "GDAC": "2026-10-29",
+   "CWAR": "2026-10-29",
+   "JDAR": "2026-10-29",
+   "GDAR": "2026-10-29",
+   "IWMR": "2026-10-29",
+   "IWAR": "2026-10-29",
+   "GWAR": "2026-10-29",
+   "JFAR": "2026-10-29",
+   "SWAR": "2026-10-29",
+   "SFAR": "2026-10-29",
+   "FFAR": "2026-10-29",
+   "UDAC": "2026-10-29",
+   "UWAR": "2026-10-29",
+   "UFBR": "2026-10-29",
+   "SVMR": "2026-10-29",
+   "WFBR": "2026-10-29"
   },
   "avis|BEM|secure.avis.de": {
-   "ECMR": "2026-10-21",
-   "CDMR": "2026-10-21",
-   "CDAR": "2026-10-21",
-   "CXMR": "2026-10-21",
-   "CFAR": "2026-10-21",
-   "IDMR": "2026-10-21",
-   "IFAR": "2026-10-21",
+   "ECMR": "2026-10-29",
+   "CDMR": "2026-10-29",
+   "CDAR": "2026-10-29",
+   "CXMR": "2026-10-29",
+   "CFAR": "2026-10-29",
+   "IDMR": "2026-10-29",
+   "IFAR": "2026-10-29",
    "CDAE": "2026-10-21",
-   "CWMR": "2026-10-21",
-   "FDAR": "2026-10-21",
-   "SWAR": "2026-10-21",
-   "FWAR": "2026-10-21",
-   "PDAR": "2026-10-21",
-   "PVAR": "2026-10-21",
-   "GVAR": "2026-10-21",
-   "PEAR": "2026-10-21",
-   "PTAR": "2026-10-21"
+   "CWMR": "2026-10-29",
+   "FDAR": "2026-10-29",
+   "SWAR": "2026-10-29",
+   "FWAR": "2026-10-29",
+   "PDAR": "2026-10-29",
+   "PVAR": "2026-10-29",
+   "GVAR": "2026-10-29",
+   "PEAR": "2026-10-29",
+   "PTAR": "2026-10-29",
+   "MDMR": "2026-10-29",
+   "EDAR": "2026-10-29",
+   "DDAR": "2026-10-29",
+   "IWAR": "2026-10-29",
+   "DWAR": "2026-10-29",
+   "IGAR": "2026-10-29",
+   "SFAH": "2026-10-29",
+   "JFAR": "2026-10-29",
+   "PWAR": "2026-10-29",
+   "FFAR": "2026-10-29",
+   "LWAR": "2026-10-29",
+   "RFAR": "2026-10-29",
+   "DTAR": "2026-10-29"
   },
   "avis|BRE|secure.avis.de": {
-   "ECMR": "2026-10-21",
-   "CDMR": "2026-10-21",
-   "CDAR": "2026-10-21",
-   "CWMR": "2026-10-21",
-   "CXMR": "2026-10-21",
+   "ECMR": "2026-10-29",
+   "CDMR": "2026-10-29",
+   "CDAR": "2026-10-29",
+   "CWMR": "2026-10-29",
+   "CXMR": "2026-10-29",
    "CDAE": "2026-10-21",
-   "CFAR": "2026-10-21",
-   "IDMR": "2026-10-21",
-   "IFAR": "2026-10-21",
-   "SWAR": "2026-10-21",
-   "FDAR": "2026-10-21",
-   "FWAR": "2026-10-21",
-   "PDAR": "2026-10-21",
-   "PVAR": "2026-10-21",
-   "GVAR": "2026-10-21",
-   "PEAR": "2026-10-21",
-   "PTAR": "2026-10-21"
+   "CFAR": "2026-10-29",
+   "IDMR": "2026-10-29",
+   "IFAR": "2026-10-29",
+   "SWAR": "2026-10-29",
+   "FDAR": "2026-10-29",
+   "FWAR": "2026-10-29",
+   "PDAR": "2026-10-29",
+   "PVAR": "2026-10-29",
+   "GVAR": "2026-10-29",
+   "PEAR": "2026-10-29",
+   "PTAR": "2026-10-29",
+   "MDMR": "2026-10-29",
+   "EDAR": "2026-10-29",
+   "DDAR": "2026-10-29",
+   "IWAR": "2026-10-29",
+   "DWAR": "2026-10-29",
+   "IGAR": "2026-10-29",
+   "SFAH": "2026-10-29",
+   "PWAR": "2026-10-29",
+   "JFAR": "2026-10-29",
+   "LWAR": "2026-10-29",
+   "FFAR": "2026-10-29",
+   "RFAR": "2026-10-29",
+   "DTAR": "2026-10-29"
   },
   "europcar|AAHC01|www.europcar.de": {
    "ECMR": "2026-10-22",
@@ -12883,6 +13154,154 @@
    "UFBR": "2026-10-22",
    "WFBR": "2026-10-22",
    "SVMR": "2026-10-22"
+  },
+  "hertz|BRET51|www.hertz.de": {
+   "ECMR": "2026-10-29",
+   "IDAR": "2026-10-29"
+  },
+  "enterprise|1057834|www.enterprise.de": {
+   "FFAR": "2026-10-29",
+   "PDAR": "2026-10-29",
+   "IVMR": "2026-10-29",
+   "MBMR": "2026-10-29",
+   "ECMR": "2026-10-29",
+   "XXMR": "2026-10-29",
+   "MBAR": "2026-10-29",
+   "CDMR": "2026-10-29",
+   "ECAR": "2026-10-29",
+   "CDAR": "2026-10-29",
+   "IDMR": "2026-10-29",
+   "CFMR": "2026-10-29",
+   "CFAR": "2026-10-29",
+   "SDMR": "2026-10-29",
+   "IFMR": "2026-10-29",
+   "IDAR": "2026-10-29",
+   "SDAR": "2026-10-29",
+   "IWMR": "2026-10-29",
+   "IFAR": "2026-10-29",
+   "SFMR": "2026-10-29",
+   "SWMR": "2026-10-29",
+   "IWAR": "2026-10-29",
+   "SFAR": "2026-10-29",
+   "SWAR": "2026-10-29",
+   "FFMR": "2026-10-29",
+   "DCMR": "2026-10-29",
+   "DCAR": "2026-10-29",
+   "FDMR": "2026-10-29",
+   "CWMR": "2026-10-29",
+   "FDAR": "2026-10-29",
+   "PDMR": "2026-10-29",
+   "CWAR": "2026-10-29",
+   "FWMR": "2026-10-29",
+   "PWMR": "2026-10-29",
+   "PWAR": "2026-10-29",
+   "FWAR": "2026-10-29",
+   "PFAR": "2026-10-29",
+   "FKMN": "2026-10-29",
+   "OKMN": "2026-10-29",
+   "SVMR": "2026-10-29",
+   "SVAR": "2026-10-29",
+   "LKMD": "2026-10-29",
+   "IVAR": "2026-10-29",
+   "FVMR": "2026-10-29",
+   "FVAR": "2026-10-29",
+   "LVMR": "2026-10-29",
+   "LVAR": "2026-10-29"
+  },
+  "enterprise|1057824|www.enterprise.de": {
+   "FFAR": "2026-10-29",
+   "PDAR": "2026-10-29",
+   "IVMR": "2026-10-29",
+   "MBMR": "2026-10-29",
+   "ECMR": "2026-10-29",
+   "XXMR": "2026-10-29",
+   "MBAR": "2026-10-29",
+   "CDMR": "2026-10-29",
+   "ECAR": "2026-10-29",
+   "CDAR": "2026-10-29",
+   "IDMR": "2026-10-29",
+   "CFMR": "2026-10-29",
+   "CFAR": "2026-10-29",
+   "SDMR": "2026-10-29",
+   "IFMR": "2026-10-29",
+   "IDAR": "2026-10-29",
+   "SDAR": "2026-10-29",
+   "IWMR": "2026-10-29",
+   "IFAR": "2026-10-29",
+   "SFMR": "2026-10-29",
+   "SWMR": "2026-10-29",
+   "IWAR": "2026-10-29",
+   "SFAR": "2026-10-29",
+   "SWAR": "2026-10-29",
+   "FFMR": "2026-10-29",
+   "DCMR": "2026-10-29",
+   "DCAR": "2026-10-29",
+   "FDMR": "2026-10-29",
+   "CWMR": "2026-10-29",
+   "FDAR": "2026-10-29",
+   "PDMR": "2026-10-29",
+   "CWAR": "2026-10-29",
+   "FWMR": "2026-10-29",
+   "PWMR": "2026-10-29",
+   "PWAR": "2026-10-29",
+   "FWAR": "2026-10-29",
+   "PFAR": "2026-10-29",
+   "FKMN": "2026-10-29",
+   "OKMN": "2026-10-29",
+   "SVMR": "2026-10-29",
+   "SVAR": "2026-10-29",
+   "LKMD": "2026-10-29",
+   "IVAR": "2026-10-29",
+   "FVMR": "2026-10-29",
+   "FVAR": "2026-10-29",
+   "LVMR": "2026-10-29",
+   "LVAR": "2026-10-29"
+  },
+  "enterprise|1057829|www.enterprise.de": {
+   "IVMR": "2026-10-29",
+   "PDAR": "2026-10-29",
+   "FFAR": "2026-10-29",
+   "MBMR": "2026-10-29",
+   "ECMR": "2026-10-29",
+   "XXMR": "2026-10-29",
+   "CDMR": "2026-10-29",
+   "MBAR": "2026-10-29",
+   "CFMR": "2026-10-29",
+   "ECAR": "2026-10-29",
+   "CDAR": "2026-10-29",
+   "IDMR": "2026-10-29",
+   "CFAR": "2026-10-29",
+   "SDMR": "2026-10-29",
+   "IFMR": "2026-10-29",
+   "IDAR": "2026-10-29",
+   "SDAR": "2026-10-29",
+   "IWMR": "2026-10-29",
+   "IFAR": "2026-10-29",
+   "SFMR": "2026-10-29",
+   "SVMR": "2026-10-29",
+   "SVAR": "2026-10-29",
+   "SWMR": "2026-10-29",
+   "IWAR": "2026-10-29",
+   "SFAR": "2026-10-29",
+   "DCMR": "2026-10-29",
+   "SWAR": "2026-10-29",
+   "DCAR": "2026-10-29",
+   "IVAR": "2026-10-29",
+   "FDMR": "2026-10-29",
+   "FDAR": "2026-10-29",
+   "FFMR": "2026-10-29",
+   "PDMR": "2026-10-29",
+   "CWMR": "2026-10-29",
+   "FWMR": "2026-10-29",
+   "PWMR": "2026-10-29",
+   "PWAR": "2026-10-29",
+   "FWAR": "2026-10-29",
+   "CWAR": "2026-10-29",
+   "PFAR": "2026-10-29",
+   "FVMR": "2026-10-29",
+   "FVAR": "2026-10-29",
+   "LVMR": "2026-10-29",
+   "LVAR": "2026-10-29"
   }
  }
 }

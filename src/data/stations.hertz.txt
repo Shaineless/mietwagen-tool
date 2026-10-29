@@ -1,304 +1,89 @@
 # Hertz-PKW-Stationen in Deutschland.
 # Format: id|plz|bundesland|breite|laenge|art|name
-# Geerntet: 2026-10-21 mit tools/ernte-hertz.mjs
+# Geerntet: 2026-10-29 mit tools/ernte-hertz.mjs
 # Bundesland aus Koordinate und Landesumriss. Datei wird im Ganzen ersetzt.
-STRE03|73430|baden-wuerttemberg|48.83098|10.07952||Aalen - V-Baumarkt
-MUCE01|84503|bayern|48.2263|12.66973||Altötting POCO
-MHGC02|55232|rheinland-pfalz|49.74702|8.13914||Alzey ROLLER
 ZCBC63|63743|bayern|49.97039|9.161667||Aschaffenburg - Würzburger Straße 102
 MUCW63|86165|bayern|48.37348|10.93343||Augsburg - Donaustraße 15
 MUCX66|86150|bayern|48.366695|10.886482||Augsburg - Hertz Go! Augsburg
 AGBT51|86169|bayern|48.423124930117|10.9297374139809|flughafen|Augsburg - Hertz Go! Augsburg Flughafen
-MUCN13|86179|bayern|48.32031|10.89016||Augsburg - POCO Augsburg-Haunstetten
-MUCW04|86154|bayern|48.40094|10.87858||Augsburg - POCO Augsburg-Oberhausen
-MUCW01|86386||51.26853|4.376153||Augsburg, IKEA
-BREN01|26605|niedersachsen|53.47105|7.46135||Aurich Hagebau
-FRAE67|97816|bayern|49.9769186|9.5851716||Ausschließlich Buchungen mit Bosch Rexroth Vertragsrate
-HAMS02|21357|niedersachsen|53.28758|10.3881||Bardowick POCO
-NUEC02|95448|bayern|49.96838|11.607||Bayreuth ROLLER
-DTMN02|59192|nordrhein-westfalen|51.64276|7.67206||Bergkamen - POCO
-BERC80|10557|berlin|52.524911|13.369492||Berlin - Europaplatz 1 (Ausschließlich BWFP Buchungen)
 BERT50|12529|brandenburg|52.37448|13.50982|flughafen|Berlin Brandenburg Willy Brandt Flughafen
 BERC63|10365|berlin|52.525055|13.499737||Berlin Lichtenberg - Siegfriedstraße 168
 BERC62|10117|berlin|52.508967|13.390363||Berlin Mitte - Friedrichstraße 50-55
 BERC66|10557|berlin|52.524911|13.369492||Berlin Selbstbedienung - Europaplatz 1
-BERC17|12489|berlin|52.43105|13.55017||Berlin-Adlershof POCO
-BERC07|12623|berlin|52.50525|13.61263||Berlin-Mahlsdorf ROLLER
-BFEC02|33605|nordrhein-westfalen|52.00133|8.5764||Bielefeld POCO
-BFEC01|33647|nordrhein-westfalen|51.980941|8.492845||Bielefeld,IKEA
-FRAC09|65474|hessen|49.97337|8.38582||Bischofsheim ROLLER
 STRS63|71034|baden-wuerttemberg|48.68394|9.00522||Böblingen - Herrenberger Straße 35
-STRC01|71032|baden-wuerttemberg|48.68712|9.00458||Böblingen POCO
-QBOX90|44787|nordrhein-westfalen|51.478893|7.222731||Bochum Hauptbahnhof - Kurt-Schumacher-Platz 15
 QBOC04|44805|nordrhein-westfalen|51.49887|7.25799||Bochum, JYSK Bochum
-SCNC01|66359|saarland|49.28434|6.78272||Bous ROLLER
-BREN05|26919|niedersachsen|53.33615|8.46867||Brake Hagebau
-BERW01|14772|brandenburg|52.4317|12.53467||Brandenburg an der Havel - JYSK Brandenburg
 BWEC01|38112|niedersachsen|52.30964|10.50465||Braunschweig IKEA
-BWEC05|38112|niedersachsen|52.31227|10.49935||Braunschweig, POCO Braunschweig
-BREC81|28195|bremen|53.082624|8.812837||Bremen - Bahnhofsplatz (Ausschließlich BWFP Buchungen)
-BREC80|28199|bremen|53.053296|8.785568|flughafen|Bremen - Flughafenallee 20 (Ausschließlich BWFP Buchungen)
 BRET51|28199|bremen|53.051972|8.788313|flughafen|Bremen - Hertz Go! Bremen Flughafen
-BREX90|28195|bremen|53.08312|8.81186||Bremen Hauptbahnhof My Fiets by Mobydis GMBH- Bahnhofsplatz 14a
-BREC02|28239|bremen|53.13789|8.74268||Bremen ROLLER
-BREC01|28816|niedersachsen|53.0267|8.80306||Bremen-Brinkum, IKEA
-BRVC01|27572|niedersachsen|53.4948|8.59991||Bremerhaven POCO
-MUCS07|85649|bayern|48.04145|11.66045||Brunnthal Hagebau
 ZCNC60|29221|niedersachsen|52.604619|10.072981||Celle - Hannoversche Heerstraße 43
-ZCNC01|29223|niedersachsen|52.63658|10.07384||Celle ROLLER
-NUEC03|74564|baden-wuerttemberg|49.14278|10.03005||Crailsheim ROLLER
-FCNC01|27472|niedersachsen|53.84483|8.69638||Cuxhaven - JYSK Cuxhaven
-ZCRC01|85221|bayern|48.26014|11.47581||Dachau Hagebau
-ZCSC01|64293|hessen|49.88963|8.64607||Darmstadt ROLLER
-FRAE71|63069|hessen|50.088532|8.763614||Dietzenbach - Senefelder Straße 164
 MUCW60|89407|bayern|48.585586|10.509494||Dillingen an der Donau - Donauwörther Straße 24
-BRES01|49413|niedersachsen|52.65837|8.11883||Dinklage POCO
-DUSC02|46535|nordrhein-westfalen|51.55842|6.74079||Dinslaken ROLLER
-MUCN12|86609|bayern|48.70818|10.75734||Donauwörth - Hagebaumarkt
-DUSC03|41540|nordrhein-westfalen|51.09358|6.80627||Dormagen ROLLER
-DTMC07|44145|nordrhein-westfalen|51.53766|7.47041||Dortmund POCO
-DTMC03|44287|nordrhein-westfalen|51.5059|7.56782||Dortmund ROLLER
-DMTC01|59174|nordrhein-westfalen|51.565709|7.389307||Dortmund-Kamen, IKEA
-DMTC02|44149|nordrhein-westfalen|51.49184|7.369751||Dortmund-Kley, IKEA
-DTMC05|44149|nordrhein-westfalen|51.4964|7.37721||Dortmund-Oespel ROLLER
 DRST51|01109|sachsen|51.1240652262351|13.7665478034542|flughafen|Dresden - Hertz Go! Dresden Flughafen
-DRST50|01109|sachsen|51.124563|13.765659|flughafen|Dresden Flughafen
 DRSC62|1159|sachsen|51.052373|13.712486||Dresden Innenstadt - Fröbelstraße 24
-DRSC02|1257|sachsen|50.9937|13.79861||Dresden-Nickern POCO
-DRSC01|01257|sachsen|51.00633|13.80952||Dresden, JYSK Dresden Prohlis
-DUIC02|47269|nordrhein-westfalen|51.37748|6.77381||Duisburg - JYSK Duisburg
-DUIC01|47166|nordrhein-westfalen|51.48258|6.76469||Duisburg, IKEA
-CGNW01|52353|nordrhein-westfalen|50.83027|6.47512||Düren - JYSK Düren
 DUSX66|40210|nordrhein-westfalen|51.2218778|6.790837||Düsseldorf - Hertz Go! Düsseldorf Hauptbahnhof
 DUSC67|40472|nordrhein-westfalen|51.264624|6.803562||Düsseldorf - Rather Kreuzweg 109
 DUST50|40474|nordrhein-westfalen|51.282785|6.76227|flughafen|Düsseldorf Flughafen
-DUSC07|40233|nordrhein-westfalen|51.21949|6.80876||Düsseldorf ROLLER
-DUSC09|40223|nordrhein-westfalen|51.2028|6.77186||Düsseldorf Schaffrath
-DUSC01|41564|nordrhein-westfalen|51.192534|6.61357||Düsseldorf-Kaarst, IKEA
-MUCN06|85386|bayern|48.30722|11.63392||Eching Hagebau
-MUCN01|85386|bayern|48.30447|11.63366||Eching IKEA
-MUCN04|85386|bayern|48.3077|11.63146||Eching POCO
-MUCC02|85386|bayern|48.30529|11.6358||Eching ROLLER
-MUCE03|84307|bayern|48.39978|12.74703||Eggenfelden Hagebau
-MUCN05|85435|bayern|48.30572|11.89149||Erding Hagebaumarkt
 ERFC65|99092|thueringen|50.973965|10.964817||Erfurt - Binderslebener Landstraße 100
-ERFC81|99092|thueringen|50.975095|10.961347||Erfurt - Binderslebener Landstraße 100 (Ausschließlich BWFP-Buchungen)
-ERFC07|99092|thueringen|50.97458|10.95435||Erfurt - POCO
-ERFC03|99091|thueringen|51.02056|11.01019||Erfurt ROLLER
-ERFC01|99094|thueringen|50.95909|10.94968||Erfurt, IKEA
 ZCZX66|91052|bayern|49.594357|11.001699||Erlangen - Hertz Go! Erlangen Hauptbahnhof
 ESZX66|45127|nordrhein-westfalen|51.4535966004959|7.01599639724492||Essen - Hertz Go! Essen Hauptbahnhof
-ESSC02|45127|nordrhein-westfalen|51.46097|7.00006||Essen ROLLER
-ESSC01|45127|nordrhein-westfalen|51.45995|7.00045||Essen, IKEA
 STRE64|73730|baden-wuerttemberg|48.72407|9.34805||Esslingen - Fritz-Müller-Straße 135
-CGNC05|53879|nordrhein-westfalen|50.64895|6.80404||Euskirchen ROLLER
-BERW02|14612|brandenburg|52.55979|13.12246||Falkensee - JYSK Falkensee
-BERC12|16244|brandenburg|52.84951|13.68691||Finowfurt-Schorfheide ROLLER
-FLFC02|24941|schleswig-holstein|54.77069|9.43373||Flensburg - JYSK Flensburg
-FLFC01|24941|schleswig-holstein|54.76099|9.43247||Flensburg,  ROLLER
 FRAT50|60549|hessen|50.050789|8.568951|flughafen|Frankfurt Flughafen - Terminal 1
 FRAT52|60549|hessen|50.051455|8.586853|flughafen|Frankfurt Flughafen - Terminal 2
 FRAT53|60549|hessen|50.029402|8.582439|flughafen|Frankfurt Flughafen - Terminal 3
 FRAX91|60329|hessen|50.107398|8.661919||Frankfurt Hauptbahnhof - Im Hauptbahnhof
-FRAC02|60386|hessen|50.13136|8.74013||Frankfurt POCO
-FRAC01|60437|hessen|50.19657|8.657255||Frankfurt, IKEA
 QFBC70|79115|baden-wuerttemberg|47.97919|7.81959||Freiburg - Lörracher Straße 49
-QFBC02|79108|baden-wuerttemberg|48.02932|7.84348||Freiburg ROLLER
-QFBC01|79108|baden-wuerttemberg|48.029017|7.834102||Freiburg, IKEA
-MUCN07|85356|bayern|48.38117|11.75341||Freising Hagebau
 FDHT53|88046|baden-wuerttemberg|47.6740159758454|9.52663318933664|flughafen|Friedrichshafen - Hertz Go! Friedrichshafen Flughafen
 ZEEC60|36043|hessen|50.447311|9.611172||Fulda - Weichselstrasse17
-FELC01|82256|bayern|48.18602|11.23797||Fürstenfeldbruck Hagebaumarkt
 FMMS61|87645|bayern|47.564835|10.708061||Füssen, Schwangau - Füssener Straße 112
-HAJC02|30827|niedersachsen|52.4275|9.62399||Garbsen ROLLER
-FRAE07|63571|hessen|50.20272|9.17326||Gelnhausen - OBI
-ZEJC01|45891|nordrhein-westfalen|51.54493|7.07858||Gelsenkirchen - POCO
-DUSC05|45891|nordrhein-westfalen|51.54897|7.07801||Gelsenkirchen ROLLER
-LEJC03|07552|thueringen|50.89798|12.09871||Gera ROLLER
-MUCW02|82110|bayern|48.14068|11.37182||Germering Hagebau
-STRC03|73037|baden-wuerttemberg|48.69093|9.6705||Göppingen RIEGER
-DRSC04|02828|sachsen|51.17059|14.96627||Görlitz ROLLER
-HAJC01|38644|niedersachsen|51.9317|10.41079||Goslar ROLLER
 NUEE60|92655|bayern|49.72114|11.90218||Grafenwöhr - Am Sudhaus 4
-FRAS06|63868|bayern|49.88165|9.14294||Großwallstadt - POCO
-MUCE02|85540|bayern|48.10859|11.72141||Haar Hagebaumarkt
-BWEC03|38820|sachsen-anhalt|51.88308|11.07358||Halberstadt ROLLER
-HAMN01|25469|schleswig-holstein|53.62619|9.86457||Halstenbek POCO
 HAMX66|20097|hamburg|53.5501233282033|10.0078809448654||Hamburg - Hertz Go! Hamburg Hauptbahnhof
 HAMT50|22335|hamburg|53.63549|10.01731|flughafen|Hamburg Flughafen
-HAMC01|22767|hamburg|53.550987|9.942397||Hamburg-Altona, IKEA
-HAMC15|21079|hamburg|53.45602|10.00835||Hamburg-Harburg POCO
-HAMC02|22113|hamburg|53.513178|10.091109||Hamburg-Moorfleet, IKEA
-HAMC03|22457|schleswig-holstein|53.648102|9.928106||Hamburg-Schnelsen, IKEA
-HAMC26|21029|hamburg|53.48696|10.2062||Hamburg, JYSK Hamburg Bergedorf
-HAMC27|22143|hamburg|53.60283|10.14515||Hamburg, JYSK Hamburg Rahlstedt
-HAMC05|22339|hamburg|53.64966|10.03632||Hamburg,ROLLER
-ZNFC01|63450|hessen|50.11598|8.92699||Hanau - POCO
-FRAC04|63452|hessen|50.14776|8.93162||Hanau ROLLER
-FRAE01|63452|hessen|50.150548|8.943665||Hanau, IKEA
 HAJX66|30161|niedersachsen|52.375792|9.745581||Hannover - Hertz Go! Hannover Hauptbahnhof
 HAJC70|30165|niedersachsen|52.4101010102001|9.70860837774343||Hannover - Hertz Go! Hannover Innenstadt
-HAJC63|30165|niedersachsen|52.410283|9.70963||Hannover - Schulenburger Landstraße 152 ( Ausschließlich BWFP Buchungen)
 HAJT50|30855|niedersachsen|52.459794|9.698482|flughafen|Hannover-Langenhagen Flughafen
-HAJC04|30453|niedersachsen|52.36723|9.70185||Hannover, POCO Hannover-Linden
-HEIC01|25746|schleswig-holstein|54.19849|9.1267||Heide - ROLLER Heide
 HDBC63|69124|baden-wuerttemberg|49.386751|8.662948||Heidelberg - Pleikartsförster Straße 116
-HDBC01|69190|baden-wuerttemberg|49.30567|8.63029||Heidelberg-Walldorf, IKEA
-DRSC08|01809|sachsen|50.97909|13.85177||Heidenau ROLLER
-ZNIC01|89518|baden-wuerttemberg|48.67911|10.1052||Heidenheim an der Brenz ROLLER
-ZNJC02|74080|baden-wuerttemberg|49.14925|9.19644||Heilbronn POCO
-ZNOC02|31137|niedersachsen|52.15959|9.93853||Hildesheim POCO
-ZNOC01|31135|niedersachsen|52.16529|9.96984||Hildesheim ROLLER
-PADS01|65719|hessen|50.058665|8.373523||Hofheim-Wallau, IKEA
-DUSC04|41836|nordrhein-westfalen|51.05585|6.21638||Hückelhoven ROLLER
-IGSC02|85055|bayern|48.78|11.43124||Ingolstadt POCO
-IGSC01|85051|bayern|48.7052|11.42569||Ingolstadt ROLLER
-KLTC02|67663|rheinland-pfalz|49.44184|7.71453||Kaiserslautern - POCO
-KLTC01|67663|rheinland-pfalz|49.442764|7.700465||Kaiserslautern, IKEA
 FKBC65|76185|baden-wuerttemberg|48.99441|8.374108||Karlsruhe - Bannwaldallee 60
 FKBT51|77836|baden-wuerttemberg|48.7766856|8.087442|flughafen|Karlsruhe - Hertz Go! Karlsruhe Baden-Baden Flughafen
-FKBC05|76137|baden-wuerttemberg|49.00496|8.44067||Karlsruhe IKEA
-KSFX90|34131|hessen|51.31348|9.445291||Kassel Wilhelmshöhe Bahnhof - Wilhelmshöher Allee 253
-KSFC01|34123|hessen|51.27745|9.52462||Kassel, IKEA
 KSFC05|34253|hessen|51.27969|9.52936||Kassel, POCO
 FRAW61|65451|hessen|50.04854|8.53416||Kelsterbach - Grenzweg 2
-CGNC03|50171|nordrhein-westfalen|50.88366|6.69315||Kerpen ROLLER
 KELC63|24113|schleswig-holstein|54.30383|10.12916||Kiel - Lauenburger Straße 2
-KELC01|24114|schleswig-holstein|54.313747|10.109358||Kiel, IKEA
-ZNVX90|56068|rheinland-pfalz|50.350765|7.589595||Koblenz Hauptbahnhof - Bahnhofplatz 2
-ZNVC02|56070|rheinland-pfalz|50.38209|7.56566||Koblenz- POCO Koblenz
-ZNVC01|56070|rheinland-pfalz|50.381331|7.568901||Koblenz-IKEA
 CGNX92|50667|nordrhein-westfalen|50.942628|6.958216||Köln - Hauptbahnof Reisezentrum
-QKLE01|50997|nordrhein-westfalen|50.862359|6.972499||Köln-Godorf, IKEA
 CGNC08|50829|nordrhein-westfalen|50.98395|6.90018||Köln, JYSK Köln Ossendorf
-CGNC07|51067|nordrhein-westfalen|50.97611|7.05568||Köln, OBI Köln Dellbruck
-CGNC04|50858|nordrhein-westfalen|50.92164|6.85607||Köln, ROLLER
 QKFC03|47803|nordrhein-westfalen|51.32518|6.52373||Krefeld - Knuffmann
-QKFC02|47803|nordrhein-westfalen|51.34835|6.53467||Krefeld - Schaffrath
-CGNC01|57223|nordrhein-westfalen|50.96714|8.04105||Kreuztal POCO
 LEJX70|04109|sachsen|51.3391214245235|12.3800304346902||Leipzig - Hertz Go! Leipzig Hauptbahnhof
-LEJC81|4435|sachsen|51.418571|12.23404||Leipzig - Terminalring 11 (Ausschließlich BWFP Buchungen)
-LEJC02|04178|sachsen|51.34762|12.26429||Leipzig ROLLER
 LEJC07|04329|sachsen|51.34872|12.47894||Leipzig, JYSK Leipzig
 QIIC60|88131|bayern|47.551351|9.69603||Lindau - Bregenzer Straße 20a-22
-FRAS07|88161|bayern|47.5934|9.86595||Lindenberg - Hagebaumarkt
 FRAE64|97816|bayern|49.984218|9.573672||Lohr am Main - Am Landgraben 4
 LBCT51|23562|schleswig-holstein|53.805437600946|10.7010057218543|flughafen|Lübeck - Hertz Go! Lübeck Flughafen
-LBCC03|23556|schleswig-holstein|53.86042|10.62509||Lübeck POCO
-HAMS01|23569|schleswig-holstein|53.91295|10.741977||Lübeck,IKEA
-DTMS01|58515|nordrhein-westfalen|51.20868|7.66631||Lüdenscheid POCO
-ZODC02|71634|baden-wuerttemberg|48.92199|9.1442||Ludwigsburg ROLLER
-ZODC01|71634|baden-wuerttemberg|48.91902|9.15347||Ludwigsburg-IKEA
-ZOEC01|67071|rheinland-pfalz|49.48327|8.35351||Ludwigshafen ROLLER
 CSOC61|39110|sachsen-anhalt|52.12291|11.60145||Magdeburg - Liebknechtstr. 77
-ZMGC04|39124|sachsen-anhalt|52.1549|11.64804||Magdeburg POCO
-ZMGC01|39128|sachsen-anhalt|52.16032|11.60518||Magdeburg ROLLER
 CSOC01|39118|sachsen-anhalt|52.08149|11.60452||Magdeburg, JYSK Magdeburg
 QMCX60|55116|rheinland-pfalz|49.99833|8.26232||Mainz - Hertz Go! Mainz Hauptbahnhof
-QMZC03|55128|rheinland-pfalz|49.96834|8.24208||Mainz-Bretzenheim POCO
 MHGC68|68309|baden-wuerttemberg|49.505643|8.505877||Mannheim - Ausschließlich ABB Reservierungen
 MHGX70|68161|baden-wuerttemberg|49.478411|8.472225||Mannheim - Hertz Go! Mannheim Hauptbahnhof
-MHGC08|68219|baden-wuerttemberg|49.45151|8.5138||Mannheim POCO
-MHGC01|68307|baden-wuerttemberg|49.556051|8.446588||Mannheim, IKEA
-ZOIC01|35041|hessen|50.84162|8.77063||Marburg - JYSK Marburg
 FRAE61|97828|bayern|49.847805|9.625647||Marktheidenfeld - Baumhofstraße 101
 FMMT51|87766|bayern|47.9916143717037|10.2312296438032|flughafen|Memmingen - Hertz Go! Memmingen Flughafen
 LEJW61|06217|sachsen-anhalt|51.354834|12.002375||Merseburg - Rischmühle 1b
-MUCS08|83714|bayern|47.79429|11.83901||Miesbach Hagebau
-DUSW03|41065|nordrhein-westfalen|51.1824|6.44386||Mönchengladbach - Schaffrath
-DUSW02|41238|nordrhein-westfalen|51.15074|6.45828||Mönchengladbach - Schaffrath Abhollager
 FRAN60|56412|rheinland-pfalz|50.45054|7.84713||Montabaur, Heiligenroth - Industriestraße 4
-HHNC02|56218|rheinland-pfalz|50.395|7.53152||Mülheim-Kärlich ROLLER
-MUCC71|81671|bayern|48.1287|11.61401||München - Ausschließlich Rohde & Schwarz Buchungen (Selbstbedienungskiosk)
 MUCC61|80335|bayern|48.141617|11.562774||München - Elisenhof 3
 MUCX67|81667|bayern|48.1302256395845|11.5918553954236||München - Hertz Go! München Innenstadt - Hilton München - Haidhausen
 MUCC74|80687|bayern|48.144743|11.490822||München - Laim Landsberger Straße
 MUCT50|85356|bayern|48.353662|11.775028|flughafen|München Franz-Josef-Strauß Flughafen
-MUCS01|82024|bayern|48.04084|11.65707||München-Brunnthal, IKEA
-MUCC01|80939|bayern|48.19331|11.59369||München-POCO
-MUCC12|85774|bayern|48.17997|11.63303||München-Unterföhring Hagebaumarkt
-MUCC13|81379|bayern|48.1014|11.52938||München, Hagebaumarkt
-MUCC14|80809|bayern|48.18853|11.55174||München, Nord Hagebau
-MUCC15|81477|bayern|48.08945|11.50723||München, Süd Hagebau
-QULC02|89231|bayern|48.39598|10.01836||Neu-Ulm ROLLER
 ZOQC01|41460|nordrhein-westfalen|51.20446|6.68745||Neuss - Knuffmann
-NODC01|26506|niedersachsen|53.60136|7.18599||Norden Hagebau
-ERFN02|99734|thueringen|51.48263|10.81034||Nordhausen POCO
-NUEC81|90429|bayern|49.46238|11.01983||Nürnberg - Fürther Straße 343 (Ausschließlich BWFP Buchungen)
 NUEC65|90441|bayern|49.462313|11.020023||Nürnberg - Löffelholzstraße 30
-NUEC05|90471|bayern|49.42355|11.14033||Nürnberg-Außenlager POCO
-NUEW01|90765|thueringen|51.08342|10.423447||Nürnberg-Fürth, IKEA
-NUEC06|90431|bayern|49.44806|11.0386||Nürnberg, POCO Nürnberg-Sundersbuhl
-FRAC05|63067|hessen|50.10721|8.7357||Offenbach am Main ROLLER
-ZPAC01|77656|baden-wuerttemberg|48.4435|7.93126||Offenburg ROLLER
-ZPDC03|26129|niedersachsen|53.15941|8.1699||Oldenburg - JYSK Oldenburg-Wechloy
-ZPDC01|26135|niedersachsen|53.138346|8.254521||Oldenburg-IKEA
 FMOT51|48268|nordrhein-westfalen|52.1300393404661|7.69733531904857|flughafen|Osnabrück - Hertz Go! Münster/Osnabrück Flughafen
-FMOC01|49084|niedersachsen|52.26142|8.07336||Osnabrück POCO
-FMOE01|49078|niedersachsen|52.263976|7.971995||Osnabrück, IKEA
-BREN06|27711|niedersachsen|53.23308|8.75147||Osterholz-Scharmbeck Hagebau
-BREW01|26842|niedersachsen|53.13808|7.59772||Ostrhauderfehn Hagebau
 PADT53|33142|nordrhein-westfalen|51.611301|8.622331|flughafen|Paderborn - Hertz Go! Paderborn Lippstadt Flughafen
-MUCN08|93080|bayern|48.98011|12.06507||Pentling - V-Markt (Regensburg)
-FRAC03|36100|hessen|50.55233|9.719||Petersberg POCO
-FMMN01|85276|bayern|48.53655|11.51303||Pfaffenhofen Hagebaumarkt
-UPFC02|79179|baden-wuerttemberg|48.90283|8.66051||Pforzheim POCO
-STRS03|72793|baden-wuerttemberg|48.47843|9.22788||Pfullingen - JYSK Pfullingen
 RMST51|66877|rheinland-pfalz|49.436944|7.600278|flughafen|Ramstein Airbase
-DUSC08|40878|nordrhein-westfalen|51.29611|6.83273||Ratingen ROLLER
-ZPMC04|93059|bayern|49.02718|12.11225||Regensburg POCO
-ZPMC01|93055|bayern|49.002289|12.178323||Regensburg-IKEA
-KELW01|24768|schleswig-holstein|54.32721|9.62695||Rendsburg - ROLLER Rendsburg
-STRC04|72760|baden-wuerttemberg|48.50279|9.20685||Reutlingen ROLLER
-PADN01|33378|nordrhein-westfalen|51.84675|8.29438||Rheda-Wiedenbruck POCO
-FRAC07|61191|hessen|50.29926|8.69315||Rosbach ROLLER
-RLGC04|18069|mecklenburg-vorpommern|54.10694|12.05526||Rostock POCO
 RLGC63|18069|mecklenburg-vorpommern|54.106519|12.036284||Rostock, Sievershagen - Ostsee-Park-Straße 2d
 RLGN71|18119|mecklenburg-vorpommern|54.17384|12.0928||Rostock, Warnemünde - Kreuzfahrtterminal
 SCNT51|66131|saarland|49.2208747164785|7.11300564265208|flughafen|Saarbrücken - Hertz Go! Saarbrücken Flughafen
 SCNC65|66111|saarland|49.22739|7.0194||Saarbrücken - Mainzer Straße 193
-SCNC17|66740|saarland|49.179183|7.035268||Saarbrücken-Saarlouis,IKEA
 BERN60|16303|brandenburg|53.067609|14.267903||Schwedt - Handelsstraße 15
-DTMC06|58332|nordrhein-westfalen|51.29116|7.28239||Schwelm ROLLER
-HAMN03|24223|schleswig-holstein|54.28672|10.22041||Schwentinental - JYSK Raisdorf
-HAMC04|24223|schleswig-holstein|54.28835|10.22228||Schwentinental POCO
 LBCN01|24223|schleswig-holstein|54.28811|10.22216||Schwentinental POCO Kiel
-SGEC01|57072|nordrhein-westfalen|50.865891|7.999995||Siegen, IKEA
-BUFW01|71063|baden-wuerttemberg|48.701132|9.004745||Sindelfingen, IKEA
-ZQAC02|78224|baden-wuerttemberg|47.75329|8.8721||Singen POCO
-ZQAC01|78224|baden-wuerttemberg|47.75311|8.85271||Singen ROLLER
-DTMC04|59494|nordrhein-westfalen|51.56359|8.0855||Soest ROLLER
-ERFN01|99610|thueringen|51.15702|11.14165||Sömmerda OBI
-MHGS03|67346|rheinland-pfalz|49.33488|8.41339||Speyer POCO
-SCNC02|66386|saarland|49.27163|7.12933||St. Ingbert ROLLER
 STRX70|70173|baden-wuerttemberg|48.7873245|9.18155||Stuttgart - Hertz Go! Stuttgart Hauptbahnhof
 STRT50|70629|baden-wuerttemberg|48.690564|9.193723|flughafen|Stuttgart Flughafen
-STRC06|70376|baden-wuerttemberg|48.81173|9.21834||Stuttgart-Bad Cannstatt POCO
 STRC08|70376|baden-wuerttemberg|48.80004|9.23745||Stuttgart-POCO Fellbach
 ZQHC02|72070|baden-wuerttemberg|48.5238|9.03124||Tübingen - JYSK Tübingen
-QULC01|89077|baden-wuerttemberg|48.40362|9.97657||Ulm, IKEA
-MUCS02|82008|bayern|48.05545|11.60274||Unterhaching Hagebaumarkt
 BREE63|27283|niedersachsen|52.924406|9.285095||Verden - Marie-Curie-Straße 4
-MHGE01|68519|baden-wuerttemberg|49.52506|8.55743||Viernheim POCO
 ZQLC61|78054|baden-wuerttemberg|48.061669|8.5127||Villingen-Schwenningen - Grabenäckerstraße 28
-FKBC01|78048|baden-wuerttemberg|48.06651|8.44888||Villingen-Schwenningen ROLLER
-MHGC07|68753|baden-wuerttemberg|49.21441|8.52927||Waghäusel ROLLER
-FDHW01|79761|baden-wuerttemberg|47.61838|8.24922||Waldshut-Tiengen OBI
 NRNT51|47652|nordrhein-westfalen|51.598912|6.152487|flughafen|Weeze - Hertz Go! Niederrhein Flughafen
-MHGC05|69469|baden-wuerttemberg|49.54302|8.66124||Weinheim ROLLER
-FRAS03|64331|hessen|49.89775|8.61364||Weiterstadt POCO
-LEJC05|08412|sachsen|50.71116|12.41353||Werdau ROLLER
-CGNC06|51674|nordrhein-westfalen|50.97036|7.52616||Wiehl ROLLER
 WIEX66|65189|hessen|50.070173089741|8.24125873900231||Wiesbaden - Hertz Go! Wiesbaden Hauptbahnhof
-WVNC03|26389|niedersachsen|53.52737|8.06283||Wilhelmshaven - JYSK Wilhelmshaven
-WVNC04|26389|niedersachsen|53.52554|8.07254||Wilhelmshaven - ROLLER Wilhelmshaven
-WVNC01|26388|niedersachsen|53.57633|8.10723||Wilhelmshaven POCO
-HHNC01|54516|rheinland-pfalz|49.96593|6.82262||Wittlich ROLLER
-BREN07|26409|niedersachsen|53.58231|7.79688||Wittmund Hagebau
-FRAS04|63939|bayern|49.78679|9.1691||Wörth am Main Hagebau
 QWUC72|97076|bayern|49.79613|9.979559||Würzburg - Nürnberger Straße 88
 QWUX98|97070|bayern|49.80134|9.93653||Würzburg HBF - Bahnhofplatz 4
-QWUC02|97080|bayern|49.80342|9.89551||Würzburg POCO
-QWUC01|97078|bayern|49.819869|9.980651||Würzburg,IKEA
-ERFC05|98544|thueringen|50.6441|10.68992||Zella-Mehlis ROLLER
-LEJC06|07751|thueringen|50.87238|11.63618||Zöllnitz ROLLER

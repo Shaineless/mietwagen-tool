@@ -505,13 +505,23 @@ Preis je Miettag. Die Abrufzahl steht vor dem Start im Formular. Gemessen in
 Bremen, CDMR, November, 2 Tage: an keiner Station vor dem 23. buchbar, danach
 zwischen 82,97 € (Vegesack, Sa. 28.11.) und 250 € (24.11.).
 
-### 15 · Mehrere Anbieter: Sixt, Europcar, Avis
+### 15 · Fünf Anbieter: Sixt, Europcar, Avis, Hertz, Enterprise
 
 Die Bundeslandsuche und Finde dein Auto fragen neben Sixt auch **Europcar**
-(257 Stationen in Deutschland) und **Avis** (122) ab, in einer gemeinsamen
-Rangliste. Welche Anbieter mitmachen, lässt sich ankreuzen. Verglichen wird
-über den ACRISS-Code, den alle drei verwenden: ein CDMR ist überall dieselbe
-Klasse.
+(257 Stationen in Deutschland), **Avis** (122), **Hertz** (85) und
+**Enterprise** ab, in einer gemeinsamen Rangliste. Welche Anbieter mitmachen,
+lässt sich ankreuzen. Verglichen wird über den ACRISS-Code, den alle fünf
+verwenden: ein CDMR ist überall dieselbe Klasse.
+
+Jeder Anbieter hat seinen eigenen Weg zu den Preisen, und keiner ist eine
+Trefferliste zum Ablesen: Europcar und Hertz liefern JSON, das ihre eigene
+Seite ohnehin abholt; Avis trägt alles als Attribute an den Fahrzeugkarten;
+Enterprise schickt die Suche als POST an die eigene Schnittstelle. Alle vier
+laufen aus TRACKERs Chrome heraus, so wie Sixt.
+
+Bei Hertz zählen nur die 85 klassischen Stationen. Die 200 Selbstbedienungs-
+punkte „Hertz 24/7" bei IKEA und Baumärkten kennt die Buchungsseite nicht,
+sie stünden als Zeilen ohne Preis in der Rangliste.
 
 - **Kilometer stehen dabei.** Europcar gibt oft nur begrenzte Kilometer
   (Köln, 3 Tage: 1.200 km), Sixt und Avis unbegrenzte. Ein günstigerer Preis
@@ -650,6 +660,10 @@ Oberfläche auch ohne Server direkt von der Festplatte.
 | `scrape/sixt.mjs` | Liest die Preisliste einer Länderseite aus |
 | `scrape/sixt-schutz.mjs` | Klickt die Schutzpakete in der Kasse durch und liest die Endsummen |
 | `scrape/offer-parse.mjs` | Vom Build erzeugte Kopie des Parsers, nicht bearbeiten |
+| `scrape/europcar.mjs`, `avis.mjs`, `hertz.mjs`, `enterprise.mjs` | Je ein Preisabruf für die weiteren Anbieter, alle im Format des Sixt-Lesers |
+| `ernte-gemeinsam.mjs` | Was alle Stationsernten brauchen: die Ortsliste, Koordinate → Bundesland, das Schreiben der Datei |
+| `ernte-europcar.mjs`, `ernte-avis.mjs`, `ernte-hertz.mjs`, `ernte-enterprise.mjs` | Holen die deutschen Stationen je Anbieter nach `src/data/stations.<anbieter>.txt` |
+| `anbieter.test.mjs` | Die Tests für die Leser der weiteren Anbieter, je an einem echten Ausschnitt |
 | `katalog.mjs` | Merkt sich dauerhaft, welche ACRISS-Klassen es an welcher Station gab |
 | `beobachtung.mjs` | Legt je Abruf einen Messpunkt ab (`preisverlauf.jsonl`), die Grundlage der Preiskurve. Liest Archive mit, dünnt auf Ansage aus |
 | `wecker.mjs` | Preiswecker: anlegen, fällige finden, Prüfung vermerken, auslösen |

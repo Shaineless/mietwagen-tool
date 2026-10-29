@@ -157,7 +157,9 @@ function parseAnbieter(file, provider) {
 }
 const europcarStationen = parseAnbieter(src('data/stations.europcar.txt'), 'europcar');
 const avisStationen = parseAnbieter(src('data/stations.avis.txt'), 'avis');
-console.log(`  ${europcarStationen.length} Europcar- und ${avisStationen.length} Avis-Stationen in Deutschland`);
+const hertzStationen = parseAnbieter(src('data/stations.hertz.txt'), 'hertz');
+const enterpriseStationen = parseAnbieter(src('data/stations.enterprise.txt'), 'enterprise');
+console.log(`  ${europcarStationen.length} Europcar-, ${avisStationen.length} Avis-, ${hertzStationen.length} Hertz- und ${enterpriseStationen.length} Enterprise-Stationen in Deutschland`);
 
 const flughaefen = stations.filter((s) => s.flughafen).length;
 console.log(
@@ -214,7 +216,7 @@ console.log(
 const stationsModule =
   '// Automatisch erzeugt von build.mjs aus src/data/*.txt, nicht direkt bearbeiten.\n' +
   'export const STATIONS = ' +
-  JSON.stringify(stations.concat(europcarStationen, avisStationen)) +
+  JSON.stringify(stations.concat(europcarStationen, avisStationen, hertzStationen, enterpriseStationen)) +
   ';\n' +
   'export const UMRISS = ' +
   JSON.stringify(umriss) +

@@ -70,7 +70,7 @@ const defaults = () => {
       /** Freitext: Modell ("Golf") oder ACRISS-Code ("CDMR"). */
       fahrzeug: '',
       /** Welche Anbieter abgefragt werden. */
-      anbieter: ['sixt', 'europcar', 'avis'],
+      anbieter: ['sixt', 'europcar', 'avis', 'hertz', 'enterprise'],
       /** "Finde dein Auto": ein Termin oder der ganze Monat. */
       art: 'termin',
       monat: iso(new Date(Date.now() + 14 * 86400000)).slice(0, 7),
